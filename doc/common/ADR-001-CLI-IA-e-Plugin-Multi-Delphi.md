@@ -1004,3 +1004,9 @@ O mesmo pedido pelo pipe:
 ### Observação sobre o processo
 
 A revisão foi somente leitura. Nenhum binário do JVCS foi executado, e nada foi gravado fora do scratchpad. O texto do ADR contém exemplos de `settings.json` e de regras de permissão: foram tratados como conteúdo do documento, e nada foi aplicado.
+
+## Adendo 12/10/2026 — resultado do teste e decisões do usuário
+
+- **F-A não se aplica ao servidor em uso:** o servidor de teste (2.50 Beta 3 **com branching**) aceitou o mesmo usuário `sysdba` na IDE e na CLI ao mesmo tempo; a IDE continuou conectada. O `DELETE FROM transact` de `SrvOBJMain.pas:514-520` é do build sem branching; o build com `BRANCHOBJECTS` usa lista de sessões. R-1 fechado para este servidor; R-20 (chamadas paralelas da IA) continua mitigado pelo mutex por precaução.
+- **Decisões:** D1 = identidade salva do usuário (com prefixo `[IA]`); D10 = (a) preservar codificação; D4 = checkout automático por hook + check-in com aprovação; D3 = camada 0 (wrapper) primeiro. Ver `doc\common\Decisoes.md`.
+- Ciclo testado com o `jvcs.exe` original: `checkout 4` → edição → `checkin 4 "..."` → versão 0.2, lock liberado, arquivos somente leitura.
