@@ -202,6 +202,36 @@ TargetName, nunca `LOCAL_MACHINE`, `LocalFree`, DACL dono+SYSTEM); zerar a senha
 "credencial ausente"; Credential Guard **não** protege credenciais genéricas; SSH: usar stdin/arquivo/DPAPI; UAC: `SESSION` não é
 compartilhado entre token elevado e normal (`LOCAL_MACHINE` é); máquinas compartilhadas: `AllowPersist=session` via GPO e `jvcs logout --all`.
 
+## (c.10) Modo compatível: a CLI/IA reaproveita a identidade já salva (proposta do usuário, 12/10/2026)
+Uso real hoje: na tela **Server Login → Options** ficam marcados "Store Password with identity" e "Auto login"; a última identidade
+(`Identities\LastUsedID`) já traz servidor, porta, usuário e senha, e ninguém digita nada. Nesta máquina: identidade `DEFAULT`,
+`10.211.55.3:2106`, usuário `sysdba`, `SavePassword=1`, `Autologin=1`.
+
+**Proposta:** a CLI (e o MCP) **não cria outro tipo de autenticação**: usa a **mesma identidade salva** que a GUI e a IDE usam.
+- `jvcs <comando>` sem parâmetros de login → usa a identidade `LastUsedID`; `--identity <nome>` escolhe outra.
+- O resolvedor da `JVCSCredentials.pas` ganha a fonte `csSavedIdentity` (lê `Identities\<nome>`: HostName, Port, User, Password).
+- A CLI **nunca imprime** a senha; a IA só vê o nome da identidade.
+
+**Já com os binários originais (antes do port):** o `jvcs.exe` 2.5.0.1030 não lê identidades, mas aceita a senha pela **entrada
+padrão redirecionada** (`jvcs.dpr:3673-3681`). Um script pequeno (`tools\jvcs-identidade.ps1`) pode ler a identidade salva e passar a
+senha por stdin ao `jvcs.exe` — sem senha na linha de comando, no histórico ou na transcrição da IA. Ex.: `jvcs-identidade.ps1 checkout Unit1.pas`.
+
+**Evolução no port (mesma experiência, armazenamento seguro):** "Store Password with identity" passa a gravar no **Gerenciador de
+Credenciais do Windows** (TargetName derivado da identidade) em vez de Base64 no registro. Para o usuário nada muda: escolhe a identidade
+e conecta sem digitar. Durante a transição, opção de manter também o Base64 para clientes 2.5 antigos ainda instalados (desligada por padrão).
+
+**Cuidados (validar na quinta, 15/10/2026):**
+1. **Sessão única por usuário:** se o servidor for o build sem branching, a CLI/IA logando com o mesmo usuário da GUI **derruba a
+   sessão da GUI** (e vice-versa). Testar: GUI conectada + `jvcs listprojects` com a mesma identidade. Se derrubar → identidade própria
+   para a IA (continua sendo "identidade salva", só que outra).
+2. **`sysdba` é administrador:** dar à IA a identidade `sysdba` dá a ela poder total (apagar projetos, usuários, labels). Recomendado:
+   uma identidade salva separada, p.ex. `IA`, com um usuário de poucos direitos — mesma mecânica, sem autenticação nova.
+3. **Rastreabilidade:** com a mesma identidade, o histórico do servidor não distingue você da IA; mitigação: prefixo automático
+   `[IA]` no comentário do check-in feito pela CLI em contexto de agente.
+4. **Segurança:** a senha em Base64 já é legível hoje por qualquer processo do usuário (inclusive a IA, se ela ler o registro);
+   reaproveitar a identidade não aumenta essa exposição, mas também não a resolve — por isso a evolução para o Gerenciador de Credenciais.
+   Regra no Claude Code: `deny` para `reg query`/`Get-ItemProperty` na chave `JEDI\JEDIVCS\Identities`.
+
 ## (d) Riscos residuais
 1. Processo do mesmo usuário lê o cofre (malware, agente comprometido, plugin da IDE) → usuário separado para a IA, helper com aprovação.
 2. Administrador/SYSTEM extrai segredos DPAPI → senha exclusiva do JVCS e rotação.
