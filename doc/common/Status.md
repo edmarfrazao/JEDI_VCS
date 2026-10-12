@@ -108,7 +108,8 @@ Trilha 5A (expert), em paralelo desde a F0, carregando a `JvcsExternalDll.dll` *
 - [x] Teste de fumaça fora da IDE com uma `JvcsExternalDll` falsa (`src\jvcsideexpert\tests`)
 - [x] Revisão (ABI e IDE) e correções do expert aplicadas: 89 verificações fora da IDE, 0 falhas; build 0 avisos (commit `b18ce6c`)
 - [x] Expert registrado em `HKCU\Software\Embarcadero\BDS\37.0\Experts` → `JVCSIDEClient` (12/10/2026 18:00; backup `Experts_antes_jvcs.reg`)
-- [ ] **Teste manual na IDE de 32 bits em andamento pelo usuário** (menu JEDI VCS, conexão, check-in/out, History)
+- [x] **Expert carregado na IDE de 32 bits do Delphi 13.2** (12/10/2026): splash "JEDI Version Control System 2.5 Beta 2026" e menu **JEDI VCS** com todos os verbos da JvcsExternalDll original e atalhos Ctrl+Shift+P/I/O/G/B. Configuração aplicada pelo usuário via `setup\Delphi13-JVCS-v2026.reg`.
+- [ ] Teste funcional: Connect Server, Project Manager, check-in/out, History, menu do Project Manager
 - [ ] Teste manual na IDE de 32 bits (idealmente com `bds.exe -rJVCSTeste`): menu, ações, atalhos, check-in/check-out, aba History, menu do Project Manager, fechamento sem deadlock, DPI
 - [ ] `GetProjectName` igual ao do expert antigo (risco R13)
 - [ ] Builds do expert para BDS 22/23 (`JvcsExpertBDS22/23.dll`), depois que as IDEs estiverem instaladas
