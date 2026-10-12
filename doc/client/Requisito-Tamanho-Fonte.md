@@ -1,4 +1,4 @@
-# Requisito — Tamanho da fonte da interface (menus e janelas)
+# Requisito — Aparência: fonte, tamanho e tema claro/escuro
 
 Pedido do usuário (12/10/2026): em monitor de 32" QHD (2560×1440, escala 100%), menus e textos do JEDI VCS ficam pequenos.
 Deve existir uma forma de **alterar o tamanho da fonte** no cliente **standalone** e na versão **integrada ao Delphi**.
@@ -41,6 +41,14 @@ Além da escala em %, a página **VCS Properties → User Interface** terá:
 - Regra: se UIFontSize estiver definido, ele prevalece sobre UIFontScale; a escala em % fica como atalho rápido (menu Exibir → Tamanho da fonte).
 - Aplicação imediata ao clicar **Apply** (todas as janelas abertas, standalone e IDE), sem reiniciar.
 
+## 2.2 Tema claro/escuro seguindo o Delphi (pedido do usuário)
+- **Integrado ao Delphi:** o expert lê o tema ativo da IDE via ToolsAPI (`IOTAIDEThemingServices.ActiveTheme`: Light / Dark / Mountain Mist) e registra um notifier (`IOTAIDEThemingServicesNotifier.ChangedTheme`) para acompanhar a troca em tempo real. Ele repassa o tema à DLL (novo valor na ABI v2 ou notificação `ifn*` nova; na DLL original 2007 não é possível).
+  Como a DLL portada tem a **própria VCL** (linkada estática, sem runtime packages), o `ApplyTheme` da IDE não estiliza os forms dela; a DLL aplica um **VCL Style equivalente** com o seu `TStyleManager`: Light → padrão/"Windows11 Modern Light", Dark → "Windows11 Modern Dark" (ou o style escuro mais próximo do tema da IDE), Mountain Mist → claro. Os .vsf vêm de `Studio\37.0\Redist\styles\vcl` e são embutidos como recurso.
+- **Standalone:** opção **Tema: Seguir o Windows / Claro / Escuro** (`UITheme`) em VCS Properties → User Interface; "Seguir o Windows" lê `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme` e reage a `WM_SETTINGCHANGE`. Barra de título escura no Windows 11 via `DwmSetWindowAttribute(DWMWA_USE_IMMERSIVE_DARK_MODE)`.
+- **Cuidados:** cores personalizadas da listview (New / In work by you / by others) precisam de versão para tema escuro (`ListColorsDark`); owner-draw dos menus e listas usa `StyleServices` para fundo/texto; SynEdit (Diff/Line History) troca o esquema de cores do highlighter; VirtualTree acompanha o style.
+- Fase: infraestrutura junto com `JVCSUIScale` (unit `JVCSUITheme.pas`) na **F3**, aplicada na F4/F5.
+
 ## 3. Critério de aceite
 No monitor de 32" QHD a 100%: ao escolher outra fonte/tamanho (ex.: Segoe UI 12 pt) ou 150%, menus, listas, diálogos e o editor do Diff ficam proporcionalmente maiores, sem cortes de
 texto, e a escolha persiste entre sessões e vale tanto no `jedivcs.exe` quanto nas janelas abertas pelo menu JEDI VCS no Delphi.
+- Tema: com a IDE em Dark, as janelas do JEDI VCS abertas pelo menu ficam escuras e mudam junto ao trocar o tema da IDE; o standalone segue o tema do Windows (ou a escolha fixa).
