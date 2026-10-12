@@ -12,4 +12,5 @@
 | 12/10/2026 | Midware | Licença não comercial: **decidir depois**. Portar agora isolando o transporte em `JVCSTransport.pas`. | usuário |
 | 12/10/2026 | Teste de protocolo | Usuário vai montar um **servidor 2.5 Beta 3 de teste** com cópia do banco; captura "golden" do cliente oficial 2.5.0.1030 (`3rdparty\referencia-2.5.0.1030`). | usuário |
 | 12/10/2026 | Plataforma | Fase 1 só Win32 (FVCSCrypt.dll é 32 bits). Win64/ARM64EC opcionais (F6). | plano |
+| 12/10/2026 | Versão | Nome desta versão: **JEDI VCS 2.5 Beta 2026**. Recurso de versão: FileVersion numérico 2.5.0.2026, ProductVersion "2.5 Beta 2026", flag VS_FF_PRERELEASE. Vale para o expert e, no port, para EXE/DLL/Diff/console (`jvcsver.rc`). | usuário |
 | 12/10/2026 | Git | Repositório local em `v2026`, sem conversão de fim de linha (`.gitattributes: * -text`). | usuário |

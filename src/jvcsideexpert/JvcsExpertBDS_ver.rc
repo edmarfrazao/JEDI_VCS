@@ -1,0 +1,32 @@
+/* VERSIONINFO do JEDI VCS IDE Expert (v2026) - compilado por
+   tools\compilar-expert.bat (brcc32) para dcu\Win32\expert\JvcsExpertBDS_ver.res */
+
+1 VERSIONINFO
+FILEVERSION 2,5,0,2026
+PRODUCTVERSION 2,5,0,2026
+FILEFLAGSMASK 0x3F
+FILEFLAGS 0x2
+FILEOS 0x4
+FILETYPE 0x2
+FILESUBTYPE 0x0
+{
+ BLOCK "StringFileInfo"
+ {
+  BLOCK "040904E4"
+  {
+   VALUE "CompanyName", "Project JEDI\000"
+   VALUE "FileDescription", "JEDI VCS IDE Expert (bridge to JvcsExternalDll 2.5)\000"
+   VALUE "FileVersion", "2.5.0.2026 Beta 2026\000"
+   VALUE "InternalName", "JvcsExpertBDS.dpr\000"
+   VALUE "LegalCopyright", "Mozilla Public License 1.1\000"
+   VALUE "OriginalFilename", "JvcsExpertBDS.dll\000"
+   VALUE "ProductName", "JEDI VCS 2.5 Beta 2026\000"
+   VALUE "ProductVersion", "2.5 Beta 2026\000"
+   VALUE "Comments", "Delphi 11/12/13 (BDS 22/23/37), IDE 32 bits\000"
+  }
+ }
+ BLOCK "VarFileInfo"
+ {
+  VALUE "Translation", 0x0409, 1252
+ }
+}
