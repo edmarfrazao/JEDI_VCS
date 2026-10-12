@@ -122,7 +122,9 @@ Callbacks (`TExternalIDEFunctionRec`), conforme 3.4 da análise:
 - **Pacotes.** `GetModuleCount`/`Name` e `GetComponentCount`/`Name` usam `IOTAPackageServices`, a
   mesma semântica da antiga ToolIntf.
 - **Erros.** `RaiseException` **não** levanta exceção: mostra um MessageBox
-  "JEDI VCS - Application Error", como o original.
+  "JEDI VCS - Application Error", como o original. A mesma mensagem repetida em menos de 30 s
+  (contados do fechamento da caixa anterior) só vai para o log, para um erro no `GetVerbState`
+  (chamado a cada segundo pelo `OnUpdate`) não virar uma sequência de caixas.
 - **IDE.** `GetParentHandle` e `GetBaseRegistryKey` usam `IOTAServices`.
 - **Componentes.** `GetModuleComponentCount`/`GetModuleComponent` usam
   `IOTAFormEditor.GetRootComponent` e `INTAComponent.GetComponent.Name`.
@@ -137,6 +139,11 @@ tools\compilar-expert.bat [Debug|Release]          (padrão: Release)
 
 - **Saída.**
   - `bin\ideclient\Win32\JvcsExpertBDS37.dll`, mais `.map` (`-GD`) para localizar AVs.
+  - A DLL é compilada antes em `dcu\Win32\expert\out` e só é copiada para `bin\ideclient\Win32`
+    se a compilação e a verificação do PE derem certo. **Um build com falha não apaga o expert que
+    a IDE já usa.**
+  - O número BDS do nome (`37`, `23`, `22`) e dos imports esperados vem da DLL gerada (o
+    `$LIBSUFFIX` do `.dpr` é escolhido por `CompilerVersion`), e não do nome da pasta do Delphi.
   - DCUs e `.res` de versão em `dcu\Win32\expert`.
   - Log em `tools\logs\compilar-expert_Win32_<Config>.log`.
 - **Linha do compilador (resumo).** O script também chama `rsvars.bat` e o `brcc32` do `.rc`:
@@ -150,8 +157,12 @@ tools\compilar-expert.bat [Debug|Release]          (padrão: Release)
 - **Runtime copiado** para a pasta da DLL: `JvcsExternalDll.dll`, `fvcscrypt.dll`, `zipdll.dll`,
   `unzdll.dll`, `htm_rep.htm`, `*.jvcs` e `*.chm`. Opcionalmente também `jedivcsdiff.exe`, que a DLL
   usa em Compare/Diff.
-  - Ordem de origem: `3rdparty\`, depois `3rdparty\referencia-2.5.0.1030\`, depois
-    `C:\Program Files (x86)\JEDI\JVCS` (ou `JVCS_INSTALL`).
+  - **`JvcsExternalDll.dll`**: só de `3rdparty\referencia-2.5.0.1030\` ou de
+    `C:\Program Files (x86)\JEDI\JVCS` (ou `JVCS_INSTALL`), e só se o SHA-256 for o da 2.5.0.1030
+    (`7d9d1d35…055a10a3`). Uma DLL portada deixada em `3rdparty\` nunca é copiada por engano; para
+    testar uma DLL nova com este expert, copie-a à mão para `bin\ideclient\Win32`.
+  - Demais arquivos, nesta ordem de origem: `3rdparty\`, depois `3rdparty\referencia-2.5.0.1030\`,
+    depois `C:\Program Files (x86)\JEDI\JVCS` (ou `JVCS_INSTALL`).
   - A DLL resolve tudo relativo à **própria** pasta, então expert, DLL e runtime ficam juntos.
 - **Outras versões do Delphi.** Com `set BDSROOT=C:\Program Files (x86)\Embarcadero\Studio\23.0`,
   o script gera `JvcsExpertBDS23.dll` e confere os imports `…290.bpl`. Para BDS 22, os imports são
@@ -159,8 +170,9 @@ tools\compilar-expert.bat [Debug|Release]          (padrão: Release)
 - **Códigos de saída.**
   - `0`: OK.
   - `1`: falha de compilação ou de ambiente. Isso inclui a DLL em uso porque a IDE está aberta com o
-    expert.
-  - `2`: compilou, mas falta arquivo de runtime ou a verificação do PE falhou.
+    expert. Nos dois casos o expert anterior fica intacto.
+  - `2`: compilou, mas falta arquivo de runtime, a `JvcsExternalDll.dll` não é a original ou a
+    verificação do PE falhou (nesse último caso a DLL nova não é copiada).
 
 ## Registro na IDE (manual; o script não grava no registro)
 
@@ -187,11 +199,15 @@ reg add "HKCU\Software\Embarcadero\BDS\37.0\Experts" /v JVCSIDEClient /t REG_SZ 
 |---|---|
 | `JVCS_EXPERT_LOG=<arquivo>` | Grava o log do expert em UTF-8: carga da DLL, verbos executados, notificações, erros e truncamentos. Sem ela o log só sai por `OutputDebugString` (visível no DebugView) com o prefixo `[JVCS Expert]` |
 | `JVCS_EXPERT_DPI=off\|unaware\|gdiscaled` | Contexto de DPI das janelas da DLL. O padrão é `gdiscaled` (`DPI_AWARENESS_CONTEXT_UNAWARE_GDISCALED`, com fallback para `unaware`). `off` desliga a troca de contexto, como no original |
+| `JVCS_EXPERT_DEFERINIT=auto\|on\|off` | Adiamento do `JEDIVCSDLLINIT` até a janela principal da IDE ficar visível. O padrão `auto` adia só com `ShowLoad = True`; `on` sempre adia (útil para testar); `off` nunca adia, como no original |
 
 ## Diferenças em relação ao `JvcsExpertBDS21.dll`
 
 1. Buffers limitados nas 8 callbacks que escrevem em `array[0..255]`. O original fazia `StrPCopy`
-   sem limite e estourava a pilha da DLL com caminhos de 256 ou mais caracteres.
+   sem limite e estourava a pilha da DLL com caminhos de 256 ou mais caracteres. Caminhos que não
+   cabem viram `''` (ou saem da lista), nunca um caminho truncado.
+   - Nomes vão para ANSI **sem "best fit"**: o original (`AnsiString(S)`) trocava `Ł` por `L` e
+     `＼` por `\`, e a DLL podia operar num arquivo diferente do que está na IDE.
 2. Do lado do expert, os buffers que a DLL preenche são grandes. Um `GetVerb` com nome de arquivo
    longo estourava o buffer de 256 bytes do original.
 3. O editor é convertido entre UTF-8 e ANSI em `SourceReadString`/`SourceWriteString`. O original
@@ -215,6 +231,10 @@ reg add "HKCU\Software\Embarcadero\BDS\37.0\Experts" /v JVCSIDEClient /t REG_SZ 
    - Se, depois de um `ExecuteVerb`, a quantidade de verbos ou algum atalho mudar, o menu e o key
      binding são reconstruídos. A reconstrução é **adiada por mensagem** e nunca roda dentro do
      OnClick ou do KeyProc que a disparou.
+   - Com `CheckModuleState = True`, o `GetVerbState` da DLL consulta o servidor e bombeia mensagens
+     (`Application.ProcessMessages`). Um verbo clicado (ou atalho) nesse intervalo **não** roda
+     aninhado: fica pendente e é executado por mensagem quando a atualização termina. Uma
+     reconstrução pedida nesse intervalo também é reenviada no fim.
 10. Se a DLL não carregar, o menu "JEDI VCS" mostra o item "JvcsExternalDll.dll not loaded -
     details…" com os caminhos tentados e o erro do Windows. O original deixava o menu vazio.
 11. **History.**
@@ -222,14 +242,24 @@ reg add "HKCU\Software\Embarcadero\BDS\37.0\Experts" /v JVCSIDEClient /t REG_SZ 
     - As chamadas vão para a thread principal (`TThread.Synchronize`), porque a DLL usa sockets ICS.
     - Há contagem de referência real (`TInterfacedObject` com stubs de `IDispatch`).
 12. O bitmap do splash e do About é desenhado em tempo de execução, sem recurso binário.
+13. **INIT adiado com `ShowLoad = True`.** O original abria o diálogo de conexão durante o splash.
+    Aqui o `JEDIVCSDLLINIT` espera a IDE ficar visível e a abertura do projeto ativo é reproduzida
+    para a DLL (ver "Arquitetura"). Sem `ShowLoad`, a ordem é a do original.
+14. **Menu do Project Manager com vários arquivos.** Sem conexão (ou com o projeto fora do arquivo
+    do JVCS), aparece **uma** mensagem e os demais arquivos selecionados não são processados. Antes
+    era uma caixa por arquivo.
+15. `RaiseException` repetida em menos de 30 s só vai para o log (ver "Callbacks").
 
 ## Limitações e riscos conhecidos
 
 - **Só a IDE de 32 bits.** O `bin64\bds.exe` não carrega DLL de 32 bits, nem o expert nem a
   `JvcsExternalDll`. Isso só muda depois do port da DLL para Win64.
 - **DLL antiga, ANSI.** Nomes de arquivo e textos fora da página de código do Windows (CP_ACP, 1252
-  aqui) viram `?`. O conteúdo do editor também passa por CP_ACP, e caracteres sem equivalente se
-  perdem na expansão de keywords e na marcação de check-in.
+  aqui) viram `?`, e a operação da DLL nesse arquivo falha. O conteúdo do editor também passa por
+  CP_ACP (com "best fit", que aproxima o caractere), e caracteres sem equivalente se perdem na
+  expansão de keywords e na marcação de check-in.
+- **Caminhos com mais de 255 bytes** não chegam à DLL: o projeto ou o arquivo atual aparece vazio
+  para ela, e a unit some da lista de units. O log registra cada caso.
 - **Duas VCLs no processo** (2007 dentro do Delphi 13):
   - As janelas da DLL não seguem tema nem VCL Styles da IDE (tema escuro).
   - Em formulários **não modais** da DLL, como o Project Manager do JVCS, Tab, atalhos, hints e
@@ -245,8 +275,14 @@ reg add "HKCU\Software\Embarcadero\BDS\37.0\Experts" /v JVCSIDEClient /t REG_SZ 
   pode falhar com endereços acima de 2 GB. Uma AV aleatória dentro da DLL é forte indício disso.
 - **Detecção da IDE pela DLL** (`JVCSIDESettings`). O BDS 37 fica `IDEUnknown` e é tratado como
   Delphi; funciona por acidente.
-- **Auto-login.** Com `ShowLoad = True`, a DLL abre o diálogo de conexão durante a carga da IDE,
-  dentro do `INITWIZARD0001`, como no original.
+- **Auto-login.** Com `ShowLoad = True`, o INIT é adiado até a IDE ficar visível. A reprodução da
+  abertura cobre só o projeto **ativo**: num grupo, os outros projetos não recebem
+  `ifnProjectOpening`/`ifnProjectOpened` nem o notifier de fechamento (o `ofnFileClosing` de cada
+  um continua chegando). Arquivos já abertos antes do INIT não geram `ifnFileOpened`. Se algo der
+  errado, `JVCS_EXPERT_DEFERINIT=off` volta ao comportamento do original.
+- **`GetVerbState` com `CheckModuleState = True`.** A janela de espera e eventuais erros do servidor
+  saem no contexto de DPI da IDE (pequenos em escala alta). O expert não troca o contexto ali porque
+  isso deixaria a IDE em "unaware" durante o bombeamento de mensagens a cada segundo.
 - **Duas notificações de fechamento.** O projeto recebe `ifnProjectClosing` duas vezes, por
   `ofnFileClosing` e pelo `Destroyed` do módulo, como no original. A DLL ignora a segunda.
 - **Ordem do shutdown.** Ela difere do original, que chamava `FINALIZE`/`FreeLibrary` antes de
@@ -267,8 +303,11 @@ src\jvcsideexpert\tests\testar-expert.bat
 
 O teste compila `tests\FakeJvcsExternalDll.dpr`, uma DLL **falsa** com a mesma ABI que não é o cliente
 JEDI VCS. Também compila `tests\JvcsExpertSmokeTest.dpr`, um host console com
-`rtl;vcl;designide`. Tudo vai para `dcu\Win32\expert-test`, e nenhum binário do JVCS nem a IDE são
-executados. São 69 verificações:
+`rtl;vcl;designide`, e com ele `tests\JvcsAbiCrossCheck.pas` e a unit original
+`src\common\JVCSIDEInterfaceCommon.pas` (includes vazios de `tests\abi-stub`). Tudo vai para
+`dcu\Win32\expert-test`, e nenhum binário do JVCS nem a IDE são executados. O script fixa
+`JVCS_EXPERT_DEFERINIT=off`, para os testes não dependerem do `ShowLoad` do registro. São 89
+verificações:
 
 - **A) O `JvcsExpertBDS37.dll` real.**
   - `INITWIZARD0001` com um `IBorlandIDEServices` vazio, depois `Terminate` e `FreeLibrary`.
@@ -280,8 +319,13 @@ executados. São 69 verificações:
   - Verbos com 1500 caracteres e exceção lançada dentro da DLL.
   - Preservação de `Cancel`, notificações, History (também a partir de outra thread) e operações.
   - Menu do Project Manager com 10 itens por arquivo e 4 por projeto.
-- **C) Conversões.** Truncamento em 255 + #0 e UTF-8 → ANSI, incluindo o €.
+- **C) Conversões.** Truncamento de texto em 255 + #0, UTF-8 → ANSI (incluindo o €), `?` em vez de
+  "best fit", caminho de 300 bytes devolvido vazio e caminho de exatamente 255 bytes copiado inteiro.
 - **D) Pasta sem a DLL.** `InitWizard` continua `True` e o erro de carga vai para o log.
+- **E) INIT adiado** (`JVCS_EXPERT_DEFERINIT=on`, sem janela principal). Nada da DLL é chamado
+  dentro do `INITWIZARD0001`, e o `Terminate` com o timer pendente encerra sem carregar a DLL.
+- **F) ABI independente.** Os cinco records (posição de cada campo pelo nome), assinaturas, enums,
+  set, constantes e nomes dos exports conferidos contra a unit original e a tabela 3.4.
 
 ## Roteiro de teste manual (na IDE de 32 bits)
 
@@ -319,3 +363,9 @@ executados. São 69 verificações:
     `JvcsExternalDll descarregada`.
 11. Renomeie temporariamente a `JvcsExternalDll.dll` e abra a IDE. O menu deve mostrar "not loaded -
     details…" com o motivo, e a IDE não pode travar.
+12. Opcional, INIT adiado: abra a IDE a partir de um prompt com `set JVCS_EXPERT_DEFERINIT=on`, com
+    um projeto versionado reaberto automaticamente.
+    - O menu **JEDI VCS** aparece alguns instantes depois da janela principal.
+    - No log: `INIT da JvcsExternalDll adiado`, depois `IDE visivel: executando o INIT adiado` e
+      `INIT adiado: reproduzindo a abertura do projeto ativo …dpr`.
+    - O Project Manager do JVCS deve reconhecer o projeto, como no passo 5.
