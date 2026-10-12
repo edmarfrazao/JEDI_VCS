@@ -18,7 +18,7 @@ Paliativos até o port:
 e opcionalmente `UIFontName` (padrão: fonte do sistema, `Screen.MessageFont`). Lido/gravado via `ConfigStorage` (jvcsReadInteger/jvcsWriteInteger).
 
 **Interface**
-- Standalone: menu **Exibir → Tamanho da fonte** (Normal / 125% / 150% / 175% / 200% / Personalizar…) + página em *Options*.
+- Standalone: menu **Exibir → Tamanho da fonte** (Normal / 125% / 150% / 175% / 200% / Personalizar…) + controles em **VCS Properties → User Interface** (`Options.pas`; ver `img\options-user-interface-2.5.0.1030.png`): "Tamanho da fonte da interface" (combo de %), "Fonte" (padrão do sistema) e "Tamanho da fonte dos editores" (Diff/Line History, preferência `EditorFontSize` separada), ao lado das cores de listview já existentes. A mesma página serve à DLL na IDE.
 - Integrado ao Delphi: item **JEDI VCS → Tamanho da fonte…** criado pelo expert (`src\jvcsideexpert\JVCSExpertWizard.pas`), que grava a mesma
   chave e notifica a DLL (novo verbo/notificação) para reaplicar nas janelas abertas. Os menus da **IDE** (o próprio menu "JEDI VCS") seguem
   a fonte/tema da IDE e não são alterados.
