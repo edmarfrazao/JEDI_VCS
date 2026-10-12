@@ -5,6 +5,7 @@
 /bin/client/**/*.rsm
 /bin/client/**/*.drc
 /dcu/
+/lib/
 *.dcu
 *.dcp
 *.bpl
