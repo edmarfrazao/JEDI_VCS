@@ -136,3 +136,11 @@ DLL e setup:
 - Licença do Midware (uso não comercial): decisão adiada; transporte isolado em `JVCSTransport.pas`.
 - Consultar [Componentes.md](Componentes.md) para o que cada unit ausente vira.
 - Reconciliar a skill `D:\skills\delphi`, que cita Delphi 11 e 12 como instalados: hoje só existe o 13.2.
+
+## Testes de integração com o servidor de teste (12/10/2026)
+- [x] Servidor 2.50 (branching, HEAD) + Firebird 2.5.9; banco atualizado para a versão 250 (ver `doc\server\Servidor-Teste-Local.md`).
+- [x] **Check-in pela IDE do Delphi 13.2** com o expert BDS37 + JvcsExternalDll original: projeto `Exemplo01` (4 módulos, `.pas`+`.dfm` pela família).
+- [x] Standalone `jedivcs.exe` 2.5.0.1030 conectado ao mesmo tempo que a IDE.
+- [x] **Duas sessões do mesmo usuário (IDE + CLI) convivem** neste servidor (build com branching): a IDE continuou conectada.
+- [x] **CLI `jvcs.exe` original:** `listprojects`, `listproject`, `listlocks`, `checkout 4` (sem prompt: arquivo limpo → `CHECKOUT_ONLY_MODULE`), alteração, `checkin 4 "comentário"` → versão **0.1 → 0.2**, lock liberado, arquivos voltam a somente leitura.
+- [ ] Próximo: wrapper `tools\ai\jvcs-ai.ps1` (ADR-001 §3, camada de curto prazo) para a IA usar a CLI com segurança (identidade salva, JSON, mutex, checagem de alteração local antes de bloquear).
