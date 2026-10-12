@@ -7,7 +7,7 @@
 | Porta | **2106** (banner "Welcome to JEDI VCS Firebird Server") |
 | SGBD | **Firebird 2.5.9 instalado** (serviço `FirebirdServerDefaultInstance`, porta 3050), **não** o embutido |
 | Banco | `C:\Program Files (x86)\JEDI\JVCS\server\archive\db_fib\JEDIVCS.FDB` — ODS 11.2, página 4096 |
-| Login do servidor no Firebird | `SYSDBA` / `masterkey`, Server `LOCALHOST`, Char Set `NONE`, "Use Firebird embedded" desmarcado |
+| Login do servidor no Firebird | `SYSDBA` / `masterkey`, **Server `127.0.0.1`** (ou o IP da máquina; **não** `LOCALHOST`), Char Set `NONE`, "Use Firebird embedded" desmarcado |
 | Configuração efetiva | `%LOCALAPPDATA%\VirtualStore\Program Files (x86)\JEDI\JVCS\Server\jvcssrv.ini` (o servidor não tem permissão em Program Files; senha gravada criptografada) |
 | Usuário inicial do JEDI VCS | `sysdba` / `admin` (padrão do banco novo; trocar após o 1º login) |
 
@@ -42,3 +42,9 @@ Backups: `D:\Delphi\JediVCS\ServidorTeste\backup\JEDIVCS_antes_upgrade250_*.fbk`
 
 **Por que o servidor às vezes abre com o Firebird 2.1 embutido:** quando executado como Administrador ele lê o `jvcssrv.ini` de Program Files (não o do VirtualStore);
 manter os dois iguais com `D:\Delphi\JediVCS\ServidorTeste\corrigir-ini-servidor.cmd` (executar como Administrador). Com Server = LOCALHOST o servidor abre o caminho sem `host:` (`SrvMain.pas:1083-1087`).
+
+## CAUSA RAIZ do erro "unsupported on-disk structure ... found 11.2, support 11.1"
+No campo **Server** da tela *Logon to Firebird*, os valores `LOCAL`, `LOCALHOST` ou vazio fazem o servidor abrir o arquivo **sem host**
+(`SrvMain.pas:1083-1087`: `DatabaseName := FDBDatabase`), ou seja, conexão local — que nesta instalação acaba no motor 2.1 embutido.
+Com um **IP** (`127.0.0.1` ou `10.211.55.3`) a conexão vira `<ip>:<caminho>` e vai por TCP ao serviço **Firebird 2.5** (porta 3050). Confirmado pelo usuário em 12/10/2026.
+**Recomendado: `127.0.0.1`** (não depende do IP da VM).

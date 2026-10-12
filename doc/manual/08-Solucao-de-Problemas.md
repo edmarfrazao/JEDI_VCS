@@ -105,3 +105,9 @@ Primeiro, três conferências que resolvem boa parte dos casos:
 ## 7. Quando pedir ajuda
 
 Junte: versão (`jvcs.exe`/`jedivcs.exe` 2.5.0.1030, servidor 2.50 Beta 3), mensagem completa, o trecho do `server.log` (Log > Show Logfile...), o log do expert (`JVCS_EXPERT_LOG`), `C:\Program Files\Firebird\Firebird_2_5\firebird.log` e o que você fez antes. **Não** envie senhas, o `jvcssrv.ini` nem exportações de registro com identidades.
+
+## Causa raiz confirmada: ODS 11.2 × 11.1 com Server = LOCALHOST
+
+| Sintoma | Causa | Solução |
+|---|---|---|
+| Servidor JVCS: *unsupported on-disk structure ... found 11.2, support 11.1* mesmo com "Use Firebird embedded" desmarcado | Com **Server** = `LOCALHOST`, `LOCAL` ou vazio, o servidor abre o banco **sem host** (`SrvMain.pas:1083-1087`) e a conexão local cai no Firebird 2.1 embutido | Em *Logon to Firebird*, **Server = `127.0.0.1`** (ou o IP da máquina). A conexão passa a ser `127.0.0.1:<caminho>` via TCP no Firebird 2.5 instalado |
