@@ -33,6 +33,14 @@ e opcionalmente `UIFontName` (padrão: fonte do sistema, `Screen.MessageFont`). 
 - DPI: projetos com manifesto **Per-Monitor V2** (já previsto no Plano-de-Port F0); a escala do usuário multiplica a do monitor.
 - Fase do plano: infraestrutura em **F3** (comum de GUI, piloto no Diff), aplicada em **F4** (EXE) e **F5** (DLL + item no expert).
 
+## 2.1 Escolha explícita de fonte e tamanho (pedido do usuário)
+Além da escala em %, a página **VCS Properties → User Interface** terá:
+- **Fonte da interface…** — botão que abre um TFontDialog (família + tamanho em pontos, sem cor/efeitos), com prévia ao lado e botão **Padrão do sistema**. Grava UIFontName e UIFontSize (pt).
+- **Fonte dos editores…** — idem para Diff/Line History/visualizadores (EditorFontName, EditorFontSize; padrão Consolas 10).
+- **Fonte dos menus** — por padrão acompanha a fonte da interface; opção de família/tamanho próprios (MenuFontName, MenuFontSize).
+- Regra: se UIFontSize estiver definido, ele prevalece sobre UIFontScale; a escala em % fica como atalho rápido (menu Exibir → Tamanho da fonte).
+- Aplicação imediata ao clicar **Apply** (todas as janelas abertas, standalone e IDE), sem reiniciar.
+
 ## 3. Critério de aceite
-No monitor de 32" QHD a 100%: ao escolher 150%, menus, listas, diálogos e o editor do Diff ficam proporcionalmente maiores, sem cortes de
+No monitor de 32" QHD a 100%: ao escolher outra fonte/tamanho (ex.: Segoe UI 12 pt) ou 150%, menus, listas, diálogos e o editor do Diff ficam proporcionalmente maiores, sem cortes de
 texto, e a escolha persiste entre sessões e vale tanto no `jedivcs.exe` quanto nas janelas abertas pelo menu JEDI VCS no Delphi.
