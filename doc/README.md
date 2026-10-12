@@ -10,6 +10,22 @@
 | [common/Plano-de-Port.md](common/Plano-de-Port.md) | Plano de execução em fases, critérios de pronto, riscos e checklist de compatibilidade com o servidor. |
 | [common/Decisoes.md](common/Decisoes.md) | Registro datado das decisões do port (escopo, IDE alvo, bibliotecas, recursos desligados, nome da versão). |
 
+## Manual de configuração (`manual`)
+
+Manual prático, em português, para instalar o servidor JEDI VCS 2.5 Beta 3 (Firebird), configurar o cliente e integrar ao Delphi 13. Comece pelo [índice do manual](manual/README.md).
+
+| Capítulo | O que contém |
+|---|---|
+| [manual/README.md](manual/README.md) | Índice, "por onde começar", mapa de caminhos desta máquina e convenções do manual. |
+| [manual/01-Servidor-Instalacao-e-Configuracao.md](manual/01-Servidor-Instalacao-e-Configuracao.md) | Servidor (aplicação × serviço), Firebird instalado × embutido, restaurar o banco com `gbak`, tela "Logon to Firebird", `jvcssrv.ini`/VirtualStore, porta 2106 e firewall, backup, menus do servidor. |
+| [manual/02-Cliente-Primeiro-Acesso.md](manual/02-Cliente-Primeiro-Acesso.md) | Identidade e Server Login, `sysdba`/`admin`, trocar senha, criar usuários (você e a IA), níveis de acesso, grupos, primeiro projeto e nomes proibidos. |
+| [manual/03-Integracao-com-o-Delphi.md](manual/03-Integracao-com-o-Delphi.md) | Expert no Delphi 13 (32 bits): registro, verificação, reverter, variáveis `JVCS_EXPERT_*`, limitações. |
+| [manual/04-Opcoes-do-Cliente.md](manual/04-Opcoes-do-Cliente.md) | VCS Properties, página por página, com recomendações (inclui External Bugtracker e Save WIP). |
+| [manual/05-Familias-de-Arquivos.md](manual/05-Familias-de-Arquivos.md) | `.pas` + `.dfm` + `.fmx`, File Families Manager e famílias recomendadas. |
+| [manual/06-Linha-de-Comando.md](manual/06-Linha-de-Comando.md) | `jvcs.exe`: sintaxe, comandos, exemplos seguros, senha na linha de comando, o que ainda não existe. |
+| [manual/07-Senhas-Padrao-e-Seguranca.md](manual/07-Senhas-Padrao-e-Seguranca.md) | Senhas padrão, o que trocar e boas práticas. |
+| [manual/08-Solucao-de-Problemas.md](manual/08-Solucao-de-Problemas.md) | Tabela sintoma, causa e solução. |
+
 ## Ambiente, versões e componentes (`common`)
 
 | Documento | O que contém |
@@ -34,6 +50,7 @@
 | Documento | O que contém |
 |---|---|
 | [server/LEIAME.md](server/LEIAME.md) | O servidor não é portado (JEDI VCS 2.5 Beta 3 com Firebird, funciona até o Firebird 5); a pasta receberá os resultados das consultas somente leitura no banco (Plano F0, 0.7). |
+| [server/Servidor-Teste-Local.md](server/Servidor-Teste-Local.md) | Servidor de teste montado em 12/10/2026: versões, banco, configuração efetiva, problemas encontrados e bancos de reserva. Uso passo a passo: [manual](manual/README.md). |
 
 ## Build, bibliotecas e binários (fora de `doc`)
 
@@ -53,3 +70,4 @@
 3. [Componentes](common/Componentes.md) e [Versoes](common/Versoes.md), para a lista de materiais.
 4. [Ambiente](common/Ambiente.md), antes de mexer na IDE ou no registro.
 5. [Inventario-Componentes](common/Inventario-Componentes.md), quando precisar do detalhe de uma unit ou de um risco.
+6. [Manual de configuração](manual/README.md), para instalar e configurar servidor, cliente e expert do Delphi.
