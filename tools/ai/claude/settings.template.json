@@ -1,0 +1,94 @@
+{
+  "x-jvcs-ai": {
+    "comment": "Modelo usado por instalar-no-projeto.ps1 (este bloco não vai para o settings). Placeholders: {{TOOLS_AI}} = pasta absoluta tools\\ai (D:\\...); {{TOOLS_AI_FWD}} = a mesma com barras normais (D:/...), forma canônica dos comandos da skill; {{TOOLS_AI_POSIX}} = d/Delphi/... para regras //caminho. allowEditPreserve só entra com instalar-no-projeto.ps1 -AllowEditPreserve.",
+    "version": "1.1.0",
+    "allowEditPreserve": [
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI_FWD}}/edit-preserve.ps1\" *)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI_FWD}}/edit-preserve.ps1\" *)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI}}\\edit-preserve.ps1\" *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|MultiEdit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "{{TOOLS_AI}}\\hooks\\pretooluse.ps1"],
+            "timeout": 600,
+            "onFailure": "block"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell.exe",
+            "args": ["-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", "{{TOOLS_AI}}\\hooks\\stop.ps1"],
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  },
+  "permissions": {
+    "allow": [
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI_FWD}}/jvcs-ai.ps1\" *)",
+      "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI_FWD}}/jvcs-ai.ps1\" *)",
+      "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI}}\\jvcs-ai.ps1\" *)"
+    ],
+    "ask": [
+      "PowerShell(*-Confirmed*)",
+      "Bash(*-Confirmed*)",
+      "PowerShell(*-Discard*)",
+      "Bash(*-Discard*)",
+      "PowerShell(*-AllowEncodingChange*)",
+      "Bash(*-AllowEncodingChange*)"
+    ],
+    "deny": [
+      "PowerShell(*JEDIVCS*Identities*)",
+      "Bash(*JEDIVCS*Identities*)",
+      "PowerShell(*jvcs*/password*)",
+      "PowerShell(*jvcs*-password*)",
+      "Bash(*jvcs*/password*)",
+      "Bash(*jvcs*-password*)",
+      "PowerShell(*jvcs-ai.ps1* config set*)",
+      "Bash(*jvcs-ai.ps1* config set*)",
+      "PowerShell(*JVCS*config.ini*)",
+      "Bash(*JVCS*config.ini*)",
+      "PowerShell(*instalar-no-projeto.ps1*)",
+      "Bash(*instalar-no-projeto.ps1*)",
+      "PowerShell(*edit-preserve*-NoCheckout*)",
+      "Bash(*edit-preserve*-NoCheckout*)",
+      "PowerShell(*CLAUDECODE*)",
+      "Bash(*CLAUDECODE*)",
+      "PowerShell(*AI_AGENT*)",
+      "Bash(*AI_AGENT*)",
+      "PowerShell(*settings.local.json*)",
+      "Bash(*settings.local.json*)",
+      "PowerShell(*disableAllHooks*)",
+      "Bash(*disableAllHooks*)",
+      "PowerShell(attrib *)",
+      "Bash(attrib *)",
+      "PowerShell(*IsReadOnly*)",
+      "Bash(*IsReadOnly*)",
+      "PowerShell(*SetAttributes*)",
+      "Bash(*SetAttributes*)",
+      "PowerShell(*-Name Attributes*)",
+      "PowerShell(*.Attributes =*)",
+      "PowerShell(*.Attributes=*)",
+      "Bash(chmod *)",
+      "Edit(/.claude/settings.json)",
+      "Edit(/.claude/settings.local.json)",
+      "Edit(/.claude/skills/jvcs/**)",
+      "Edit(~/AppData/Roaming/JEDI/JVCS/**)",
+      "Edit(~/AppData/Local/JEDI/JVCS/**)",
+      "Edit(//{{TOOLS_AI_POSIX}}/**)"
+    ]
+  }
+}
