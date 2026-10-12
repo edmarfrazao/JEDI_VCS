@@ -1,0 +1,248 @@
+********************************************************************************
+JEDI Version Control System                      
+JVCS Command Line Client - 2.5.0.XX                     Last update: 22/Jul/2007
+********************************************************************************
+
+HOW TO USE:
+===========
+Call:
+
+jvcs server:port /user Username /password Password /Available commands
+                 ^
+or
+
+jvcs server:port -user Username -password Password -Available commands
+                 ^
+                 (use either [/] or [-] as switch char)
+
+Example:
+--------
+Assume you have a JVCS server running at "vcsserver" on port "2106". User 
+"sysdba", password "admin" should sync project "testproject1" without further
+intervention.
+
+Call (from the commandline or from a batch file):
+
+jvcs vcsserver:2106 /user sysdba /password admin /syncproject testproject1 noprompt
+
+NOTES
+=====
+- Multiple commands can be executed by the <input> option (see below).
+
+- If you don't provide any of the available commands, JVCS console client
+  will switch to interactive mode. Terminate the interactive mode by entering 
+  "exit" at the command prompt.
+
+- Commands can be entered at the internal command prompt, via command line
+  parameter or from an external text file by the input commend.
+
+- To check for proper operation, you may use the pipe symbol [>] to redirect JVCS
+  output to a text file: 
+
+  Call:
+  jvcs server:port -user Username -password Password -Available commands > result.txt
+
+- In contrast to GUI/IDE clients, JVCS does not check for the version of the
+  server to connect. Responsibility for this is on your side.
+
+- be carefull with sync & get commands!!! It's possible to overwrite your 
+  local changes if you did check out a module and try to sync or get this module
+
+AVAILABLE COMMANDS
+==================
+
+listprojects
+
+  List all projects in the archive.
+
+--------------------------------------------------------------------------------
+listproject <project_name> | <project_id> [includehidden]
+
+  List modules of the specified project. Provide either name or id.
+  (since Build 1.0.0.80): If includehidden is given as parameter, also hidden
+  modules are synchronized, default is not synchronizing hidden modules.
+
+--------------------------------------------------------------------------------
+openproject <project_name> | <project_id>
+
+  Open the specified project. Provide either name or id.
+
+--------------------------------------------------------------------------------
+listlocks [<user_name> | all_users ]
+
+  List modules locked by <user_name> or all users. Default is current user.
+
+--------------------------------------------------------------------------------
+checkin <module_name> | <module_id> [<comment>]
+
+  Check in the specified module. A project containing the module is assumed to
+  be already open. Provide either name (+ drive:\path) or id.
+  (since Build 1.0.0.80): If server configuration is 'restrictive checkin' then
+  checkin is only possible for already checkedout (from same user) modules. If
+  server configuration is without restrictive checkin, it's possible to checkin
+  modules which are not checked out.
+  If module is unchange no checkin will be performed.
+
+--------------------------------------------------------------------------------
+checkout <module_name> | <module_id>
+
+  Check out the specified module. A project containing the module is assumed to
+  be already open. Provide either name (+ drive:\path) or id.
+
+--------------------------------------------------------------------------------
+labelproject <project_name> | <project_id> <"label">
+
+  Stamp project with given label.
+  Label will be created, if not existing. Description for autocreated label will
+  be autocreated in the format "yyyy/mm/dd - autocreated by jvcs-commandlineclient"
+  if label contains spaces, enclose with double quotes.
+  Provide either name or id.
+
+--------------------------------------------------------------------------------
+syncproject <project_name> | <project_id> [noprompt] [stamp | crc] [crossref] [includehidden|deletehidden] [extexitcode] [label="labelname"]
+
+  Synchronize the specified project. Provide either name or id.
+
+  Optional Parameters:
+
+  [noprompt]: will create directories and overwrite files without questions.
+
+  [stamp | crc]: specifies whether files are to be checked by their 
+                 timestamp (stamp) or CRC value (crc). Default is stamp.
+
+  WARNING! Using noprompt together with crc will overwrite any local target
+  file, whether the local file is newer or not. Except for files/modules which
+  are checked out by the connected user are *not* overwritten!
+
+  [includehidden|deletehidden]: one of this option can be added to treat hidden
+                                files. Hidden files are ignored on synch. if none
+                                of both options are used.
+                                Includehidden will also check and synchronize
+                                hidden files, deletehidden will delete hidden files
+                                in the target folder. If a hidden file is checked
+                                out by any user it will not be deleted if option
+                                deletehidden is specified.
+                  Default is not to synchronize or delete hidden modules.
+
+  [crossref]: modules of all crossreferenced projects are synchronized.
+              Default is synchronizing without crossreferences.
+
+  [extexitcode]: a special exit code (3) will be returned by the application 
+                 when no modules were synchronized. This is useful when you
+                 want to abort your build process if nothing has changed after
+                 your last synchronization.
+                  
+  [label="labelname"]: the project will be restored to the labeled state. If label 
+                       contains spaces, enclose with double quotes.
+
+--------------------------------------------------------------------------------
+syncprojectgroup <prj_group_name> | <prj_group_id> [noprompt] [stamp | crc] [crossref] [includehidden|deletehidden] [extexitcode] [label="labelname"]
+
+  Synchronize all projects (and project groups, recursively) under the specified
+  project group. Provide either name or id.
+  If the group name contains spaces, enclose with double quotes.
+  Note that group names are not unique and the first group with the given name will be synchronized.
+
+  Optional Parameters:
+
+  [noprompt]: will create directories and overwrite files without questions.
+
+  [stamp | crc]: specifies whether files are to be checked by their 
+                 timestamp (stamp) or CRC value (crc). Default is stamp.
+
+  WARNING! Using noprompt together with crc will overwrite any local target
+  file, whether the local file is newer or not. Except for files/modules which
+  are checked out by the connected user are *not* overwritten!
+
+  [includehidden|deletehidden]: one of this option can be added to treat hidden
+                                files. Hidden files are ignored on synch. if none
+                                of both options are used.
+                                Includehidden will also check and synchronize
+                                hidden files, deletehidden will delete hidden files
+                                in the target folder. If a hidden file is checked
+                                out by any user it will not be deleted if option
+                                deletehidden is specified.
+                  Default is not to synchronize or delete hidden modules.
+
+  [crossref]: modules of all crossreferenced projects are synchronized.
+              Default is synchronizing without crossreferences.
+
+  [extexitcode]: a special exit code (3) will be returned by the application 
+                 when no modules were synchronized. This is useful when you
+                 want to abort your build process if nothing has changed after
+                 your last synchronization.
+                  
+  [label="labelname"]: the project will be restored to the labeled state. If label 
+                       contains spaces, enclose with double quotes.
+
+--------------------------------------------------------------------------------
+undocheckout <module_name> | <module_id>
+
+  Undo checkout of the specified module. A project containing the module is
+  assumed to be already open. Provide either name (+ drive:\path) or id.
+
+--------------------------------------------------------------------------------
+input <file_name>
+
+  Execute commands from the specified external file.
+
+  Example: Sync several projects at once
+  Create File "vcstest.txt" and enter your commands:
+    ..
+    syncproject testproject1 noprompt
+    syncproject testproject2 noprompt
+    syncproject testproject3 noprompt
+    ..
+    (no need for switch chars in the input file)
+    ..
+  Call (from the command prompt, the commandline or from a batch file):
+  jvcs vcsserver:2106 /user sysdba /password admin /input vcstest.txt
+
+--------------------------------------------------------------------------------
+getmodule <module_name> | <module_id> [rev=ver.rev] [dest="destinationpath"] [noprompt]
+
+  Get the revision of the specified module. A project containing the module is assumed 
+  to be already open (see also openproject). Parameter rev="rev" allows to get exactly 
+  this revision of the moduel, if not given getmodule gets the most recent revision.
+  dest parameter allows to get the revision to a different folder as stored in the VCS. 
+  If this parameter is omitted, getmodule saves the revision of the module to the folder 
+  stored in the VCS. Optional parameter noprompt will create directories and overwrite 
+  file without questions. If directory does not exist and needs to be created or file
+  is already existing in the destination folder and noprompt parameter is not given
+  you're asked to create directory or overwrite file. 
+
+--------------------------------------------------------------------------------
+help [<command>]
+
+  Display help for given <command>, or list of available commands.
+
+--------------------------------------------------------------------------------
+exit
+
+  Exit the interactive session.
+
+********************************************************************************
+History:
+--------
+2003-03-29 THu  - added description for now first working version of labelproject
+                  (build 56)
+2003-09-09 PLa  - mantis #0001116
+                  don't erase checkedout file by current user
+2003-10-30 THu  - mantis #1159: introduced new parameter includehidden to commands
+                                syncproject & listproject
+                - mantis #1153: allow 'unsafe' checkin if allowed by global parameter
+2004-02-29 Esa  - mantis #1346: extended exit code
+2005-03-18 USc  - added the possibility to restore a labeled version (mantis #1556)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 2.40 RC2 was released ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2005-07-07 THu  - mantis #3045: added getmodule command
+2005-12-03 THu  - mantis #3337: added option deletehidden to synchproject command
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 2.40 RC3 was released ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+2005-12-29 USc  - mantis #3356: finished command syncprojectgroup
+
+********************************************************************************
+JEDI VCS on the web               http://jedivcs.sourceforge.net
+JEDI VCS @SourceForge             http://sourceforge.net/projects/jedivcs
+JEDI VCS newsgroup                news://forums.talkto.net/jedi.vcs
+JEDI VCS Online FAQ               http://jedivcs.sourceforge.net/jvcsfaq
+JEDI VCS Issue Tracker            http://homepages.codegear.com/jedi/issuetracker
+

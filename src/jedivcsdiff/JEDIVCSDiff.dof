@@ -1,0 +1,6 @@
+[Directories]
+OutputDir=..\..\bin\debug
+UnitOutputDir=..\..\dcu
+SearchPath=..\comp\fastmm;..\jcl\source;..\jcl\source\common;..\jcl\source\windows;..\jvcl\common;..\jvcl\resources;..\jvcl\run;..\comp\synedit\source;..\comp\dfs;..\comp\unknown;..\comp\htmlhelp;..\comp\overbyte;..\comp\abbrevia\source;..\comp\mwfavdlgs;..\jedivcs;..\common
+Conditionals=DEBUG;LANGUAGE;DelphiPersonalEdition
+

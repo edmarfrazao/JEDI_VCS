@@ -1,0 +1,28 @@
+# Saídas de compilação
+/bin/client/**/*.exe
+/bin/client/**/*.dll
+/bin/client/**/*.map
+/bin/client/**/*.rsm
+/bin/client/**/*.drc
+/dcu/
+*.dcu
+*.dcp
+*.bpl
+*.bpi
+*.lib
+*.obj
+!src/comp/_legacy/**/*.obj
+
+# Arquivos locais da IDE
+*.local
+*.identcache
+*.dsk
+*.stat
+*.tvsconfig
+__history/
+__recovery/
+*.~*
+
+# Logs
+/tools/logs/
+*.log

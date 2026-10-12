@@ -1,0 +1,74 @@
+JEDI VCS -Howto build-
+
+History:
+========
+>>>2.39dev (only for developers who'd like to contribute!)
+02/01/03 THu: First migration version of Thomas Hensles
+              original FreeVCS-sources.
+
+14/03/03 THe: JVCL changed from 2.0 to 2.1
+
+16/03/03 THe: New: HtmlHelAPI translation.
+
+<<<2.39dev             
+
+>>>2.40 (focused as first stable JEDI version 
+
+2004/05/14 Usc - changed to JVCL 3 Beta, JCL 1.90 Beta
+2004/07/25 Usc - changed to JVCL 3 CVS, JCL 1.91 CVS
+
+<<<2.40
+
+
+             
+================================================================================
+
+--------------------------------
+1. What is it (JEDIVCS.EXE/DLL)?
+--------------------------------
+This compiles to standalone JEDI VCS or with compiler directive 
+IDEDLL to delphi-vcsmanager-dll
+
+----------------------
+2. Directory structure
+----------------------
+base directory: v:\projects\jedivcs
+base source   : v:\projects\jedivcs\src
+3rd comp src  : v:\projects\jedivcs\comp
+                (component packages in subdirectories) 
+client source : v:\projects\jedivcs\src\jedivcs         => jedivcs.exe/dll
+vcs diff app  : v:\projects\jedivcs\src\jedivcsdiff     => jedivcsdiff.exe
+report dll    : v:\projects\jedivcs\src\jedivcsreport   => jedivcsreport.dll
+dcu output    : v:\projects\jedivcs\dcu
+bpl output    : v:\projects\jedivcs\bpl
+dcp output    : v:\projects\jedivcs\dcp
+
+
+-----------------------------
+3. Used component(s) packages
+-----------------------------
+All component(s) packages (as long as no source is explicitely stated) 
+should be accessable on demos.href.com, see JEDIvcs_3rdparty
+
+JEDI-JCL  - Jedi code library (1.91 CVS)
+JEDI-VCL  - Jedi visual compont library (3.00 CVS)
+Midware   - Francois Piettes Middleware component package
+ICS       - Francois Piettes Internet component suite
+DFS       - Brad Stowers component package - see [1]
+mlslot1f  - Martin Djernæs mailslot components
+DelZip14  - Eric Englers Zip/Unzip component package
+FavDlgs   - Markus Stephany's favorite-open-dialog
+CryptoLib - CRYPTOCard Corporation's CryptoLib Version 1 (1996)
+DcpCrypt  - David Bartons CrpytoLibrary (v2 beta2)
+HtmlHlp   - Marcel van Brakel's HtmlHelpAPI conversion
+            (ftp://delphi-jedi.org/api/HtmlHelp.zip)
+
+
+[1] Obviously DFS is not aware of D7 and may produce errors when compiling.
+    Add the following lines to DFS.inc (just before {$IFDEF VER140}) to fix this:
+    {$IFDEF VER150}
+      {$DEFINE DFS_COMPILER_6}
+      {$DEFINE DFS_DELPHI}
+      {$DEFINE DFS_DELPHI_6}
+    {$ENDIF}
+

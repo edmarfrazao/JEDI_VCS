@@ -1,0 +1,11 @@
+[File Families]
+0=Help project files|*.rtf;*.doc;*.hpj;*.cnt;*.hh
+1=Web files|*.htm;*.html;*.gif;*.jpg
+2=Text files|*.txt;*.me;*.1st
+3=Resource files|*.res;*.rc;*.cur;*.ico;*.fon
+4=Project files|*.dpr;*.res;*.dof;*.dsk;*.cfg;*.bdsproj
+5=Not set
+6=Not set
+7=Not set
+8=Not set
+9=Not set

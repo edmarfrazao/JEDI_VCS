@@ -1,0 +1,187 @@
+********************************************************************************
+FreeVCS/JediVCS - Source Credits file                            V1.0 2003/02/09
+********************************************************************************
+Hello all,
+
+for a long time I had no plans about opening this source, so nearly all credits
+were placed in the online help files or at my web page (htpp://www.freevcs.de)
+instead of the source files. I hope this is ok for you...
+
+If anyone feels overlooked, annoyed or misses a hint in one of the source files,
+please contact me via the address below and we will correct this immediately.
+
+Thanks to all who contributed these code parts for free to the developers
+community,
+                                     Thomas Hensle (freevcs@thensle.de) Jan/2003
+********************************************************************************
+
+Portions of this code are based on/derived from:
+--------------------------------------------------------------------------------
+Jedi JCL Code Library (http://sourceforge.net/projects/jcl/)
+Jedi VCL Visual Component Library  (http://sourceforge.net/projects/jvcl/)
+SynEdit Components (http://synedit.sourceforge.net/)
+GExperts Source distribution (http://www.gexperts.org)
+Borland ToolsAPI/ VCSIntfAPI sample code (http://www.borland.com)
+
+Free Components/Packages used by earlier FreeVCS/ partly used by current
+JediVCS versions:
+--------------------------------------------------------------------------------
+Setup program:
+ Inno Setup, InnoSetup Extensions (2.0.6) © 2001 by Jordan Russell/Martijn Laan.
+
+Middleware application framework:
+ ICS/Midware © 2000 by François Piette.
+
+Database engine I:
+ DBISAM (2.08) © 2001 by Elevate Software .
+
+Database engine II:
+ FlashFiler (2.01) © 2001 by TurboPower Software .
+
+Text compare engine (JediVCSDiff):
+ Based on code by Armin L. Biernaczyk. (Derived from the program FC_Win)
+
+Zip engine:
+ TZipmaster, Zipdll.dll & Unzdll.dll (1.4) © 1998, by Eric W. Engler &
+ Chris Vleghert.
+ These DLLs are based on the InfoZip Official Freeware Zip/Unzip source code on:
+ (http://www.cdrom.com/pub/infozip/)
+
+Browse for folders component:
+ TSystemTreeView (0.91) © 1999 by Brad Stowers.
+
+Don’t show again dialogs component:
+ DSAMsg Unit (2.13) © 1998 by Brad Stowers.
+
+Enhanced ListView component:
+ TEnhListView (3.60) © 2000 by Brad Stowers.
+
+Gauge Statusbar component:
+ TdfsStatusBar (1.12) © 1999 by Brad Stowers.
+
+Mailslot in Clients/ FVCSNotify:
+ TmdMailSlot (1.14) © 1997-99 by Martin Djernæs.
+
+TaskbarIcon in FVCSNotify/ Server:
+ WTaskBar (1.0) © 1997 White Ants Systemhouse BV.
+
+Basics of password encryption (FVCSCrypt.dll/ ServerCrypt.dll):
+ TEncrypt © 1996 by F. Millenaar.
+
+Pascal Parser/ Tokenizer:
+ TmwPasLex (1.31) © 1998 by Martin Waldenburg.
+
+CRC32 calculation:
+ Based on unattributed code downloaded from the Turbo Pascal Programmers Page.
+
+OS version detection:
+ Sample code provided by Stefan Pause.
+
+Basics of NT event log:
+ TafpEventLog (1.1) © 1997 by Alfred Petri.
+
+Slider in menu accelerator:
+ TSlideBar (?) © ? I really don’t know where I got this (unattributed) archive.
+ If you are the author contact me and I’ll give you credit.
+
+Hlistbox:
+ Hlistbox (?) © 1996, by Fulvio Senore.
+
+MRU file dialogs:
+ TFAVOpenDialog (0.2) © 1999, by Markus Stephany.
+
+Drive selection:
+ TmpDrivePanel (0.2) © 1999, by Markus Stephany.
+
+Color selection:
+ TColorCombo (1.0) © 1997 by Michael Dürig.
+
+Enhanced Combobox:
+ TEnhComboBox, TImgComboBox  (1.8) © 2000 by Norbert Adamko.
+
+Rows colored Listbox:
+ ExtListbox (1.0) © 1999 by Dani Seelhofer.
+
+Protected Edit control:
+ TPasswordEdit (1.3) © 2000 by Andrzej Maliszewski.
+
+RTF file syntax:
+ Based on the component "CtrlToRTF" (1.0) © 2000 by K. Nishita.
+
+Patch utility:
+ makeupd5 (1.05) © 2000 by Greg Bullock.
+
+Debug utility:
+ DebugLog (1.0) © 1996, by Mike Scott.
+
+
+Special thanks to:
+--------------------------------------------------------------------------------
+Holger Dors for a lot of help, suggestions and constructive criticism. He
+ developed the basics of the relational archive design, fundamental parts of the
+ application server and the two Oracle ports.
+
+Marco Gosselink, developer of the MSSQL7 & Informix application server port and
+ the basics for the NT service server.
+
+Victor Rodrigues, developer of the Interbase 6 application server port.
+
+Eivind Bakkestuen, developer of the FlashFiler 2 application server port.
+
+Ludo Brands, developer of the MySQL application server port.
+
+Stefan Heymann, developer of the FreeVCS SMTP mail robot.
+
+Vitaly Belman, developer of the VC++ Plugin for the 'core' DLL.
+
+Uwe Szobries for his help related to the C++ Builder Integration.
+
+Gary Brightwell for his hints, help and code related to Timezone/Daylight 
+ calculations.
+
+Attila Szomor for providing the source of his user made client.
+
+Hector Sosa, Jr. for porting the Perl bug report stuff to ASP.
+
+Elevate Software & Tim Young for donating a free copy of their great database
+  engine DBISAM.
+
+TurboPower Software & Sean Winstead for donating a free copy of their great
+  database engine FlashFiler.
+
+
+Many thanks to the following people for hints, code snippets, beta testing or
+other usefull things:
+--------------------------------------------------------------------------------
+André Mens, Keith Hawes, Martin Harvey, Andreas Schmid, Benoît Grivel,
+David Birkedale, Andrew McIntyre, Christopher Burr, Bert Verhees,
+Fleet Sensemann, Bill Barnes, Carlito’s, Carlos Sánchez, Brian Ambrose,
+Martin Klüver, Sebastian Modersohn, David Byington, Bill Miller,
+Alexandre Danvy, Andreas Kunkel, Donovan J. Edye, Gerhard Hoogterp,
+Jan van den Borst, Bill Lee, Josef Gschwendtner, Martin Boegel,
+Chris Mulcahy, Juan Coruña Rodriguez, Thomas Handler, Hubert Bannwarth, 
+Tony Carreon, Kevin Campbell, Krystian Brazulewicz, Dmitry Rakovetzky, 
+Martin Brekhof, Scott Nebeker, Kevin M. Minori, Wim ten Have, Ed Hoskins, 
+Olray Dragon, Roy Nielsen, Bruce Vander Werf, Brooke Hedrik, Kevin Schilter, 
+Thomas von Stetten, Ivor Breukink, Enselme Béranger, Carlos Ramirez, 
+Karel Kral, Marcel van Beuzekom, Steve McCusker, Martin Kubecka, 
+Robert Cerny, Alexander Muylaert, Marcel Eric Loiselle, Cristoph Lüders, 
+Dmitry Filinov, Odie, Cosmin Ioan, Tomas Bihary, Tim Evans, Niels Thomsen, 
+Sanjay Kanade, Michael Silver, Chuah TC, Kyle A. Miller, Pawel Mielanczuk, 
+Wagner R. Landgraf, Kevin Davidson, Scott Moe, Michael Schnell, Mauro Assis, 
+Scott Mattes, Mark Shiffer, Steven Tatham, Wolfgang Klein, Jan Najvarek, 
+Craig Hynd, Scott Bussinger, Andreas Kanthak, Olaf Monien, Roel Plieger, 
+Kevin Talley, Lee Brown, Jamie Rorrison, Gary Walker, Christoph Stock, 
+Herbert Oppolzer, Filippo Pandiani, Henry Martin, Haris Zujo, Pascal Joyeux, 
+Antonio Cordero Balcázar, Kevin Davids, Michael Williams, Philipp Reif, 
+Luke Miller, Alexei Kudinov, Claus Nielsen, Bo Berglund, Benjamin Eric Morin, 
+Robert Meek, Daniel Vink, Fábio Santana de Oliveira, Keith Procter, 
+David Saracini, Stefan Pause, Lars Amsel, Jim Gunkel, Nicola Rolando, 
+Alex Brainman, Kevin van den Schnoor, Iwan van Ee, Mike Dolan, Rodion, 
+Don Gollahon, Craig Everard, Gerald Me, Eric Raymond, David Oldfield, 
+Alexander Genedl, Olaf Asholz, Norman Dunbar, Coen Blignaut, Paul Murray, 
+Fernando Silva, Heinz Zastrau, Ian Darroch, James Rosati & Eddi Mazzarini 
+
+…and all others I have forgotten now. Sorry…
+
+Thomas

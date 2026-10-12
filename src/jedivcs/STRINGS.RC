@@ -1,0 +1,508 @@
+/****************************************************************************
+
+
+strings.rc
+
+produced by Borland Resource Workshop
+
+Known Issues:
+Jan/04:
+- string 84 seams not to be used currently but link should be taken from VCSCommon.pas
+
+*****************************************************************************/
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 32, "Connection closed.\n\rYou must reopen the connection to make JEDI VCS's functions available."
+ 33, "Label <%s> successfully assigned to %d modules."
+ 34, "Existing registry entry of the IDE version found in\n\r%s.\n\rShould this entry be used for both JEDI VCS versions?"
+ 35, "Error while trying to extract <%s> to <%s>."
+ 36, "Fatal Error: JEDI VCS cannot load the library:\n\r<%s>.\n\rTerminate the program, make sure that this file exists in the\n\rapplication folder and retry."
+ 37, "Fatal Error: JEDI VCS cannot find the external library procedure:\n\r<%s>.\n\rThe reason for this is usually an invalid DLL version\n\ror the library could not be loaded."
+ 38, "Cannot extract compressed modules without UNZDLL.DLL.\n\r<%s>.\n\rBe sure that this file exists somewhere in the application folder or the path."
+ 39, "Yes to &all of the current queue."
+ 40, "Integer between <%d> and <%d> expected."
+ 41, "JEDI VCS cannot find the directory:\n\r<%s>."
+ 42, "Are you sure you want to change the base registry key?\n\rWarning! All user settings and window positions will be lost!"
+ 43, "You do not have a double click action defined.\n\rWould you like to do this now?"
+ 44, "%s\n\r%s names cannot contain any of the following characters:\n\r\042, \\, /, <, >, [, ], {, }, @, $,, *, %%, :, ;, |, or the tab character."
+ 45, "JEDI VCS cannot open the file. (Invalid path or access denied):\n\r<%s>.\n\rMake sure that the file exists, that it is not opened by another application\n\rand that you have the required access rights."
+ 46, "This feature is only available in the IDE expert version."
+ 47, "This feature is only available in the Stand-alone version."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 48, "Are you sure you want to clear all project based rights\n\rassigned to user <%s>?"
+ 49, "&Don't show this message again."
+ 50, "Application server (local)"
+ 51, "File <%s>\n\rcould not be added to temporary Zip file\n\r<%s>."
+ 52, "&Delete without prompting from now on."
+ 53, "&Don't show this message if the file on disk is equal or older."
+ 54, "Module <%s> is already checked out by you.\n\rAre you sure you want to overwrite all changes of the existing file?"
+ 55, "Adding file <%s>\n\to temporary Zip file<%s>\n\rraised exception:\n\r%s."
+ 56, "Searching for modules to merge..."
+ 57, "Merge new version..."
+ 58, "Select stamp keyword"
+ 59, "Stamp version..."
+ 60, "Select the module again and retry if you have defined an editor now."
+ 61, "Searching for new/changed modules..."
+ 62, "Text files (*.txt)|*.txt|All files (*.*)|*.*"
+ 63, "JEDI VCS cannot create <%s>."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 64, "<%s> is not a valid name for version controlling.\n\rYou must save the project first under a unique name before doing this."
+ 65, "The directory <%s> does not exist.\n\rShould JEDI VCS create it now?"
+ 66, "JEDI VCS cannot create the directory\n\r<%s>.\n\rPerhaps there is already a folder with this name or you\n\rdo not have the requested rights for this."
+ 67, "Calculating CRC checksum for <%s>\n\rraised exception:\n\r%s."
+ 68, "<%s>\n\rBLOB transfer into request stream raised exception:\n\r%s."
+ 69, "File <%s> not found.\n\r(This is normal behavior if you open this window for the first time)."
+ 70, "Reading file <%s>\n\rraised exception:\n\r%s."
+ 71, "JEDI VCS cannot find the file:\n\r<%s>."
+ 72, "IDE returns no active IDE project."
+ 73, "Programs (*.exe;*.com;*.bat)|*.exe;*.com;*.bat|All files (*.*)|*.*"
+ 74, "<%s> is not a member of the current VC project.\n\rContinue anyway?"
+ 75, "Archive is empty. Nothing to do."
+ 76, "There were no %s located that match the search criteria."
+ 77, "Module <%s> is not available on the local disk.\n\rYou must Get the module first or select \042View latest Archive Version\042."
+ 78, "Requested result set is blank. Nothing to do."
+ 79, "JEDI VCS cannot find the Windows standard printer.\n\rDefine a Windows standard printer and retry."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 80, "ToDo list contains no entries for this project."
+ 81, "There were no records located that match your search criteria.\n\rRe-check your criterias and retry."
+ 82, "Label <%s> is already assigned to V %s.%s of this module.\n\rOnly one version of a module can be assigned with the same label."
+ 83, "<%s>. This value cannot be blank."
+ 84, "\n\rYou should visit http://homepages.borland.com/jedi/issuetracker and include this error message in a bug report."
+ 85, "Beta %s\n\rThis is a beta version for test and debug purposes!\n\rDo NOT publish or distribute this version!\n\rThis version expires after %s!"
+ 86, "Fatal Error: JEDI VCS is unable to get the DLL path.\n\rClose the program, execute \042reginst.exe\042 and retry."
+ 87, "Application server not connected.\n\rConnect the application server and retry."
+ 88, "Add %d selected modules to the current project?"
+ 89, "Server reports an unknown project name <%s>.\n\rCreate a new project with this name?"
+ 90, "Module <%s> not found in\n\r<%s>.\n\rFirst move the modules, then update the archive."
+ 91, "Are you sure you want to move <%s>\n\rto <%s>?"
+ 92, "Integer between <%d> and <%d> or wildcard expected."
+ 93, "%d records successfully updated."
+ 94, "You must refresh (F5) the project manager view to see the changes."
+ 95, "Project contains %s modules.\n\rCheck in all modules from this project and retry."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 96, "<%s>\n\rThis module is already a member of the current project."
+ 97, "<%s>\n\rThis module is already used by %d other projects:\n\r%s"
+ 98, "Project <%s> successfully created. Project ID: %s"
+ 99, "JEDI VCS cannot find the Notify application."
+ 100, "<%s>\n\rMissing description (check in memo).\n\rCheck in anyway?"
+ 101, "The new project name must have the same file extension as the old one."
+ 102, "Are you sure you want to cancel your work on\n\r<%s> and unlock the module?"
+ 103, "<%s>\n\rThis module is locked by another user.\n\rUse your administrator right to unlock anyway?\n\rWarning! All changes to this file will be lost."
+ 104, "&Don't show this message again in the current queue."
+ 105, "Log out user <%s> and terminate program?"
+ 106, "This module is already used by other projects in the archive.\n\rShared link removed."
+ 107, "Parameters changed. Refresh View?"
+ 108, "There is already a file <%s> in\n\r<%s>.\n\rDelete the file to show the latest archive version of <%s>?"
+ 109, "<%s>\n\rThis module is already used by other projects.\n\rOnly the link to the current project was removed. "
+ 110, "JEDI VCS cannot detect the name of the local temporary directory.\n\rTry to define a temporary directory in \042Properties|Folders\042 and retry."
+ 111, "Modules <%s/ %s%s> successfully checked in."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 112, "Module <%s> successfully checked in."
+ 113, "<%s> not added."
+ 114, "This is an outdated Beta version!"
+ 115, "Are you sure you want to clear the time log?\n\rWarning! This process is not reversible."
+ 116, "Error %d in _CopyFile()"
+ 117, "Project <%s> (Version %d.0) successfully checked in."
+ 118, "<%s>\n\rUndo Checkout success. Module unlocked.\n\rRestore original file state on local disk?"
+ 119, "%d requests transfered %s bytes of data between server and client.\n\rLog in time: %s\n\rLog started at %s."
+ 120, "MRU item <%s> is blank."
+ 121, "Are you sure you want to Check in the write protected file:\n\r<%s>?"
+ 122, "JEDI VCS cannot find the MRU item <%s> in the list."
+ 123, "You do not have a JEDI VCS %s editor defined.\n\rWould you like to do this now?"
+ 124, "Exception in Undo Check Out. Step: %d"
+ 125, "You cannot add this type of file:\n\r<%s>"
+ 126, "<%s>\n\rJEDI VCS cannot find this file on the local disk. "
+ 127, "Select editor for %s files"
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 128, "The value you have entered is invalid.\n\rRequired: One leading dot, different child extensions seperated with semicolons.\n\rWildcards not allowed."
+ 129, "\n\rSelect the dialog's help button for more information."
+ 130, "<%s>\n\rMissing description (check out memo).\n\rCheck out anyway?"
+ 131, "Module <%s> is already checked out by %s (%s).\n\rCreate a read-only copy?"
+ 132, "Execute Ping raised exception:\n\r%s."
+ 133, "Select folder to check out:"
+ 134, "File <%s> already exists.\n\rAre you sure you want to overwrite the existing file?"
+ 135, "JEDI VCS cannot delete the file\n\r<%s>.\n\rBe sure that the file is not opened by another application\n\rand that you have the required access rights."
+ 136, "<%s>\n\rThis module is already used by %d other project[s]:\n\r%s\n\rModule added as shared link."
+ 137, "Module <%s> is already checked out!\n\rCreate a read-only copy?"
+ 138, "You have selected option <%s>.\n\rThe corresponding value cannot be blank."
+ 139, "\n\rRemember that you must open a project to work with JEDI VCS."
+ 140, "JEDI VCS cannot synchronize your local time with the server's time.\n\rProbably you don't have the required rights for this."
+ 141, "JEDI VCS cannot get the privilege <%s>.\n\rAccess denied by OS."
+ 142, "Recent Projects/Files - %d items"
+ 143, "Module <%s> successfully checked out."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 144, "Module <%s> is currently locked by <%s> and cannot be removed."
+ 145, "Are you sure you want to remove <%s> %s from \n\r<%s>?"
+ 146, "Project names are subject to the naming conventions of the operating system.\n\rJEDI VCS can check for you if the project name matches these conditions.\n\rRemember that the test will overwrite existing files with the same name in your temporary foder.\n\rCheck now?"
+ 147, "Are you sure you want to load all source files into the IDE?\n\rThis may consume a lot of system resources on big projects."
+ 148, "Are you sure you want to unload all source files (except of the project) from the IDE?"
+ 149, "There is already a module named <%s> in the current project.\n\rModule skipped."
+ 150, "Projectfile <%s> checked out.\n\rYou have to close and reload the project for this change to take effect."
+ 151, "The file <%s> on disk\n\ris of a more recent date than the module in the archive.\n\rYou are about to overwrite all changes of the existing file. (UnCheckOut)\n\rAre you sure you want to do this?"
+ 152, "<%s>\n\rThe directory you have selected is located on a RAM disk or a CDROM.\n\rYou cannot use temporary or read-only drives for backup."
+ 153, "<%s>\n\rJEDI VCS cannot create the file on disk.\n\rThe project name seems to be invalid."
+ 154, "The name matches the naming conventions of the operating system."
+ 155, "%d modules selected.\n\r"
+ 156, "Project <%s> (%d modules) successfully removed."
+ 157, "JEDI VCS cannot detect the name of Delphi's base installation folder.\n\rYou must define the folder manually in \042Properties|Folders\042."
+ 158, "The module is checked out.\n\rYou cannot hide modules while they are checked out."
+ 159, "You have a user editor defined but no corresponding file extensions."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 160, "<%s>\n\rCore units (members of the Delphi project) cannot be removed."
+ 161, "JEDI VCS cannot save the file\n\r<%s>.\n\rBe sure that the file is not opened by another application,\n\rthat there is enough free space on the disk\n\rand that you have the required access rights."
+ 162, "Source code template \042jvcstodo | JEDI VCS Todo Code Comment\042 successfully added.\n\rHit <Ctrl+J> to insert the template into your source files."
+ 163, "Are you sure you want to remove all categories from the history list?\n\r(This will not affect already created ToDo items)"
+ 164, "Are you sure you want to restore the default filter values?\n\rThis will overwrite all user definitions."
+ 165, "Restore project <%s>?\n\rRemember that JEDI VCS cannot restore the links between this project\n\rand the modules recently used by them."
+ 166, "Exception in QR call (%s).\n\r%s"
+ 167, "There is no application associated with the given file extension (%s).\n\rWould you like to select an application now?"
+ 168, "Start version archive live backup now?\n\rServer may be blocked for some time."
+ 169, "&Remove without prompting from now on."
+ 170, "There is already a file <%s> in <%s>.\n\rDelete the file to show the latest version of <%s>?"
+ 171, "Parsing the source files..."
+ 172, "Building Listview..."
+ 173, "&Delphi's installation base folder:"
+ 174, "Invalid or duplicate shortcut.\n\rChar between <A> and <Z> or blank expected."
+ 175, "&Add as new search path:"
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 176, "Are you sure you want to clear the server log file?\n\rRemember that this will clear the original file\n\ron the application servers machine."
+ 177, "<%s>\n\rThe disk is a remote (network) drive.\n\rShow help about sharing the archive via a network?"
+ 178, "You have made changes that have not been applied.\n\rDo you want to apply these now?"
+ 179, "%d records passed with no errors."
+ 180, "You cannot assign the same shortcuts to different functions."
+ 181, "Are you sure you want to remove milestone <%s> from the archive?"
+ 182, "Max. %d entries in the current version. Sorry."
+ 183, "Are you sure you want to remove all revisions from the archive?"
+ 184, "Are you sure you want to delete the selected items?"
+ 185, "Are you sure you want to delete all done items?"
+ 186, "Are you sure you want to remove label <%s> from the archive?"
+ 187, "<%s>\n\rCannot execute this command without an open server connection or project."
+ 188, "Internal Notify: Server: [.] / Mailslot: [FVCSMail] - Init: %s"
+ 189, "Are you sure you want to remove family <%s> from the archive?"
+ 190, "Warning! Notify services may not be available"
+ 191, "Internal Notify Init raised exception: %s"
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 192, "Parsing the ListView content raised exception:\n\r%s"
+ 193, "Select the working directory:"
+ 194, "User names must be at least 2 characters.\n\rPlease enter a valid user name."
+ 195, "List \042Available projects\042 contains no entries to add. "
+ 196, "JEDI VCS cannot find the %s in drive <%s>."
+ 197, "&Backup root folder:"
+ 198, "Are you sure you want to remove label <%s>\n\rfrom <%s>?"
+ 199, "Are you sure you want to clear the selected MRU list?"
+ 200, "Project files should not be loaded from here.\n\rSelect 'Recent Projects' or 'File|Open Project' to open a new project."
+ 201, "JEDI VCS's functionality will be only partly available."
+ 202, "Are you sure you want to create a new working directory with the selected modules?"
+ 203, "<%s> is not a member of the current VC project <%s>.\n\rYou cannot access the module from here."
+ 204, "No revisions of <%s> in the archive.\n\rThis command is only available for archived files."
+ 205, "JEDI VCS cannot retrieve the servers local time.\n\rThis value is necessary around client password encryption.\n\rServer response: <%s>"
+ 206, "\n\rAdd the module to the current VC project?"
+ 207, "JEDI VCS cannot load the library:\n\r<%s>.\n\rThe function you have requested requires an additional\n\rDLL which is not part of the JEDI VCS standard package.\n\rYou can download this DLL for free from JEDI VCS home."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 208, "Are you sure you want to delete all items?"
+ 209, "Compare found %d different lines."
+ 210, "%d KBytes in %d temporary files (QRPxx.tmp) left in <%s>.\n\rDelete?"
+ 211, "Shell error: %d\n\r(%s, %s)"
+ 212, "<%s>\n\rsuccessfully created."
+ 213, "Your search criteria <%s> will include %d files.\n\rAre you sure you want to add all files at once?"
+ 214, "%d projects in <%s>"
+ 215, "This function is only available for libraries or applications."
+ 216, "Backup path should not point to the archive folder."
+ 217, "<%s> is already assigned to <%s>.\n\rAre you sure to continue?"
+ 218, "<%s> is checked out and cannot be changed."
+ 219, "Remember that this may take some time and cannot be canceld!"
+ 220, "There is already a module <%s> assigned to <%s> in the archive.\n\rOnly one version of a module can be assigned with the same label."
+ 221, "Searching in <%s> %s\n\r"
+ 222, "Your search matches more than %d files.\n\rPlease re-check your criteria and retry."
+ 223, "Servers time zone (%s) is different from your local time zone (%s).\n\rArchive file date/time stamps may differ from local date/time stamps."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 224, "\n\rAre you sure you want to sync your local time with the server?"
+ 225, "<%s>\n\rSynchronize with archive?"
+ 226, "Exception in Check Out. Step: %d\n\r%s"
+ 227, "Exception in Check In. Step: %d\n\r%s"
+ 228, "1. Disable 'Include version information...' in Project|Options.\n\r2. Delete all version informations in %s to prevent 'Duplicate Resource' errors.\n\r3. Include {$R JVCSVER.RES} in %s."
+ 229, "Cannot access clipboard."
+ 230, "\n\r%d shared modules skipped."
+ 231, "Select root directory for project backup:"
+ 232, "Compare found %d different lines."
+ 233, "The files are equal."
+ 234, "Project contains %s modules. Check in all modules and retry."
+ 235, "The server you have connected reports [%s] version %d.%2.2d.\n\rThis client expects at least a server from version %d.%2.2d.\n\rWarning! Client will not work correctly!"
+ 236, "Access denied. (%s)\n\rProject <%s> is not enabled for your account.\n\rPlease contact the archive administrator for more information."
+ 237, "Cannot merge from version <%d> to <%d>.\n\rTarget version must be higher than source version."
+ 238, "New &module path:"
+ 239, "\n\r%d modules."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 240, "&Synchronize without prompting from now on."
+ 241, "JEDI VCS cannot compare the selected versions."
+ 242, "Cannot extract compressed modules without UNZDLL.DLL."
+ 243, "You cannot select an existing project name. Select a new, unused name and retry."
+ 244, "Unable to add backup files to\n\r<%s>.\n\rPerhaps the ZIP is corrupt."
+ 245, "JEDI VCS cannot expand the keywords in file\n\r<%s>\n\rException: %s"
+ 246, "Backup complete. %d files added/replaced."
+ 247, "You do not have a valid backup path defined.\n\rWould you like to do this now?"
+ 248, "Source code template \042jvcskeywords | JEDI VCS Keyword Expansion\042 successfully added.\n\rHit <Ctrl+J> to insert the template into your source files."
+ 249, "Calculating version/revision..."
+ 250, "Query for available projects..."
+ 251, "Query for available modules..."
+ 252, "Get last version/revision..."
+ 253, "Target directory must be empty."
+ 254, "Password does not match confirmation.\n\rPlease re-enter the password."
+ 255, "Passwords must be at least 5 characters.\n\rPlease re-enter the password."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 256, "Are you sure you want to clear %d entries?"
+ 257, "Files stored in the DLL folder cannot be compared."
+ 258, "%d files changed or new since %s"
+ 259, "JEDI VCS cannot expand keywords in file\n\r<%s>\n\rThe file is a binary file type."
+ 260, "&Target folder:"
+ 261, "Target folder cannot be blank. Define a target folder and retry."
+ 262, "Are you sure to synchronize the working directory with the archive?\n\rThis may overwrite changes in your working directory."
+ 263, "Module <%s> on disk has a newer date than the module in the archive!\n\rAre you sure you want to overwrite all changes of the existing file?"
+ 264, "<%s>\n\rModule is unchanged. Just unlocked the latest revision."
+ 265, "%d modules added."
+ 266, "One or more selected modules are checked out.\n\rContinue anyway?"
+ 267, "Fatal Error: JEDI VCS cannot find Unzip-DLL."
+ 268, "Create branch project <%s>\n\rin <%s> with all selected modules?"
+ 269, "Synchronizing..."
+ 270, "Synchronize complete. %d files updated."
+ 271, "<%s>\n\rNo path information available.\n\rJEDI VCS cannot add or checkin the module without path information."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 272, "Verify %s to <%s>:\n\r%d files in the target folder[s] not up to date."
+ 273, "Select a module first."
+ 274, "Are you sure to synchronize <%s> with the archive?\n\rThis may overwrite files on your local disk."
+ 275, "JEDI VCS cannot find the source file:\n\r<%s>.\n\rUnable to compare."
+ 276, "Visual compare is only available for text files.\n\rKnown text files: (%s)"
+ 277, "(Selected archive modules are of a more recent date and need to be synchronized)"
+ 278, "Archive template created. %d files extracted."
+ 279, "<%s>\n\rThere are already modules locked by this user.\n\rIf you delete the user now you will be unable to check in these modules.\n\rContinue?"
+ 280, "<%s>\n\rThis is the only archive administrator registered in the archive.\n\rYou cannot delete this user until a new archive administrator is defined."
+ 281, "Are you sure you want to create a complete new version (%d.%d) of the application?"
+ 282, "Synchronize complete. %d files updated.\n\rModify the directories in <%s> to match with the new path?\n\r\n\rNote: I will only modify the .dsk file!\n\rIf your .dpr file contains hard coded paths you must modify them by hand."
+ 283, "Branching project..."
+ 284, "You cannot %s while modules are checked out.\n\rCheck in all modules and retry."
+ 285, "Are you sure you want to remove user <%s> from the archive?"
+ 286, "Are you sure you want to remove bug <%s> from the archive?"
+ 287, "JEDI VCS cannot convert the form (.dfm) file:\n\r<%s>."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 288, "Module <%s> successfully updated."
+ 289, "JEDI VCS cannot copy the original .dfm file."
+ 290, "Target directory is not blank.\n\rAre you sure to expand the files in this directory?\n\rWarning! Existing archive files will be overwritten without prompting."
+ 291, "%s file update..."
+ 292, "<%s>\n\rAre you sure you want to overwrite this file?"
+ 293, "There is already a project named <%s> in the archive.\n\rYou cannot have different projects with the same name in the archive."
+ 294, "%d modules assigned to label <%s>"
+ 295, "<%s> is checked out and cannot be changed."
+ 296, "Are you sure you want to remove group <%s>\n\rwith all sub groups and assigned projects?"
+ 297, "\n\rWould you like to assign the project to a group?"
+ 298, "Are you sure you want to remove bug <%s>\n\rfrom <%s>?"
+ 299, "Synchronize <%s> with the latest version archive state?"
+ 300, "JEDI VCS cannot find the Zip file:\n\r<%s>.\n\rThere is no recent backup available for this project to restore files."
+ 301, "UnzDLL.dll Exception: Cannot access zip file <%s>"
+ 302, "Are you sure you want to restore the selected files?"
+ 303, "\n\rWarning! Existing files will be overwritten without prompting."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 304, "%d files successfully restored."
+ 305, "JEDI VCS cannot find the directory:\n\r<%s>."
+ 306, "&Base restore folder:"
+ 307, "Nothing to do."
+ 308, "[%d files, %s KB, %s]"
+ 309, "Delta: %d lines saved to file\n\r<%s>.\n\r\n\rShow the file?"
+ 310, "Report saved to file\n\r<%s>."
+ 311, "Exception in project backup. Step: %d"
+ 312, "Are you sure you want to restore %s of this project in\n\r%s?\n\rThis may overwrite files in the target folders."
+ 313, "\n\r(All files with a different %s will be overwritten with the version stored in the archive.)"
+ 314, "All unchecked items will be invisible until you hit the \042Refresh\042 button."
+ 315, "Exception in Synchronize. Step: %d"
+ 316, "Error %d in _CopyFile()"
+ 317, "Do not use \042localhost\042 or \042127.0.0.1\042 if your PC is running Win2000!\n\rUse the machines real IP number (%s) to connect a local server."
+ 318, "Exception in Extract SourceFile. Step: %d"
+ 319, "<%s>\n\rYou are currently not the owner of this module.\n\rModule cannot be changed."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 320, "\n\rAre you sure you want to remove unchecked items from the list?"
+ 321, "Project <%s> (Version %d.%d) sucessfully merged."
+ 322, "All unchecked items will be invisible until you reopen the dialog."
+ 323, "<%s>\n\rModule is checked out by you and cannot be added at this time."
+ 324, "WARNING! This is a high-risk function and not recommended for beginners!\n\rInproper use of direct SQL commands may cause corrupted archive tables\n\rand/or unreversible loss of data!\n\rDo NOT use this function until you are really sure what you are doing!\n\rYou have been warned! Continue anyway?"
+ 325, "Server reports an already known project name <%s>.\n\rProbably there is a  formerly deleted project with the same name in the version archive.\n\rCheck \042Server|Deleted Projects\042 and restore the project or select a different name."
+ 326, "This feature has not been finished yet and has been disabled\n\runtil it has been fixed. Sorry."
+ 327, "You have added or changed custom files to the list.\n\rSave these files and and restore the list the next time you open the dialog?"
+ 328, "<%s>\n\rArchive file successfully created (%d files)."
+ 329, "Are you sure you want to move the selected backup files\n\rto the recycle bin?"
+ 330, "Warning! Sequentiel backup runs out of free numbers.\n\rYou have more than 900 recent backupfiles in\n\r<%s>\n\rPlease remove some older ones."
+ 331, "%d files removed to recycle bin."
+ 332, "Data encryption requires a key length of 128 bit min.\n\rYour key must be at least 16 characters and can be up to 56 characters.\n\rNote that longer keys will not result in slower encoding/decoding, but in more security."
+ 333, "Confirmation does not match key.\n\rPlease re-enter the key."
+ 334, "This will affect %d modules."
+ 335, "\n\rRemember that Purge may take several minutes on large projects."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 336, "\n\rProbably you've tried to add one of his file family members."
+ 337, "<%s>\n\rJEDI VCS is unable to create a local copy of this file.\n\rException: %s in %s. "
+ 338, "Binary compare: <%s>.\n\rArchive: $%s\n\rFile:        $%s\n\rThe modules are %s."
+ 339, "No CRC32 checksum stored for this module.\n\rProbably the module was checked in with a version < 1.2.0"
+ 340, "Are you sure you want to remove the selected items from the project's custom filter?"
+ 341, "<%s>\n\rRemove all registry values associated with this project?"
+ 342, "<%s> This project is not registered by JEDI VCS.\n\rYou must add the project to the version archive first."
+ 343, "<%s>.\n\rNo such VCS project."
+ 344, "Internet files (*.htm;*.html)|*.htm;*.html|All files (*.*)|*.*"
+ 345, "You must restart the IDE/ the program for this change to take effect.\n\rSorry."
+ 346, "<%s>.\n\rThis value cannot be blank."
+ 347, "<%s>\n\r%s\n\rSee help topic \042Naming conventions\042 for more information."
+ 348, "JEDI VCS is unable to focus the project manager window."
+ 349, "Really purge project <%s> and keep %d revisions at maximum?"
+ 350, "This would affect %d modules. Proceed?"
+ 351, "No modules affected by this operation."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 352, "Purge removed %d revisions (affected modules: %d) from project <%s>."
+ 353, "\n\rWarning! This process is not reversible."
+ 354, "Current version does not support uncompressed modules."
+ 355, "You have %s SMTP mail records (%n k) in your SMTP out folder."
+ 356, "Remember that you need to install the JEDI VCS forwarder\n\r\042FVCSSMTP.exe\042 in order to send SMTP mail."
+ 357, "\n\rMake sure that the JEDI VCS forwarder \042FVCSSMTP.exe\042 is up and running."
+ 358, "%s saved to file\n\r<%s>."
+ 359, "<%s>\n\rCould not open the file as ShareExclusive.\n\rProbably the file is locked by another application."
+ 360, "<%s>\n\rJEDI VCS cannot check in this file.\n\rException: %s.\n\rAccess denied in object [%s]."
+ 361, "%d files to backup, %d old archives, %d outdated -> %d just removed."
+ 362, "\n\rRequest check in from the current module owner?"
+ 363, "This is a potentially dangerous option and only recommended for\n\rexperienced users. Inproper use may cause data loss!\n\rPlease read the related help topic before enabling this option.\n\rEnable \042%s\042 anyway? "
+ 364, "JEDI VCS runs currently in \042Beginners\042 mode.\n\rTo access all functionality go to menu \042Options\042 and\n\rcheck the menu item \042Enable Expert Menu\042."
+ 365, "IDE Menu accelerator changed.\n\rYou must restart the IDE for this change to take effect."
+ 366, "<Unassigned> is an auto generated group and not part of the archive.\n\rYou cannot edit, rename or remove this group."
+ 367, "Connect failed. (%s).\n\rThe JEDI VCS server on host <%s> did not answer.\n\rPerhaps the server is not running, you have entered an invalid IP or port number\n\ror your TCP/IP network is not properly set.\n\rSelect the connect dialog's help button for more information."
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 368, "\n\rPlease refer to the online help file."
+ 369, "Module is locked by <%s>."
+ 370, "Access denied. (403)\n\rUnknown user name, wrong password or invalid client IP.\n\rRe-check your login data and retry."
+ 371, "Are you sure you want to remove <%s> (%s) from the archive?"
+ 372, "No modules from <%s> in the version archive."
+ 373, "Connect failed. (%s).\n\rThe JEDI VCS server on host <%s> did not answer.\n\rShould JEDI VCS try to start the local server?."
+ 374, "JEDI VCS detects an unknown server type: [%s].\n\rSee \042Help|About|Version Information\042 for a list of known server types.\n\rWarning! Client may not work correctly!"
+ 375, "This change will not take effect until you reopen the %s."
+ 376, "There are currently no known project folders for <%s>.\n\rProbably the project is still empty."
+ 377, "Access denied (%s).\n\rThe project still contains checked out modules.\n\rCheck In all related modules and retry."
+ 378, "\n\rRemember that the filter is related only to files checked out by you."
+ 379, "\042Global settings\042 flag set by admin on %s.\n\rSome local options/features may be overwritten by global settings\n\rand will be locked as long as you are connected to this server.\n\rContact your archive administrator for details."
+ 380, "This option is forced to be %s on the current application server.\n\rYour changes will not take effect as long as you are connected to this server.\n\rContact your archive administrator for details."
+ 381, "This feature is currently not supported by the C++ Builder version. Sorry."
+ 382, "You have %d items in the history list.\n\rLoading all Check In comments may take several time.\n\rContinue anyway?"
+ 383, "%s <%s>.\n\rJEDI VCS expects the local file to be %s, but the file is %s.\n\rContinue anyway?"
+}
+
+
+STRINGTABLE
+LANGUAGE LANG_GERMAN, SUBLANG_GERMAN
+{
+ 384, "<%s>\n\r%s a binary file type. You %s use files of this type with JEDIVCSDiff.exe."
+ 385, "JEDI VCS will synchronize all referenced projects in the list\n\rwithout further prompting. Once started, you cannot cancel the process.\n\rActivate \042Sync all at once\042?"
+ 386, "Sync process ready.\n\rSynched: %d files in %d projects."
+ 387, "Warning! Storing your passwords is not recommended!\n\rOther users with access to your computer may be able to\n\rdecode or use them. Continue anyway?"
+ 388, "Label <%s> is already assigned to V %s.%s of this module.\n\rOnly one version of a module can be assigned with the same label.\n\rMove the label to the current revision?"
+}
+

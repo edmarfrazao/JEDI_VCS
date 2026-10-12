@@ -1,0 +1,153 @@
+********************************************************************************
+JEDI VCS - href.com server projects/ local directories
+********************************************************************************
+
+New Development tree mainly based on original FreeVCS source:
+=============================================================
+
+JEDI VCS 'Stand-Alone' client:
+-----------------------------
+JEDI VCS/JEDI VCS.Client/jedivcs.dpr
+v:\..\jedivcs\src\jedivcs\
+
+JEDI VCS IDE (DLL) client:
+-------------------------
+JEDI VCS/JEDI VCS.Client/jedivcsdll.dpr
+v:\..\jedivcs\src\jedivcs\
+
+JEDI VCS IDE Delphi VCS Interface client:
+----------------------------------------
+JEDI VCS/JEDI VCS.Client/JEDI VCS.IDE/jvcside_dxvcsintf.dpr 
+v:\..\jedivcs\src\jedivcside\delphi_vcs\
+
+JEDI VCS IDE Delphi Wizard Interface client:
+-------------------------------------------
+JEDI VCS/JEDI VCS.Client/JEDI VCS.IDE/jvcside_dxwizard.dpr
+v:\..\jedivcs\src\jedivcside\delphi_wizard\
+
+JEDI VCS Diff/ Merge tool:
+-------------------------
+JEDI VCS/JEDI VCS.Client/jedivcsdiff.dpr
+v:\..\jedivcs\src\jedivcsdiff\
+
+JEDI VCS 'Core' DLL:
+-------------------
+JEDI VCS/JEDI VCS.Client/JEDI VCS.CoreDLL/jvcscore.dpr
+v:\..\jedivcs\src\jedivcscoredll\
+
+JEDI VCS 'Core' DLL demo application:
+------------------------------------
+JEDI VCS/JEDI VCS.Client/JEDI VCS.CoreDLL/coretest.dpr
+v:\..\jedivcs\src\jedivcscoredll\jedivcscoredemo\
+
+JEDI VCS client testproject for new ideas:
+-----------------------------------------
+JEDI VCS/JEDI VCS.Client/jvcstest.dpr
+v:\..\jedivcs\src\newideas\jedivcs\
+
+JEDI VCS client code generator:
+------------------------------
+JEDI VCS/JEDI VCS.Client/jvcsgen.dpr
+v:\..\jedivcs\src\jvcsgen\
+
+JEDI VCS command line client:
+----------------------------
+JEDI VCS/JEDI VCS.Console/jvcs.dpr
+v:\..\freevcs\src\client\jvcs\
+
+JEDI VCS command line client binaries:
+-------------------------------------
+JEDI VCS/JEDI VCS.Console/jedivcs.console.client.bin
+v:\..\jedivcs\bin\
+
+JEDI VCS client(GUI) Plugins:
+----------------------------
+JEDI VCS/JEDI VCS.Plugins/...
+v:\..\jedivcs\src\..
+
+JEDI VCS server/ service:
+------------------------
+JEDI VCS/JEDI VCS.Server/jvcssrv.dpr
+v:\..\jedivcs\src\jedivcsserver\
+
+JEDI VCS service control panel applet:
+-------------------------------------
+JEDI VCS/JEDI VCS.Server/jvcscpa.dpr
+v:\..\jedivcs\src\jedivcscpa\
+
+JEDI VCS DB Transfer:
+--------------------
+JEDI VCS/JEDI VCS.Server/jedivcsdbtransfer.dpr
+v:\..\jedivcs\src\jedivcsdbtransfer\
+
+JEDI VCS TestProxy Server:
+-------------------------
+JEDI VCS/JEDI VCS.Server/jvcssrvtestproxy.dpr
+v:\..\jedivcs\src\jedivcsserver\testproxy\
+
+JEDI VCS documentation:
+----------------------
+[no seperate sever project for now]
+v:\..\jedivcs\doc\client\
+v:\..\jedivcs\doc\common\
+v:\..\jedivcs\doc\server\
+
+JEDI VCS makefiles:
+------------------
+JEDI VCS/JEDI VCS._make/jvcsmake
+v:\..\jedivcs\src\
+
+JEDI VCS 3rd party components:
+-----------------------------
+JEDI VCS/JEDI VCS.3rdparty/jedivcs_3rdparty
+v:\..\jedivcs\3rdparty\
+JEDI VCS/JEDI VCS.Components/...
+v:\..\jedivcs\src\comp\...
+
+Old Development tree based on source by THuber/TOndrej:
+=======================================================
+
+JFVCS binaries (GUI/ Command line client):
+------------------------------------------
+JEDI VCS/_development_stopped/jfvcsbinaries/fvcs_binaries
+v:\..\freevcs\client\bin\
+
+JFVCS client package:
+---------------------
+JEDI VCS/_development_stopped/jfvcsclientsource/fvcsclient.dpk
+v:\..\freevcs\client\bin\
+
+JFVCS client test program:
+--------------------------
+JEDI VCS/_development_stopped/jfvcsclientsource/fvcsclienttest.dpr
+v:\..\freevcs\client\test\
+
+JFVCS generator:
+----------------
+JEDI VCS/_development_stopped/jfvcsclientsource/fvcsgen.dpr
+v:\..\freevcs\client\generator\
+
+JFVCS GUI client:
+-----------------
+JEDI VCS/_development_stopped/jfvcsclientsource/jedifvcs.dpr
+v:\..\freevcs\client\jedifvcs\
+v:\..\freevcs\client\source\
+v:\..\freevcs\client\resource\
+
+JFVCS command line client:
+--------------------------
+JEDI VCS/_development_stopped/jfvcsclientsource/jfvcs.dpr
+v:\..\freevcs\client\jfvcs\
+v:\..\freevcs\client\source\
+v:\..\freevcs\client\resource\
+
+JFVCS components:
+-----------------
+JEDI VCS/_development_stopped/jfvcscomponents/fvcs.dpk
+v:\..\freevcs\client\source\
+
+JFVCS 3rd party components:
+---------------------------
+JEDI VCS/_development_stopped/jfvcscomponents/fvcs_3rdparty_components.dpk
+v:\3rd_party_comp\
+

@@ -1,0 +1,701 @@
+; -----------------------------------------------------------------------------
+; JEDI VCS Version Control - Project JEDI
+; This file is part of the Setup
+; -----------------------------------------------------------------------------
+; The contents of this file are subject to the Mozilla Public License
+; Version 1.1 (the "License"); you may not use this file except in compliance
+; with the License. You may obtain a copy of the License at
+; http://www.mozilla.org/MPL/MPL-1.1.html
+;
+; Software distributed under the License is distributed on an "AS IS" basis,
+; WITHOUT WARRANTY OF ANY KIND, either expressed or implied. See the License
+; for the specific language governing rights and limitations under the License.
+;
+; The Original Code is: verinf.fvc
+;
+; The Initial Developer of this script is:
+; Thomas Hensle
+;
+; Componentes and used code which is used in this code are explictly stated to
+; be copyright of the respective author(s).
+;
+; Last Modified: see History
+;
+; Known Issues:
+;
+; -----------------------------------------------------------------------------
+; History:
+;
+; 2004/03/29 THuber   - moved from FreeVCS setup to JEDI VCS setup
+;
+; -----------------------------------------------------------------------------
+; Internationalization strings for VERSIONINFO resource.
+; Usage:
+; Copy all string values from [0000] (Language Neutral) below your language ID.
+; Replace all strings behind the equal sign with the translated strings of 
+; your language. (See [0407] German (Standard) as an example); 
+; Language ID's without custom strings will be shown in English.
+; Do NOT alter the strings at the left side of the equal sign!
+; Don't forget to save the file!
+; =============================================================================
+; If you have translated the strings of your language it is a good idea to
+; paste them into an e-mail and mailto freevcs@thensle.de - I will include
+; these strings in the next release of this file.
+; =============================================================================
+
+; Language Neutral
+[0000]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; Process Default Language
+[0400]
+
+; Arabic (Iraq)
+[0801]
+
+; Arabic (Egypt)
+[0c01]
+
+; Arabic (Libya)
+[1001]
+
+; Arabic (Algeria)
+[1401]
+
+; Arabic (Morocco)
+[1801]
+
+; Arabic (Tunisia)
+[1c01]
+
+; Arabic (Oman)
+[2001]
+
+; Arabic (Yemen)
+[2401]
+
+; Arabic (Syria)
+[2801]
+
+; Arabic (Jordan)
+[2c01]
+
+; Arabic (Lebanon)
+[3001]
+
+; Arabic (Kuwait)
+[3401]
+
+; Arabic (U.A.E.)
+[3801]
+
+; Arabic (Bahrain)
+[3c01]
+
+; Arabic (Qatar)
+[4001]
+
+; Bulgarian
+[0402]
+
+; Catalan
+[0403]
+
+; Chinese (Taiwan)
+[0404]
+
+; Chinese (PRC)
+[0804]
+
+; Chinese (Hong Kong)
+[0c04]
+
+; Chinese (Singapore)
+[1004]
+
+; Czech
+[0405]
+
+; Danish
+[0406]
+
+; German (Standard)
+[0407]
+Author=Autor
+BuildTimestamp=Build Datum
+BuildType=Build Typ
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=Interne Version (NICHT VERÖFFENTLICHEN!)
+InternalVersion=Interne Versionsnummer
+LegalTrademarks=Warenzeichen
+
+; German (Swiss)
+[0807]
+Author=Autor
+BuildTimestamp=Build Datum
+BuildType=Build Typ
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=Interne Version (NICHT VERÖFFENTLICHEN!)
+InternalVersion=Interne Versionsnummer
+LegalTrademarks=Warenzeichen
+
+; German (Austrian)
+[0c07]
+Author=Autor
+BuildTimestamp=Build Datum
+BuildType=Build Typ
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=Interne Version (NICHT VERÖFFENTLICHEN!)
+InternalVersion=Interne Versionsnummer
+LegalTrademarks=Warenzeichen
+
+; German (Luxembourg)
+[1007]
+Author=Autor
+BuildTimestamp=Build Datum
+BuildType=Build Typ
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=Interne Version (NICHT VERÖFFENTLICHEN!)
+InternalVersion=Interne Versionsnummer
+LegalTrademarks=Warenzeichen
+
+; German (Liechtenstein)
+[1407]
+Author=Autor
+BuildTimestamp=Build Datum
+BuildType=Build Typ
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=Interne Version (NICHT VERÖFFENTLICHEN!)
+InternalVersion=Interne Versionsnummer
+LegalTrademarks=Warenzeichen
+
+; Greek
+[0408]
+
+; English (United States)
+[0409]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (United Kingdom)
+[0809]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (Australian)
+[0c09]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (Canadian)
+[1009]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (New Zealand)
+[1409]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (Ireland)
+[1809]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (South Africa)
+[1c09]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (Jamaica)
+[2009]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (Caribbean)
+[2409]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (Belize)
+[2809]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; English (Trinidad)
+[2c09]
+Author=Author
+BuildTimestamp=BuildTimestamp
+BuildType=BuildType
+DebugBuild=DebugBuild
+ReleaseBuild=ReleaseBuild
+SpecialBuild=SpecialBuild
+InternalBuild (NOT FOR RELEASE!)=InternalBuild (NOT FOR RELEASE!)
+InternalVersion=InternalVersion
+LegalTrademarks=LegalTrademarks
+
+; Spanish (Traditional Sort)
+[040a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Mexican)
+[080a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Modern Sort)
+[0c0a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Guatemala)
+[100a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Costa Rica)
+[140a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Panama)
+[180a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Dominican Republic)
+[1c0a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Venezuela)
+[200a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Colombia)
+[240a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Peru)
+[280a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Argentina)
+[2c0a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Ecuador)
+[300a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Chile)
+[340a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Uruguay)
+[380a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Paraguay)
+[3c0a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Bolivia)
+[400a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (El Salvador)
+[440a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Honduras)
+[480a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Nicaragua)
+[4c0a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Spanish (Puerto Rico)
+[500a]
+Author=Autor
+BuildTimestamp=Fecha de compilación
+BuildType=Tipo de compilación
+DebugBuild=Depuración
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Compilación interna (¡PROHIBIDA SU DISTRIBUCIÓN!)
+InternalVersion=Versión interna
+LegalTrademarks=Marcas legales
+
+; Finnish
+[040b]
+
+; French (Standard)
+[040c]
+
+; French (Belgian)
+[080c]
+
+; French (Canadian)
+[0c0c]
+
+; French (Swiss)
+[100c]
+
+; French (Luxembourg)
+[140c]
+
+; Hebrew
+[040d]
+
+; Hungarian
+[040e]
+
+; Icelandic
+[040f]
+
+; Italian (Standard)
+[0410]
+
+; Italian (Swiss)
+[0810]
+
+; Japanese
+[0411]
+
+; Korean
+[0412]
+
+; Korean (JoHab)
+[0812]
+
+; Dutch (Standard)
+[0413]
+
+; Dutch (Belgian)
+[0813]
+
+; Norwegian (Bokmal)
+[0414]
+
+; Norwegian (Nynorsk)
+[0814]
+
+; Polish
+[0415]
+
+; Portuguese (Brazilian)
+[0416]
+Author=Autor
+BuildTimestamp=Data/Hora de compilação
+BuildType=Tipo de Compilação
+DebugBuild=Depuração
+ReleaseBuild=Comercial
+SpecialBuild=Especial
+InternalBuild (NOT FOR RELEASE!)=Interna (NÃO DISTRIBUIR!)
+InternalVersion=Versào Interna
+LegalTrademarks=Marcas
+
+; Portuguese (Standard)
+[0816]
+
+; Romanian
+[0418]
+
+; Russian
+[0419]
+
+; Croatian
+[041a]
+
+; Serbian
+[0c1a]
+
+; Slovak
+[041b]
+
+; Albanian
+[041c]
+
+; Swedish
+[041d]
+
+; Swedish (Finland)
+[081d]
+
+; Thai
+[041e]
+
+; Turkish
+[041f]
+
+; Indonesian
+[0421]
+
+; Ukrainian
+[0422]
+
+; Belarusian
+[0423]
+
+; Slovenian
+[0424]
+
+; Estonian
+[0425]
+
+; Latvian
+[0426]
+
+; Lithuanian
+[0427]
+
+; Serbian
+[081a]
+
+; Farsi
+[0429]
+
+; Basque
+[042d]
+
+; Afrikaans
+[0436]
+
+; Faeroese
+[0438]

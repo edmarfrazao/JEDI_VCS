@@ -1,0 +1,32 @@
+********************************************************************************
+JediVCS - Source License file                                   V1.02 2003/03/14
+********************************************************************************
+The majority of the source code in this distribution is published under the
+terms of the Mozilla Public License (MPL).
+You may obtain a copy of the License at http://www.mozilla.org/MPL/MPL-1.1.html
+
+The MPL is valid for all files containing the standard MPL header or without any
+special licensing information at all.
+
+Additionaly, several parts of this code are donations/ derivations from other
+developers/ libraries, published under different licenses/ restrictions.
+These code parts are plainly marked as such in their file headers.
+
+If you want to distribute/ reuse this code in part or as a whole, you need to
+carefully look at each header in each single unit/ component and take care of
+the restrictions as stated there. Responsibility for this is completely on your
+side.
+
+If you plan to use this code in part or as a whole to create binaries for
+commercial applications or to make money with it in *any* other way, be aware
+that there are several parts herein you are not allowed to do so.
+
+--------------------------------------------------------------------------------
+Units/ components not covered by MPL:
+
+JediVCSServer:
+ Cipher.pas
+ CipherLZ.pas
+
+
+

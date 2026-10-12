@@ -1,0 +1,30 @@
+1 VERSIONINFO LOADONCALL MOVEABLE DISCARDABLE IMPURE
+FILEVERSION 2,5,0,1030
+PRODUCTVERSION 2,5,0,0
+FILEOS VOS__WINDOWS32
+FILETYPE VFT_APP
+{
+ BLOCK "StringFileInfo"
+ {
+  BLOCK "040904E4"
+  {
+   VALUE "CompanyName", "Project JEDI (www.delphi-jedi.org)\000"
+   VALUE "FileDescription", "JEDI VCS GUI client\000"
+   VALUE "FileVersion", "2.5.0.1030\000"
+   VALUE "ProductVersion", "2.5.0.0\000"
+   VALUE "InternalName", "Jedivcs.dpr/Jedivcsdll\000"
+   VALUE "OriginalFilename", "Jedivcs.exe/Jedivcsdll.dll\000"
+   VALUE "LegalCopyright", "Released under MPL 1.1\000"
+   VALUE "ProductName", "JEDI Version Control System\000"
+   VALUE "LegalTrademarks", "MPL 1.1\000"
+   VALUE "BuildType", "Beta Build\000"
+   VALUE "BuildTimestamp", "31.01.2010 23:00:00\000"
+   VALUE "InternalVersion", "2.5.0 Beta 3\000"
+   VALUE "VCS", "JVCS 2.5.0.1030 Beta 3 http://jedivcs.sourceforge.net/\000"
+  }
+ }
+ BLOCK "VarFileInfo"
+ {
+  VALUE "Translation", 0x0409,1252
+ }
+}
