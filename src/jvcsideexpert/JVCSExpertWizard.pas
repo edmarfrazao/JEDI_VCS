@@ -176,7 +176,7 @@ uses
 const
   WM_JVCS_REBUILD = WM_USER + $4A1;
   WM_JVCS_EXECUTE = WM_USER + $4A2;
-  cPluginTitle = 'JEDI Version Control System';
+  cPluginTitle = 'JEDI Version Control System 2.5 Beta 2026';
   cPluginLicense = 'MPL 1.1';
   cDeferTimerID = $4A1;
   cDeferTimerMs = 500;
@@ -244,7 +244,7 @@ begin
     begin
       About120 := AboutSvc;
       GAboutIndex := About120.AddPluginInfo(cPluginTitle,
-        'JEDI VCS IDE Expert (v2026) - ponte entre a ToolsAPI e a ' +
+        'JEDI VCS 2.5 Beta 2026 - IDE Expert: ponte entre a ToolsAPI e a ' +
         'JvcsExternalDll.dll do JEDI VCS 2.5 (cliente Delphi 2007, ANSI).',
         CreatePluginBitmapHandle, False, cPluginLicense, '');
     end;
