@@ -725,3 +725,10 @@ Os nomes marcados com (s) são sugestões.
 | Helper de status bar (s) e `TJVCSListView` (s) em `src\common` | F3/F4 | Substitutos DFS |
 | `src\jvcsideexpert\JVCSIDE_DxWizard.dpr`, `JVCSIDEWizard.pas`, `JVCSIDEFileHistoryImpl.pas`, `JVCSIDEProjectMenuImpl.pas` | F5 | Expert ToolsAPI |
 | `setup\*.iss` (s) | F5 | Instalador e registro das chaves `Experts` |
+
+## Adendo (12/10/2026) — Recursos de 2012 mantidos
+Decisão do usuário: o port inclui ExtBugtracker, SaveWIP e Compare all local/archive (já presentes em `src\jedivcs`).
+- **F4 (EXE):** portar `ExtBugtracker.pas` (JclPCRE → `TRegEx`, `Groups['bug']` protegido por try/except), `SaveWIP.pas` (`ShellExecute`/`CreateProcess` do comando configurado; lista em `%TEMP%`; placeholders `#vcslistfile#`, `#y##m##d#` etc.), ações `acCompareAllLocalArchive`/`mnCompareAllLocalArchive`.
+- **F5 (DLL):** os mesmos recursos aparecem nas janelas da IDE (Options, históricos, módulos bloqueados).
+- **Testes:** regex de bugtracker com e sem grupo `bug`; Save WIP com 7-Zip; Compare all com 1 e N módulos.
+- Opções novas ficam nas abas **External Bugtracker** e **Save WIP** de VCS Properties (17 → 19 abas).
