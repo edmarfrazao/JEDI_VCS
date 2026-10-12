@@ -29,3 +29,16 @@
 3. Tools → File Families Manager: família `.pas` com Child `.dfm;.fmx;` (ver `doc\client\Checkin-Familias-FMX.md`).
 4. Criar um projeto de teste, check-in/check-out, histórico; capturas "golden" de tráfego para o port.
 5. Verificar se o servidor permite duas sessões do mesmo usuário (GUI + CLI) — ver `Credenciais.md`, achado de sessão única.
+## Atualização do banco para o esquema 2.5 (branching) — feita em 12/10/2026
+O `jedivcs.fbk` do instalador é de 2003. Ao iniciar, o servidor sobe o banco até a **2.42** sozinho (tabela `DBARCHIVEVERSION`: 110→240→241→242),
+mas o `Upgrade250` do servidor (`SrvDBDef.pas:959`) só cria os índices `I_RVBRANCH_BID_RID` e `I_BRMODULE_BID_MID` e **pressupõe as tabelas de branch já criadas**.
+Sem elas: "error on upgrading your archive" e no cliente "Column unknown BRANCHID" (`ADD_NEW_PROJECT`, `GET_SHARED_MODULES`).
+
+Procedimento oficial (release notes): 1) `JediVcsDBTransfer.exe` → Update V2.5 (aplica `Server\InterBase\UpdateV25.sql` e cria o branch `HEAD`); 2) reiniciar o servidor (`Upgrade250` cria os índices e grava a versão 250).
+Como o DBTransfer não funcionou nesta máquina, o passo 1 foi feito com o `isql` do Firebird 2.5 (script `D:\Delphi\JediVCS\ServidorTeste\aplicar_UpdateV25.sql`):
+`UpdateV25.sql` oficial + `INSERT INTO BRANCHES VALUES (GEN_ID(GEN_BRANCH_ID,1), 0, 'HEAD', 'HEAD branch', 0, <UTC>)` — válido porque `PJMODULE`, `PJREF`, `VCSLOG`, `MODULES` e `REVISION` estavam vazias
+(com dados, seria preciso também a migração que o servidor faz em `INITIAL_ADD_HEADBRANCH`: `FillProjectModules`, `CreateRevisions`, `CreateBranchModule`).
+Backups: `D:\Delphi\JediVCS\ServidorTeste\backup\JEDIVCS_antes_upgrade250_*.fbk` e `JEDIVCS_v242_antes_UpdateV25_*.fbk`.
+
+**Por que o servidor às vezes abre com o Firebird 2.1 embutido:** quando executado como Administrador ele lê o `jvcssrv.ini` de Program Files (não o do VirtualStore);
+manter os dois iguais com `D:\Delphi\JediVCS\ServidorTeste\corrigir-ini-servidor.cmd` (executar como Administrador). Com Server = LOCALHOST o servidor abre o caminho sem `host:` (`SrvMain.pas:1083-1087`).
