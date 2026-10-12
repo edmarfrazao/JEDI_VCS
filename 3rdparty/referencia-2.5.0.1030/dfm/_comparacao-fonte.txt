@@ -1,0 +1,747 @@
+Comparação DFM binário (jedivcs.exe / jedivcsdiff.exe 2.5.0.1030) x .dfm texto em D:\Delphi\JediVCS\v2026\src
+Gerado por análise estática (conversor TPF0 próprio em C#). Valores canônicos: I:=inteiro, F:=float, S:=string, ID:=identificador, SET:=conjunto, L()=lista, C<>=coleção, B:tamanho:md5(12)=binário.
+Ruído ignorado (contado em 'ruido'): ExplicitLeft/Top/Width/Height, PixelsPerInch, TextHeight, OldCreateOrder, DesignSize.
+Round-trip: cada DFM binário foi convertido para texto, relido pelo parser de texto e comparado com o original: 107/107 sem diferença.
+
+=== jedivcs / TDATAMODULE1 (TDataModule1) x jedivcs\DBModule.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TJVCSBACKUPTREEOPTIONS (TJVCSBackupTreeOptions) x jedivcs\BackupTreeOptions.dfm : comp=0 prop=9 ruido=2
+  PROP JVCSBackupTreeOptions.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSBackupTreeOptions.gbOutputStructure.Width: binario=I:419 | fonte=I:411
+  PROP JVCSBackupTreeOptions.gbOutputStructure.Height: binario=I:174 | fonte=I:170
+  PROP JVCSBackupTreeOptions.gbOutputStructure.Label1.Width: binario=I:189 | fonte=I:190
+  PROP JVCSBackupTreeOptions.gbOutputStructure.Label2.Width: binario=I:133 | fonte=I:138
+  PROP JVCSBackupTreeOptions.gbOutputStructure.Label3.Width: binario=I:127 | fonte=I:134
+  PROP JVCSBackupTreeOptions.PanelBottom.Top: binario=I:231 | fonte=I:227
+  PROP JVCSBackupTreeOptions.PanelBottom.Width: binario=I:419 | fonte=I:411
+  PROP JVCSBackupTreeOptions.GroupBoxZipFile.Width: binario=I:419 | fonte=I:411
+=== jedivcs / TJVCSBASEABOUTDLG (TJVCSBaseAboutDlg) x common\JVCSBaseAboutDialog.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TJVCSBRANCHTREEVIEWFRM (TJVCSBranchTreeViewFrm) x jedivcs\JVCSBranchTreeViewFrame.dfm : comp=0 prop=1 ruido=0
+  PROP JVCSBranchTreeViewFrm.vtBranch.Header.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TJVCSBROWSERFRM (TJVCSBrowserFrm) x jedivcs\JVCSBrowserFrame.dfm : comp=0 prop=1 ruido=0
+  PROP JVCSBrowserFrm.VST.Header.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TJVCSCOMPRESSEDDIFFFRM (TJVCSCompressedDiffFrm) x common\client\JVCSCompressedDiffFrame.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TJVCSCREATEBRANCHFORM (TJVCSCreateBranchForm) x jedivcs\JVCSCreateBranchDialog.dfm : comp=0 prop=23 ruido=2
+  PROP JVCSCreateBranchForm.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipParentBranch.Header.Title.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipParentBranch.Header.Subtitle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipParentBranch.Header.ParentFont: binario=(ausente) | fonte=ID:false
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipParentBranchSelection.Header.Title.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipParentBranchSelection.Header.Subtitle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipParentBranchSelection.Header.ParentFont: binario=(ausente) | fonte=ID:false
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipNameAndDescription.Header.Title.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipNameAndDescription.Header.Subtitle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipNameAndDescription.Header.ParentFont: binario=(ausente) | fonte=ID:false
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipNameAndDescription.Label1.Width: binario=I:28 | fonte=I:27
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipOptions.Header.Title.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipOptions.Header.Subtitle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipOptions.Header.ParentFont: binario=(ausente) | fonte=ID:false
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipOptions.lbNewRootPath.Width: binario=I:73 | fonte=I:72
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipSummary.Header.Title.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipSummary.Header.Subtitle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipSummary.Header.ParentFont: binario=(ausente) | fonte=ID:false
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipBranchCreation.Header.Title.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipBranchCreation.Header.Subtitle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipBranchCreation.Header.ParentFont: binario=(ausente) | fonte=ID:false
+  PROP JVCSCreateBranchForm.CreateBranchWizard.wipBranchCreation.lbCreateBranch.Font.Name: binario=S:Arial | fonte=S:Tahoma
+  PROP JVCSCreateBranchForm.CreateBranchWizard.CreateBranchWizardSteps.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TJVCSDOCKABLEFORM (TJVCSDockableForm) x jedivcs\JVCSDockForm.dfm : comp=0 prop=1 ruido=0
+  PROP JVCSDockableForm.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TJVCSDOCKLOCKEDMODULESWINDOW (TJVCSDockLockedModulesWindow) x jedivcs\JVCSLockedModulesDockWnd.dfm : comp=2 prop=1 ruido=0
+  COMP so no fonte: JVCSDockLockedModulesWindow.ToolBar1.tbSaveWIP : TToolButton
+  COMP so no fonte: JVCSDockLockedModulesWindow.popmSharedby.mnCompareAllLocalArchive : TMenuItem
+  PROP JVCSDockLockedModulesWindow.ToolImageList.Bitmap: binario=B:4390:28FB351A3E3C | fonte=B:4368:090404207FB8
+=== jedivcs / TJVCSDOCKPROJECTTREE (TJVCSDockProjectTree) x jedivcs\ProjectTreeDockWnd.dfm : comp=0 prop=6 ruido=0
+  PROP JVCSDockProjectTree.tvHierachy.Top: binario=I:120 | fonte=I:109
+  PROP JVCSDockProjectTree.tvHierachy.Width: binario=I:570 | fonte=I:562
+  PROP JVCSDockProjectTree.VSTHierarchy.Width: binario=I:570 | fonte=I:562
+  PROP JVCSDockProjectTree.VSTHierarchy.Height: binario=I:95 | fonte=I:84
+  PROP JVCSDockProjectTree.VSTHierarchy.Header.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSDockProjectTree.pnlFilter.Width: binario=I:570 | fonte=I:562
+=== jedivcs / TJVCSDOCKTODOWINDOW (TJVCSDockToDoWindow) x jedivcs\ToDoDockWnd.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TJVCSGUICLIENTIMAGESDATAMODULE (TJVCSGUIClientImagesDataModule) x jedivcs\JVCSGUIClientImages.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TJVCSLINEHISTORYFRM (TJVCSLineHistoryFrm) x common\client\JVCSLineHistoryFrame.dfm : comp=0 prop=1 ruido=0
+  PROP JVCSLineHistoryFrm.pnlRight.pnlSummary.vstSummary.Header.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TJVCSLINEHISTORYSETTINGSDLG (TJVCSLineHistorySettingsDlg) x common\client\JVCSLineHistorySettingsDialog.dfm : comp=0 prop=25 ruido=0
+  PROP JVCSLineHistorySettingsDlg.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.VSTUserColors.Header.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.Label1.Width: binario=I:50 | fonte=I:51
+  PROP JVCSLineHistorySettingsDlg.Panel1.Label2.Width: binario=I:23 | fonte=I:24
+  PROP JVCSLineHistorySettingsDlg.Panel1.Label3.Width: binario=I:13 | fonte=I:12
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateTo.HotTrackFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateTo.Properties.NoneColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateTo.Properties.DefaultColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateTo.Properties.CustomColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionFrom.HotTrackFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionFrom.Properties.NoneColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionFrom.Properties.DefaultColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionFrom.Properties.CustomColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionTo.HotTrackFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionTo.Properties.NoneColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionTo.Properties.DefaultColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnRevisionTo.Properties.CustomColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateFrom.HotTrackFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateFrom.Properties.NoneColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateFrom.Properties.DefaultColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnDateFrom.Properties.CustomColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnUserColor.HotTrackFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnUserColor.Properties.NoneColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnUserColor.Properties.DefaultColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP JVCSLineHistorySettingsDlg.Panel1.cbtnUserColor.Properties.CustomColorFont.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TJVCSSELECTBRANCHFORM (TJVCSSelectBranchForm) x jedivcs\JVCSSelectBranchDialog.dfm : comp=0 prop=1 ruido=0
+  PROP JVCSSelectBranchForm.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TNTFYSENDFORM (TNtfySendForm) x jedivcs\NtfySend.dfm : comp=0 prop=1 ruido=0
+  PROP NtfySendForm.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TPASSWORDDLG (TPassWordDlg): SEM .dfm correspondente no fonte
+=== jedivcs / TVCSABOUT (TVCSAbout) x jedivcs\About.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TVCSADDBUG (TVCSAddBug) x jedivcs\AddNewBug.dfm : comp=0 prop=8 ruido=0
+  PROP VCSAddBug.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAddBug.pnlBugHead.Label1.Left: binario=I:6 | fonte=I:8
+  PROP VCSAddBug.pnlBugHead.Label1.Width: binario=I:48 | fonte=I:47
+  PROP VCSAddBug.pnlBugHead.Label4.Width: binario=I:38 | fonte=I:40
+  PROP VCSAddBug.pnlBugHead.Label7.Left: binario=I:313 | fonte=I:312
+  PROP VCSAddBug.pnlBugHead.Label7.Width: binario=I:25 | fonte=I:26
+  PROP VCSAddBug.pnlBugHead.Label3.Width: binario=I:46 | fonte=I:47
+  PROP VCSAddBug.pnlBugHead.Label5.Width: binario=I:44 | fonte=I:45
+=== jedivcs / TVCSADDCOMPARETOOL (TVCSAddCompareTool) x jedivcs\AddNewCompareTool.dfm : comp=0 prop=4 ruido=0
+  PROP VCSAddCompareTool.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAddCompareTool.Label2.Width: binario=I:86 | fonte=I:89
+  PROP VCSAddCompareTool.Label6.Width: binario=I:144 | fonte=I:149
+  PROP VCSAddCompareTool.Label1.Width: binario=I:72 | fonte=I:76
+=== jedivcs / TVCSADDFAMILY (TVCSAddFamily) x jedivcs\AddNewFamily.dfm : comp=0 prop=4 ruido=0
+  PROP VCSAddFamily.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAddFamily.pnlHead.Label1.Width: binario=I:58 | fonte=I:59
+  PROP VCSAddFamily.pnlHead.Label3.Width: binario=I:51 | fonte=I:55
+  PROP VCSAddFamily.pnlHead.Label4.Width: binario=I:76 | fonte=I:78
+=== jedivcs / TVCSADDLABEL (TVCSAddLabel) x jedivcs\AddNewLabel.dfm : comp=0 prop=2 ruido=0
+  PROP VCSAddLabel.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAddLabel.pnlHead.Label1.Width: binario=I:26 | fonte=I:25
+=== jedivcs / TVCSADDMILESTONE (TVCSAddMilestone) x jedivcs\AddNewMilestone.dfm : comp=0 prop=1 ruido=0
+  PROP VCSAddMilestone.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSADDNEWGROUP (TVCSAddNewGroup) x jedivcs\AddNewGroup.dfm : comp=0 prop=3 ruido=0
+  PROP VCSAddNewGroup.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAddNewGroup.pnlHead.lblParent.Width: binario=I:31 | fonte=I:32
+  PROP VCSAddNewGroup.pnlHead.Label1.Width: binario=I:28 | fonte=I:27
+=== jedivcs / TVCSADDSHAREDMODULE (TVCSAddSharedModule) x jedivcs\AddShareModule.dfm : comp=0 prop=1 ruido=0
+  PROP VCSAddSharedModule.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSADDUSER (TVCSAddUser) x jedivcs\AddNewUser.dfm : comp=0 prop=10 ruido=0
+  PROP VCSAddUser.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAddUser.pnlHead.Label4.Width: binario=I:60 | fonte=I:58
+  PROP VCSAddUser.pnlHead.Label5.Width: binario=I:83 | fonte=I:86
+  PROP VCSAddUser.pnlHead.Label6.Width: binario=I:221 | fonte=I:228
+  PROP VCSAddUser.pnlHead.spBtnEditIP.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSAddUser.pnlHead.spBtnEditIP.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSAddUser.pnlHead.spBtnEditIP.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSAddUser.pnlHead.spBtnEditIP.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSAddUser.pnlHead.spBtnEditIP.Font.Style: binario=SET:fsbold | fonte=(ausente)
+  PROP VCSAddUser.pnlHead.spBtnEditIP.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcs / TVCSASSIGNBUGS (TVCSAssignBugs) x jedivcs\AssignBugs.dfm : comp=0 prop=3 ruido=0
+  PROP VCSAssignBugs.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAssignBugs.Panel5.Panel2.Panel3.Label1.Left: binario=I:10 | fonte=I:9
+  PROP VCSAssignBugs.Panel5.Panel2.Panel3.Label1.Width: binario=I:44 | fonte=I:45
+=== jedivcs / TVCSASSIGNLABELS (TVCSAssignLabels) x jedivcs\AssignLabels.dfm : comp=0 prop=3 ruido=0
+  PROP VCSAssignLabels.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAssignLabels.pnlMiddle.pnlSearchFind.Panel3.Label1.Left: binario=I:10 | fonte=I:9
+  PROP VCSAssignLabels.pnlMiddle.pnlSearchFind.Panel3.Label1.Width: binario=I:48 | fonte=I:49
+=== jedivcs / TVCSASSIGNMILESTONES (TVCSAssignMilestones) x jedivcs\AssignMilestones.dfm : comp=0 prop=2 ruido=0
+  PROP VCSAssignMilestones.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSAssignMilestones.Panel3.Panel2.Panel1.Label1.Width: binario=I:52 | fonte=I:56
+=== jedivcs / TVCSBACKUP (TVCSBackup) x jedivcs\Backup.dfm : comp=0 prop=8 ruido=0
+  PROP VCSBackup.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSBackup.PageControl1.sheetBackup.Panel3.Label2.Left: binario=I:15 | fonte=I:13
+  PROP VCSBackup.PageControl1.sheetBackup.Panel3.Label2.Width: binario=I:34 | fonte=I:36
+  PROP VCSBackup.PageControl1.sheetRestore.Panel4.Label4.Width: binario=I:90 | fonte=I:96
+  PROP VCSBackup.PageControl1.sheetInfo.Panel6.Label5.Left: binario=I:20 | fonte=I:16
+  PROP VCSBackup.PageControl1.sheetInfo.Panel6.Label5.Width: binario=I:37 | fonte=I:41
+  PROP VCSBackup.PageControl1.sheetInfo.Panel6.Label6.Left: binario=I:42 | fonte=I:41
+  PROP VCSBackup.PageControl1.sheetInfo.Panel6.Label6.Width: binario=I:14 | fonte=I:15
+=== jedivcs / TVCSBRANCH (TVCSBranch) x jedivcs\Branch.dfm : comp=0 prop=5 ruido=0
+  PROP VCSBranch.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSBranch.Panel1.Label1.Left: binario=I:33 | fonte=I:32
+  PROP VCSBranch.Panel1.Label1.Width: binario=I:86 | fonte=I:87
+  PROP VCSBranch.Panel1.Label2.Left: binario=I:7 | fonte=I:5
+  PROP VCSBranch.Panel1.Label2.Width: binario=I:113 | fonte=I:115
+=== jedivcs / TVCSBUGWINDOW (TVCSBugWindow) x jedivcs\BugWindow.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TVCSCHANGEUSERPW (TVCSChangeUserPW) x jedivcs\ChangeUserPW.dfm : comp=0 prop=3 ruido=0
+  PROP VCSChangeUserPW.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSChangeUserPW.Label1.Width: binario=I:64 | fonte=I:65
+  PROP VCSChangeUserPW.Label5.Width: binario=I:106 | fonte=I:109
+=== jedivcs / TVCSCHECKFBUILD (TVCSCheckfBuild) x jedivcs\CheckfBuild.dfm : comp=0 prop=1 ruido=0
+  PROP VCSCheckfBuild.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSCHKINSINGLE (TVCSChkInSingle) x jedivcs\ChkInSingle.dfm : comp=0 prop=5 ruido=0
+  PROP VCSChkInSingle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSChkInSingle.Panel1.Label2.Left: binario=I:49 | fonte=I:48
+  PROP VCSChkInSingle.Panel1.Label2.Width: binario=I:38 | fonte=I:39
+  PROP VCSChkInSingle.Panel1.lblQueue.Left: binario=I:19 | fonte=I:18
+  PROP VCSChkInSingle.Panel1.lblQueue.Width: binario=I:35 | fonte=I:36
+=== jedivcs / TVCSCHKOUTSINGLE (TVCSChkOutSingle) x jedivcs\ChkOutSingle.dfm : comp=0 prop=5 ruido=0
+  PROP VCSChkOutSingle.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSChkOutSingle.Panel2.Label2.Left: binario=I:49 | fonte=I:48
+  PROP VCSChkOutSingle.Panel2.Label2.Width: binario=I:38 | fonte=I:39
+  PROP VCSChkOutSingle.Panel2.lblQueue.Left: binario=I:19 | fonte=I:18
+  PROP VCSChkOutSingle.Panel2.lblQueue.Width: binario=I:35 | fonte=I:36
+=== jedivcs / TVCSCOMPAREFOLDERS (TVCSCompareFolders) x jedivcs\CompareFolders.dfm : comp=0 prop=5 ruido=0
+  PROP VCSCompareFolders.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSCompareFolders.Panel1.Label1.Left: binario=I:28 | fonte=I:27
+  PROP VCSCompareFolders.Panel1.Label1.Width: binario=I:53 | fonte=I:54
+  PROP VCSCompareFolders.Panel1.Label2.Left: binario=I:23 | fonte=I:20
+  PROP VCSCompareFolders.Panel1.Label2.Width: binario=I:60 | fonte=I:63
+=== jedivcs / TVCSCOMPRESSEDDIFF (TVCSCompressedDiff) x common\client\JVCSCompressedDiffDialog.dfm : comp=0 prop=1 ruido=0
+  PROP VCSCompressedDiff.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSCUSTOMVIEWFILTER (TVCSCustomViewFilter) x jedivcs\CustViewFilter.dfm : comp=0 prop=1 ruido=0
+  PROP VCSCustomViewFilter.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSDELETEPH (TVCSDeletePH) x jedivcs\DeletePH.dfm : comp=0 prop=15 ruido=0
+  PROP VCSDeletePH.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSDeletePH.Label2.Left: binario=I:25 | fonte=I:22
+  PROP VCSDeletePH.Label2.Width: binario=I:81 | fonte=I:84
+  PROP VCSDeletePH.Label3.Left: binario=I:12 | fonte=I:8
+  PROP VCSDeletePH.Label3.Width: binario=I:93 | fonte=I:97
+  PROP VCSDeletePH.Label4.Left: binario=I:11 | fonte=I:9
+  PROP VCSDeletePH.Label4.Width: binario=I:95 | fonte=I:97
+  PROP VCSDeletePH.Label5.Left: binario=I:52 | fonte=I:49
+  PROP VCSDeletePH.Label5.Width: binario=I:52 | fonte=I:55
+  PROP VCSDeletePH.Label1.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSDeletePH.Label1.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSDeletePH.Label1.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSDeletePH.Label1.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSDeletePH.Label1.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSDeletePH.Label1.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcs / TVCSDESCRIPTION (TVCSDescription) x jedivcs\Description.dfm : comp=0 prop=2 ruido=0
+  PROP VCSDescription.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSDescription.Panel2.Label1.Width: binario=I:56 | fonte=I:60
+=== jedivcs / TVCSDIRECTSQL (TVCSDirectSQL) x jedivcs\DirectSQL.dfm : comp=0 prop=4 ruido=0
+  PROP VCSDirectSQL.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSDirectSQL.Panel1.Label3.Width: binario=I:363 | fonte=I:370
+  PROP VCSDirectSQL.Panel2.Label2.Width: binario=I:47 | fonte=I:46
+  PROP VCSDirectSQL.Panel2.speMaxRows.Height: binario=I:22 | fonte=I:21
+=== jedivcs / TVCSDIRWATCH (TVCSDirWatch) x jedivcs\DirWatch.dfm : comp=0 prop=1 ruido=0
+  PROP VCSDirWatch.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSDISTRIBUTION (TVCSDistribution) x jedivcs\Distribution.dfm : comp=0 prop=2 ruido=0
+  PROP VCSDistribution.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSDistribution.Panel1.Label1.Width: binario=I:74 | fonte=I:76
+=== jedivcs / TVCSEDITIP (TVCSEditIP) x jedivcs\EditIP.dfm : comp=0 prop=2 ruido=0
+  PROP VCSEditIP.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSEditIP.Label4.Width: binario=I:108 | fonte=I:110
+=== jedivcs / TVCSFILEFAMILIES (TVCSFileFamilies) x jedivcs\FileFamilies.dfm : comp=0 prop=1 ruido=0
+  PROP VCSFileFamilies.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSHISTORY (TVCSHistory) x jedivcs\History.dfm : comp=2 prop=3 ruido=0
+  COMP so no fonte: VCSHistory.PopupMenu1.BugtrackerSep : TMenuItem
+  COMP so no fonte: VCSHistory.PopupMenu1.BugtrackerItem : TMenuItem
+  PROP VCSHistory.AutoScroll: binario=ID:false | fonte=(ausente)
+  PROP VCSHistory.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSHistory.StateImageList.Bitmap: binario=B:4390:A2EFBD2A8035 | fonte=B:4390:0509902CC1A5
+=== jedivcs / TVCSINFO (TVCSInfo) x jedivcs\ModuleInfo.dfm : comp=0 prop=3 ruido=0
+  PROP VCSInfo.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSInfo.Panel2.Label1.Left: binario=I:13 | fonte=I:11
+  PROP VCSInfo.Panel2.Label1.Width: binario=I:52 | fonte=I:54
+=== jedivcs / TVCSLABELHISTORY (TVCSLabelHistory) x jedivcs\JVCSLabelHistory.dfm : comp=0 prop=5 ruido=0
+  PROP VCSLabelHistory.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSLabelHistory.Panel1.lbFromLabel.Width: binario=I:52 | fonte=I:53
+  PROP VCSLabelHistory.Panel1.lbToLabel.Width: binario=I:42 | fonte=I:41
+  PROP VCSLabelHistory.Panel1.Label3.Width: binario=I:33 | fonte=I:34
+  PROP VCSLabelHistory.Panel1.Label4.Width: binario=I:27 | fonte=I:26
+=== jedivcs / TVCSLISTEDIT (TVCSListEdit) x jedivcs\ListEdit.dfm : comp=0 prop=1 ruido=0
+  PROP VCSListEdit.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSLISTVIEW (TVCSListView) x jedivcs\ListView.dfm : comp=0 prop=7 ruido=0
+  PROP VCSListView.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSListView.Memo1.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSListView.Memo1.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcs / TVCSLOAD (TVCSLoad) x jedivcs\Create.dfm : comp=0 prop=22 ruido=0
+  PROP VCSLoad.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSLoad.Panel1.Label2.Width: binario=I:134 | fonte=I:136
+  PROP VCSLoad.Panel1.Label2.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSLoad.Panel1.Label2.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSLoad.Panel1.Label2.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSLoad.Panel1.Label2.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSLoad.Panel1.Label2.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSLoad.Panel1.Label2.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSLoad.Panel1.lblVersion.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSLoad.Panel1.lblVersion.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSLoad.Panel1.lblVersion.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSLoad.Panel1.lblVersion.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSLoad.Panel1.lblVersion.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSLoad.Panel1.lblVersion.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSLoad.PageControl1.SheetAppServer.GroupBox1.Label3.Width: binario=I:37 | fonte=I:42
+  PROP VCSLoad.PageControl1.SheetAppServer.GroupBox1.Label6.Width: binario=I:22 | fonte=I:24
+  PROP VCSLoad.PageControl1.SheetAppServer.GroupBox1.Label4.Width: binario=I:25 | fonte=I:26
+  PROP VCSLoad.PageControl1.SheetAppServer.GroupBox1.Label1.Width: binario=I:25 | fonte=I:26
+  PROP VCSLoad.PageControl1.SheetAppServer.GroupBox1.Label12.Width: binario=I:49 | fonte=I:50
+  PROP VCSLoad.PageControl1.SheetSocks.GroupBox3.Label7.Width: binario=I:34 | fonte=I:36
+  PROP VCSLoad.PageControl1.SheetSocks.GroupBox3.Label8.Width: binario=I:22 | fonte=I:24
+  PROP VCSLoad.PageControl1.SheetSocks.GroupBox3.Label10.Width: binario=I:49 | fonte=I:50
+=== jedivcs / TVCSMAINTAINBUGS (TVCSMaintainBugs) x jedivcs\MaintainBugs.dfm : comp=0 prop=6 ruido=0
+  PROP VCSMaintainBugs.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSMaintainBugs.Panel2.Panel3.Label1.Width: binario=I:38 | fonte=I:40
+  PROP VCSMaintainBugs.Panel2.Panel3.Label2.Width: binario=I:46 | fonte=I:47
+  PROP VCSMaintainBugs.Panel2.Panel3.Label3.Width: binario=I:44 | fonte=I:45
+  PROP VCSMaintainBugs.Panel2.Panel3.Label4.Left: binario=I:164 | fonte=I:163
+  PROP VCSMaintainBugs.Panel2.Panel3.Label4.Width: binario=I:30 | fonte=I:31
+=== jedivcs / TVCSMAINTAINFFAMILIES (TVCSMaintainFFamilies) x jedivcs\MaintainFFamilies.dfm : comp=0 prop=3 ruido=0
+  PROP VCSMaintainFFamilies.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSMaintainFFamilies.Panel3.Panel2.Panel4.Label1.Left: binario=I:7 | fonte=I:6
+  PROP VCSMaintainFFamilies.Panel3.Panel2.Panel4.Label1.Width: binario=I:31 | fonte=I:32
+=== jedivcs / TVCSMAINTAINLABELS (TVCSMaintainLabels) x jedivcs\MaintainLabels.dfm : comp=0 prop=1 ruido=0
+  PROP VCSMaintainLabels.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSMAINTAINMILESTONES (TVCSMaintainMilestones) x jedivcs\MaintainMilestones.dfm : comp=0 prop=1 ruido=0
+  PROP VCSMaintainMilestones.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSMAINTAINUSERS (TVCSMaintainUsers) x jedivcs\MaintainUsers.dfm : comp=0 prop=12 ruido=0
+  PROP VCSMaintainUsers.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSMaintainUsers.Panel3.Panel4.Label1.Left: binario=I:11 | fonte=I:12
+  PROP VCSMaintainUsers.Panel3.Panel4.Label1.Width: binario=I:63 | fonte=I:62
+  PROP VCSMaintainUsers.Panel3.Panel4.Label3.Left: binario=I:9 | fonte=I:6
+  PROP VCSMaintainUsers.Panel3.Panel4.Label3.Width: binario=I:66 | fonte=I:69
+  PROP VCSMaintainUsers.Panel3.Panel4.spBtnEditIP.Left: binario=I:251 | fonte=I:250
+  PROP VCSMaintainUsers.Panel3.Panel4.spBtnEditIP.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSMaintainUsers.Panel3.Panel4.spBtnEditIP.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSMaintainUsers.Panel3.Panel4.spBtnEditIP.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSMaintainUsers.Panel3.Panel4.spBtnEditIP.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSMaintainUsers.Panel3.Panel4.spBtnEditIP.Font.Style: binario=SET:fsbold | fonte=(ausente)
+  PROP VCSMaintainUsers.Panel3.Panel4.spBtnEditIP.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcs / TVCSMANAGEFAVORITES (TVCSManageFavorites) x jedivcs\JVCSManageFavorites.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TVCSMERGE (TVCSMerge) x jedivcs\MergeVersion.dfm : comp=0 prop=8 ruido=0
+  PROP VCSMerge.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSMerge.Panel2.Label3.Left: binario=I:106 | fonte=I:103
+  PROP VCSMerge.Panel2.Label3.Width: binario=I:138 | fonte=I:141
+  PROP VCSMerge.Panel2.Label1.Left: binario=I:170 | fonte=I:167
+  PROP VCSMerge.Panel2.Label1.Width: binario=I:73 | fonte=I:76
+  PROP VCSMerge.Panel2.Label4.Left: binario=I:22 | fonte=I:19
+  PROP VCSMerge.Panel2.Label4.Width: binario=I:71 | fonte=I:74
+  PROP VCSMerge.Panel2.Label2.Width: binario=I:79 | fonte=I:78
+=== jedivcs / TVCSMODMOVE (TVCSModMove) x jedivcs\MoveModules.dfm : comp=0 prop=2 ruido=0
+  PROP VCSModMove.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSModMove.Panel1.Label1.Width: binario=I:38 | fonte=I:39
+=== jedivcs / TVCSMODULEHISTORYWINDOW (TVCSModuleHistoryWindow) x jedivcs\ModuleHistoryWindow.dfm : comp=2 prop=8 ruido=0
+  COMP so no fonte: VCSModuleHistoryWindow.PopupMenu1.BugtrackerSep : TMenuItem
+  COMP so no fonte: VCSModuleHistoryWindow.PopupMenu1.BugtrackerItem : TMenuItem
+  PROP VCSModuleHistoryWindow.Width: binario=I:601 | fonte=(ausente)
+  PROP VCSModuleHistoryWindow.Height: binario=I:173 | fonte=(ausente)
+  PROP VCSModuleHistoryWindow.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSModuleHistoryWindow.ClientHeight: binario=(ausente) | fonte=I:138
+  PROP VCSModuleHistoryWindow.ClientWidth: binario=(ausente) | fonte=I:585
+  PROP VCSModuleHistoryWindow.lvHistory.Width: binario=I:593 | fonte=I:585
+  PROP VCSModuleHistoryWindow.lvHistory.Height: binario=I:146 | fonte=I:138
+  PROP VCSModuleHistoryWindow.StateImageList.Bitmap: binario=B:4390:A2EFBD2A8035 | fonte=B:4390:6C16B6C25824
+=== jedivcs / TVCSOPENPROJECT (TVCSOpenProject) x jedivcs\OpenProject.dfm : comp=0 prop=4 ruido=0
+  PROP VCSOpenProject.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSOpenProject.Label1.Width: binario=I:166 | fonte=I:136
+  PROP VCSOpenProject.Label1.Height: binario=I:13 | fonte=I:26
+  PROP VCSOpenProject.Label2.Width: binario=I:188 | fonte=I:193
+=== jedivcs / TVCSOPTIONS (TVCSOptions) x jedivcs\Options.dfm : comp=14 prop=82 ruido=2
+  COMP so no fonte: VCSOptions.PanelExtBugTrack : TPanel
+  COMP so no fonte: VCSOptions.PanelExtBugTrack.Label16 : TLabel
+  COMP so no fonte: VCSOptions.PanelExtBugTrack.Label8 : TLabel
+  COMP so no fonte: VCSOptions.PanelExtBugTrack.Label28 : TLabel
+  COMP so no fonte: VCSOptions.PanelExtBugTrack.Label29 : TLabel
+  COMP so no fonte: VCSOptions.PanelExtBugTrack.edBugtrackerURL : TEdit
+  COMP so no fonte: VCSOptions.PanelExtBugTrack.edBugtrackerRegEx : TEdit
+  COMP so no fonte: VCSOptions.PanelSaveWIP : TPanel
+  COMP so no fonte: VCSOptions.PanelSaveWIP.Label31 : TLabel
+  COMP so no fonte: VCSOptions.PanelSaveWIP.Label61 : TLabel
+  COMP so no fonte: VCSOptions.PanelSaveWIP.Label30 : TLabel
+  COMP so no fonte: VCSOptions.PanelSaveWIP.Label66 : TLabel
+  COMP so no fonte: VCSOptions.PanelSaveWIP.edSaveWIPcommand : TEdit
+  COMP so no fonte: VCSOptions.PanelSaveWIP.cbSaveWIPauto : TCheckBox
+  PROP VCSOptions.AutoScroll: binario=ID:false | fonte=(ausente)
+  PROP VCSOptions.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSOptions.Label14.Width: binario=I:48 | fonte=I:49
+  PROP VCSOptions.PanelInterface.Label22.Width: binario=I:126 | fonte=I:123
+  PROP VCSOptions.PanelInterface.Label36.Width: binario=I:119 | fonte=I:123
+  PROP VCSOptions.PanelInterface.Label37.Width: binario=I:25 | fonte=I:24
+  PROP VCSOptions.PanelInterface.Label48.Width: binario=I:111 | fonte=I:112
+  PROP VCSOptions.PanelInterface.Label49.Width: binario=I:123 | fonte=I:125
+  PROP VCSOptions.PanelInterface.Label1.Width: binario=I:110 | fonte=I:113
+  PROP VCSOptions.PanelInterface.speSearchTime.Height: binario=I:22 | fonte=I:21
+  PROP VCSOptions.PanelInterface.speSearchTime.MaxValue: binario=I:5000 | fonte=F:5000
+  PROP VCSOptions.PanelInterface.speSearchTime.MinValue: binario=I:500 | fonte=F:500
+  PROP VCSOptions.PanelInterface.speSearchTime.Value: binario=I:500 | fonte=F:500
+  PROP VCSOptions.PanelInterface.ccbxLVOut.Height: binario=I:22 | fonte=I:20
+  PROP VCSOptions.PanelInterface.ccbxLVNA.Height: binario=I:22 | fonte=I:20
+  PROP VCSOptions.PanelInterface.ccbxLVNew.Height: binario=I:22 | fonte=I:20
+  PROP VCSOptions.PanelMRU.Label51.Width: binario=I:40 | fonte=I:38
+  PROP VCSOptions.PanelMRU.Label52.Width: binario=I:37 | fonte=I:39
+  PROP VCSOptions.PanelMRU.speFDlgMRUMax.Height: binario=I:22 | fonte=I:21
+  PROP VCSOptions.PanelMRU.speFDlgMRUMax.MaxValue: binario=I:30 | fonte=F:30
+  PROP VCSOptions.PanelMRU.speFDlgMRUMax.MinValue: binario=I:5 | fonte=F:5
+  PROP VCSOptions.PanelMRU.speFDlgMRUMax.Value: binario=I:5 | fonte=F:5
+  PROP VCSOptions.PanelFolders.Label17.Width: binario=I:139 | fonte=I:143
+  PROP VCSOptions.PanelFolders.Label20.Width: binario=I:136 | fonte=I:137
+  PROP VCSOptions.PanelFolders.Label50.Width: binario=I:128 | fonte=I:131
+  PROP VCSOptions.PanelOptions.Label9.Width: binario=I:130 | fonte=I:135
+  PROP VCSOptions.PanelOptions.speAutoRefresh.Height: binario=I:22 | fonte=I:21
+  PROP VCSOptions.PanelOptions.speAutoRefresh.MaxValue: binario=I:60 | fonte=F:60
+  PROP VCSOptions.PanelOptions.speAutoRefresh.MinValue: binario=I:1 | fonte=F:1
+  PROP VCSOptions.PanelOptions.speAutoRefresh.Value: binario=I:1 | fonte=F:1
+  PROP VCSOptions.PanelTimeStamp.Label4.Width: binario=I:118 | fonte=I:122
+  PROP VCSOptions.PanelTimeStamp.Label5.Width: binario=I:126 | fonte=I:130
+  PROP VCSOptions.PanelTimeStamp.Label33.Width: binario=I:127 | fonte=I:133
+  PROP VCSOptions.PanelBackup.Label35.Width: binario=I:96 | fonte=I:98
+  PROP VCSOptions.PanelBackup.Label3.Width: binario=I:140 | fonte=I:138
+  PROP VCSOptions.PanelBackup.lOlderthan.Width: binario=I:118 | fonte=I:123
+  PROP VCSOptions.PanelBackup.spEraseDays.Height: binario=I:22 | fonte=I:21
+  PROP VCSOptions.PanelBackup.spEraseDays.MaxValue: binario=I:360 | fonte=F:360
+  PROP VCSOptions.PanelBackup.spEraseDays.MinValue: binario=I:1 | fonte=F:1
+  PROP VCSOptions.PanelBackup.spEraseDays.Value: binario=I:30 | fonte=F:30
+  PROP VCSOptions.PanelEncryption.Label2.Width: binario=I:170 | fonte=I:180
+  PROP VCSOptions.PanelEncryption.Label58.Width: binario=I:241 | fonte=I:248
+  PROP VCSOptions.PanelEncryption.Label59.Width: binario=I:86 | fonte=I:90
+  PROP VCSOptions.PanelEncryption.Label60.Width: binario=I:35 | fonte=I:37
+  PROP VCSOptions.PanelEncryption.pwedBFKey.PasswordChar: binario=S:* | fonte=S:Ï
+  PROP VCSOptions.PanelEncryption.pwedBFKeyConfirm.PasswordChar: binario=S:* | fonte=S:Ï
+  PROP VCSOptions.PanelDebug.Label62.Width: binario=I:143 | fonte=I:151
+  PROP VCSOptions.PanelDebug.Label63.Width: binario=I:17 | fonte=I:16
+  PROP VCSOptions.PanelDebug.Label64.Width: binario=I:123 | fonte=I:124
+  PROP VCSOptions.PanelDebug.speSrvTimeOut.Height: binario=I:22 | fonte=I:21
+  PROP VCSOptions.PanelDebug.speSrvTimeOut.MaxValue: binario=I:900 | fonte=F:900
+  PROP VCSOptions.PanelDebug.speSrvTimeOut.MinValue: binario=I:30 | fonte=F:30
+  PROP VCSOptions.PanelDebug.speSrvTimeOut.Value: binario=I:120 | fonte=F:120
+  PROP VCSOptions.PanelIntPrinter.Label42.Width: binario=I:52 | fonte=I:54
+  PROP VCSOptions.PanelIntPrinter.Label43.Width: binario=I:232 | fonte=I:242
+  PROP VCSOptions.PanelIntPrinter.Label46.Width: binario=I:50 | fonte=I:51
+  PROP VCSOptions.PanelIntPrinter.spePrintTM.Height: binario=I:22 | fonte=I:21
+  PROP VCSOptions.PanelIntPrinter.spePrintLM.Height: binario=I:22 | fonte=I:21
+  PROP VCSOptions.PanelEditors.Label10.Width: binario=I:75 | fonte=I:76
+  PROP VCSOptions.PanelEditors.Label13.Width: binario=I:89 | fonte=I:92
+  PROP VCSOptions.PanelEditors.Label12.Width: binario=I:50 | fonte=I:53
+  PROP VCSOptions.PanelEditors.Label11.Width: binario=I:58 | fonte=I:61
+  PROP VCSOptions.PanelExtCompare.Label15.Width: binario=I:169 | fonte=I:183
+  PROP VCSOptions.PanelNotify.Label19.Width: binario=I:14 | fonte=I:18
+  PROP VCSOptions.PanelNotify.Label38.Width: binario=I:73 | fonte=I:78
+  PROP VCSOptions.PanelNotify.NtfyColorCombo.Height: binario=I:22 | fonte=I:20
+  PROP VCSOptions.PanelShortcut.Label25.Width: binario=I:78 | fonte=I:79
+  PROP VCSOptions.PanelShortcut.Label26.Width: binario=I:43 | fonte=I:42
+  PROP VCSOptions.PanelShortcut.Label27.Width: binario=I:51 | fonte=I:50
+  PROP VCSOptions.PanelShortcut.Label32.Width: binario=I:82 | fonte=I:79
+  PROP VCSOptions.PanelShortcut.Label34.Width: binario=I:45 | fonte=I:46
+  PROP VCSOptions.PanelShortcut.edSCProjAdmin.InvalidKeys: binario=SET:hcnone,hcshift | fonte=(ausente)
+  PROP VCSOptions.PanelShortcut.edSCGet.InvalidKeys: binario=SET:hcnone,hcshift | fonte=(ausente)
+  PROP VCSOptions.PanelShortcut.edSCChkIn.InvalidKeys: binario=SET:hcnone,hcshift | fonte=(ausente)
+  PROP VCSOptions.PanelShortcut.edSCChkOut.InvalidKeys: binario=SET:hcnone,hcshift | fonte=(ausente)
+  PROP VCSOptions.PanelShortcut.edSCBckUp.InvalidKeys: binario=SET:hcnone,hcshift | fonte=(ausente)
+  PROP VCSOptions.PanelShortcut.edSCSync.InvalidKeys: binario=SET:hcnone,hcshift | fonte=(ausente)
+  PROP VCSOptions.lbSelectSheet.Items.Strings: binario=L(S:User Interface|S:Common Options|S:Comments|S:Folders|S:Time Stamps|S:Keyword Expans... | fonte=L(S:User Interface|S:Common Options|S:Comments|S:Folders|S:Time Stamps|S:Keyword Expans...
+  PROP VCSOptions.StateImageList.Bitmap: binario=B:4390:55189826AD10 | fonte=B:4390:5A1ED58E13C7
+  PROP VCSOptions.TypeImageList.Bitmap: binario=B:12838:7E17DADEE043 | fonte=B:12838:805BD7A08DA4
+  PROP VCSOptions.FontDialog1.MinFontSize: binario=I:0 | fonte=(ausente)
+  PROP VCSOptions.FontDialog1.MaxFontSize: binario=I:0 | fonte=(ausente)
+=== jedivcs / TVCSPASSWORD (TVCSPassword) x jedivcs\Password.dfm : comp=0 prop=3 ruido=0
+  PROP VCSPassword.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSPassword.GroupBox1.Label1.Width: binario=I:28 | fonte=I:30
+  PROP VCSPassword.GroupBox1.Label2.Width: binario=I:29 | fonte=I:32
+=== jedivcs / TVCSPHISTORYFILTER (TVCSPHistoryFilter) x jedivcs\PHFilter.dfm : comp=0 prop=7 ruido=0
+  PROP VCSPHistoryFilter.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSPHistoryFilter.PageControl1.TabSheet1.Label6.Width: binario=I:36 | fonte=I:38
+  PROP VCSPHistoryFilter.PageControl1.TabSheet3.Label8.Width: binario=I:25 | fonte=I:26
+  PROP VCSPHistoryFilter.PageControl1.TabSheet4.Label3.Left: binario=I:10 | fonte=I:8
+  PROP VCSPHistoryFilter.PageControl1.TabSheet4.Label3.Width: binario=I:26 | fonte=I:28
+  PROP VCSPHistoryFilter.PageControl1.TabSheet4.Label5.Width: binario=I:181 | fonte=I:185
+  PROP VCSPHistoryFilter.PageControl1.TabSheet5.Label2.Width: binario=I:38 | fonte=I:39
+=== jedivcs / TVCSPLUGIN (TVCSPlugin) x jedivcs\Plugins.dfm : comp=0 prop=1 ruido=0
+  PROP VCSPlugin.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSPROGRESS (TVCSProgress) x jedivcs\Progress.dfm : comp=0 prop=2 ruido=0
+  PROP VCSProgress.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSProgress.Panel1.Label1.Width: binario=I:32 | fonte=I:31
+=== jedivcs / TVCSPROJADMIN (TVCSProjAdmin) x jedivcs\ProjAdmin.dfm : comp=2 prop=36 ruido=0
+  COMP so no fonte: VCSProjAdmin.PopupMenu1.miCompareAllLocalArchive : TMenuItem
+  COMP so no fonte: VCSProjAdmin.ActionList1.acCompareAllLocalArchive : TAction
+  PROP VCSProjAdmin.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSProjAdmin.ControlBar1.TBModule.Label2.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.Label2.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.Label2.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.Label2.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.Label2.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.Label2.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.edSearch.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.edSearch.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.edSearch.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.edSearch.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.edSearch.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.edSearch.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton3.Left: binario=I:160 | fonte=I:162
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton4.Left: binario=I:197 | fonte=I:201
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton5.Left: binario=I:221 | fonte=I:225
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton6.Left: binario=I:229 | fonte=I:233
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton7.Left: binario=I:253 | fonte=I:257
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton10.Left: binario=I:277 | fonte=I:281
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton24.Left: binario=I:301 | fonte=I:305
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton18.Left: binario=I:325 | fonte=I:329
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton17.Left: binario=I:333 | fonte=I:337
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton11.Left: binario=I:357 | fonte=I:361
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton9.Left: binario=I:365 | fonte=I:369
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton13.Left: binario=I:389 | fonte=I:393
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton12.Left: binario=I:413 | fonte=I:417
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton14.Left: binario=I:421 | fonte=I:425
+  PROP VCSProjAdmin.ControlBar1.TBModule.ToolButton19.Left: binario=I:445 | fonte=I:449
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.ButtonWidth: binario=I:50 | fonte=I:44
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.Flat: binario=ID:true | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSProjAdmin.ControlBar1.MenuBar1.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcs / TVCSPROJECTDEPENDENCIES (TVCSProjectDependencies) x jedivcs\ProjDependencies.dfm : comp=0 prop=1 ruido=0
+  PROP VCSProjectDependencies.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSPROJECTHISTORY (TVCSProjectHistory) x jedivcs\ProjectHist.dfm : comp=0 prop=1 ruido=0
+  PROP VCSProjectHistory.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSPROJECTRIGHTS (TVCSProjectRights) x jedivcs\ProjectRights.dfm : comp=0 prop=2 ruido=0
+  PROP VCSProjectRights.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSProjectRights.Panel3.Label4.Width: binario=I:358 | fonte=I:370
+=== jedivcs / TVCSPROJECTTREE (TVCSProjectTree) x jedivcs\ProjectTree.dfm : comp=0 prop=1 ruido=0
+  PROP VCSProjectTree.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSPURGE (TVCSPurge) x jedivcs\Purge.dfm : comp=0 prop=3 ruido=0
+  PROP VCSPurge.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSPurge.lblPurgeProj.Width: binario=I:56 | fonte=I:57
+  PROP VCSPurge.SpinEditRevisions.Height: binario=I:22 | fonte=I:21
+=== jedivcs / TVCSREMOVEPROJ (TVCSRemoveProj) x jedivcs\RemoveProj.dfm : comp=0 prop=1 ruido=0
+  PROP VCSRemoveProj.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSRENAMEPROJ (TVCSRenameProj) x jedivcs\RenameProj.dfm : comp=0 prop=1 ruido=0
+  PROP VCSRenameProj.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSSEARCHMODULES (TVCSSearchModules) x jedivcs\SearchModules.dfm : comp=0 prop=2 ruido=0
+  PROP VCSSearchModules.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSSearchModules.Panel1.Label1.Width: binario=I:149 | fonte=I:153
+=== jedivcs / TVCSSELCROSSREF (TVCSSelCrossRef) x jedivcs\CrossRefList.dfm : comp=0 prop=0 ruido=0
+=== jedivcs / TVCSSELECTDRIVE (TVCSSelectDrive) x jedivcs\SelectDrive.dfm : comp=0 prop=2 ruido=0
+  PROP VCSSelectDrive.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSSelectDrive.Label1.Width: binario=I:247 | fonte=I:250
+=== jedivcs / TVCSSELECTFOLDER (TVCSSelectFolder) x jedivcs\SelectFolder.dfm : comp=0 prop=1 ruido=0
+  PROP VCSSelectFolder.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSSELECTLIST (TVCSSelectList) x jedivcs\SelectList.dfm : comp=0 prop=1 ruido=0
+  PROP VCSSelectList.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSSELECTPROJECT (TVCSSelectProject) x jedivcs\SelectProjectID.dfm : comp=0 prop=1 ruido=0
+  PROP VCSSelectProject.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSSERVEROPTIONS (TVCSServerOptions) x jedivcs\ServerOptions.dfm : comp=0 prop=17 ruido=0
+  PROP VCSServerOptions.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSServerOptions.PageControl1.TabSheet1.Label1.Width: binario=I:91 | fonte=I:93
+  PROP VCSServerOptions.PageControl1.TabSheet1.Label2.Width: binario=I:63 | fonte=I:64
+  PROP VCSServerOptions.PageControl1.TabSheet1.Label5.Width: binario=I:17 | fonte=I:16
+  PROP VCSServerOptions.PageControl1.TabSheet1.speLoginTO.Height: binario=I:22 | fonte=I:21
+  PROP VCSServerOptions.PageControl1.TabSheet1.speConnectTO.Height: binario=I:22 | fonte=I:21
+  PROP VCSServerOptions.PageControl1.TabSheet2.Label4.Width: binario=I:158 | fonte=I:152
+  PROP VCSServerOptions.PageControl1.TabSheet3.Label12.Width: binario=I:110 | fonte=I:111
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label8.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label8.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label8.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label8.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label8.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label8.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label7.Width: binario=I:63 | fonte=I:61
+  PROP VCSServerOptions.PageControl1.TabSheet4.lblLastBackup.Width: binario=I:67 | fonte=I:64
+  PROP VCSServerOptions.PageControl1.TabSheet4.Label9.Width: binario=I:110 | fonte=I:111
+=== jedivcs / TVCSSHOWTIMELOG (TVCSShowTimeLog) x jedivcs\ShowTimeLog.dfm : comp=0 prop=3 ruido=0
+  PROP VCSShowTimeLog.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSShowTimeLog.Panel1.Label4.Left: binario=I:11 | fonte=I:9
+  PROP VCSShowTimeLog.Panel1.Label4.Width: binario=I:22 | fonte=I:24
+=== jedivcs / TVCSSIMPLEREPORT (TVCSSimpleReport) x jedivcs\SimpleReport.dfm : comp=0 prop=1 ruido=0
+  PROP VCSSimpleReport.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSSTDLISTVIEW (TVCSStdListView) x jedivcs\Std_ListView.dfm : comp=0 prop=1 ruido=0
+  PROP VCSStdListView.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSSYNC (TVCSSync) x jedivcs\Syncronice.dfm : comp=0 prop=7 ruido=0
+  PROP VCSSync.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSSync.Panel5.PageControl1.SheetVer.Panel7.Label1.Left: binario=I:4 | fonte=I:3
+  PROP VCSSync.Panel5.PageControl1.SheetVer.Panel7.Label1.Width: binario=I:38 | fonte=I:39
+  PROP VCSSync.Panel5.PageControl1.SheetVer.Panel7.speVer.Height: binario=I:22 | fonte=I:21
+  PROP VCSSync.Panel5.PageControl1.SheetVer.Panel7.speRev.Height: binario=I:22 | fonte=I:21
+  PROP VCSSync.Panel5.PageControl1.SheetRollBack..Date.Left: binario=I:4 | fonte=I:3
+  PROP VCSSync.Panel5.PageControl1.SheetRollBack..Date.Width: binario=I:26 | fonte=I:27
+=== jedivcs / TVCSTEXTCOMPARE (TVCSTextCompare) x jedivcs\TextComp.dfm : comp=0 prop=35 ruido=0
+  PROP VCSTextCompare.Font.Color: binario=ID:clblack | fonte=ID:clwindowtext
+  PROP VCSTextCompare.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSTextCompare.Label1.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSTextCompare.Label1.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSTextCompare.Label1.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSTextCompare.Label1.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSTextCompare.Label1.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSTextCompare.Label1.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSTextCompare.Label2.Left: binario=I:30 | fonte=I:32
+  PROP VCSTextCompare.Label2.Width: binario=I:26 | fonte=I:24
+  PROP VCSTextCompare.Label5.Width: binario=I:95 | fonte=I:97
+  PROP VCSTextCompare.btnClose.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSTextCompare.btnClose.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSTextCompare.btnClose.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSTextCompare.btnClose.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSTextCompare.btnClose.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSTextCompare.btnClose.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSTextCompare.btnCompare.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSTextCompare.btnCompare.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSTextCompare.btnCompare.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSTextCompare.btnCompare.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSTextCompare.btnCompare.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSTextCompare.btnCompare.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSTextCompare.cbArch2.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSTextCompare.cbArch2.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSTextCompare.cbArch2.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSTextCompare.cbArch2.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSTextCompare.cbArch2.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSTextCompare.cbArch2.ParentFont: binario=ID:false | fonte=(ausente)
+  PROP VCSTextCompare.cbArchVers.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSTextCompare.cbArchVers.Font.Color: binario=ID:clblack | fonte=(ausente)
+  PROP VCSTextCompare.cbArchVers.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSTextCompare.cbArchVers.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSTextCompare.cbArchVers.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSTextCompare.cbArchVers.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcs / TVCSTLFILTER (TVCSTLFilter) x jedivcs\TimeLogFilter.dfm : comp=0 prop=5 ruido=0
+  PROP VCSTLFilter.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSTLFilter.Label1.Left: binario=I:4 | fonte=I:3
+  PROP VCSTLFilter.Label1.Width: binario=I:58 | fonte=I:59
+  PROP VCSTLFilter.Label3.Left: binario=I:16 | fonte=I:14
+  PROP VCSTLFilter.Label3.Width: binario=I:47 | fonte=I:49
+=== jedivcs / TVCSTODO (TVCSToDo) x jedivcs\ToDo.dfm : comp=0 prop=1 ruido=0
+  PROP VCSToDo.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcs / TVCSTODOEDIT (TVCSToDoEdit) x jedivcs\ToDoEdit.dfm : comp=0 prop=10 ruido=0
+  PROP VCSToDoEdit.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSToDoEdit.pnlHead.Label1.Left: binario=I:6 | fonte=I:7
+  PROP VCSToDoEdit.pnlHead.Label1.Width: binario=I:34 | fonte=I:38
+  PROP VCSToDoEdit.pnlHead.Label1.Alignment: binario=ID:tarightjustify | fonte=(ausente)
+  PROP VCSToDoEdit.pnlHead.Label2.Left: binario=I:128 | fonte=I:127
+  PROP VCSToDoEdit.pnlHead.Label2.Width: binario=I:26 | fonte=I:27
+  PROP VCSToDoEdit.pnlHead.Label5.Width: binario=I:55 | fonte=I:57
+  PROP VCSToDoEdit.pnlHead.Label7.Width: binario=I:45 | fonte=I:49
+  PROP VCSToDoEdit.pnlHead.Label8.Width: binario=I:36 | fonte=I:38
+  PROP VCSToDoEdit.pnlHead.spePriority.Height: binario=I:22 | fonte=I:21
+=== jedivcs / TVCSTODOFILTER (TVCSToDoFilter) x jedivcs\ToDoFilter.dfm : comp=0 prop=7 ruido=0
+  PROP VCSToDoFilter.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSToDoFilter.PageControl1.TabSheet1.Label3.Width: binario=I:36 | fonte=I:38
+  PROP VCSToDoFilter.PageControl1.TabSheet3.Label5.Width: binario=I:25 | fonte=I:26
+  PROP VCSToDoFilter.PageControl1.TabSheet4.Label4.Width: binario=I:68 | fonte=I:71
+  PROP VCSToDoFilter.PageControl1.TabSheet5.Label1.Width: binario=I:45 | fonte=I:49
+  PROP VCSToDoFilter.PageControl1.TabSheet5.Label2.Left: binario=I:39 | fonte=I:35
+  PROP VCSToDoFilter.PageControl1.TabSheet5.Label2.Width: binario=I:34 | fonte=I:38
+=== jedivcs / TVCSTOUCH (TVCSTouch) x jedivcs\Touch.dfm : comp=0 prop=4 ruido=0
+  PROP VCSTouch.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSTouch.Panel1.Panel3.Label1.Width: binario=I:341 | fonte=I:348
+  PROP VCSTouch.Panel2.Label2.Left: binario=I:8 | fonte=I:7
+  PROP VCSTouch.Panel2.Label2.Width: binario=I:29 | fonte=I:30
+=== jedivcs / TVCSUNITFILTER (TVCSUnitFilter) x jedivcs\UnitFilter.dfm : comp=0 prop=4 ruido=0
+  PROP VCSUnitFilter.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSUnitFilter.GroupBox1.Label1.Width: binario=I:52 | fonte=I:56
+  PROP VCSUnitFilter.GroupBox1.Label2.Width: binario=I:47 | fonte=I:48
+  PROP VCSUnitFilter.GroupBox1.lblItems.Width: binario=I:35 | fonte=I:37
+=== jedivcs / TVCSUSEDUNITS (TVCSUsedUnits) x jedivcs\UsedUnits.dfm : comp=0 prop=2 ruido=0
+  PROP VCSUsedUnits.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSUsedUnits.Panel1.Label1.Width: binario=I:66 | fonte=I:67
+=== jedivcs / TVCSWAITFORSERVER (TVCSWaitforServer) x jedivcs\WaitforServer.dfm : comp=0 prop=3 ruido=0
+  PROP VCSWaitforServer.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSWaitforServer.Label1.Width: binario=I:192 | fonte=I:200
+  PROP VCSWaitforServer.Label2.Width: binario=I:95 | fonte=I:92
+=== jedivcs / TVCSWCVIEWFILTER (TVCSWCViewFilter) x jedivcs\WCViewFilter.dfm : comp=0 prop=5 ruido=0
+  PROP VCSWCViewFilter.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSWCViewFilter.PageControl1.SheetWC.Label1.Width: binario=I:83 | fonte=I:86
+  PROP VCSWCViewFilter.PageControl1.SheetWC.Label2.Width: binario=I:81 | fonte=I:86
+  PROP VCSWCViewFilter.PageControl1.SheetStatus.Label3.Left: binario=I:30 | fonte=I:28
+  PROP VCSWCViewFilter.PageControl1.SheetStatus.Label3.Width: binario=I:41 | fonte=I:43
+=== jedivcs / TVCSWHOAMI (TVCSWhoami) x jedivcs\Whoami.dfm : comp=0 prop=33 ruido=0
+  PROP VCSWhoami.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSWhoami.Label1.Left: binario=I:98 | fonte=I:96
+  PROP VCSWhoami.Label1.Width: binario=I:63 | fonte=I:65
+  PROP VCSWhoami.Label3.Left: binario=I:63 | fonte=I:61
+  PROP VCSWhoami.Label3.Width: binario=I:99 | fonte=I:101
+  PROP VCSWhoami.Label4.Left: binario=I:94 | fonte=I:92
+  PROP VCSWhoami.Label4.Width: binario=I:67 | fonte=I:69
+  PROP VCSWhoami.Label5.Left: binario=I:85 | fonte=I:84
+  PROP VCSWhoami.Label5.Width: binario=I:76 | fonte=I:77
+  PROP VCSWhoami.Label6.Left: binario=I:73 | fonte=I:70
+  PROP VCSWhoami.Label6.Width: binario=I:87 | fonte=I:90
+  PROP VCSWhoami.Label7.Left: binario=I:79 | fonte=I:76
+  PROP VCSWhoami.Label7.Width: binario=I:82 | fonte=I:85
+  PROP VCSWhoami.Label8.Left: binario=I:80 | fonte=I:74
+  PROP VCSWhoami.Label8.Width: binario=I:81 | fonte=I:87
+  PROP VCSWhoami.Label9.Left: binario=I:62 | fonte=I:60
+  PROP VCSWhoami.Label9.Width: binario=I:99 | fonte=I:101
+  PROP VCSWhoami.lblUser.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblDefaultRight.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblProjectRight.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblServer.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblArchive.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblStoredIP.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblCurrentIP.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblLogin.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblLoginRemain.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.Label10.Left: binario=I:87 | fonte=I:85
+  PROP VCSWhoami.Label10.Width: binario=I:74 | fonte=I:76
+  PROP VCSWhoami.lblServerLoc.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.Label11.Left: binario=I:75 | fonte=I:68
+  PROP VCSWhoami.Label11.Width: binario=I:85 | fonte=I:92
+  PROP VCSWhoami.lblProject.Width: binario=I:15 | fonte=I:14
+  PROP VCSWhoami.lblServerLogin.Width: binario=I:15 | fonte=I:14
+=== jedivcs / TVCSYES2ALLDLG (TVCSYes2AllDlg) x jedivcs\Yes2allDlg.dfm : comp=0 prop=7 ruido=0
+  PROP VCSYes2AllDlg.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSYes2AllDlg.Label1.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSYes2AllDlg.Label1.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSYes2AllDlg.Label1.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSYes2AllDlg.Label1.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSYes2AllDlg.Label1.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSYes2AllDlg.Label1.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcsdiff / TCUSTOMKW (TCustomKW) x jedivcsdiff\DiffCustomKW.dfm : comp=0 prop=1 ruido=0
+  PROP CustomKW.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== jedivcsdiff / TDATAMODULE1 (TDataModule1) x jedivcs\DBModule.dfm : comp=0 prop=0 ruido=0
+=== jedivcsdiff / TFM_EDITORPROP (Tfm_EditorProp) x jedivcsdiff\DiffEditorProp.dfm : comp=0 prop=18 ruido=0
+  PROP fm_EditorProp.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP fm_EditorProp.Label1.Width: binario=I:49 | fonte=I:48
+  PROP fm_EditorProp.Label4.Width: binario=I:62 | fonte=I:59
+  PROP fm_EditorProp.Label3.Width: binario=I:53 | fonte=I:52
+  PROP fm_EditorProp.Label2.Width: binario=I:51 | fonte=I:53
+  PROP fm_EditorProp.Label5.Width: binario=I:99 | fonte=I:97
+  PROP fm_EditorProp.Label6.Width: binario=I:96 | fonte=I:98
+  PROP fm_EditorProp.Label7.Width: binario=I:102 | fonte=I:100
+  PROP fm_EditorProp.Label8.Width: binario=I:47 | fonte=I:48
+  PROP fm_EditorProp.Label10.Width: binario=I:50 | fonte=I:49
+  PROP fm_EditorProp.speMaxUndo.Height: binario=I:22 | fonte=I:21
+  PROP fm_EditorProp.speLineSpacing.Height: binario=I:22 | fonte=I:21
+  PROP fm_EditorProp.speRightEdge.Height: binario=I:22 | fonte=I:21
+  PROP fm_EditorProp.cocbxWinBack.Height: binario=I:22 | fonte=I:20
+  PROP fm_EditorProp.cocbxSelFore.Height: binario=I:22 | fonte=I:20
+  PROP fm_EditorProp.cocbxSelBack.Height: binario=I:22 | fonte=I:20
+  PROP fm_EditorProp.cocbxText.Height: binario=I:22 | fonte=I:20
+  PROP fm_EditorProp.speTabWidth.Height: binario=I:22 | fonte=I:21
+=== jedivcsdiff / TFM_HIGHLIGHTPROP (Tfm_HighLightProp) x jedivcsdiff\DiffHLProp.dfm : comp=0 prop=8 ruido=0
+  PROP fm_HighLightProp.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP fm_HighLightProp.Label6.Width: binario=I:53 | fonte=I:55
+  PROP fm_HighLightProp.Label22.Width: binario=I:42 | fonte=I:47
+  PROP fm_HighLightProp.Label23.Width: binario=I:83 | fonte=I:86
+  PROP fm_HighLightProp.Label24.Width: binario=I:87 | fonte=I:86
+  PROP fm_HighLightProp.Label5.Width: binario=I:38 | fonte=I:41
+  PROP fm_HighLightProp.cocbxAttrForeground.Height: binario=I:22 | fonte=I:20
+  PROP fm_HighLightProp.cocbxAttrBackground.Height: binario=I:22 | fonte=I:20
+=== jedivcsdiff / TFM_MAIN (Tfm_Main) x jedivcsdiff\DiffMain.dfm : comp=0 prop=22 ruido=0
+  PROP fm_Main.Font.Color: binario=ID:clblack | fonte=ID:clwindowtext
+  PROP fm_Main.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP fm_Main.Panel7.ToolBar1.ToolButton26.Left: binario=I:140 | fonte=I:148
+  PROP fm_Main.Panel7.ToolBar1.ToolButton7.Left: binario=I:163 | fonte=I:171
+  PROP fm_Main.Panel7.ToolBar1.ToolButton8.Left: binario=I:171 | fonte=I:179
+  PROP fm_Main.Panel7.ToolBar1.ToolButton9.Left: binario=I:194 | fonte=I:202
+  PROP fm_Main.Panel7.ToolBar1.ToolButton10.Left: binario=I:217 | fonte=I:225
+  PROP fm_Main.Panel7.ToolBar1.ToolButton11.Left: binario=I:240 | fonte=I:248
+  PROP fm_Main.Panel7.ToolBar1.ToolButton12.Left: binario=I:263 | fonte=I:271
+  PROP fm_Main.Panel7.ToolBar1.ToolButton13.Left: binario=I:271 | fonte=I:279
+  PROP fm_Main.Panel7.ToolBar1.ToolButton14.Left: binario=I:307 | fonte=I:317
+  PROP fm_Main.Panel7.ToolBar1.ToolButton15.Left: binario=I:330 | fonte=I:340
+  PROP fm_Main.Panel7.ToolBar1.ToolButton16.Left: binario=I:338 | fonte=I:348
+  PROP fm_Main.Panel7.ToolBar1.ToolButton17.Left: binario=I:361 | fonte=I:371
+  PROP fm_Main.Panel7.ToolBar1.cbxHighlighter.Left: binario=I:369 | fonte=I:379
+  PROP fm_Main.Panel7.ToolBar1.ToolButton19.Left: binario=I:569 | fonte=I:579
+  PROP fm_Main.Panel7.ToolBar1.ToolButton20.Left: binario=I:592 | fonte=I:602
+  PROP fm_Main.Panel7.ToolBar1.ToolButton1.Left: binario=I:600 | fonte=I:610
+  PROP fm_Main.Panel7.ToolBar1.ToolButton25.Left: binario=I:623 | fonte=I:633
+  PROP fm_Main.Panel7.ToolBar1.ToolButton21.Left: binario=I:631 | fonte=I:641
+  PROP fm_Main.Panel6.HexViewPanel.Panel8.HexViewLabel.Width: binario=I:68 | fonte=I:66
+  PROP fm_Main.Panel6.WholeLinePanel.Panel9.WholeLineLabel.Width: binario=I:77 | fonte=I:74
+=== jedivcsdiff / TJVCSBASEABOUTDLG (TJVCSBaseAboutDlg) x common\JVCSBaseAboutDialog.dfm : comp=0 prop=0 ruido=0
+=== jedivcsdiff / TJVCSDIFFABOUT (TJVCSDiffAbout) x jedivcsdiff\DiffAbout.dfm : comp=0 prop=0 ruido=0
+=== jedivcsdiff / TVCSLISTVIEW (TVCSListView) x jedivcs\ListView.dfm : comp=0 prop=7 ruido=0
+  PROP VCSListView.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+  PROP VCSListView.Memo1.Font.Charset: binario=ID:default_charset | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Color: binario=ID:clwindowtext | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Height: binario=I:-11 | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Name: binario=S:MS Sans Serif | fonte=(ausente)
+  PROP VCSListView.Memo1.Font.Style: binario=SET: | fonte=(ausente)
+  PROP VCSListView.Memo1.ParentFont: binario=ID:false | fonte=(ausente)
+=== jedivcsdiff / TVCSSIMPLEREPORT (TVCSSimpleReport) x jedivcsdiff\DiffSimpleReport.dfm : comp=0 prop=1 ruido=0
+  PROP VCSSimpleReport.Font.Name: binario=S:MS Sans Serif | fonte=S:Tahoma
+=== .dfm do fonte SEM recurso em nenhum binario:
+  jedivcs\UsedComponents.dfm (TVCSUsedComponents)
+  jedivcs\VerSet.dfm (TVCSVerSet)
+  common\JVCSDebugView.dfm (TfmClientDebugView)
+  jedivcs\Recent.dfm (TVCSRecentProjects)
