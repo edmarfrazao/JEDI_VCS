@@ -5,6 +5,8 @@
 /bin/client/**/*.rsm
 /bin/client/**/*.drc
 /bin/client/**/*.chm
+/bin/client/**/*.jvcs
+/bin/msbuild/
 /dcu/
 /lib/
 /setup/Output/
