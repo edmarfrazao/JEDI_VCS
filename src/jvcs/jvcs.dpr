@@ -159,6 +159,7 @@ uses
   , JVCSNewClientObj in '..\common\client\JVCSNewClientObj.pas'
   , JclStrings
   , VCSCommon in '..\common\VCSCommon.pas'
+  , JVCSAppVersion in '..\common\JVCSAppVersion.pas'
   , RFormat;
 
 const
@@ -3492,7 +3493,9 @@ begin
   VersionInfo := TJclFileVersionInfo.Create(ParamStr(0));
   try
     with VersionInfo do
-      Writeln(FileDescription, ' ', FileVersion, ' (', CompanyName, ')');
+      // v2026: "JEDI VCS console client 2.5.0 Beta 5 - build 2050 (...)" (InternalVersion
+      // + build do FILEVERSION; ASCII: a console nao tem o travessao)
+      Writeln(FileDescription, ' ', JVCSVersionLabel(ParamStr(0)), ' (', CompanyName, ')');
       // JVCS 2026: exigido pela licenca do MidWare (clausula 2)
       Writeln('This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.');
       Writeln;

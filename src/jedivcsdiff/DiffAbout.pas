@@ -67,7 +67,7 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  DiffUtils, JVCSUIScale, JVCSDiffResources;
+  DiffUtils, JVCSUIScale, JVCSDiffResources, JVCSAppVersion;
 
 procedure ShowDiffAboutForm;
 begin
@@ -157,7 +157,9 @@ var
   DT: TDateTime;
 begin
   LFileName := Application.ExeName;
-  Ver := DiffFileVersionValue(LFileName, 'ProductVersion');
+  // v2026: "2.5.0 Beta 5 - build 2050" (InternalVersion + build do FILEVERSION;
+  // o ProductVersion textual e "2.5.0.0", como no original)
+  Ver := JVCSVersionLabel(LFileName, ' ' + #$2013 + ' ');
   Stamp := DiffFileVersionValue(LFileName, 'BuildTimestamp');
   Msg := JVCSRES_JEDI_VCS_Diff47Merge_Utility_ {$IFDEF BETAVER} + JVCSRES_Beta {$ENDIF};
   Msg := Msg + 'V ' + Ver;

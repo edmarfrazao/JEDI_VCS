@@ -1417,9 +1417,9 @@ var
   slVersions: TStringList;
   JclFileVersionInfo: TJclFileVersionInfo;
 begin
-  // v2026: o ProductVersion textual agora e "2.5 Beta 2026"; a versao do LOGIN
-  // vem do PRODUCTVERSION numerico (2,5,0,2026 -> 2*100 + 5*10 + 0 = 250, igual
-  // ao 2.5.0.1030).
+  // v2026: a versao do LOGIN vem do PRODUCTVERSION numerico, FIXO em 2,5,0,0
+  // (tools\versao.ini nao mexe nele): 2*100 + 5*10 + 0 = 250, igual ao 2.5.0.1030.
+  // O 4o campo e ignorado; a beta/build fica so no FILEVERSION (2,5,0,<Build>).
   JclFileVersionInfo := TJclFileVersionInfo.Create(GetSelfFileName);
   try
     sVer := Format('%d.%d.%d.%d',

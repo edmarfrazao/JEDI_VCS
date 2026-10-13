@@ -175,12 +175,14 @@ implementation
 
 uses
   System.Win.Registry, Vcl.Forms, JVCSExpertABI, JVCSExpertUtils,
-  JVCSExpertCallbacks, JVCSExpertHistory, JVCSExpertProjMenu, FileHistoryAPI;
+  JVCSExpertCallbacks, JVCSExpertHistory, JVCSExpertProjMenu, FileHistoryAPI,
+  JVCSAppVersion;
 
 const
   WM_JVCS_REBUILD = WM_USER + $4A1;
   WM_JVCS_EXECUTE = WM_USER + $4A2;
-  cPluginTitle = 'JEDI Version Control System 2.5 Beta 2026';
+  // titulo no splash/About da IDE: + " 2.5.0 Beta 5 - build 2050" (JvcsPluginTitle)
+  cPluginTitle = 'JEDI Version Control System';
   cPluginLicense = 'MPL 1.1';
   cDeferTimerID = $4A1;
   cDeferTimerMs = 500;
@@ -273,6 +275,29 @@ begin
   end;
 end;
 
+{ ---- versao (VERSIONINFO do proprio expert: tools\versao.ini) ------------- }
+
+// "2.5.0 Beta 5 - build 2050" (JVCSAppVersion: InternalVersion + build do FILEVERSION)
+function JvcsExpertVersionLabel: string;
+begin
+  try
+    Result := JVCSVersionLabel(JVCSModuleFileName);
+  except
+    Result := '';
+  end;
+end;
+
+function JvcsPluginTitle: string;
+var
+  Ver: string;
+begin
+  Ver := JvcsExpertVersionLabel;
+  if Ver <> '' then
+    Result := cPluginTitle + ' ' + Ver
+  else
+    Result := cPluginTitle;
+end;
+
 procedure RegisterSplashAndAbout;
 var
   Splash: IOTASplashScreenServices270;
@@ -283,7 +308,7 @@ begin
     Splash := nil;
     if Supports(IdeSplashScreenServices, IOTASplashScreenServices270, Splash) then
     begin
-      Splash.AddPluginBitmap(cPluginTitle, CreatePluginBitmapHandle, False,
+      Splash.AddPluginBitmap(JvcsPluginTitle, CreatePluginBitmapHandle, False,
         cPluginLicense, '');
       Splash.StatusMessage('Initializing JEDI Version Control System');
     end;
@@ -294,8 +319,8 @@ begin
     if Supports(BorlandIDEServices, IOTAAboutBoxServices, AboutSvc) then
     begin
       About120 := AboutSvc;
-      GAboutIndex := About120.AddPluginInfo(cPluginTitle,
-        'JEDI VCS 2.5 Beta 2026 - IDE Expert: ponte entre a ToolsAPI e a ' +
+      GAboutIndex := About120.AddPluginInfo(JvcsPluginTitle,
+        'JEDI VCS ' + JvcsExpertVersionLabel + ' - IDE Expert: ponte entre a ToolsAPI e a ' +
         'JvcsExternalDll.dll do JEDI VCS 2.5 (cliente Delphi 2007, ANSI).',
         CreatePluginBitmapHandle, False, cPluginLicense, '');
     end;
@@ -453,8 +478,9 @@ begin
   FMsgWnd := AllocateHWnd(WndProc);
 
   JvcsInitDpiSupport;
-  JvcsLogFmt('JVCS Expert iniciando (%s, BDS %s, DPI=%s)',
-    [GetModuleName(HInstance), FloatToStr(CompilerVersion), JvcsDpiModeDescription]);
+  JvcsLogFmt('JVCS Expert iniciando (versao %s - %s, %s, BDS %s, DPI=%s)',
+    [JVCSVersionString(JVCSModuleFileName, 'FileVersion'), JvcsExpertVersionLabel,
+     GetModuleName(HInstance), FloatToStr(CompilerVersion), JvcsDpiModeDescription]);
 
   FBridge := TJVCSDllBridge.Create;
   JVCSBridge := FBridge;

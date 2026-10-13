@@ -114,7 +114,7 @@ var
 implementation
 
 uses
-  ShellAPI, JVCSFunctions, VCSCommon;
+  ShellAPI, JVCSFunctions, VCSCommon, JVCSAppVersion;
 
 {$R *.dfm}
 
@@ -161,7 +161,9 @@ begin
     ReadVersionString(GetSelfFileName, 'ProductVersion', ProductVersion) then
   begin
     ReadVersionString(GetSelfFileName, 'BuildTimestamp', BuildTimestamp);
-    lblProductVersion.Caption := 'V ' + ProductVersion +
+    // v2026: "V 2.5.0 Beta 5 - build 2050 - Buildtime ..." (o ProductVersion
+    // textual e "2.5.0.0", como no original; InternalVersion + build dizem a beta)
+    lblProductVersion.Caption := 'V ' + JVCSVersionLabel(GetSelfFileName, ' ' + #$2013 + ' ') +
       ' - Buildtime ' + BuildTimestamp;
     pnWarning.Visible := (Pos('dev', lblProductVersion.Caption) > 0);
   end

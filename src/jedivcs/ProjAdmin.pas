@@ -1144,7 +1144,7 @@ uses
   ProjectHist, WCViewFilter, NtfySend, CrossRefList, CheckfBuild, MoveModules,
   RenameProj, RemoveProj, Purge, ProjectTree, DBModule, MaintainLabels, ClipBrd,
   AssignLabels, AddShareModule, MaintainFFamilies, Description, SelectProjectID,
-  MaintainUsers, ServerOptions, JVCSUITheme,
+  MaintainUsers, ServerOptions, JVCSUITheme, JVCSAppVersion,
   {$IFNDEF REPORTDLL}
   {$IFNDEF JVCS_NOREPORTS}
   Report,
@@ -6274,7 +6274,9 @@ var
   CaptionStr: string;
 begin
   // 1. Application
-  CaptionStr := JVCSRES_JEDI_VCS_ + '('+GetJVCSAppFileVersion + ')';
+  // v2026: "JEDI VCS (2.5.0 Beta 5 - build 2050)" (InternalVersion + build do
+  // FILEVERSION, lidos do VERSIONINFO deste modulo - EXE ou DLL)
+  CaptionStr := JVCSRES_JEDI_VCS_ + '(' + JVCSVersionLabel(JVCSModuleFileName, ' ' + #$2013 + ' ') + ')';
   if sIdentityCaption <> '' then
     CaptionStr := CaptionStr + ' >> ' + sIdentityCaption;
   // 2. Branch

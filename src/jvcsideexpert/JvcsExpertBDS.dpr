@@ -54,6 +54,7 @@ uses
   ToolsAPI,
   JVCSExpertABI in 'JVCSExpertABI.pas',
   JVCSExpertUtils in 'JVCSExpertUtils.pas',
+  JVCSAppVersion in '..\common\JVCSAppVersion.pas',
   JVCSExpertCallbacks in 'JVCSExpertCallbacks.pas',
   JVCSExpertDllBridge in 'JVCSExpertDllBridge.pas',
   JVCSExpertNotifiers in 'JVCSExpertNotifiers.pas',
