@@ -93,6 +93,9 @@ begin
   JVCSUIRefreshHostTheme;
   JVCSInstallHostMenuFix;
   JVCSFormsOwnerClass := 'TAppBuilder';
+  // dona da janela propria de Application.Handle (MessageBox e dialogos da
+  // DLL ficam acima da IDE desde o INIT)
+  JVCSSyncOwnAppWindowOwner;
   {$ENDIF IDEDLL}
   JVCSUIThemeInitialize;
   {$IFNDEF IDEDLL}

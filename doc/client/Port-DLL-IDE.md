@@ -188,10 +188,101 @@ os forms da DLL eram *owned* por ela. Desde que a IDE usa `MainFormOnTaskBar`, a
 `TAppBuilder`, e o Windows não traz as janelas da DLL junto com ela. Correção (`TJVCSForm.CreateParams`,
 `JVCSFormsOwnerClass = 'TAppBuilder'` só na DLL): quando a dona seria `Application.Handle`, passa a ser a
 janela `TAppBuilder` visível do thread. Os forms ficam acima da IDE, minimizam/restauram com ela e não
-aparecem na barra de tarefas. `Application.Handle` não muda (ele é usado em `MessageBox` e por
-`Application.Title/Icon`, que mexeriam na janela da IDE). Diálogos modais continuam com dono = form ativo.
+aparecem na barra de tarefas. Diálogos modais continuam com dono = form ativo.
 Conferido no host interativo: `GetWindow(GW_OWNER)` do login, do Project Manager e do VCS Properties =
 `TAppBuilder`.
+
+**Atualização (13/10/2026, AV no XE3, ver §4A.7):** a DLL **não** usa mais a janela da IDE como
+`Application.Handle`. Ela cria uma janela própria e oculta (classe `TJVCSDllApplication`), cuja dona é a
+`TAppBuilder` (`JVCSSyncOwnAppWindowOwner`, chamado em `JVCSClientAppearanceInit` e em
+`TJVCSForm.CreateParams`). Os `MessageBox(Application.Handle, ...)` e os forms que não herdam de `TJVCSForm`
+ficam com dono = essa janela, e a raiz da cadeia de donos continua sendo a IDE. Por isso o Alt+Tab e a
+ausência de botão na barra de tarefas se mantêm.
+
+### 4A.7 AV ao clicar na barra de ferramentas dentro de IDEs antigas (XE3) — 13/10/2026
+
+**Sintoma.** No Delphi XE3, com o expert original `JvcsExpertBDS10.dll` e a DLL nova (Delphi 13), clicar
+num botão da toolbar do Project Manager (Synchronize, Get...) dava "Access violation at address 0029F557.
+Write of address 8F82C02A". Com o Get, a operação terminava (a revisão era baixada) e o AV vinha depois.
+O mesmo AV aparecia no botão Get do diálogo "Revisions", com o `.pas` aberto no editor. A pilha do XE3
+foi `TToolBar.WndProc` (DLL) → `TControl.WMLButtonUp` → `TBasicActionLink.Execute` → `SendMessageW` →
+`TApplication.WndProc` **da vcl170** → `DispatchAction` → `TCustomForm.WndProc` → `???`. No diálogo
+Revisions a pilha era outra: `TApplication.Idle` **da DLL** → `CM_ACTIONUPDATE` → `TApplication.WndProc`
+da vcl170 → `TCustomForm.CMActionUpdate` → `ProcessUpdate` → `???`.
+
+**Causa (no código).** `JediVCSDLL.dpr`, `JediVCSInternalInit`, fazia
+`Application.Handle := IDEInterface.GetParentHandle` (código original do JEDI VCS). `GetParentHandle` devolve
+a janela do `TApplication` **da IDE**. A VCL manda para `Application.Handle` mensagens com **ponteiros de
+objetos VCL**:
+- `TCustomAction.Execute`/`Update` (`Vcl.ActnList`) → `SendAppMessage(CM_ACTIONEXECUTE/CM_ACTIONUPDATE, 0,
+  LPARAM(Self))` (`Vcl.Controls.SendAppMessage` = `SendMessage(Application.Handle, ...)`). Esse caminho vale
+  para botão de toolbar, item de menu com `Action` e atalho de teclado, e também para o `TApplication.Idle`
+  da DLL, que roda nos laços modais dela;
+- `CM_APPKEYDOWN` e `CM_APPSYSCOMMAND` (atalhos e Alt+tecla dos forms da DLL): esses chegavam à IDE e
+  podiam disparar atalhos e o menu **da própria IDE**.
+
+A VCL da IDE (outra versão, `vcl170` no XE3) recebia um `TBasicAction` da VCL da DLL e chamava métodos e
+campos com outro layout, o que dava o AV. No Delphi 13 o layout é igual, então funcionava por acaso. O erro
+existe em qualquer versão.
+
+**Correção.**
+- `JVCSForms.JVCSCreateOwnAppWindow`: cria uma janela própria da DLL (classe `TJVCSDllApplication`,
+  `hInstance` da DLL, oculta, `WS_EX_TOOLWINDOW`), e `Application.Handle` passa a ser essa janela.
+  - O `WndProc` dela trata `CM_ACTIONEXECUTE`/`CM_ACTIONUPDATE` com a VCL da DLL, com o mesmo despacho de
+    `TApplication.DispatchAction`: form ativo, depois `MainForm`, depois `DisableIfNoHandler`.
+  - Ignora `CM_APPKEYDOWN`/`CM_APPSYSCOMMAND` (a DLL não tem `MainForm`).
+  - O resto vai para `DefWindowProc`. Uma exceção nesse `WndProc` vai para `Application.HandleException`
+    da DLL.
+- A dona dessa janela é a `TAppBuilder` (§4A.3), e `JEDIVCSDLLFINALIZE` (e a `finalization` da unit) a
+  destrói e zera `Application.Handle` antes do `FreeLibrary`.
+- `JVCSDLLLineHistoryFrame.AddLineHistoryControl` não troca mais `Application.Handle` pelo handle recebido
+  quando a janela própria existe.
+- Nenhum outro ponto da DLL manda `SendMessage`/`PostMessage` com ponteiro de objeto para janela da IDE.
+  Foram revisados os `MessageBox`/`ShellExecute(Application.Handle, ...)`: só usam o handle como dono.
+  `ProjAdmin.pas` mexe em `Application.Handle` só fora da DLL (`{$IFNDEF IDEDLL}`).
+
+**Regra (vale para mudanças futuras).** Dentro da IDE, a DLL nunca entrega a uma janela da IDE uma mensagem
+que carregue ponteiro de objeto da VCL/RTL da DLL. A VCL da IDE é outra, mesmo quando a versão coincide.
+`Application.Handle`, `MainForm` e `PopupParent` da DLL só podem ser janelas da DLL. A relação com a IDE é
+feita só por dono de janela (`WndParent`/`GW_OWNER`), que o Windows trata sem passar pela VCL.
+
+**Teste no host interativo** (`testar-dll-interativo.bat`, novas opções `-login 1`, `-click`, `-menu`,
+`-closemodal`). A Fake IDE agora responde `IOTAServices.GetParentHandle` com uma janela do host, como a IDE
+faz. Sem isso, a DLL antiga ficava com `Application.Handle = 0`, e o host não reproduzia o problema. O host
+conta as `CM_ACTIONEXECUTE`/`CM_ACTIONUPDATE`/`CM_APPKEYDOWN`/`CM_APPSYSCOMMAND` que chegam às janelas
+dele, e o resultado tem que ser **zero**. Ele também confere que a janela de `Application.Handle` da DLL é
+`TJVCSDllApplication`, com `hInstance` da DLL, do mesmo thread, oculta e diferente da do host. Clica em
+botões da toolbar e em itens de menu do Project Manager e fecha sozinho os modais (Cancelar/Não/`WM_CLOSE`),
+conferindo os donos com o modal aberto (`TApplication.Idle` da DLL rodando). Confere também a raiz dos
+donos (`GA_ROOTOWNER`) = Fake IDE e a ausência de `WS_EX_APPWINDOW`. Exemplo:
+
+```
+testar-dll-interativo.bat -project C:\...\Ex1\exemplo01.dpr -login 1 -verbs "Connect Server,Project Manager" ^
+  -click "ToolButton28,ToolButton38,ToolButton20" -menu "Refresh1,mmiWhoami" -timeout 2 -wait 5000
+```
+
+**Resultados (13/10/2026, DLL Release Win32).** Login com a identidade atual e a senha salva, sem mudar
+`HKCU\Software\JEDI\JEDIVCS\Identities` (o `reg export` antes e depois tem o mesmo SHA-256). Project
+Manager com `exemplo01.dpr`. Cliques em Refresh (`ToolButton28`), Synchronize (`ToolButton38`), Whoami
+(`ToolButton20`) e nos menus `Refresh1`/`mmiWhoami`. Os modais abertos (DSA "Information", `TVCSSync`,
+`TVCSWhoami`) foram fechados sozinhos.
+
+| DLL | CM_* na janela do host | Falhas de checagem | AVs |
+|---|---|---|---|
+| **Antiga** (com `Application.Handle := GetParentHandle`) | `CM_ACTIONUPDATE` = **3** (Idle e laço modal do Synchronize) | 6 | 0 (VCL do host = mesma versão) |
+| **Corrigida** | **0** | **0** | **0** |
+
+Na corrigida:
+- `Application.Handle` da DLL é `TJVCSDllApplication`, oculta, com dona = Fake IDE;
+- login, Project Manager, Synchronize e Whoami têm dono direto = `TAppBuilder`;
+- o DSA e os `MessageBox` têm dono = `TJVCSDllApplication`, e a raiz da cadeia de donos é a Fake IDE;
+- nenhuma janela tem `WS_EX_APPWINDOW`;
+- depois do `FreeLibrary` a janela própria não existe mais.
+
+`testar-dll.bat ambas`: fails=0, 0 AV (nova e original); `testar-expert.bat`: fails=0.
+
+**Pendente na IDE real (usuário, XE3):** repetir o clique na toolbar (Synchronize/Get) e o Get do diálogo
+Revisions com o arquivo aberto no editor. Atalhos e itens de menu com `Action` passam pelo mesmo caminho.
 
 ### 4A.4 Barra de status "Not connected"
 
@@ -409,6 +500,18 @@ mantém a ABI da original:
   `JEDIVCSDLLOPERATIONINIT` (conferidos com `tdump -ee` na DLL do pacote);
 - registros de 24/10/2/9/10 ponteiros, `stdcall`, `PAnsiChar` e buffers alocados por quem chama;
 - nenhum ShareMem: cada lado tem seu gerenciador de memória, e nada gerenciado atravessa a fronteira.
+
+**Risco: mensagens que cruzam as VCLs.** A ABI de exports e callbacks não é o único canal entre a DLL e a
+IDE. As mensagens de janela também são. Quando uma mensagem da DLL chega a uma janela da IDE, a VCL da IDE
+a processa, e com o expert original a IDE tem **outra versão** de VCL (ex.: `vcl170` no XE3). Qualquer
+mensagem que leve ponteiro de objeto VCL/RTL vira AV ou corrupção de memória.
+
+Foi o caso de `CM_ACTIONEXECUTE`/`CM_ACTIONUPDATE`. Com `Application.Handle` = janela do `TApplication` da
+IDE, o XE3 dava AV na toolbar do Project Manager e no Get do diálogo Revisions (§4A.7). A correção:
+`Application.Handle` é uma janela própria da DLL.
+
+Regra: nada de `Application.Handle`, `MainForm`, `PopupParent` ou `SendMessage`/`PostMessage` com
+`LPARAM` de objeto apontando para janela da IDE. A relação com a IDE é só por dono de janela (`GW_OWNER`).
 
 O expert original procura a DLL só na própria pasta (`JvcsExternalDll.dll`, `jedivcsexternaldll.dll`,
 `jedivcsdll.dll`) e não confere a versão dela.

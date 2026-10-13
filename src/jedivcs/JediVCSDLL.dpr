@@ -3750,7 +3750,16 @@ begin
       JclDebug.TraceFmt('sDLLDirectory= %s',[sDLLDirectory]);
 
       // Parent handle
-      Application.Handle := IDEInterface.GetParentHandle;
+      // v2026: NUNCA a janela da IDE (GetParentHandle = janela do TApplication
+      // da IDE). A VCL envia a Application.Handle CM_ACTIONEXECUTE/
+      // CM_ACTIONUPDATE com o TBasicAction da DLL em LParam (TCustomAction.
+      // Execute/Update e TApplication.Idle da VCL da DLL): a VCL da IDE (outra
+      // versao, ex. vcl170 no XE3) chamava metodos com outro layout -> access
+      // violation na toolbar, menus com Action, atalhos e no Idle dos dialogos
+      // modais. A DLL usa uma janela propria (JVCSForms.JVCSCreateOwnAppWindow),
+      // com a janela principal da IDE como dona (Alt+Tab: ver
+      // TJVCSForm.CreateParams).
+      Application.Handle := JVCSCreateOwnAppWindow;
 
       // App registry key
       sBaseRegistryKey := cRegSwJVCSBase;
@@ -3908,6 +3917,13 @@ begin
       LibExit;
     except
       // no fechamento da IDE: so registra (sem mensagem)
+      DllEntryFailed('JEDIVCSDLLFINALIZE', False);
+    end;
+    // antes do FreeLibrary: a janela propria de Application.Handle tem o
+    // WndProc dentro da DLL
+    try
+      JVCSDestroyOwnAppWindow;
+    except
       DllEntryFailed('JEDIVCSDLLFINALIZE', False);
     end;
     JVCSLogMessage('JEDIVCSDLLFINALIZE concluido');

@@ -97,10 +97,31 @@ function JVCSHostMainWindow: HWND;
 { grava o texto dos itens owner-draw de AMenu achando o TMenuItem em AMenus }
 procedure JVCSFixOwnerDrawMenuText(AMenu: HMENU; const AMenus: array of TMenu);
 
+{ DLL na IDE: janela PROPRIA que faz o papel de Application.Handle.
+  A VCL manda para Application.Handle mensagens com PONTEIROS de objetos da
+  VCL (CM_ACTIONEXECUTE/CM_ACTIONUPDATE com o TBasicAction em LParam, via
+  SendAppMessage em TCustomAction.Execute/Update e TApplication.Idle). Com
+  Application.Handle = janela do TApplication da IDE (GetParentHandle), a VCL
+  da IDE (outra versao, ex. vcl170 no XE3) recebia o objeto da VCL da DLL e
+  chamava metodos com outro layout: access violation ao clicar na toolbar, em
+  menus com Action, atalhos e no Idle dos dialogos modais. Esta janela (classe
+  'TJVCSDllApplication', criada pela DLL) trata essas mensagens com a VCL da
+  propria DLL (mesmo despacho de TApplication.DispatchAction) e ignora as
+  demais. O dono dela e a janela principal visivel do host (TAppBuilder),
+  ajustado em TJVCSForm.CreateParams: os forms/dialogos da DLL que ficam com
+  dono = Application.Handle continuam acima da IDE (Alt+Tab).
+  Criar: Application.Handle := JVCSCreateOwnAppWindow; destruir (antes do
+  FreeLibrary): JVCSDestroyOwnAppWindow (tambem na finalization da unit). }
+function JVCSCreateOwnAppWindow: HWND;
+procedure JVCSDestroyOwnAppWindow;
+function JVCSOwnAppWindow: HWND;
+{ poe a janela principal do host como dona da janela propria (se achada) }
+procedure JVCSSyncOwnAppWindowOwner;
+
 implementation
 
 uses
-  SysUtils, Types, Math, JVCSUIScale, JVCSUITheme;
+  SysUtils, Types, Math, ActnList, JVCSUIScale, JVCSUITheme;
 
 type
   TControlAccess = class(TControl);
@@ -351,6 +372,123 @@ begin
   Result := F.Wnd;
 end;
 
+//=== janela propria de Application.Handle (DLL na IDE) ========================
+
+const
+  cOwnAppWndClass = 'TJVCSDllApplication';
+
+var
+  GOwnAppWnd: HWND = 0;
+  GOwnAppClassRegistered: Boolean = False;
+
+{ mesmo despacho de TApplication.DispatchAction (Vcl.Forms), com a VCL da DLL }
+function OwnAppDispatchAction(Msg: UINT; LParam: LPARAM): LRESULT;
+var
+  Form: TCustomForm;
+  Action: TBasicAction;
+  Handled: Boolean;
+begin
+  Result := 0;
+  Action := TBasicAction(LParam);
+  if Action = nil then
+    Exit;
+  Form := Screen.ActiveCustomForm;
+  Handled := (Form <> nil) and (Form.Perform(Msg, 0, LParam) = 1) or
+    (Application.MainForm <> Form) and (Application.MainForm <> nil) and
+    (Application.MainForm.Perform(Msg, 0, LParam) = 1);
+  { como a VCL: desabilita a action se nao ha quem a trate }
+  if not Handled and (Action is TCustomAction) and TCustomAction(Action).Enabled and
+     TCustomAction(Action).DisableIfNoHandler and
+     not (csDesigning in Action.ComponentState) then
+    TCustomAction(Action).Enabled := Assigned(Action.OnExecute);
+  if Handled then
+    Result := 1;
+end;
+
+function OwnAppWndProc(Wnd: HWND; Msg: UINT; WParam: WPARAM; LParam: LPARAM): LRESULT; stdcall;
+begin
+  case Msg of
+    CM_ACTIONEXECUTE, CM_ACTIONUPDATE:
+      try
+        Result := OwnAppDispatchAction(Msg, LParam);
+      except
+        Result := 0;
+        // a excecao nao atravessa o SendMessage: vai para o tratamento da DLL
+        if Assigned(Application) then
+          Application.HandleException(Application);
+      end;
+    // atalhos/Alt+tecla dos forms da DLL: a DLL nao tem MainForm; nao vao
+    // mais para a IDE (antes ativavam atalhos e o menu da propria IDE)
+    CM_APPKEYDOWN, CM_APPSYSCOMMAND:
+      Result := 0;
+    // TApplication.UpdateVisible mostra Application.Handle quando ha forms
+    // visiveis (botao da aplicacao no estilo antigo): esta janela fica sempre
+    // oculta (como a do TApplication da IDE com MainFormOnTaskBar)
+    WM_WINDOWPOSCHANGING:
+      begin
+        if LParam <> 0 then
+          PWindowPos(LParam)^.flags := PWindowPos(LParam)^.flags and not SWP_SHOWWINDOW;
+        Result := 0;
+      end;
+  else
+    Result := DefWindowProc(Wnd, Msg, WParam, LParam);
+  end;
+end;
+
+function JVCSOwnAppWindow: HWND;
+begin
+  Result := GOwnAppWnd;
+end;
+
+procedure JVCSSyncOwnAppWindowOwner;
+var
+  Host: HWND;
+begin
+  if (GOwnAppWnd = 0) or not IsWindow(GOwnAppWnd) then
+    Exit;
+  Host := JVCSHostMainWindow;
+  if (Host <> 0) and (HWND(GetWindowLongPtr(GOwnAppWnd, GWLP_HWNDPARENT)) <> Host) then
+    SetWindowLongPtr(GOwnAppWnd, GWLP_HWNDPARENT, LONG_PTR(Host));
+end;
+
+function JVCSCreateOwnAppWindow: HWND;
+var
+  WC: TWndClass;
+begin
+  if (GOwnAppWnd <> 0) and IsWindow(GOwnAppWnd) then
+    Exit(GOwnAppWnd);
+  if not GOwnAppClassRegistered then
+  begin
+    FillChar(WC, SizeOf(WC), 0);
+    WC.lpfnWndProc := @OwnAppWndProc;
+    WC.hInstance := HInstance;
+    WC.lpszClassName := cOwnAppWndClass;
+    GOwnAppClassRegistered := Windows.RegisterClass(WC) <> 0;
+  end;
+  // oculta, sem tamanho, sem botao na barra de tarefas; dona ajustada depois
+  GOwnAppWnd := CreateWindowEx(WS_EX_TOOLWINDOW, cOwnAppWndClass, 'JEDI VCS',
+    WS_POPUP, 0, 0, 0, 0, 0, 0, HInstance, nil);
+  JVCSSyncOwnAppWindowOwner;
+  Result := GOwnAppWnd;
+end;
+
+procedure JVCSDestroyOwnAppWindow;
+begin
+  if GOwnAppWnd <> 0 then
+  begin
+    if Assigned(Application) and (Application.Handle = GOwnAppWnd) then
+      Application.Handle := 0;
+    if IsWindow(GOwnAppWnd) then
+      DestroyWindow(GOwnAppWnd);
+    GOwnAppWnd := 0;
+  end;
+  if GOwnAppClassRegistered then
+  begin
+    Windows.UnregisterClass(cOwnAppWndClass, HInstance);
+    GOwnAppClassRegistered := False;
+  end;
+end;
+
 { TJVCSForm }
 
 procedure TJVCSForm.WndProc(var Message: TMessage);
@@ -377,6 +515,9 @@ begin
     Host := JVCSHostMainWindow;
     if Host <> 0 then
       Params.WndParent := Host;
+    // a janela propria de Application.Handle (dona dos dialogos e
+    // MessageBox da DLL) tambem passa a ter a IDE como dona
+    JVCSSyncOwnAppWindowOwner;
   end;
   {$IFNDEF IDEDLL}
   {$IFNDEF DELPHI2007_UP}
@@ -473,5 +614,6 @@ initialization
 
 finalization
   JVCSRemoveAppearanceHook;
+  JVCSDestroyOwnAppWindow;
 
 end.

@@ -44,7 +44,7 @@ procedure SetLineHistoryControlModuleAndExtension(AModule, AExtension: PChar); s
 implementation
 
 uses
-  DBModule, JVCSLineHistoryDefaultProvider, JVCSLineHistoryFrame;
+  DBModule, JVCSLineHistoryDefaultProvider, JVCSLineHistoryFrame, JVCSForms;
 
 var
   TempForm: TForm = nil;
@@ -56,7 +56,11 @@ procedure AddLineHistoryControl(AApplicationHandle, AParentHandle: THandle); std
 var
   ParentRect: TRect;
 begin
-  Application.Handle := AApplicationHandle;
+  // v2026: com a janela propria da DLL (JEDIVCSDLLINIT) o Application.Handle
+  // nao passa a ser a janela da IDE (mensagens CM_* com objetos da VCL da DLL
+  // iriam para a VCL da IDE: ver JVCSForms.JVCSCreateOwnAppWindow)
+  if JVCSOwnAppWindow = 0 then
+    Application.Handle := AApplicationHandle;
   TempForm := TForm.Create(nil);
   Panel := TPanel.Create(TempForm);
   Panel.Parent := TempForm;
