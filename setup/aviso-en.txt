@@ -11,4 +11,6 @@ This is a BETA release. Before using it in production:
 
 The authors and contributors accept no liability for data loss, work interruption or any damages arising from the use of this product. Use it at your own risk.
 
+By selecting "I accept the agreement" you confirm that you are aware that you must test and validate the product before deciding whether it can be used in production.
+
 Close Delphi before continuing.
