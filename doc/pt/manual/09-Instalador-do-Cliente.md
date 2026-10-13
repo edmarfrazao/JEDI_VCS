@@ -1,12 +1,12 @@
 # 09. Instalador do cliente (JEDI VCS 2.5 Beta 2026)
 
 Como instalar, reparar e remover o cliente portado (standalone, Diff, console, expert do Delphi e
-ferramentas da IA) com o instalador `JediVCS-2.5-Beta2026-Setup.exe`. Detalhes técnicos, decisões e
+ferramentas da IA) com o instalador `JediVCS-2.5.0-Beta5-build2050-Setup.exe`. Detalhes técnicos, decisões e
 testes: [setup\LEIAME.md](../../../setup/LEIAME.md).
 
 ## 1. Onde está o instalador
 
-- Gerado em `D:\Delphi\JediVCS\v2026\setup\Output\JediVCS-2.5-Beta2026-Setup.exe` por
+- Gerado em `D:\Delphi\JediVCS\v2026\setup\Output\JediVCS-2.5.0-Beta5-build2050-Setup.exe` por
   `tools\gerar-instalador.bat` (compila Release de tudo) ou `tools\gerar-instalador.bat --sem-build`
   (empacota o que já está em `bin\`).
 - Para os colegas: copie só o `.exe` do setup. Ele traz tudo (inclusive a `fvcscrypt.dll` e as ajudas).
@@ -98,7 +98,7 @@ A desinstalação remove os arquivos e atalhos, o `JVCSIDEClient` **se ele apont
 ## 7. Linha de comando (administradores)
 
 ```
-JediVCS-2.5-Beta2026-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /COMPONENTS=client,ide,maps,ai /TASKS=desktopicon /LOG=%TEMP%\jvcs-setup.log
+JediVCS-2.5.0-Beta5-build2050-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /COMPONENTS=client,ide,maps,ai /TASKS=desktopicon /LOG=%TEMP%\jvcs-setup.log
 "<pasta>\unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES
 ```
 

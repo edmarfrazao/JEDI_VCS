@@ -4,24 +4,68 @@ Todas as versões relevantes do projeto num lugar só: produto, Delphi, dependê
 
 ## 1. Versão do produto
 
-| Item | Valor |
+| Item | Valor (beta 5) |
 |---|---|
 | Nome | **JEDI VCS 2.5 Beta 2026** |
-| FileVersion (numérico) | `2.5.0.2026` (`FILEVERSION 2,5,0,2026`) |
-| ProductVersion (texto) | `2.5 Beta 2026` |
-| Flag | pré-lançamento (`VS_FF_PRERELEASE`, `FILEFLAGS 0x2`) |
-| Texto de `FileVersion` no expert | `2.5.0.2026 Beta 2026` |
-| `ProductName` | `JEDI VCS 2.5 Beta 2026` |
-| Fonte da decisão | [Decisoes.md](Decisoes.md), linha "Versão" (12/10/2026) |
+| FileVersion (numérico) | `2.5.0.2050` (`FILEVERSION 2,5,0,2050`) |
+| ProductVersion | `2.5.0.0` (`PRODUCTVERSION 2,5,0,0`, **fixo**) |
+| Flag | pré-lançamento nas betas (`VS_FF_PRERELEASE`, `FILEFLAGS 0x2`); sai na versão final |
+| `BuildType` | `Beta Build` (`Release Build` na final) |
+| `BuildTimestamp` | data/hora do build (`dd.mm.aaaa hh:nn:ss`), gerada a cada compilação |
+| `InternalVersion` | `2.5.0 Beta 5 (2026)` |
+| `VCS` | `JVCS 2.5.0.2050 Beta 5 (2026) https://github.com/edmarfrazao/JEDI_VCS` |
+| `ProductName` | `JEDI Version Control System` |
+| `LegalCopyright` | `Released under MPL 1.1` |
+| Fonte única | `tools\versao.ini` (`Build`, `Stage`, `StageNumber`) |
+| Instalador | `JediVCS-2.5.0-Beta5-build2050-Setup.exe`; Painel de Controle: "JEDI VCS 2.5 Beta 2026 (Beta 5, build 2050)", versão 2.5.0.2050 |
 
-Numeração:
+## Numeração de versões
+
+Segue o **mesmo padrão do JEDI VCS original** (`jvcsver.rc` do 2.5.0.1030: `FILEVERSION 2,5,0,1030`,
+`PRODUCTVERSION 2,5,0,0`, `BuildType "Beta Build"`, `BuildTimestamp`, `InternalVersion "2.5.0 Beta 3"`,
+`VCS "JVCS 2.5.0.1030 Beta 3 ..."`). Aprovado pelo usuário em 13/10/2026; substitui o esquema anterior
+(`2.5.0.2026` fixo em todas as betas, que não dizia qual beta estava instalada).
+
+- `PRODUCTVERSION` numérico **fixo em `2,5,0,0`**: o LOGIN do EXE e da DLL envia
+  `VCSProcBase.GetJVCSAppProductVersionInt` = Maj×100 + Min×10 + Release = **250** (o 4º campo é ignorado),
+  igual ao 2.5.0.1030. O Diff e o console enviam 239 fixo. Não mude.
+- `FILEVERSION 2,5,0,<Build>`: o build diz qual versão está instalada.
+
+| Versão | Build | FILEVERSION | `InternalVersion` | Setup |
+|---|---|---|---|---|
+| Beta 5 | **2050** | `2.5.0.2050` | `2.5.0 Beta 5 (2026)` | `JediVCS-2.5.0-Beta5-build2050-Setup.exe` |
+| Beta 5, 1ª recompilação de correção | 2051 | `2.5.0.2051` | `2.5.0 Beta 5 (2026)` | `JediVCS-2.5.0-Beta5-build2051-Setup.exe` |
+| Beta 6 | 2060 | `2.5.0.2060` | `2.5.0 Beta 6 (2026)` | `JediVCS-2.5.0-Beta6-build2060-Setup.exe` |
+| Versão final | 2100 | `2.5.0.2100` | `2.5.0 (2026)` | `JediVCS-2.5.0-build2100-Setup.exe` |
+
+Regra: beta N → build `2000 + N×10`; recompilação de correção da mesma beta → +1 (2051, 2052, …); final
+→ 2100 (`Stage=Release`, sem `VS_FF_PRERELEASE`, `BuildType "Release Build"`). Os builds ficam acima do
+`1030` do original, então o 2.5.0.2050 é "mais novo" que o 2.5.0.1030 em qualquer comparação de
+FileVersion; as betas anteriores (2.5.0.2026) são reconhecidas pelo instalador como desta linha
+(build ≥ 2000).
+
+**Como subir a versão:** edite só `tools\versao.ini` (`Build`, `Stage`, `StageNumber`) e recompile.
+`tools\gerar-versao.ps1` (chamado por `compilar.bat` e `compilar-expert.bat`) gera
+`src\common\jvcsversao.rh` e os `jvcsver.res` (fora do git, regenerados a cada build, com o
+`BuildTimestamp` daquele build); o `setup\JediVCS2026.iss` lê o mesmo `.ini` com `ReadIni` e o
+`gerar-instalador.bat` confere `FILEVERSION = 2.5.0.<Build>` em todos os binários. O script recusa um
+`Build` fora da regra. Para compilar pela IDE sem os scripts, gere antes os `.res`:
+`powershell -File tools\gerar-versao.ps1 -Brcc <brcc32.exe> -Rc src\jedivcs\jvcsver.rc,src\jedivcsdiff\jvcsver.rc,src\jvcs\jvcsver.rc`.
+
+Onde o usuário vê a versão (lida do VERSIONINFO em tempo de execução, `src\common\JVCSAppVersion.pas`):
+
+- título da janela principal (EXE e DLL na IDE): `JEDI VCS (2.5.0 Beta 5 – build 2050) >> ...`;
+- About do cliente e do Diff: `V 2.5.0 Beta 5 – build 2050 - Buildtime <data/hora>`;
+- 1ª linha do console: `JEDI VCS console client 2.5.0 Beta 5 - build 2050 (Project JEDI ...)`;
+- expert: log `JVCS Expert iniciando (versao 2.5.0.2050 - 2.5.0 Beta 5 - build 2050, ...)`, splash e About
+  da IDE (`JEDI Version Control System 2.5.0 Beta 5 - build 2050`);
+- Windows: Propriedades > Detalhes do arquivo (Versão do arquivo 2.5.0.2050) e Painel de Controle.
+
+Outros pontos:
 
 - `2.5` = linha funcional do JEDI VCS (código-base 2.5 Beta 3, ~2012). O servidor continua sendo o **2.5 Beta 3** (Firebird) e não muda.
-- `0` = reservado (patch).
-- `2026` = ano do port, no lugar do número de build `1030` do instalador oficial (2.5.0.1030).
-- "Beta 2026" identifica esta linha para o usuário e distingue de "2.50 Beta 3 Refresh till 10.4 Sydney" (instalador oficial).
-- Vale para o expert (já aplicado em `src\jvcsideexpert\JvcsExpertBDS_ver.rc`) e, no port, para EXE/DLL/Diff/console via `jvcsver.rc` (F3). Atenção: o `ProductVersion` do VERSIONINFO usado no LOGIN precisa estar no formato `n.n.n.n` e resultar em pelo menos 2.2.0 (risco R5 do inventário). O EXE e a DLL enviam a versão do VERSIONINFO (mínimo 220); o Diff e o console enviam 239 fixo.
-- "Include version information" fica desligado nos `.dproj`; o `jvcsver.rc` é a fonte única.
+- "Beta 2026" (nome do produto e do instalador) identifica esta linha e a distingue de "2.50 Beta 3 Refresh till 10.4 Sydney" (instalador oficial).
+- "Include version information" fica desligado nos `.dproj`; o `tools\versao.ini` é a fonte única.
 
 ## 2. Versões do Delphi
 
@@ -113,11 +157,11 @@ Compatibilidade de protocolo: o servidor 2.5 Beta 3 é o par obrigatório. O cli
 
 | Arquivo | Versão | Estado |
 |---|---|---|
-| `bin\ideclient\Win32\JvcsExpertBDS37.dll` | 2.5.0.2026 (`2.5.0.2026 Beta 2026`, pré-lançamento) | Compilado no 13.2 (13/10/2026): importa só `rtl370`/`vcl370`/`xmlrtl370` (429 símbolos), sem `designide370` |
-| `bin\ideclient\Win32\JvcsExpertBDS22.dll` | 2.5.0.2026 | Compilado no 11.3 (13/10/2026): só `rtl280`/`vcl280`/`xmlrtl280` (420 símbolos); não testado na IDE do 11 |
+| `bin\ideclient\Win32\JvcsExpertBDS37.dll` | 2.5.0.2050 (Beta 5, pré-lançamento) | Compilado no 13.2: importa só `rtl370`/`vcl370`/`xmlrtl370`, sem `designide370` |
+| `bin\ideclient\Win32\JvcsExpertBDS22.dll` / `...BDS23.dll` | 2.5.0.2050 | Compilados no 11.3 / 12.x: só `rtl`/`vcl`/`xmlrtl` |
+| `bin\client\Win32\Jedivcs.exe`, `JvcsExternalDll.dll`, `JEDIVCSDiff.exe`, `jvcs.exe` | 2.5.0.2050 (ProductVersion 2.5.0.0) | Versão de `tools\versao.ini` |
 | `bin\client\D11\...`, `bin\client\D12\...` | n/a | Verificação do código nas outras IDEs (`compilar.bat /delphi:11`); não distribuídos (ADR-001) |
 | `bin\msbuild\<Dnn>\...` | n/a | Saída dos `.dproj` (IDE/MSBuild); não distribuída |
-| `bin\client\Win32\*` | n/a | Vazio: nenhum dos 4 projetos do cliente compila ainda ([Status.md](Status.md)) |
 
 ## 7. Histórico
 

@@ -42,7 +42,7 @@ O expert é registrado pelo valor `JVCSIDEClient` em `HKCU\Software\Embarcadero\
 
 ### Método recomendado: o instalador
 
-`setup\Output\JediVCS-2.5-Beta2026-Setup.exe` instala o expert com a DLL nova e o runtime numa pasta só
+`setup\Output\JediVCS-2.5.0-Beta5-build2050-Setup.exe` instala o expert com a DLL nova e o runtime numa pasta só
 (`C:\Program Files (x86)\JEDI\JVCS 2026`), registra o `JVCSIDEClient` nas IDEs detectadas e devolve o valor
 anterior ao desinstalar. Passo a passo no [capítulo 09](09-Instalador-do-Cliente.md). Os métodos abaixo
 continuam valendo para desenvolvimento (pasta `bin\ideclient\Win32`).

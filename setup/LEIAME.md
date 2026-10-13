@@ -4,7 +4,7 @@ Instalador do **JEDI VCS 2.5 Beta 2026** (Inno Setup 6) e arquivos `.reg` de des
 
 | Arquivo | O que é |
 |---|---|
-| `JediVCS2026.iss` | Script do instalador (gera `Output\JediVCS-2.5-Beta2026-Setup.exe`) |
+| `JediVCS2026.iss` | Script do instalador (gera `Output\JediVCS-2.5.0-Beta5-build2050-Setup.exe`) |
 | `Output\` | Saída do ISCC (fora do git, `.gitignore`) |
 | `Delphi13-JVCS-v2026.reg` | **Só desenvolvimento** (esta máquina): SynEdit/VTV em `Known Packages`, Library Path, PATH da IDE e o expert apontando para `bin\ideclient\Win32` |
 | `Delphi13-JVCS-DLL-nova.reg` | **Só desenvolvimento**: só o valor `JVCSIDEClient` → `bin\ideclient\Win32\JvcsExpertBDS37.dll` |
@@ -18,7 +18,7 @@ tools\gerar-instalador.bat --sem-build  (só empacota o que já está em bin\)
 
 Sem `--sem-build` o script chama, nesta ordem, `tools\compilar.bat exe|dll|diff|console Release Win32` e
 `tools\compilar-expert.bat Release nova` (feche o Delphi antes: o expert em uso não é sobrescrito).
-Depois confere que existem e têm **FileVersion 2.5.0.2026** `Jedivcs.exe`, `JEDIVCSDiff.exe`, `jvcs.exe`
+Depois confere que existem e têm **FileVersion 2.5.0.<Build>** (`tools\versao.ini`; beta 5 = 2.5.0.2050) `Jedivcs.exe`, `JEDIVCSDiff.exe`, `jvcs.exe`
 (`bin\client\Win32`), `JvcsExternalDll.dll` e `JvcsExpertBDS<nn>.dll` (`bin\ideclient\Win32`), confere o
 runtime em `3rdparty` e roda o ISCC. Avisos (não bloqueiam): último build Debug mais novo que o Release
 (pelos logs de `tools\compilar.bat`), `.map` ausente, e `bin\ideclient\Win32\JvcsExternalDll.dll`
@@ -40,7 +40,7 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 
 ## 2. Instalar, reinstalar/reparar, desinstalar
 
-- **Instalar:** feche o Delphi e execute `JediVCS-2.5-Beta2026-Setup.exe`. Idioma: português (Brasil)
+- **Instalar:** feche o Delphi e execute `JediVCS-2.5.0-Beta5-build2050-Setup.exe`. Idioma: português (Brasil)
   ou inglês. Pede administrador; a primeira tela permite instalar **só para o usuário atual**
   (`PrivilegesRequiredOverridesAllowed=dialog`, ou `/CURRENTUSER` na linha de comando).
 - Pasta padrão: `C:\Program Files (x86)\JEDI\JVCS 2026` (por usuário:
@@ -49,11 +49,11 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
   `jedivcs.exe` de outra versão).
 - **Reinstalar / reparar / atualizar:** rode o mesmo setup (ou um mais novo) de novo. O `AppId` é fixo
   (`{FA4F41D9-F23B-4C34-8186-DCBB5DD86E45}`): ele reaproveita a pasta, os componentes e as tarefas da vez
-  anterior e substitui todos os arquivos (`ignoreversion`; os binários têm todos a versão 2.5.0.2026).
+  anterior e substitui todos os arquivos (`ignoreversion`; os binários têm todos a versão 2.5.0.<Build> de `tools\versao.ini`).
   Desmarcar o expert ou a tarefa da IA numa reinstalação **desfaz** o registro/a gravação correspondentes.
 - **Desinstalar:** Painel de Controle → Programas → "JEDI VCS 2.5 Beta 2026", ou o atalho no Menu
   Iniciar, ou `unins000.exe` na pasta. Feche o Delphi antes.
-- Silencioso: `JediVCS-2.5-Beta2026-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR=...]
+- Silencioso: `JediVCS-2.5.0-Beta5-build2050-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR=...]
   [/COMPONENTS=client,ide,ideold\bds10,ideold\bds21,maps,ai] [/TASKS=desktopicon,aiconsole] [/LOG=arquivo]`;
   os nomes das IDEs antigas são `ideold\d7` e `ideold\bds<n>` (n = 1…12, 14…21). Sem `/COMPONENTS`, a
   reinstalação repete a seleção da vez anterior;
@@ -161,7 +161,7 @@ dele.
    reinstalação desfaz o registro dela. Nada é gravado em `Experts x64`.
 4. A pasta desta versão contém `JvcsExpertBDS21.dll`/`JvcsExpertD7.dll`, mas não é confundida com a do
    JEDI VCS original: a recusa de pasta (seção 2) ignora uma pasta cuja `JvcsExternalDll.dll` ou cujo
-   `jedivcs.exe` é 2.5.0.2026.
+   `jedivcs.exe` é 2.5.0.<build ≥ 2000> (2.5.0.2026 das betas 1–4, 2.5.0.2050 da beta 5, ...).
 
 **Suporte por versão** (13/10/2026):
 

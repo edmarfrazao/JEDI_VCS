@@ -115,7 +115,7 @@ dele, pela instalação (`C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai`, regis
 |---|---|
 | Sistema | Windows 10/11 (PowerShell 5.1). Sem suporte a Linux/macOS: o console é Win32 |
 | Servidor JEDI VCS | 2.5 (Firebird), testado com 2.50 Beta 3 |
-| Console | `jvcs.exe` 2.5.0.1030 (original) e 2.5.0.2026 |
+| Console | `jvcs.exe` 2.5.0.1030 (original) e 2.5.0.20xx (2.5.0.2050 = beta 5) |
 | Delphi | qualquer versão: a skill trabalha nos arquivos, não na IDE |
 | Ferramentas da IA (`tools\ai`) | 1.1.1 ou mais nova |
 | Claude Code | skills: versões atuais; hooks do instalador: 2.1.295+ |

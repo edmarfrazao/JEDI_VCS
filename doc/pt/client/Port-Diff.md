@@ -28,8 +28,9 @@ tools\compilar.bat diff Release Win32
 - Units linkadas além de RTL/VCL/SynEdit (conferido no `.map`): `Checksum`, `Diff*`, `DiffUtils`,
   `Historylist`, `JVCSDiffResources`, `JVCSForms`, `JVCSUIScale`, `JVCSUITheme`.
 - Recursos (fonte única: `src\jedivcsdiff\jvcsver.rc`):
-  `brcc32 -fojvcsver.res jvcsver.rc` (na pasta `src\jedivcsdiff`). O `.res` leva o VERSIONINFO
-  (FileVersion 2.5.0.2026, ProductVersion "2.5 Beta 2026", `VS_FF_PRERELEASE`) e o manifesto
+  o `jvcsver.res` (fora do git) é gerado a cada build pelo `tools\compilar.bat` (`tools\gerar-versao.ps1`
+  + `brcc32`, versão de `tools\versao.ini`). O `.res` leva o VERSIONINFO (FileVersion 2.5.0.&lt;Build&gt;,
+  ProductVersion "2.5.0.0", `VS_FF_PRERELEASE` nas betas) e o manifesto
   `JEDIVCSDiff.manifest` (Common Controls 6, `asInvoker`, DPI *System Aware*, Windows 7 a 11).
 - Estilos VCL: `src\common\client\JVCSUIStyles.rc` → `brcc32 -foJVCSUIStyles.res JVCSUIStyles.rc`
   (na pasta `src\common\client`). Embute `styles\WindowsModernDark.vsf` (do

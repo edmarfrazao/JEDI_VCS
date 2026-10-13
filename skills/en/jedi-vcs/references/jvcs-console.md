@@ -5,7 +5,7 @@ own returns 0 even on errors, does not show the server's refusal, changes the se
 questions it cannot ask with redirected input, and its documented form takes the password on the command
 line.
 
-Program: `jvcs.exe` 2.5.0.1030 (original, `C:\Program Files (x86)\JEDI\JVCS`) or 2.5.0.2026 (new,
+Program: `jvcs.exe` 2.5.0.1030 (original, `C:\Program Files (x86)\JEDI\JVCS`) or 2.5.0.20xx (2.5.0.2050 = beta 5) (new,
 `C:\Program Files (x86)\JEDI\JVCS 2026`), with `fvcscrypt.dll` next to it. The commands are the same.
 
 ## Syntax

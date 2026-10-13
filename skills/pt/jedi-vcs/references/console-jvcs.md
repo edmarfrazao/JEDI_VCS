@@ -5,7 +5,7 @@ sozinho devolve 0 mesmo com erro, não mostra a recusa do servidor, muda o estad
 perguntar coisas que não consegue perguntar com a entrada redirecionada, e a forma documentada recebe
 a senha na linha de comando.
 
-Programa: `jvcs.exe` 2.5.0.1030 (original, `C:\Program Files (x86)\JEDI\JVCS`) ou 2.5.0.2026 (novo,
+Programa: `jvcs.exe` 2.5.0.1030 (original, `C:\Program Files (x86)\JEDI\JVCS`) ou 2.5.0.20xx (2.5.0.2050 = beta 5) (novo,
 `C:\Program Files (x86)\JEDI\JVCS 2026`), com `fvcscrypt.dll` ao lado. Os comandos são os mesmos.
 
 ## Sintaxe

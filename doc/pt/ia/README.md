@@ -35,7 +35,7 @@ nem administra usuários.
    │  mutex, timeout, prova do caminho,            e as quebras de linha do arquivo
    │  modos auto/confirm/manual, JSON, auditoria
    ▼
- jvcs.exe (console JEDI VCS, original 2.5.0.1030 ou o novo 2.5.0.2026)
+ jvcs.exe (console JEDI VCS, original 2.5.0.1030 ou o novo 2.5.0.20xx (2.5.0.2050 = beta 5))
    ▼
  Servidor JEDI VCS (2.5, Firebird)
 ```

@@ -27,8 +27,9 @@ tools\compilar.bat console Release Win32
   `JclDebug`) e Abbrevia 2026.10. O console não usa JVCL, SynEdit nem VirtualTreeView.
 - Resultado atual: 0 erros e 248 avisos, quase todos `W1057`/`W1058` (conversão implícita entre
   `string` e os `ShortString` dos registros do núcleo). Ver a seção 4.
-- Recurso de versão: `src\jvcs\jvcsver.rc`. O `.res` versionado é gerado com
-  `brcc32 -fojvcsver.res jvcsver.rc` (na pasta `src\jvcs`).
+- Recurso de versão: `src\jvcs\jvcsver.rc`, com números e textos de `tools\versao.ini` (fonte única). O
+  `jvcsver.res` (fora do git) é gerado a cada build pelo `tools\compilar.bat` (`tools\gerar-versao.ps1` +
+  `brcc32`); ver [Versoes.md](../common/Versoes.md#numeração-de-versões).
 
 ## 2. O que mudou
 
@@ -41,7 +42,7 @@ tools\compilar.bat console Release Win32
 | `src\comp\midware\MWDefs.inc` | `OverbyteIcsDefs.inc` no lugar do `IcsDefs.inc`; `{$UNDEF USE_SSL}`. |
 | `src\jvcs\jvcs.dpr` | Sem `FastMM4` (gerenciador de memória embutido). `RFormat` no `uses` e `DefaultSystemCodePage := MWCodePage` no início, para que as conversões implícitas para `ShortString` (registros do núcleo) também usem 1252. Check-in com `CRCInt` em vez de `StrToInt(CRCString(...))`, que quebrava com arquivo vazio. |
 | `src\jvcs\COMPOPT.INC` | `BETA` desligado (o 2.5.0.1030 não mostra o aviso de beta). Sem `IMAGEBASE`. |
-| `src\jvcs\jvcsver.rc/.res` | FileVersion 2.5.0.2026, ProductVersion "2.5 Beta 2026", `FILEFLAGS VS_FF_PRERELEASE`. |
+| `src\jvcs\jvcsver.rc/.res` | FileVersion 2.5.0.&lt;Build&gt; (beta 5 = 2.5.0.2050), ProductVersion "2.5.0.0", `FILEFLAGS VS_FF_PRERELEASE` nas betas (de `tools\versao.ini`). |
 | `src\common\client\JVCSClientObj.pas` | `TJVCSLogin.DoExecute`: a senha cifrada vai como `ShortString` (`vtString`, bytes crus da FVCSCrypt). A **versão do LOGIN continua 239** (fixa em `JVCSConnect.pas`; não depende do recurso de versão). |
 | `src\common\client\JVCSClientObjBase.pas` | `SafeStrToFloat` com `FormatSettings`. `TJVCSAbZipper` instala um `InsertFromStreamHelper` que **mantém a data do arquivo no item do ZIP** (ver 3.4). |
 | `src\common\client\JVCSConnect.pas` | `OverbyteIcsTypes` no `uses` (`socksNoAuthentication`). |

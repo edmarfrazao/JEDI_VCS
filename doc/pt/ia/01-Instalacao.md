@@ -7,7 +7,7 @@ projeto e aceitar a confiança da pasta no Claude Code. No fim, verifique com `i
 
 ### Pelo instalador (recomendado)
 
-No `JediVCS-2.5-Beta2026-Setup.exe`, deixe marcado o componente **Ferramentas da IA** (`ai`). Ele copia
+No `JediVCS-2.5.0-Beta5-build2050-Setup.exe`, deixe marcado o componente **Ferramentas da IA** (`ai`). Ele copia
 `tools\ai` inteiro para:
 
 | Instalação | Pasta |
@@ -23,7 +23,7 @@ anterior volta na desinstalação.
 Instalação silenciosa só com cliente e ferramentas da IA:
 
 ```text
-JediVCS-2.5-Beta2026-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /COMPONENTS=client,ai /TASKS=aiconsole
+JediVCS-2.5.0-Beta5-build2050-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /COMPONENTS=client,ai /TASKS=aiconsole
 ```
 
 ### Manual (sem o instalador)

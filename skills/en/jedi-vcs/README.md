@@ -114,7 +114,7 @@ folders and, last, a `tools\ai` folder above the current folder (repository).
 |---|---|
 | System | Windows 10/11 (PowerShell 5.1). No Linux/macOS support: the console is Win32 |
 | JEDI VCS server | 2.5 (Firebird), tested with 2.50 Beta 3 |
-| Console | `jvcs.exe` 2.5.0.1030 (original) and 2.5.0.2026 |
+| Console | `jvcs.exe` 2.5.0.1030 (original) and 2.5.0.20xx (2.5.0.2050 = beta 5) |
 | Delphi | any version: the skill works on the files, not in the IDE |
 | AI tools (`tools\ai`) | 1.1.1 or newer |
 | Claude Code | skills: current versions; installer hooks: 2.1.295+ |
