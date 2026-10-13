@@ -1,0 +1,23 @@
+/* VERSIONINFO do harness: a DLL (IDEDLL) le a versao do executavel host
+   (Application.ExeName) no login, como le a do bds.exe dentro da IDE. */
+1 VERSIONINFO
+FILEVERSION 37,0,0,0
+PRODUCTVERSION 37,0,0,0
+FILEOS 0x4
+FILETYPE 0x1
+{
+ BLOCK "StringFileInfo"
+ {
+  BLOCK "040904E4"
+  {
+   VALUE "FileDescription", "JvcsExternalDll harness (JEDI VCS v2026)\000"
+   VALUE "FileVersion", "37.0.0.0\000"
+   VALUE "ProductName", "JvcsDllHarness\000"
+   VALUE "ProductVersion", "37.0\000"
+  }
+ }
+ BLOCK "VarFileInfo"
+ {
+  VALUE "Translation", 0x0409, 1252
+ }
+}
