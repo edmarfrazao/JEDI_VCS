@@ -431,13 +431,34 @@ begin
   inherited Destroy;
 end;
 
+const
+  WM_JVCSAPPLYTHEME = WM_USER + $4A1;
+
 procedure TJVCSThemeWatcher.WndProc(var Msg: TMessage);
 begin
-  if (Msg.Msg = WM_SETTINGCHANGE) and (Msg.LParam <> 0) and
-     SameText(PChar(Msg.LParam), 'ImmersiveColorSet') then
-  begin
-    if (GMode = tmFollowHost) and not Assigned(JVCSUIHostIsDark) and not GHostKnown then
-      JVCSUIApplyTheme(GMode);
+  // v2026: AllocateHWnd nao protege a janela: uma excecao aqui atravessava o
+  // user32 (WM_SETTINGCHANGE chega por SendMessage de outro processo) e o
+  // processo terminava (0EEDFADE) sem passar pelo Application.OnException.
+  // A troca do VCL Style (recria todas as janelas) agora e adiada com
+  // PostMessage para o laco de mensagens e qualquer excecao vai para o log.
+  try
+    if (Msg.Msg = WM_SETTINGCHANGE) and (Msg.LParam <> 0) and
+       SameText(PChar(Msg.LParam), 'ImmersiveColorSet') then
+    begin
+      if (GMode = tmFollowHost) and not Assigned(JVCSUIHostIsDark) and not GHostKnown then
+        PostMessage(FWnd, WM_JVCSAPPLYTHEME, 0, 0);
+    end
+    else
+    if Msg.Msg = WM_JVCSAPPLYTHEME then
+    begin
+      if (GMode = tmFollowHost) and not Assigned(JVCSUIHostIsDark) and not GHostKnown then
+        JVCSUIApplyTheme(GMode);
+      Msg.Result := 0;
+      Exit;
+    end;
+  except
+    if Assigned(Application) then
+      Application.HandleException(Self);
   end;
   Msg.Result := DefWindowProc(FWnd, Msg.Msg, Msg.WParam, Msg.LParam);
 end;

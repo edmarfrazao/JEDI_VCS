@@ -127,6 +127,7 @@ program JediVCS;
 
 uses
   Windows,
+  SysUtils,
   Forms,
   Dialogs,
   JclDebug,
@@ -295,7 +296,13 @@ begin
   Application.Initialize;
   // v2026: fonte/escala, menus, editores e tema (VCS Properties > Appearance)
   JVCSErrorLogInstall(False);
-  JVCSClientAppearanceInit;
+  try
+    JVCSClientAppearanceInit;
+  except
+    // aparencia nunca impede a partida: registra e segue com o padrao
+    on E: Exception do
+      JVCSLogException(E, 'JVCSClientAppearanceInit');
+  end;
   Application.Title := 'JEDI VCS';
   Application.CreateForm(TVCSProjAdmin, VCSProjAdmin);
   Application.CreateForm(TDataModule1, DataModule1);
