@@ -54,7 +54,7 @@ uses
   System.Rtti, System.TypInfo, System.Math, System.Generics.Collections,
   System.Generics.Defaults, Vcl.Controls, Vcl.Forms, Vcl.StdCtrls, Vcl.ExtCtrls,
   Vcl.ComCtrls, Vcl.Graphics, Vcl.Menus, Vcl.Buttons, Vcl.ToolWin,
-  Vcl.Imaging.pngimage, Vcl.ActnList, System.StrUtils, JclDebug, JVCSUIScale;
+  Vcl.Imaging.pngimage, Vcl.ActnList, System.StrUtils, JclDebug, JVCSStatusBar, JVCSUIScale;
 
 function PrintWindow(hwnd: HWND; hdcBlt: HDC; nFlags: UINT): BOOL; stdcall;
   external user32 name 'PrintWindow';
@@ -1034,6 +1034,7 @@ type
     FBusy: Boolean;
     procedure Tick(Sender: TObject);
     procedure Exec(const ALine: string);
+    procedure AppMinimize(Sender: TObject);
     procedure Out(const S: string);
   public
     constructor Create;
@@ -1071,6 +1072,28 @@ begin
     W.WriteLine(FormatDateTime('hh:nn:ss.zzz ', Now) + S);
   finally
     W.Free;
+  end;
+end;
+
+procedure TJVCSDebugAutomation.AppMinimize(Sender: TObject);
+var
+  SL: TStringList;
+  I: Integer;
+begin
+  // investigacao (item 4 da F4): quem minimiza o app? pilha no momento
+  Out('*** Application.OnMinimize');
+  SL := TStringList.Create;
+  try
+    with JclCreateStackList(True, 0, nil) do
+    try
+      AddToStrings(SL, True, True, True, True);
+    finally
+      Free;
+    end;
+    for I := 0 to SL.Count - 1 do
+      Out('  ' + SL[I]);
+  finally
+    SL.Free;
   end;
 end;
 
@@ -1211,6 +1234,8 @@ var
   C: TComponent;
   I: Integer;
   SL: TStringList;
+  SB: TJVCSStatusBar;
+  J: Integer;
 
   procedure DumpTree(AOwner: TComponent; const APrefix: string);
   var
@@ -1226,7 +1251,15 @@ var
   end;
 
 begin
+  // ate 3 palavras + o resto da linha (texto com espacos) como 4o parametro
   P := ALine.Split([' '], 4);
+  if Length(P) = 4 then
+  begin
+    I := Pos(' ', ALine);
+    I := Pos(' ', ALine, I + 1);
+    I := Pos(' ', ALine, I + 1);
+    P[3] := Copy(ALine, I + 1, MaxInt);
+  end;
   Cmd := LowerCase(P[0]);
   Out('> ' + ALine);
   if Cmd = 'stack' then
@@ -1348,6 +1381,13 @@ begin
       TControlAccess(C).Click;
     end
     else
+    if C is TPageControl then
+    begin
+      TPageControl(C).ActivePageIndex := StrToInt(Txt);
+      if Assigned(TPageControl(C).OnChange) then
+        TPageControl(C).OnChange(C);
+    end
+    else
     if C is TCustomRadioGroup then
       TRadioGroup(C).ItemIndex := StrToInt(Txt)
     else
@@ -1360,10 +1400,60 @@ begin
     Out('  ok');
   end
   else
+  if Cmd = 'stateidx' then
+  begin
+    // stateidx <form> <listview> <item|all>:<StateIndex> (marcacao por icone de estado)
+    I := StrToInt(Copy(Txt, Pos(':', Txt) + 1, MaxInt));
+    Txt := Copy(Txt, 1, Pos(':', Txt) - 1);
+    if Txt = 'all' then
+    begin
+      for J := 0 to TCustomListView(C).Items.Count - 1 do
+        TCustomListView(C).Items[J].StateIndex := I;
+    end
+    else
+      TCustomListView(C).Items[StrToInt(Txt)].StateIndex := I;
+    Out('  ok');
+  end
+  else
+  if Cmd = 'check' + 'item' then
+  begin
+    // checkitem <form> <listview> <item|all>:<0|1> (Checked do item)
+    I := StrToInt(Copy(Txt, Pos(':', Txt) + 1, MaxInt));
+    Txt := Copy(Txt, 1, Pos(':', Txt) - 1);
+    for J := 0 to TCustomListView(C).Items.Count - 1 do
+      if (Txt = 'all') or (J = StrToInt(Txt)) then
+        TCustomListView(C).Items[J].Checked := I = 1;
+    Out('  ok');
+  end
+  else
   if Cmd = 'colclick' then
   begin
     // clique no cabecalho da coluna n (ordenacao)
     TListViewAccess(C).ColClick(TListView(C).Columns[StrToInt(Txt)]);
+    Out('  ok');
+  end
+  else
+  if Cmd = 'gauge' then
+  begin
+    // painel P da TJVCSStatusBar como gauge: gauge <form> <statusbar> <P>:<pos|ind|off>
+    SB := C as TJVCSStatusBar;
+    with SB.Panels[StrToInt(Copy(Txt, 1, Pos(':', Txt) - 1))] do
+    begin
+      Txt := Copy(Txt, Pos(':', Txt) + 1, MaxInt);
+      if Txt = 'off' then
+        PanelType := sptNormal
+      else
+      begin
+        PanelType := sptGauge;
+        if Txt = 'ind' then
+          GaugeAttrs.Style := gsIndeterminate2
+        else
+        begin
+          GaugeAttrs.Style := gsPercent;
+          GaugeAttrs.Position := StrToInt(Txt);
+        end;
+      end;
+    end;
     Out('  ok');
   end
   else
@@ -1386,6 +1476,7 @@ begin
   if (GAutomation = nil) and (GetEnvironmentVariable('JVCS_DEBUG_AUTOMATION') = '1') then
   begin
     GAutomation := TJVCSDebugAutomation.Create;
+    Application.OnMinimize := GAutomation.AppMinimize;
     GAutomation.Out('automacao ativa, pid ' + IntToStr(GetCurrentProcessId));
   end;
 end;
