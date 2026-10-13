@@ -42,6 +42,8 @@ Unit history:
 2008/12/22  THuber    - now decent of TJVCSForm for VISTA  
 ^^^^^^^^^^^^^^^^^ 2.50 B2 was released ^^^^^^^^^^^^^
 2009/12/27  THuber   #5067 support for  D B I S A M removed
+v2026       - TJvRichEdit -> TRichEdit (EnableURLs/OnLinkClick) e versao lida
+              sem a JclFileUtils (GetFileVersionInfo)
 
 -----------------------------------------------------------------------------*)
 
@@ -54,7 +56,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Forms, StdCtrls, ExtCtrls, Controls, Graphics,
-  ComCtrls, JvExStdCtrls, JvRichEdit, JVCSForms;
+  ComCtrls, JVCSForms;
 
 type
   TJVCSBaseAboutDlg = class(TJVCSForm)
@@ -64,7 +66,7 @@ type
     tsVersionInformation: TTabSheet;
     tsCredits: TTabSheet;
     memVersionInformation: TMemo;
-    Memo3: TJvRichEdit;
+    Memo3: TRichEdit;
     pnWarning: TPanel;
     tsLicense: TTabSheet;
     Memo1: TMemo;
@@ -93,7 +95,7 @@ type
     procedure btnCloseClick(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
     procedure lblWebSiteClick(Sender: TObject);
-    procedure Memo3URLClick(Sender: TObject; const URLText: string;
+    procedure Memo3LinkClick(Sender: TCustomRichEdit; const URL: string;
       Button: TMouseButton);
   private
     { Private declarations }
@@ -112,13 +114,42 @@ var
 implementation
 
 uses
-  ShellAPI, JVCSFunctions, JclFileUtils, VCSCommon;
+  ShellAPI, JVCSFunctions, VCSCommon;
 
 {$R *.dfm}
 
+{ v2026: texto do VERSIONINFO sem a JCL (era TJclFileVersionInfo) }
+function ReadVersionString(const AFile, AKey: string; out AValue: string): Boolean;
+type
+  TTranslation = packed record
+    Lang, CodePage: Word;
+  end;
+  PTranslation = ^TTranslation;
+var
+  Size, Dummy: DWORD;
+  Buf: TBytes;
+  Tr: PTranslation;
+  P: PChar;
+  L: UINT;
+begin
+  Result := False;
+  AValue := '';
+  Size := GetFileVersionInfoSize(PChar(AFile), Dummy);
+  if Size = 0 then
+    Exit;
+  SetLength(Buf, Size);
+  if not GetFileVersionInfo(PChar(AFile), 0, Size, @Buf[0]) then
+    Exit;
+  Result := True;
+  if VerQueryValue(@Buf[0], '\VarFileInfo\Translation', Pointer(Tr), L) and (L >= SizeOf(TTranslation)) and
+     VerQueryValue(@Buf[0], PChar(Format('\StringFileInfo\%.4x%.4x\%s', [Tr^.Lang, Tr^.CodePage, AKey])),
+       Pointer(P), L) and (L > 0) then
+    AValue := P;
+end;
+
 procedure TJVCSBaseAboutDlg.FormCreate(Sender: TObject);
 var
-  JclFileVersionInfo: TJclFileVersionInfo;
+  ProductVersion, BuildTimestamp: string;
 begin
   {$IFDEF BETA}
   // Beta warning -> should be done in the descendant for now
@@ -126,16 +157,13 @@ begin
   AcceptDlg := False;
   Accepted := False;
 
-  if FileExists(GetSelfFileName) and VersionResourceAvailable(GetSelfFileName) then
+  if FileExists(GetSelfFileName) and
+    ReadVersionString(GetSelfFileName, 'ProductVersion', ProductVersion) then
   begin
-    JclFileVersionInfo := TJclFileVersionInfo.Create(GetSelfFileName);
-    try
-      lblProductVersion.Caption := 'V ' + JclFileVersionInfo.ProductVersion +
-        ' - Buildtime ' + JclFileVersionInfo.Items.Values['BuildTimestamp'];
-      pnWarning.Visible := (Pos('dev', lblProductVersion.Caption) > 0);
-    finally
-      JclFileVersionInfo.Free;
-    end;
+    ReadVersionString(GetSelfFileName, 'BuildTimestamp', BuildTimestamp);
+    lblProductVersion.Caption := 'V ' + ProductVersion +
+      ' - Buildtime ' + BuildTimestamp;
+    pnWarning.Visible := (Pos('dev', lblProductVersion.Caption) > 0);
   end
   else
     lblProductVersion.Caption := 'Unable to determine version...';
@@ -210,11 +238,11 @@ begin
     ShellExecute(Handle, 'open', PChar(TLabel(Sender).Caption), nil, nil, SW_SHOW);
 end;
 
-procedure TJVCSBaseAboutDlg.Memo3URLClick(Sender: TObject;
-  const URLText: string; Button: TMouseButton);
+procedure TJVCSBaseAboutDlg.Memo3LinkClick(Sender: TCustomRichEdit;
+  const URL: string; Button: TMouseButton);
 begin
   if Button = mbLeft then
-    ShellExecute(Handle, nil, PChar(URLText), nil, nil, SW_SHOW);
+    ShellExecute(Handle, nil, PChar(URL), nil, nil, SW_SHOW);
 end;
 
 end.

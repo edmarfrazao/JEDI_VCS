@@ -370,6 +370,8 @@ call set "BLD_OUTNAME=%%PRJ_%BLD_K%_OUT%%"
 if defined BLD_OUTNAME call :rename_out
 rem  FVCSCrypt.dll (32 bits) e necessaria ao lado do EXE/DLL para o LOGIN
 if /i "%BLD_PLAT%"=="Win32" if exist "%BLD_ROOT%\3rdparty\fvcscrypt.dll" if not exist "%BLD_ROOT%\bin\client\Win32\fvcscrypt.dll" copy /y "%BLD_ROOT%\3rdparty\fvcscrypt.dll" "%BLD_ROOT%\bin\client\Win32\" >nul
+rem  Ajuda: jedivcs.chm (cliente/DLL) e jedivcsdiff.chm (Diff), se existirem em 3rdparty
+for %%H in (jedivcs.chm jedivcsdiff.chm) do if exist "%BLD_ROOT%\3rdparty\%%H" if not exist "%BLD_ROOT%\bin\client\%BLD_PLAT%\%%H" copy /y "%BLD_ROOT%\3rdparty\%%H" "%BLD_ROOT%\bin\client\%BLD_PLAT%\" >nul
 goto :eof
 
 :bo_fail
