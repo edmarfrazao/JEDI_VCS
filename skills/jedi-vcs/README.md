@@ -93,6 +93,18 @@ Teste só do localizador:
 powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\skills\jedi-vcs\scripts\localizar-wrapper.ps1" -Text
 ```
 
+### Resultado registrado (13/10/2026)
+
+Skill copiada para `<projeto>\.claude\skills\jedi-vcs` de um projeto de teste (`Exemplo01`, que também
+tinha a skill `jvcs` do instalador) e o comando `claude -p` acima: a IA usou a skill, consultou o
+wrapper e respondeu com os 4 módulos `clean` (uprincipal.pas v0.14, exemplo01.res/.dproj/.dpr v0.1),
+nenhum checkout, e apontou que `Project1.dpr` usa nome padrão recusado pelo JEDI VCS. Só leitura;
+nenhum lock criado. O Claude Code avisou que as regras `allow` foram ignoradas porque a pasta não tinha
+a confiança aceita (as chamadas ao wrapper foram liberadas pelo `--allowedTools`).
+
+`localizar-wrapper.ps1`: na pasta do projeto achou o `tools\ai` pelo manifesto do instalador; fora
+dele, pela instalação (`C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai`, registro de desinstalação).
+
 ## Compatibilidade
 
 | Item | Suporte |
