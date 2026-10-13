@@ -284,6 +284,78 @@ Release nova`, 12/10/2026). O registro do expert é o mesmo de antes (`JVCSIDECl
 
 Para voltar à DLL original: feche o Delphi e rode `tools\compilar-expert.bat Release original`.
 
+## 5A. Expert em todas as atualizações do Delphi (11.x, 12.x, 13.x) — 13/10/2026
+
+**Problema.** O `JvcsExpertBDS37.dll` compilado no 13.2 não carregou num Delphi 13.1: "Could not find
+Wizard ..." no splash e, do Windows, "ponto de entrada `@Ideeditorcontrolbridge@initialization$qqrv` não
+encontrado" (erro 127 do `LoadLibrary`). O expert usa runtime packages; com pacotes, **toda unit de pacote que
+entra no grafo de `uses`** (direta ou indiretamente) gera um import, por nome, da sua `initialization`. O
+`ToolsAPI.pas` usa `DockForm` (designide), e o grafo do `DockForm` ganhou no 13.2 a unit `IdeEditorControlBridge`,
+que não existe no `designide370.bpl` do 13.1. Um `library` de teste só com `uses ToolsAPI` já reproduz.
+
+**Correção (a partir de `c1d0ddc`).**
+
+| | Antes | Depois |
+|---|---|---|
+| Pacotes importados | `rtl`, `vcl`, `designide`, `vclactnband`, `vclimg`, `vclwinx`, `xmlrtl` (7) | `rtl`, `vcl`, `xmlrtl` (3) |
+| Símbolos importados dos `.bpl` (13.2) | 599 (com `TList<T>`) → 560 | 429 (11.3: 420) |
+| Units do designide com `initialization` importada | 18 (`DockForm`, `IdeEditorControlBridge`, `DesignEditors`...) | 0 |
+
+- `tools\gerar-toolsapi.ps1` gera, na hora do build, `JvcsToolsAPI.pas` e `JvcsFileHistoryAPI.pas` a partir do
+  `source\ToolsAPI` **da instalação de quem compila**, sem `DockForm` (`TDockableForm = TForm`; o expert não usa
+  essas funções). Mesmas interfaces, GUIDs e ordem de métodos (vtable idêntica). Gravado só em
+  `dcu[\D11|D12]\Win32\expert\toolsapi` — nada da Embarcadero vai para o git.
+- `tools\compilar-expert.bat` e `JvcsExpertBDS.dproj` usam unit alias `ToolsAPI=JvcsToolsAPI`,
+  `FileHistoryAPI=JvcsFileHistoryAPI`; o fonte do expert continua com `uses ToolsAPI`. O `designide` fica no `-LU`
+  só para `DesignIntf` (sem import em tempo de execução).
+- `SplashScreenServices` é variável global da ToolsAPI que a IDE preenche na cópia dela; o expert lê
+  `@Toolsapi@SplashScreenServices` por `GetProcAddress` no `designide<nn>.bpl` (sem import estático).
+  `BorlandIDEServices` já vinha do parâmetro de `InitWizard`.
+- `JVCSExpertWizard`: `TList<TMenuItem>`/`TList<TAction>` viraram arrays dinâmicos (os genéricos importavam
+  `TListHelper` do `rtl<nn>.bpl`, interno e sujeito a mudança).
+- Validação: `src\jvcsideexpert\tests\testar-expert.bat` (host com a ToolsAPI **real** do designide carregando o
+  expert com a cópia: menus, ações, notificações, ABI) e `testar-dll.bat ambas` sem falhas no 13.2; expert do
+  11.3 compilado e conferido (`JvcsExpertBDS22.dll`).
+
+**Ferramenta.** `tools\verificar-expert.ps1` lê os imports (normais e delay-load) do expert e as exportações dos
+`.bpl` com um leitor de PE próprio e lista o que falta — a mesma resolução que o `LoadLibrary` faz:
+
+```
+powershell -NoProfile -ExecutionPolicy Bypass -File tools\verificar-expert.ps1 ^
+  -Expert bin\ideclient\Win32\JvcsExpertBDS37.dll -BplDir D:\Delphi\JediVCS\ref-bpl\13.1 -Inits -Permitidos rtl,vcl,xmlrtl
+```
+
+Sem `-BplDir` usa `Studio\<v>\bin` e `Public\Documents\...\Bpl` da versão do nome do expert. `-Inits` lista as
+units cuja `initialization` é importada; `-Permitidos` reprova outros pacotes. Código 0 = carrega; 1 = não.
+O `compilar-expert.bat` roda essa conferência a cada build (contra os `.bpl` da própria instalação) e o
+`gerar-instalador.bat` confere todos os experts antes do ISCC.
+
+**Política de build (vale para 11, 12 e 13).**
+
+1. O expert só pode importar `rtl<nn>`, `vcl<nn>` e `xmlrtl<nn>` — nada de design-time (`designide`,
+   `vclactnband`, `vclimg`, `vclwinx`...). Funcionalidade nova vai para a `JvcsExternalDll.dll`
+   (autocontida, sem pacotes), não para o expert.
+2. Sem genéricos da RTL no expert (`TList<T>`, `TDictionary<K,V>`...): use arrays dinâmicos ou `TList` clássico.
+3. Preferência: compilar cada `JvcsExpertBDS<nn>.dll` na **atualização mais antiga suportada** daquela versão
+   (13.0, 12.0, 11.0) — a Embarcadero só acrescenta exports em updates. Como esta máquina tem o 13.2 e o 11.3,
+   a garantia vem do item 4.
+4. Antes de publicar: `verificar-expert.ps1 -BplDir <.bpl de cada atualização suportada>` com 0 ausentes.
+   Guarde os `.bpl` de referência (`rtl`, `vcl`, `xmlrtl`) de cada update em `D:\Delphi\JediVCS\ref-bpl\<versão>`
+   (fora do git; são binários da Embarcadero). Pendente: `.bpl` do 13.0/13.1 (remoto), 12.x e 11.0–11.2.
+5. As units de RTL/VCL que restam com `initialization` importada (`System.*`, `Vcl.Forms`, `Vcl.Menus`...)
+   existem desde sempre; exceção a conferir com os `.bpl` do 13.0/13.1: `Winapi.Msctf.Pkghelper` e
+   `Winapi.Windows.Pkghelper` (aparecem no 13.2, não no 11.3).
+
+**IDE de 64 bits.** O Delphi 12.3 e o 13 trazem também `bin64\bds.exe`, que guarda à parte as listas de experts
+e pacotes: `HKCU\Software\Embarcadero\BDS\<v>\Experts x64`, `Known Packages x64`, `Known IDE Packages x64`
+(conferido no registro do 37.0 desta máquina; valor `App x64` aponta para `bin64\bds.exe`). Uma DLL de 32 bits
+não carrega na IDE de 64 bits (erro 193), então o expert é registrado **só** em `Experts` e o instalador remove
+um `JVCSIDEClient` nosso que esteja em `Experts x64`. Expert Win64 (futuro): a `JvcsExternalDll.dll` e a
+`fvcscrypt.dll` são 32 bits e não carregam num processo de 64 bits; seria preciso um expert Win64 fino que fale
+com o núcleo **fora do processo** (o caminho previsto no ADR-001: console/serviço local 32 bits por IPC), ou portar
+a DLL para Win64 com um substituto da `fvcscrypt.dll`. Recomendação: manter o expert 32 bits (a IDE de 32 bits
+continua sendo a principal no 12.3/13) e tratar o Win64 junto com a separação núcleo/IDE do ADR-001.
+
 ## 6. Pendências
 
 - **Teste na IDE** (seção 5), incluindo History, menu do Project Manager, Compare/Diff, fechamento com

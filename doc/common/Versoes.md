@@ -27,7 +27,7 @@ Numeração:
 
 | Delphi | `VERxxx` | `CompilerVersion` | `RTLVersion` | BDS (registro/pasta) | Sufixo de pacote (`LIBSUFFIX AUTO`) | `jedi.inc` | Situação nesta máquina |
 |---|---|---|---|---|---|---|---|
-| 11 Alexandria | `VER350` | 35.0 | 35.00 | 22.0 | 280 | `DELPHI28` | **não instalado** (será instalado depois) |
+| 11 Alexandria | `VER350` | 35.0 | 35.00 | 22.0 | 280 | `DELPHI28` | **instalado em 13/10/2026**: 11.3, `rtl280.bpl` `28.0.48361.3236`; GetIt ainda vazio |
 | 12 Athens | `VER360` | 36.0 | 36.0 (não confirmado em fonte primária) | 23.0 | 290 | `DELPHI29` | **não instalado** (será instalado depois) |
 | 13 Florence | `VER370` | 37.0 | 37.00 | 37.0 | 370 | `DELPHI37` | **instalado**: 13.2 Professional, build `37.0.60952.8797` |
 
@@ -41,7 +41,17 @@ Observações:
 - Plataforma da fase 1: **Win32 apenas** (a `fvcscrypt.dll` é de 32 bits e a IDE de 32 bits continua no Delphi 13). Win64/ARM64EC ficam na F6.
 - Matriz de build alvo: Win32 em Delphi 13.2, 12 e 11, Debug e Release.
 - Nomes de saída do expert por `CompilerVersion`: `JvcsExpertBDS37.dll` (13), `JvcsExpertBDS23.dll` (12), `JvcsExpertBDS22.dll` (11).
-- Pacotes de design-time da JVCL por IDE: `d37` (13), `d29` (12), `d28` (11).
+- Pacotes de design-time da JVCL por IDE: `d37` (13), `d29` (12), `d28` (11). Pastas de DCUs da JCL/JVCL:
+  `lib\d28|d29|d37\win32`; do ICS: `Lib\<cfg>\<plat>\<BDS>` (`22.0`, `23.0`, `37.0`).
+- Compilador por versão: `bin\dcc32280.dll` (11), `dcc32290.dll` (12), `dcc32370.dll` (13) — é por ela que o
+  `tools\msbuild\JediVCS2026.props` reconhece a versão. Tudo o que muda por versão nos scripts está em
+  `tools\versoes.ini` (`/delphi:11|12|13` ou `/bds:22|23|37` no `compilar.bat` e no `compilar-expert.bat`).
+- **Atualizações** (13.0/13.1/13.2, 12.0–12.3, 11.0–11.3): o expert precisa carregar em todas. Ele só importa
+  `rtl<pkg>`, `vcl<pkg>` e `xmlrtl<pkg>` (ToolsAPI local sem `DockForm`; ver
+  [Port-DLL-IDE](../client/Port-DLL-IDE.md), 5A): o do 13.2 importava `@Ideeditorcontrolbridge@initialization`
+  do `designide370.bpl`, que o 13.1 não tem. Conferência: `tools\verificar-expert.ps1 -BplDir <.bpl da atualização>`.
+- IDE de 64 bits (12.3 e 13, `bin64\bds.exe`): listas próprias `Experts x64` / `Known Packages x64`; o expert é
+  32 bits e só vai em `Experts`.
 
 ## 3. Versões das dependências
 
@@ -63,7 +73,9 @@ Observações:
 | `fvcscrypt.dll` | 1.0.0.19 | instalação oficial | Binário fechado |
 | Base do código do cliente | clone `Libaud/JediVCS`, commit `f6a777d` (28/12/2017) | `D:\Delphi\JediVCS\Fontes_JediVCS_2.5` | Ver [LEIAME-Origem.md](LEIAME-Origem.md) |
 
-Quando as dependências forem instaladas em D11/D12, registrar aqui os commits equivalentes.
+Quando as dependências forem instaladas em D11/D12, registrar aqui os commits equivalentes (e ajustar as
+seções `[22.0]`/`[23.0]` de `tools\versoes.ini`; os valores de lá são prováveis). Checklist:
+[manual, capítulo 10](../manual/10-Delphi-11-e-12.md).
 
 ## 4. Ferramentas
 
@@ -101,7 +113,10 @@ Compatibilidade de protocolo: o servidor 2.5 Beta 3 é o par obrigatório. O cli
 
 | Arquivo | Versão | Estado |
 |---|---|---|
-| `bin\ideclient\Win32\JvcsExpertBDS37.dll` | 2.5.0.2026 (`2.5.0.2026 Beta 2026`, pré-lançamento) | Compila e passa na verificação do PE. **Em revisão/correção**; não afirmar que foi testado na IDE |
+| `bin\ideclient\Win32\JvcsExpertBDS37.dll` | 2.5.0.2026 (`2.5.0.2026 Beta 2026`, pré-lançamento) | Compilado no 13.2 (13/10/2026): importa só `rtl370`/`vcl370`/`xmlrtl370` (429 símbolos), sem `designide370` |
+| `bin\ideclient\Win32\JvcsExpertBDS22.dll` | 2.5.0.2026 | Compilado no 11.3 (13/10/2026): só `rtl280`/`vcl280`/`xmlrtl280` (420 símbolos); não testado na IDE do 11 |
+| `bin\client\D11\...`, `bin\client\D12\...` | n/a | Verificação do código nas outras IDEs (`compilar.bat /delphi:11`); não distribuídos (ADR-001) |
+| `bin\msbuild\<Dnn>\...` | n/a | Saída dos `.dproj` (IDE/MSBuild); não distribuída |
 | `bin\client\Win32\*` | n/a | Vazio: nenhum dos 4 projetos do cliente compila ainda ([Status.md](Status.md)) |
 
 ## 7. Histórico

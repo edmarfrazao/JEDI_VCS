@@ -28,7 +28,11 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
   `%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe`. Direto: `ISCC.exe setup\JediVCS2026.iss`.
 - Log: `tools\logs\gerar-instalador.log`. Código de saída 0 = OK, 1 = falha.
 - Experts: entra no pacote todo `bin\ideclient\Win32\JvcsExpertBDS22.dll` / `23` / `37` que existir
-  (pré-processador `#if FileExists`), **sem editar o `.iss`**. Hoje só existe o 37 (Delphi 13).
+  (pré-processador `#if FileExists`), **sem editar o `.iss`**. O `gerar-instalador.bat` compila o 22/23 só se
+  o Delphi 11/12 estiver instalado e confere cada expert com `tools\verificar-expert.ps1` (só `rtl`/`vcl`/`xmlrtl`
+  importados, todos os símbolos resolvidos). Em 13/10/2026: 37 (Delphi 13.2) e 22 (Delphi 11.3).
+- O expert é registrado só em `HKCU\...\BDS\<v>\Experts` (IDE de 32 bits); um valor nosso em `Experts x64`
+  (IDE de 64 bits do 12.3/13) é removido na instalação.
 
 ## 2. Instalar, reinstalar/reparar, desinstalar
 
