@@ -1,4 +1,4 @@
-# Port do cliente standalone `jedivcs.exe` para Delphi 13.2 (F4, 1ª etapa)
+# Port do cliente standalone `jedivcs.exe` para Delphi 13.2 (F4, 1ª e 2ª etapas)
 
 Estado em **12/10/2026**. O cliente GUI (`src\jedivcs\Jedivcs.dpr`) compila no Delphi 13.2 Win32
 (Debug e Release, 0 erros). Ele foi testado contra o servidor de teste JEDI VCS 2.50
@@ -7,8 +7,9 @@ comentário acentuado, histórico de revisões e undo checkout.
 
 Esta etapa usa a JVCL 2026.08 do GetIt como **ponte**: os forms ainda têm controles `TJv*`. As DFS,
 o FavOpenDialog, o RekScan, o ItemProp, o HtmlHlp, o BFCrypt e o mwPasLex foram trocados por código
-nativo ou novo. A troca da JVCL visual (lotes 4.4/4.5), a auditoria completa de forms e as opções
-de fonte/tema/IA ficam para as próximas etapas.
+nativo ou novo. A troca da JVCL visual (lotes 4.4/4.5) e a auditoria completa de forms ficam para as
+próximas etapas. A 2ª etapa (13/10/2026) trouxe as opções de aparência e de IA e o log de erros
+(seção 4).
 
 Referências: [Plano-de-Port.md](../common/Plano-de-Port.md) (F4 e adendo),
 [Decisoes.md](../common/Decisoes.md), [Port-Console.md](Port-Console.md),
@@ -131,7 +132,63 @@ Observações:
   (`UIFontScale`) entra junto com as opções de fonte/tema.
 - O GUI grava `ProgramVersion = 2.5.0.2026` na chave compartilhada com o cliente 2.5.0.1030.
 
-## 4. Pendências
+## 4. Aparência e IA (F4, 2ª etapa, 13/10/2026)
+
+### 4.1 O que entrou
+
+| Arquivo | Mudança |
+|---|---|
+| `src\common\JVCSForms.pas` | `TJVCSForm.DoCreate` (antes do `OnCreate`, que restaura posição/tamanho salvos) aplica fonte/escala (`JVCSUIApplyToForm`), fonte dos popup menus e dos SynEdit (reconhecidos pelo nome da classe) e o tema, quando `JVCSFormsApplyAppearance = True`. Com a fonte padrão o form fica como no DFM. Forms que não herdam de `TJVCSForm` (mensagens, diálogos da JVCL) são tratados por `Screen.OnActiveFormChange` (encadeado). A aplicação é idempotente |
+| 19 forms + `JVCSCompressedDiffDialog` | `class(TForm)` → `class(TJVCSForm)` (ProjAdmin, check-in/out, dock forms, Recent, VerSet, UsedUnits...) |
+| `src\jedivcs\JVCSClientAppearance.pas` (nova) | liga `JVCSUIScale`/`JVCSUITheme` na `ConfigStorage` (`sBaseRegistryKey + crbOptions`), `JVCSUIInitialize`, tema; no EXE `JVCSUIStartFollowingSystem` (troca do tema do Windows em tempo real) |
+| `Jedivcs.dpr` | `JVCSErrorLogInstall(False)` e `JVCSClientAppearanceInit` logo depois do `Application.Initialize` |
+| `Options.pas/.dfm`, `VCSBase.pas` | páginas **Appearance** (`cspAppearance = 19`) e **AI / Automation** (`cspAI = 20`), no fim da lista (os índices antigos não mudam) |
+| `src\common\client\JVCSAIConfig.pas` (nova) | lê/grava `%APPDATA%\JEDI\JVCS\config.ini` `[ai] checkout=/checkin=` exatamente como `Read-JaIniSection`/`Set-JaConfigValue` do `tools\ai\lib\jvcs-ai-common.ps1`: UTF-8 com BOM, CRLF, troca só a linha da chave, preserva o resto; arquivo novo com o cabeçalho do wrapper; valor inválido = `confirm` |
+| `src\common\client\JVCSErrorLog.pas` (nova) | log de erros (ver 4.3) |
+| `JVCSDialogs.pas` | diálogos DSA reentrantes (ver 4.3) |
+| `JVCSBaseAboutDialog.pas/.dfm` | `TJvRichEdit` → `TRichEdit` (`EnableURLs`/`OnLinkClick`); versão lida com `GetFileVersionInfo` (sem `JclFileUtils`) |
+
+**Appearance**: escala (100–200%, ou digitada 80–250), fonte da interface, dos menus e dos editores
+(TFontDialog, botões *Font...* e *Default*), tema *Follow Windows* (na DLL: *Follow Delphi*) | *Light* |
+*Dark*, *Restore defaults*. Grava `UIFontScale`, `UIFontName`, `UIFontSize`, `MenuFontName/Size`,
+`EditorFontName/Size` e `UITheme` (Port-Diff.md §4.1) só se algo mudou, e reaplica em todas as janelas
+abertas (`JVCSClientAppearanceApplyAll`). No EXE o tema escuro é o VCL Style global "Windows Modern
+Dark" (embutido); o claro é o estilo nativo.
+
+**AI / Automation**: *Check out by AI* e *Check in by AI* = Manual | Ask for confirmation | Automatic
+(`manual`/`confirm`/`auto`), texto curto de cada modo e o caminho do `config.ini`. Só grava a chave que
+mudou. Os demais valores do `[ai]` (`commentPrefix`, `identity`, `asciiAs`, `jvcsExe`, timeouts) continuam
+só pelo `jvcs-ai.ps1 config set`.
+
+`JVCS_NOBRANCHUI` (branch oculta) foi conferido: continua no `exe` e no `dll` do `compilar.bat`.
+
+### 4.2 Testes (13/10/2026)
+
+| Passo | Resultado |
+|---|---|
+| Build `exe`/`dll`/`diff`/`console` Debug e Release Win32 | 0 erros (avisos: exe 313/312, dll 328/327, diff 0, console 248) |
+| Options → Appearance e AI / Automation (captura da janela) | páginas aparecem; IA mostra `Automatic/Automatic` (config.ini desta máquina) |
+| Gravar 150% + Dark + IA confirm/confirm, OK | registro `UIFontScale=150`, `UITheme=2`; config.ini só com `checkout=confirm`/`checkin=confirm` trocados (324 → 330 bytes, BOM e CRLF mantidos); a janela principal foi recriada no tema escuro |
+| `jvcs-ai.ps1 config list -Text` | `checkout = confirm [config.ini]`, `checkin = confirm [config.ini]` |
+| Reabrir o EXE | login e Options em escuro, fonte 150% (Segoe UI 14 pt), página Appearance com 150% e Dark |
+| Restauração | `HKCU\Software\JEDI\JEDIVCS` reimportado do backup (export idêntico) e `config.ini` copiado de volta (auto/auto, hash igual) |
+
+### 4.3 Controle de erros
+
+- `JVCSErrorLog`: `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-<exe|dll>-AAAAMMDD.log` (UTF-8). Cada linha: data/hora,
+  processo, módulo e versão, contexto, classe e mensagem, endereço (módulo+offset) e unit/rotina/linha
+  quando o `.map` está ao lado do módulo (JclDebug, sem hook de exceções). Instalado por
+  `Application.OnException` (encadeado; no EXE a mensagem continua a mesma) e `ExceptProc`. Nunca grava
+  senha (só a mensagem da exceção).
+- `JVCSDialogs.DSAIdentsMessageDlg/GetState/SetState`: antes todos usavam o ID DSA 0 e o texto de marca
+  `ctkOwnDSAMsg`; um segundo diálogo aberto por um `TTimer` enquanto o primeiro estava aberto levantava
+  `EJvDSADialog: CheckMarkText ID 99 already registered` (reproduzido no host interativo da DLL, com o
+  `LoginTimer`). Agora cada uso pega um ID livre e o texto tem contador de referências.
+
+`Options` crashou uma vez (`0EEDFADE`) ao abrir por teclado numa sessão em que o login tinha sido feito
+automaticamente; não reproduziu nas execuções seguintes (com o log ligado). Se voltar, o log terá a pilha.
+
+## 5. Pendências
 
 - **JVCL visual** ainda presente (47 DFMs): lotes 4.4/4.5 do plano; `JvPluginManager` ainda no DFM do
   ProjAdmin. JCL ainda usada (`JclDebug`, `JclFileUtils`, `JclStrings`, `JclSecurity`, `JclPCRE` no
@@ -142,7 +199,11 @@ Observações:
   Compressed Diff, UsedUnits/ToDo com o lexer novo, SelectFolder com `TShellTreeView`, ordenação por
   coluna e setas, gauge da status bar, ExtBugtracker, Save WIP, Compare all.
 - **mdMailSlot** não portado (só compila); `SMTPSend` intacto.
-- **Opções de fonte/tema/aba IA** (dependem de `JVCSUIScale`/`JVCSUITheme` da F3): próxima etapa.
+- ~~Opções de fonte/tema/aba IA~~: feitas (seção 4). Faltam: item de menu **View → Font size**
+  (atalho de escala), ícones da toolbar para o tema escuro, esquema escuro dos highlighters do
+  SynEdit, `ImageList` escalada pelo DPI, ajuste fino de layouts a 150–200% (alguns rótulos cortados,
+  ex. a página User Interface do Options), `DiffAbout` voltar a herdar de `JVCSBaseAboutDialog`, e os
+  demais valores do `[ai]` (prefixo, identidade, `asciiAs`) na página AI / Automation.
 - `.dproj` do EXE (F0) e builds em D11/D12.
 - Exceção no lugar da cifragem LZH: se algum servidor exigir `EncryptServerData`, a conexão falha
   com mensagem explícita.
