@@ -10,7 +10,7 @@ Full details (Portuguese): [manual 09](../manual/09-Instalador-do-Cliente.md) an
 ## 1. Before you install
 
 1. Download the installer from [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) and compare
-   its SHA-256 with the value on the release page or the [news page](../../novidades/README.en.md).
+   its SHA-256 with the value on the release page or the [news page](../../news/en/README.md).
 2. **Close Delphi** (every `bds.exe`; for Delphi 7, `delphi32.exe`). If Delphi is running, the installer
    asks you to close it (Retry/Cancel). Delphi rewrites its registry settings when it closes and would
    undo the registration.

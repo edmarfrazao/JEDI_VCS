@@ -10,7 +10,7 @@ IA. Fala **exatamente o mesmo protocolo** do servidor JEDI VCS **2.5 Beta 3** (F
 mesmo.
 
 [Download](https://github.com/edmarfrazao/JEDI_VCS/releases) ·
-[Novidades](novidades/README.md) ·
+[Novidades](news/pt/README.md) ·
 [Manual](doc/manual/README.md) ·
 [Documentação](doc/README.md) ·
 [IA](doc/ia/README.md) ·
@@ -133,7 +133,7 @@ Mapa detalhado: [doc/fontes](doc/fontes/README.md).
 | Entender o código | [doc/fontes](doc/fontes/README.md) — arquitetura, units, compilação, convenções |
 | História, decisões, testes e release | [doc/processo](doc/processo/README.md) |
 | Situação atual e decisões datadas | [Status](doc/common/Status.md), [Decisões](doc/common/Decisoes.md) |
-| O que mudou em cada versão | [Novidades](novidades/README.md) e [CHANGELOG](CHANGELOG.md) |
+| O que mudou em cada versão | [Novidades](news/pt/README.md) e [CHANGELOG](CHANGELOG.md) |
 | Índice completo | [doc/README.md](doc/README.md) |
 
 ## IA

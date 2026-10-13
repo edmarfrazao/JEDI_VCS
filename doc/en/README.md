@@ -30,7 +30,7 @@ ported to Delphi 11, 12 and 13, fully compatible with the existing **JEDI VCS 2.
 | Understand how JEDI VCS works | [01](01-Overview.md) |
 | Let an AI assistant check out and check in files | [05](05-Using-with-AI.md) |
 | Fix a problem | [07](07-FAQ-and-Troubleshooting.md) |
-| Know what changed in each version | [What's new](../../novidades/README.en.md) |
+| Know what changed in each version | [What's new](../../news/en/README.md) |
 
 ## Detailed documentation (Portuguese)
 
