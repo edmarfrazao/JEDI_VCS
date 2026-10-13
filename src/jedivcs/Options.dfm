@@ -348,7 +348,7 @@ object VCSOptions: TVCSOptions
       TabOrder = 4
       OnClick = btnClrMRUAllClick
     end
-    object lbMRUList: TJvTextListBox
+    object lbMRUList: TListBox
       Left = 8
       Top = 48
       Width = 268
@@ -1306,23 +1306,21 @@ object VCSOptions: TVCSOptions
       TabOrder = 0
       OnClick = cbEncryptDataClick
     end
-    object pwedBFKey: TJvEdit
+    object pwedBFKey: TEdit
       Left = 8
       Top = 48
       Width = 265
       Height = 21
-      PasswordChar = #207
-      ProtectPassword = True
+      PasswordChar = '*'
       Anchors = [akLeft, akTop, akRight]
       TabOrder = 1
     end
-    object pwedBFKeyConfirm: TJvEdit
+    object pwedBFKeyConfirm: TEdit
       Left = 8
       Top = 86
       Width = 265
       Height = 21
-      PasswordChar = #207
-      ProtectPassword = True
+      PasswordChar = '*'
       Anchors = [akLeft, akTop, akRight]
       TabOrder = 2
     end

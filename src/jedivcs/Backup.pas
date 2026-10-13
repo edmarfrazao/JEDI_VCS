@@ -84,8 +84,7 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, Menus, JvLED, Buttons, ImgList,
-  JvCombobox, JvComponent, JVCSMruList, JvExStdCtrls, JvExControls,
+  StdCtrls, ComCtrls, ExtCtrls, Menus, JvLED, Buttons, ImgList, JvComponent, JVCSMruList, JvExStdCtrls, JvExControls,
   AbArcTyp, AbZipTyp, AbZipPrc, AbUnzPrc, AbUtils, AbDlgPwd, JVCSForms;
 
 type
@@ -130,8 +129,8 @@ type
     PopupMenu1: TPopupMenu;
     HideUncheckedModules1: TMenuItem;
     Panel2: TPanel;
-    cbxRestoreFile: TJvComboBox;
-    rcbRestorePath: TJvComboBox;
+    cbxRestoreFile: TComboBox;
+    rcbRestorePath: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure btnBackupClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
@@ -764,7 +763,6 @@ end;
 procedure TVCSBackup.btnBackupClick(Sender: TObject);
 var
   PWResult, I: Integer;
-  Password: string;
   FilesSelected: Boolean;
 begin
   FilesSelected := False;
@@ -802,7 +800,9 @@ begin
       VCSPassword.Free;
     end;
     // Break or no Password empty
-    if not (PWResult <> mrCancel) and (Password <> '') then
+    // v2026: o teste usava a variavel local Password (sempre vazia): Cancelar
+    // seguia com o backup SEM senha. Cancelar ou senha vazia = nao faz backup
+    if (PWResult = mrCancel) or (ZipPassword = '') then
     begin
       ZipPassword := '';
       Exit;
