@@ -233,6 +233,7 @@ uses
   {$IFDEF DEBUG}
   JVCSDebug in '..\common\JVCSDebug.pas',
   JVCSDebugView in '..\common\JVCSDebugView.pas',
+  JVCSFormSweep in 'JVCSFormSweep.pas', // v2026: modo -formsweep (varredura de forms)
   {$ENDIF DEBUG}
   JVCSDialogs,
   JVCSThreads in '..\common\JVCSThreads.pas',
@@ -304,11 +305,21 @@ begin
       JVCSLogException(E, 'JVCSClientAppearanceInit');
   end;
   Application.Title := 'JEDI VCS';
+  {$IFDEF DEBUG}
+  if JVCSFormSweepRequested then
+    Application.ShowMainForm := False;
+  JVCSDebugAutomationStart; // so com JVCS_DEBUG_AUTOMATION=1 (testes)
+  {$ENDIF DEBUG}
   Application.CreateForm(TVCSProjAdmin, VCSProjAdmin);
   Application.CreateForm(TDataModule1, DataModule1);
   CleanCompareDirectories;
   {$IFDEF DEBUG}
   //CreateClientDebugView;
+  {$ENDIF DEBUG}
+  {$IFDEF DEBUG}
+  if JVCSFormSweepRequested then
+    JVCSRunFormSweep
+  else
   {$ENDIF DEBUG}
   Application.Run;
   ReleaseMutex(JVCSMutex);
