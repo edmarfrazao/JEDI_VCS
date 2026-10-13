@@ -71,6 +71,6 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 | Peça | Versão |
 |---|---|
 | Servidor | JEDI VCS Firebird Server 2.50 Beta 3 (versão aplicação) |
-| Cliente oficial | 2.5.0.1030 (binários de referência; o port ainda não compila, ver [Status](../common/Status.md)) |
+| Cliente oficial | 2.5.0.1030 (binários de referência; o cliente portado 2.5 Beta 2026 já é distribuído pelo [instalador](09-Instalador-do-Cliente.md), ver [Status](../common/Status.md)) |
 | Expert | JEDI VCS 2.5 Beta 2026 (2.5.0.2026) para BDS 37.0 (Delphi 13.2 Florence), IDE de 32 bits |
 | Banco | Firebird 2.5.9 (ODS 11.2); alternativa embutida 2.1.3 (ODS 11.1) |
