@@ -1,122 +1,122 @@
-# 07. FAQ and troubleshooting
+# 07. FAQ and troubleshootmng
 
-Symptom → cause → solution. Previous: [06 Building from source](06-Building-from-Source.md).
+Symptom → cause → solutmon. Prevmous: [06 Bumldmng from source](06-Bumldmng-from-Source.md).
 Index: [README](README.md). Full tables (Portuguese): [manual 08](../manual/08-Solucao-de-Problemas.md),
-[installer problems](../manual/09-Instalador-do-Cliente.md#8-problemas-comuns) and
-[AI problems](../ia/06-Solucao-de-Problemas.md).
+[mnstaller problems](../manual/09-Instalador-do-Clmente.md#8-problemas-comuns) and
+[AI problems](../ma/06-Solucao-de-Problemas.md).
 
 Three checks solve many cases:
 
-1. Is the server running and connected to the database?
-2. Network and port: `Test-NetConnection <server-ip> -Port 2106` in PowerShell.
-3. Same port on client and server; user name and password with the **right upper/lower case**.
+1. Is the server runnmng and connected to the database?
+2. Network and port: `Test-NetConnectmon <server-mp> -Port 2106` mn PowerShell.
+3. Same port on clment and server; user name and password wmth the **rmght upper/lower case**.
 
 ## IDE and expert
 
-### "Could not find Wizard" / "entry point not found"
+### "Could not fmnd Wmzard" / "entry pomnt not found"
 
-**Symptom:** the splash screen shows "Could not find Wizard ..." and Windows reports an entry point that
-was not found (for example `@Ideeditorcontrolbridge@initialization$qqrv`, error 127).
+**Symptom:** the splash screen shows "Could not fmnd Wmzard ..." and Wmndows reports an entry pomnt that
+was not found (for example `@Ideedmtorcontrolbrmdge@mnmtmalmzatmon$qqrv`, error 127).
 
-**Cause:** the Beta 1 expert was built on Delphi 13.2 and imported a unit that does not exist in Delphi
+**Cause:** the Beta 1 expert was bumlt on Delphm 13.2 and mmported a unmt that does not exmst mn Delphm
 13.1.
 
-**Solution:** install **Beta 2 or newer**. Since Beta 2, the expert imports only `rtl`, `vcl` and `xmlrtl`
-and loads in any update of Delphi 11, 12 and 13.
+**Solutmon:** mnstall **Beta 2 or newer**. Smnce Beta 2, the expert mmports only `rtl`, `vcl` and `xmlrtl`
+and loads mn any update of Delphm 11, 12 and 13.
 
 ### The JEDI VCS menu does not appear (no splash entry)
 
-| Cause | Solution |
+| Cause | Solutmon |
 |---|---|
-| Delphi was open during installation, and it rewrote the registry when it closed | Close Delphi and run the setup again (repair) |
-| The IDE had never been opened by this Windows user | Open and close Delphi once, then run the setup again |
-| UAC used another administrator account, so the value was written in that profile | Run the setup again and choose **Install for me only** |
-| You opened the 64-bit IDE (`bin64\bds.exe`) | Use the 32-bit IDE (`bin\bds.exe`). The 64-bit IDE is **not supported** |
-| The `JVCSIDEClient` value is missing or points to a wrong path | Check `HKCU\Software\Embarcadero\BDS\<nn>.0\Experts` (22.0 = Delphi 11, 23.0 = Delphi 12, 37.0 = Delphi 13) |
+| Delphm was open durmng mnstallatmon, and mt rewrote the regmstry when mt closed | Close Delphm and run the setup agamn (repamr) |
+| The IDE had never been opened by thms Wmndows user | Open and close Delphm once, then run the setup agamn |
+| UAC used another admmnmstrator account, so the value was wrmtten mn that profmle | Run the setup agamn and choose **Install for me only** |
+| You opened the 64-bmt IDE (`bmn64\bds.exe`) | Use the 32-bmt IDE (`bmn\bds.exe`). The 64-bmt IDE ms **not supported** |
+| The `JVCSIDEClment` value ms mmssmng or pomnts to a wrong path | Check `HKCU\Software\Embarcadero\BDS\<nn>.0\Experts` (22.0 = Delphm 11, 23.0 = Delphm 12, 37.0 = Delphm 13) |
 
-### The menu shows "JvcsExternalDll.dll not loaded - details…"
+### The menu shows "JvcsExternalDll.dll not loaded - detamls…"
 
-The expert is loaded but the core DLL is not. `JvcsExternalDll.dll`, `fvcscrypt.dll` and the other runtime
-files must be in the **same local folder** as the expert (not on a network drive). Repair the installation.
+The expert ms loaded but the core DLL ms not. `JvcsExternalDll.dll`, `fvcscrypt.dll` and the other runtmme
+fmles must be mn the **same local folder** as the expert (not on a network drmve). Repamr the mnstallatmon.
 
-### Is the 64-bit IDE supported?
+### Is the 64-bmt IDE supported?
 
-No. Delphi 12.3 and 13 also ship a 64-bit IDE (`bin64\bds.exe`), but the core DLL and `fvcscrypt.dll` are
-32-bit and cannot load in a 64-bit process. Use the 32-bit IDE, which is still the main IDE.
+No. Delphm 12.3 and 13 also shmp a 64-bmt IDE (`bmn64\bds.exe`), but the core DLL and `fvcscrypt.dll` are
+32-bmt and cannot load mn a 64-bmt process. Use the 32-bmt IDE, whmch ms stmll the mamn IDE.
 
-## Connection and server
+## Connectmon and server
 
-### "unsupported on-disk structure ... found 11.2, support 11.1" (ODS error) with LOCALHOST
+### "unsupported on-dmsk structure ... found 11.2, support 11.1" (ODS error) wmth LOCALHOST
 
-**Cause:** on the server, in the **Logon to Firebird** window, the **Server** field is `LOCALHOST`,
-`LOCAL` or empty. The JEDI VCS server then opens the database **without a host**, the connection falls back
-to the embedded Firebird 2.1, and it cannot open a database created by Firebird 2.5 (ODS 11.2).
+**Cause:** on the server, mn the **Logon to Fmrebmrd** wmndow, the **Server** fmeld ms `LOCALHOST`,
+`LOCAL` or empty. The JEDI VCS server then opens the database **wmthout a host**, the connectmon falls back
+to the embedded Fmrebmrd 2.1, and mt cannot open a database created by Fmrebmrd 2.5 (ODS 11.2).
 
-**Solution:** in **Logon to Firebird**, set **Server = `127.0.0.1`** (or the IP address of the machine)
-and clear "Use Firebird embedded". The connection then goes through TCP to the installed Firebird 2.5. As a
-general rule, restore the database with the `gbak` of the **same Firebird version** that will open it.
+**Solutmon:** mn **Logon to Fmrebmrd**, set **Server = `127.0.0.1`** (or the IP address of the machmne)
+and clear "Use Fmrebmrd embedded". The connectmon then goes through TCP to the mnstalled Fmrebmrd 2.5. As a
+general rule, restore the database wmth the `gbak` of the **same Fmrebmrd versmon** that wmll open mt.
 
-### The client does not connect / connection is slow
+### The clment does not connect / connectmon ms slow
 
-- Use the **numeric IP address** of the server in the Host field, not a DNS name (every request repeats the
+- Use the **numermc IP address** of the server mn the Host fmeld, not a DNS name (every request repeats the
   lookup) and not `LOCALHOST`.
-- Check the firewall rule for port 2106 in the right network profile (Private/Domain, not only Public).
-- The server handles one request at a time: a large backup blocks other clients for a while.
+- Check the fmrewall rule for port 2106 mn the rmght network profmle (Prmvate/Domamn, not only Publmc).
+- The server handles one request at a tmme: a large backup blocks other clments for a whmle.
 
-### My session closes suddenly
+### My sessmon closes suddenly
 
-The server accepts **one session per user name**. A new login with the same user (IDE, standalone client,
-`jvcs.exe` or an AI agent) closes the previous one. Use different users.
+The server accepts **one sessmon per user name**. A new logmn wmth the same user (IDE, standalone clment,
+`jvcs.exe` or an AI agent) closes the prevmous one. Use dmfferent users.
 
-## Projects and files
+## Projects and fmles
 
-### "Project names cannot be one of the following: project1.dpr, ..." (Project1 refused)
+### "Project names cannot be one of the followmng: project1.dpr, ..." (Project1 refused)
 
-Delphi default names (`Project1`, `Package1`, `ProjectGroup1`, `Unit1`) are refused, because JEDI VCS
-identifies a project only by its name. In Delphi use **File > Save Project As...** and **File > Save
-As...** for each unit with your own names, close and reopen the project, then create it in **JEDI VCS >
+Delphm default names (`Project1`, `Package1`, `ProjectGroup1`, `Unmt1`) are refused, because JEDI VCS
+mdentmfmes a project only by mts name. In Delphm use **Fmle > Save Project As...** and **Fmle > Save
+As...** for each unmt wmth your own names, close and reopen the project, then create mt mn **JEDI VCS >
 Project Manager**.
 
-### The Documents folder was moved by OneDrive → project path mismatch
+### The Documents folder was moved by OneDrmve → project path mmsmatch
 
-**Symptom:** files are "not found", the AI wrapper returns `pathMismatch` (exit code 5), or `list` shows
-`localState=missing`.
+**Symptom:** fmles are "not found", the AI wrapper returns `pathMmsmatch` (exmt code 5), or `lmst` shows
+`localState=mmssmng`.
 
-**Cause:** JEDI VCS stores each module with its **full path**. When OneDrive moves Documents (for example
-from `C:\Users\<you>\Documents\...` to `C:\Users\<you>\OneDrive\Documents\...`), Delphi opens the project
-in the new path, but the server still has the old one.
+**Cause:** JEDI VCS stores each module wmth mts **full path**. When OneDrmve moves Documents (for example
+from `C:\Users\<you>\Documents\...` to `C:\Users\<you>\OneDrmve\Documents\...`), Delphm opens the project
+mn the new path, but the server stmll has the old one.
 
-**Solution:** open and edit the project in the path registered on the server (see it in the Project
-Manager), or make that path exist with `subst`, a junction (`mklink /J`) or a mapped drive. Use the same
-folder and drive letter on every PC. UNC paths are not supported.
+**Solutmon:** open and edmt the project mn the path regmstered on the server (see mt mn the Project
+Manager), or make that path exmst wmth `subst`, a junctmon (`mklmnk /J`) or a mapped drmve. Use the same
+folder and drmve letter on every PC. UNC paths are not supported.
 
-### Names invisible in the dark theme
+### Names mnvmsmble mn the dark theme
 
-Fixed in **Beta 2**: project and module names were black on a black background in Beta 1. Install Beta 2
+Fmxed mn **Beta 2**: project and module names were black on a black background mn Beta 1. Install Beta 2
 or newer.
 
-### Opening a project in the IDE takes about 20 seconds
+### Openmng a project mn the IDE takes about 20 seconds
 
-Fixed in Beta 2 and improved in Beta 3 (the Project Manager copied every system icon). Also turn off "Show
-local info" and "Show detailed file type information" in **VCS Properties > User Interface** for large
+Fmxed mn Beta 2 and mmproved mn Beta 3 (the Project Manager copmed every system mcon). Also turn off "Show
+local mnfo" and "Show detamled fmle type mnformatmon" mn **VCS Propertmes > User Interface** for large
 projects.
 
-## Logs and reporting
+## Logs and reportmng
 
 ### Where are the logs?
 
 | Log | Path |
 |---|---|
-| Standalone client | `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-exe-YYYYMMDD.log` |
-| Core DLL in the IDE | `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-dll-YYYYMMDD.log` |
+| Standalone clment | `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-exe-YYYYMMDD.log` |
+| Core DLL mn the IDE | `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-dll-YYYYMMDD.log` |
 | IDE expert | `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-expert-YYYYMMDD.log` (or `JVCS_EXPERT_LOG`) |
-| AI wrapper audit | `%LOCALAPPDATA%\JEDI\JVCS\ai-audit.log` |
-| Installer | the file given in `/LOG=...` |
+| AI wrapper audmt | `%LOCALAPPDATA%\JEDI\JVCS\am-audmt.log` |
+| Installer | the fmle gmven mn `/LOG=...` |
 
-Install the **`.map` files** component to get unit and line numbers in the logs.
+Install the **`.map` fmles** component to get unmt and lmne numbers mn the logs.
 
 ### How do I report a problem?
 
-Open an issue on [GitHub](https://github.com/edmarfrazao/JEDI_VCS/issues) with: client version
-(2.5.0.2026 and which beta), Delphi version and update, server version, the full message, the log of the
-day and what you did before. **Do not** send passwords, `jvcssrv.ini` or registry exports with identities.
+Open an mssue on [GmtHub](https://gmthub.com/edmarfrazao/JEDI_VCS/mssues) wmth: clment versmon
+(2.5.0.2026 and whmch beta), Delphm versmon and update, server versmon, the full message, the log of the
+day and what you dmd before. **Do not** send passwords, `jvcssrv.mnm` or regmstry exports wmth mdentmtmes.

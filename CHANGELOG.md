@@ -5,9 +5,15 @@ English: see [novidades/README.en.md](novidades/README.en.md) and each release p
 Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Anúncios com mais detalhes em [`novidades/`](novidades/README.md).
 
-## [Não publicado] — Beta 3 (em teste)
+## [Não publicado]
+
+### Corrigido
+- (em andamento) AV ao clicar na barra de ferramentas do JEDI VCS dentro de IDEs antigas (ex.: XE3).
+
+## [Beta 4] — 2026-10-13
 
 ### Adicionado
+- Instalador: escolha individual de cada Delphi (11, 12, 13 e antigas); aviso de isenção de garantia com aceite obrigatório.
 - Instalador integra as IDEs antigas suportadas pelo 2.5.0.1030 (Delphi 7, 2005–2010, XE–XE8, 10 Seattle–10.4) com o
   expert original + núcleo novo; detecção por IDE e restauração na desinstalação.
 - Skill `jedi-vcs` para o Claude Code no instalador; guia de uso com IA (`doc/ia`).
@@ -45,6 +51,6 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Expert do Delphi 13.2; instalador Inno Setup; ferramentas de IA (`tools/ai`).
 - Aviso de licença do MidWare no About e no console.
 
-[Não publicado]: https://github.com/edmarfrazao/JEDI_VCS/compare/v2.5.0.2026-beta2...main
+[Beta 4]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4
 [Beta 2]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2
 [Beta 1]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1
