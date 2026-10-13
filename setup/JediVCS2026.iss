@@ -772,12 +772,39 @@ begin
     Result := ExpandConstant('{userappdata}\JEDI\JVCS\config.ini');
 end;
 
+{ True se o arquivo so tem comentarios, linhas em branco e cabecalhos [ai]
+  (o que sobra de um config.ini criado por este instalador) }
+function AiIsEmptyConfig(const Path: String): Boolean;
+var
+  Lines: TStringList;
+  I: Integer;
+  T: String;
+  Valid: Boolean;
+begin
+  Result := False;
+  Lines := TStringList.Create;
+  try
+    if not AiLoadLines(Path, Lines, Valid) then
+      Exit;
+    for I := 0 to Lines.Count - 1 do
+    begin
+      T := Trim(AiStripBom(Lines[I]));
+      if (T <> '') and (T[1] <> ';') and (T[1] <> '#') and (CompareText(T, '[ai]') <> 0) then
+        Exit;
+    end;
+    Result := True;
+  finally
+    Lines.Free;
+  end;
+end;
+
 procedure ApplyAiConsole;
 var
   Path, NewExe, Cur: String;
-  Found: Boolean;
+  Found, Existed: Boolean;
 begin
   Path := AiConfigPath;
+  Existed := FileExists(Path);
   NewExe := ExpandConstant('{app}\jvcs.exe');
   Found := AiReadValue(Path, AiKeyJvcsExe, Cur);
   if not (Found and (CompareText(Cur, NewExe) = 0)) then
@@ -799,6 +826,8 @@ begin
   begin
     StateSet('ai.path', Path);
     StateSet('ai.value', NewExe);
+    if not Existed then
+      StateSet('ai.created', '1');
     Log('IA: ' + Path + ' [ai] jvcsExe=' + NewExe);
   end
   else
@@ -827,6 +856,11 @@ begin
     begin
       AiRemoveKey(Path, AiKeyJvcsExe);
       Log('IA: jvcsExe removido (o wrapper volta ao console padrao)');
+      if (StateGet('ai.created') = '1') and AiIsEmptyConfig(Path) then
+      begin
+        DeleteFile(Path);
+        Log('IA: ' + Path + ' criado por este instalador e vazio; apagado');
+      end;
     end;
   end
   else
@@ -835,6 +869,7 @@ begin
   StateSet('ai.value', '');
   StateSet('ai.prev', '');
   StateSet('ai.hadprev', '');
+  StateSet('ai.created', '');
 end;
 
 { ---------------------------------------------------------------- pasta }
