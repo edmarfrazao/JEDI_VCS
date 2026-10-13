@@ -197,13 +197,13 @@ var
   Test: string;
 begin
   Test := S;
-  if Pos(DecimalSeparator, Test) = 0 then
+  if Pos(FormatSettings.DecimalSeparator, Test) = 0 then
   begin
     for I := 1 To Length(Test) do
     begin
-      if not (Test[I] in [' ','0'..'9','e','E','+','-']) then
+      if not CharInSet(Test[I], [' ','0'..'9','e','E','+','-']) then
       begin
-        Test[I] := DecimalSeparator;
+        Test[I] := FormatSettings.DecimalSeparator;
         Break;
       end;
     end;

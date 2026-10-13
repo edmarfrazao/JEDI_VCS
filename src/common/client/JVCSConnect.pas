@@ -177,7 +177,7 @@ implementation
 uses
   Windows,
   {$IFDEF OVERBYTEV6_UP}
-  OverbyteIcsWSocket,
+  OverbyteIcsTypes, OverbyteIcsWSocket,
   {$ELSE}
   WSocket,
   {$ENDIF OVERBYTEV6_UP}

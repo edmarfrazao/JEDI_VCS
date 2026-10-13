@@ -6273,7 +6273,7 @@ end;
 
 procedure TJVCSLogin.DoExecute;
 var
-  S: string;
+  S: ShortString; // JVCS 2026: bytes crus da FVCSCrypt (vtString), sem conversao de code page
 begin
   if Assigned(FAppSrvClient) and Assigned(FAppSrvClient.Request) then
     with FAppSrvClient do

@@ -150,7 +150,7 @@ set "PRJ_diff_PATH=..\jedivcs"
 
 set "PRJ_console_DIR=src\jvcs"
 set "PRJ_console_NAME=jvcs"
-set "PRJ_console_DEFINES=DelphiPersonalEdition"
+set "PRJ_console_DEFINES=DelphiPersonalEdition;JVCSCONSOLECLIENT;BRANCHING"
 set "PRJ_console_PATH=..\jedivcs"
 
 rem ---- Parametros -----------------------------------------------------------
