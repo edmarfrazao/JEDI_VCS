@@ -172,7 +172,7 @@ O servidor guarda tudo no `jvcssrv.ini`, ao lado do `JVCSSrv.exe`. Como o servid
 | Arquivo | Conteúdo | Vale para |
 |---|---|---|
 | `C:\Program Files (x86)\JEDI\JVCS\Server\jvcssrv.ini` | Cópia original do instalador: só chaves antigas `Firebird 1.xDB*` e `FirebirdUseEmbeded=1` | Quem roda **como administrador** (sem redirecionamento) (a validar) |
-| `C:\Users\edmarfrazao\AppData\Local\VirtualStore\Program Files (x86)\JEDI\JVCS\Server\jvcssrv.ini` | Configuração **efetiva**: `FirebirdUseEmbeded=0`, porta, logon, timeouts | Quem roda como usuário comum (o caso aqui) |
+| `%USERPROFILE%\AppData\Local\VirtualStore\Program Files (x86)\JEDI\JVCS\Server\jvcssrv.ini` | Configuração **efetiva**: `FirebirdUseEmbeded=0`, porta, logon, timeouts | Quem roda como usuário comum (o caso aqui) |
 
 > **Atenção:** editar o arquivo de `Program Files` não adianta enquanto existir a cópia do VirtualStore. E rodar o `JVCSSrv.exe` "como administrador" faz o servidor ler o arquivo original (embutido) e voltar o erro de ODS 11.2/11.1. Escolha um modo e use sempre o mesmo. Em produção, instale fora de `Program Files` e evite o problema.
 

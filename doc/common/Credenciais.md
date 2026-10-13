@@ -205,7 +205,7 @@ compartilhado entre token elevado e normal (`LOCAL_MACHINE` é); máquinas compa
 ## (c.10) Modo compatível: a CLI/IA reaproveita a identidade já salva (proposta do usuário, 12/10/2026)
 Uso real hoje: na tela **Server Login → Options** ficam marcados "Store Password with identity" e "Auto login"; a última identidade
 (`Identities\LastUsedID`) já traz servidor, porta, usuário e senha, e ninguém digita nada. Nesta máquina: identidade `DEFAULT`,
-`10.211.55.3:2106`, usuário `sysdba`, `SavePassword=1`, `Autologin=1`.
+`192.168.0.10:2106`, usuário `sysdba`, `SavePassword=1`, `Autologin=1`.
 
 **Proposta:** a CLI (e o MCP) **não cria outro tipo de autenticação**: usa a **mesma identidade salva** que a GUI e a IDE usam.
 - `jvcs <comando>` sem parâmetros de login → usa a identidade `LastUsedID`; `--identity <nome>` escolhe outra.

@@ -2,7 +2,7 @@
 
 | Item | Valor |
 |---|---|
-| Máquina | esta (IP `10.211.55.3`, Windows 11 ARM64) |
+| Máquina | esta (IP `192.168.0.10`, Windows 11 ARM64) |
 | Servidor | JEDI VCS Firebird Server **2.50 Beta 3, versão aplicação** (`JVCSv2.50SalFIB.Beta 3.exe`, SourceForge, SHA-256 `018989AB…D119A696D`) instalado em `C:\Program Files (x86)\JEDI\JVCS\Server` |
 | Porta | **2106** (banner "Welcome to JEDI VCS Firebird Server") |
 | SGBD | **Firebird 2.5.9 instalado** (serviço `FirebirdServerDefaultInstance`, porta 3050), **não** o embutido |
@@ -24,7 +24,7 @@
   ferramentas 2.1 isoladas em `D:\Delphi\JediVCS\ServidorTeste\fb21embed\`.
 
 ## Próximos passos de teste
-1. Cliente (Delphi 13 ou `jedivcs.exe`): identidade `10.211.55.3:2106`, usuário `sysdba`, senha `admin` → trocar a senha.
+1. Cliente (Delphi 13 ou `jedivcs.exe`): identidade `192.168.0.10:2106`, usuário `sysdba`, senha `admin` → trocar a senha.
 2. Criar usuário administrador pessoal e usuário **IA** com poucos direitos (ver `doc\common\Credenciais.md` §c.8/c.10).
 3. Tools → File Families Manager: família `.pas` com Child `.dfm;.fmx;` (ver `doc\client\Checkin-Familias-FMX.md`).
 4. Criar um projeto de teste, check-in/check-out, histórico; capturas "golden" de tráfego para o port.
@@ -46,5 +46,5 @@ manter os dois iguais com `D:\Delphi\JediVCS\ServidorTeste\corrigir-ini-servidor
 ## CAUSA RAIZ do erro "unsupported on-disk structure ... found 11.2, support 11.1"
 No campo **Server** da tela *Logon to Firebird*, os valores `LOCAL`, `LOCALHOST` ou vazio fazem o servidor abrir o arquivo **sem host**
 (`SrvMain.pas:1083-1087`: `DatabaseName := FDBDatabase`), ou seja, conexão local — que nesta instalação acaba no motor 2.1 embutido.
-Com um **IP** (`127.0.0.1` ou `10.211.55.3`) a conexão vira `<ip>:<caminho>` e vai por TCP ao serviço **Firebird 2.5** (porta 3050). Confirmado pelo usuário em 12/10/2026.
+Com um **IP** (`127.0.0.1` ou `192.168.0.10`) a conexão vira `<ip>:<caminho>` e vai por TCP ao serviço **Firebird 2.5** (porta 3050). Confirmado pelo usuário em 12/10/2026.
 **Recomendado: `127.0.0.1`** (não depende do IP da VM).

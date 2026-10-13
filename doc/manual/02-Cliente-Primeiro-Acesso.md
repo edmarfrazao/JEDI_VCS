@@ -24,14 +24,14 @@ Os três usam o mesmo servidor e o mesmo banco.
 | Campo | Para que serve | Valor no servidor de teste |
 |---|---|---|
 | **Identity** | Conjunto salvo de servidor + porta + usuário (+ senha opcional). Botões: **Add/Update Identity** (Ctrl+A) e **Remove Identity** (Ctrl+R). O nome não aceita `[`, `]` nem `\` e não diferencia maiúsculas | `DEFAULT` (criada pela instalação) |
-| **Host** | IP ou nome do servidor. A ajuda recomenda **IP numérico** (cada pedido refaz a consulta DNS) | `10.211.55.3` |
+| **Host** | IP ou nome do servidor. A ajuda recomenda **IP numérico** (cada pedido refaz a consulta DNS) | `192.168.0.10` |
 | **Port** | Porta do servidor; precisa ser igual à do servidor | `2106` |
 | **User** | Usuário do JEDI VCS (**diferencia maiúsculas**) | `sysdba` |
 | **Password** | Senha (**diferencia maiúsculas**) | `admin` |
 | Botão **Ping** (Ctrl+P) | Testa se o servidor responde | |
 | Botão **Connect** | Conecta | |
 
-> **Só no ambiente de teste:** `sysdba`/`admin` e o IP `10.211.55.3` valem para o servidor de teste. Troque a senha logo no primeiro acesso (seção 4).
+> **Só no ambiente de teste:** `sysdba`/`admin` e o IP `192.168.0.10` valem para o servidor de teste. Troque a senha logo no primeiro acesso (seção 4).
 
 Se o servidor e o cliente estão na mesma máquina, a ajuda manda usar o IP real da máquina, não `localhost`/`127.0.0.1`. (No teste de 12/10/2026 o `jvcs.exe` também conectou em `127.0.0.1:2106`.)
 
@@ -45,7 +45,7 @@ Só preencha se a rede exigir proxy SOCKS: **Server**, **Port**, **Usercode**, *
 |---|---|---|
 | **Store Password with identity** | Grava a senha junto da identidade, em `HKCU\Software\JEDI\JEDIVCS\Identities\<nome>\Password`, só em **Base64** (legível por qualquer processo seu). A ajuda também desaconselha | **Desmarque** em produção. Hoje a identidade `DEFAULT` desta máquina tem senha gravada (`SavePassword=1`). Detalhes na seção (a) do [Credenciais.md](../common/Credenciais.md) e no capítulo 07 |
 | **Auto login local clients (Host = local IP)** | Conecta sem mostrar a tela. Segundo a ajuda só funciona com cliente e servidor na mesma máquina e com "Enable local login w/o password" ligado no servidor. No código, o auto-login aciona o botão Connect sozinho, o que dispensa digitar quando a senha está gravada | Desmarcado (aqui `Autologin=0`) |
-| **Use always current local IP as host name** | Troca o host pelo IP atual da máquina; só para instalação local | Aqui está marcado (`UseCurrentIP=1`), por isso o host aparece como `10.211.55.3`. Desmarque se o servidor for outra máquina |
+| **Use always current local IP as host name** | Troca o host pelo IP atual da máquina; só para instalação local | Aqui está marcado (`UseCurrentIP=1`), por isso o host aparece como `192.168.0.10`. Desmarque se o servidor for outra máquina |
 | **Sync local time with server time** | Acerta o relógio do Windows pelo do servidor ao logar. Exige direito de mudar a hora do sistema (normalmente só administrador) | Desmarcado se você não é administrador local (aqui `SyncServerTime=0`); com vários usuários, mantenha os relógios sincronizados por NTP |
 
 3. Clique **Ping**, depois **Connect**. O login do `sysdba` deve entrar como Archive Administrator (o `jvcs.exe` mostra `User accepted. Access level: 4 [Archive Admin]`).
@@ -79,7 +79,7 @@ Não apague o `sysdba` antes de confirmar que o seu usuário administrador funci
 | **Password** / **Confirm password** | 5 a 50 caracteres |
 | **Access level** | Guest account, Read only access, Read write access, Project administrator, Archive administrator |
 | **Description** | Texto livre (até 2000 caracteres) |
-| **Client IP address (optional)** | Botão `...`: "Allow this user login from any client" ou "Restrict to IP address (IP mask)", aceita `*` e `?` (por exemplo `10.211.55.*`). Só vale se "Login restricted to stored IP address" estiver ligado em Server Properties > Security |
+| **Client IP address (optional)** | Botão `...`: "Allow this user login from any client" ou "Restrict to IP address (IP mask)", aceita `*` e `?` (por exemplo `192.168.0.*`). Só vale se "Login restricted to stored IP address" estiver ligado em Server Properties > Security |
 
 Outros itens do menu de contexto da lista: Edit, Delete (mostra/oculta excluídos com "Hide deleted Users"), **Log Out** (derruba a sessão do usuário), Change Password..., Insert E-Mail Address, Export SMTP Forwarder List, Modules locked by, Report.
 
