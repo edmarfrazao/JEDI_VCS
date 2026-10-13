@@ -4,9 +4,10 @@ Expert de IDE (wizard DLL, export `INITWIZARD0001`) para **Delphi 13.2 Florence 
 32 bits** (`Studio\37.0\bin\bds.exe`). O mesmo fonte também compila para Delphi 11 (BDS 22) e 12
 (BDS 23), mas só o Delphi 13 foi testado.
 
-Ele substitui o `JvcsExpertBDS21.dll` (Delphi 10.4) e carrega a **`JvcsExternalDll.dll` ORIGINAL**
-do JEDI VCS 2.5.0.1030 (Delphi 2007, ANSI). Assim o cliente JEDI VCS completo passa a funcionar dentro
-do Delphi 13, falando com o servidor 2.5 Beta 3, antes do port do cliente.
+Ele substitui o `JvcsExpertBDS21.dll` (Delphi 10.4) e carrega a **`JvcsExternalDll.dll`** da própria
+pasta: a **ORIGINAL** do JEDI VCS 2.5.0.1030 (Delphi 2007, ANSI), que fez o cliente completo funcionar
+no Delphi 13 antes do port, ou a **nova** (port para o Delphi 13, F5, mesma ABI; padrão do
+`compilar-expert.bat` desde 12/10/2026). As duas falam com o servidor 2.5 Beta 3.
 
 O comportamento do expert original foi obtido por engenharia reversa estática, documentada em
 [`doc\client\Expert-IDE-Analise.md`](../../doc/client/Expert-IDE-Analise.md). As referências como
@@ -134,8 +135,12 @@ Callbacks (`TExternalIDEFunctionRec`), conforme 3.4 da análise:
 ## Compilação
 
 ```
-tools\compilar-expert.bat [Debug|Release]          (padrão: Release)
+tools\compilar-expert.bat [Debug|Release] [nova|original]     (padrão: Release nova)
 ```
+
+O segundo parâmetro escolhe a `JvcsExternalDll.dll` copiada para a pasta do expert: `nova` é o port
+para o Delphi 13 (F5, `bin\client\Win32`, gerada por `tools\compilar.bat dll Release Win32`; ver
+[`doc\client\Port-DLL-IDE.md`](../../doc/client/Port-DLL-IDE.md)); `original` é a 2.5.0.1030.
 
 - **Saída.**
   - `bin\ideclient\Win32\JvcsExpertBDS37.dll`, mais `.map` (`-GD`) para localizar AVs.
@@ -157,10 +162,11 @@ tools\compilar-expert.bat [Debug|Release]          (padrão: Release)
 - **Runtime copiado** para a pasta da DLL: `JvcsExternalDll.dll`, `fvcscrypt.dll`, `zipdll.dll`,
   `unzdll.dll`, `htm_rep.htm`, `*.jvcs` e `*.chm`. Opcionalmente também `jedivcsdiff.exe`, que a DLL
   usa em Compare/Diff.
-  - **`JvcsExternalDll.dll`**: só de `3rdparty\referencia-2.5.0.1030\` ou de
+  - **`JvcsExternalDll.dll` `nova`**: de `bin\client\Win32`, só se exportar `JEDIVCSDLLINIT` e não
+    for a 2.5.0.1030 (o `.map` vai junto).
+  - **`JvcsExternalDll.dll` `original`**: só de `3rdparty\referencia-2.5.0.1030\` ou de
     `C:\Program Files (x86)\JEDI\JVCS` (ou `JVCS_INSTALL`), e só se o SHA-256 for o da 2.5.0.1030
-    (`7d9d1d35…055a10a3`). Uma DLL portada deixada em `3rdparty\` nunca é copiada por engano; para
-    testar uma DLL nova com este expert, copie-a à mão para `bin\ideclient\Win32`.
+    (`7d9d1d35…055a10a3`). Uma DLL portada deixada em `3rdparty\` nunca é copiada por engano.
   - Demais arquivos, nesta ordem de origem: `3rdparty\`, depois `3rdparty\referencia-2.5.0.1030\`,
     depois `C:\Program Files (x86)\JEDI\JVCS` (ou `JVCS_INSTALL`).
   - A DLL resolve tudo relativo à **própria** pasta, então expert, DLL e runtime ficam juntos.
@@ -171,8 +177,13 @@ tools\compilar-expert.bat [Debug|Release]          (padrão: Release)
   - `0`: OK.
   - `1`: falha de compilação ou de ambiente. Isso inclui a DLL em uso porque a IDE está aberta com o
     expert. Nos dois casos o expert anterior fica intacto.
-  - `2`: compilou, mas falta arquivo de runtime, a `JvcsExternalDll.dll` não é a original ou a
-    verificação do PE falhou (nesse último caso a DLL nova não é copiada).
+  - `2`: compilou, mas falta arquivo de runtime, a `JvcsExternalDll.dll` não é a pedida (`nova`
+    ausente/sem exports ou `original` com outro SHA-256) ou a verificação do PE falhou (nesse último
+    caso o expert novo não é copiado).
+
+Harness da `JvcsExternalDll.dll` **real** (nova e/ou original) fora da IDE, pelo mesmo
+`TJVCSDllBridge` e callbacks do expert: `src\jvcsideexpert\tests\testar-dll.bat [nova|original|ambas]`
+(ver `doc\client\Port-DLL-IDE.md`).
 
 ## Registro na IDE (manual; o script não grava no registro)
 

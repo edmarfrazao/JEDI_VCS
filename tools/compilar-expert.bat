@@ -2,8 +2,8 @@
 rem ==========================================================================
 rem  compilar-expert.bat - Compila o expert de IDE do JEDI VCS (wizard DLL)
 rem
-rem  Uso:   compilar-expert.bat [Debug ou Release]
-rem         Padrao: Release
+rem  Uso:   compilar-expert.bat [Debug ou Release] [nova ou original]
+rem         Padrao: Release nova
 rem
 rem  Compila src\jvcsideexpert\JvcsExpertBDS.dpr com dcc32 (Win32, runtime
 rem  packages rtl;vcl;designide) e gera:
@@ -17,13 +17,16 @@ rem  A DLL e compilada em dcu\Win32\expert\out e so e copiada para
 rem  bin\ideclient\Win32 se a compilacao e a verificacao do PE derem certo:
 rem  um build com falha NAO apaga o expert que a IDE ja usa.
 rem
-rem  Depois copia para bin\ideclient\Win32 os arquivos de runtime da
-rem  JvcsExternalDll.dll ORIGINAL (JEDI VCS 2.5.0.1030): JvcsExternalDll.dll,
-rem  fvcscrypt.dll, zipdll.dll, unzdll.dll, htm_rep.htm, *.jvcs, *.chm
+rem  Depois copia para bin\ideclient\Win32 a JvcsExternalDll.dll e o runtime
+rem  dela: fvcscrypt.dll, zipdll.dll, unzdll.dll, htm_rep.htm, *.jvcs, *.chm
 rem  (e, se existir, jedivcsdiff.exe - usado pela DLL para Compare/Diff).
-rem  JvcsExternalDll.dll: SOMENTE de 3rdparty\referencia-2.5.0.1030\ ou da
-rem  instalacao original (JVCS_INSTALL), e so se o SHA-256 for o da 2.5.0.1030
-rem  (uma DLL portada deixada em 3rdparty\ nunca e copiada por engano).
+rem  JvcsExternalDll.dll (parametro 2):
+rem    nova     (padrao, F5) = a DLL portada para o Delphi 13, de
+rem               bin\client\Win32 (tools\compilar.bat dll Release Win32); so
+rem               se exportar JEDIVCSDLLINIT e NAO for a 2.5.0.1030;
+rem    original = a 2.5.0.1030 (Delphi 2007), SOMENTE de
+rem               3rdparty\referencia-2.5.0.1030\ ou da instalacao original
+rem               (JVCS_INSTALL), e so se o SHA-256 for o da 2.5.0.1030.
 rem  Demais arquivos, nesta ordem: 3rdparty\, 3rdparty\referencia-2.5.0.1030\,
 rem  JVCS_INSTALL.
 rem
@@ -43,7 +46,7 @@ rem
 rem  Log: tools\logs\compilar-expert_Win32_CONFIG.log
 rem  Codigo de saida: 0 = tudo OK; 1 = falha de compilacao/ambiente ou DLL
 rem                   em uso (IDE aberta); 2 = compilou, mas falta arquivo de
-rem                   runtime, a JvcsExternalDll.dll nao e a original ou a
+rem                   runtime, a JvcsExternalDll.dll nao e a pedida ou a
 rem                   verificacao do PE falhou (nesse caso a DLL anterior e
 rem                   mantida).
 rem ==========================================================================
@@ -82,6 +85,16 @@ if /i "%~1"=="--help" goto :usage
 
 set "BLD_CFG=%~1"
 if not defined BLD_CFG set "BLD_CFG=Release"
+set "BLD_EXTDLL=%~2"
+if not defined BLD_EXTDLL set "BLD_EXTDLL=nova"
+if /i "%BLD_EXTDLL%"=="nova" (
+    set "BLD_EXTDLL=nova"
+) else if /i "%BLD_EXTDLL%"=="original" (
+    set "BLD_EXTDLL=original"
+) else (
+    goto :bad_extdll
+)
+set "BLD_NEWDLLDIR=%BLD_ROOT%\bin\client\Win32"
 if /i "%BLD_CFG%"=="Debug" (
     set "BLD_CFG=Debug"
 ) else if /i "%BLD_CFG%"=="Release" (
@@ -133,6 +146,7 @@ echo Raiz    : %BLD_ROOT%
 echo Delphi  : %BLD_BDSDIR%
 echo Config  : %BLD_CFG% Win32 ^(dcc32, pacotes %BLD_PACKAGES%^)
 echo Saida   : %BLD_OUTDIR%\%BLD_PROJ%^<nn^>.dll ^(compilada antes em %BLD_STAGE%^)
+echo DLL     : JvcsExternalDll.dll %BLD_EXTDLL% ^(nova = %BLD_NEWDLLDIR%^)
 echo Runtime : %JVCS_INSTALL%
 
 set "BLD_RESULT=0"
@@ -188,11 +202,11 @@ if "%BLD_PEFAIL%"=="1" (
 )
 if "%BLD_LOCKED%"=="1" goto :dll_locked
 
-rem ---- 5) Arquivos de runtime da JvcsExternalDll original --------------------
+rem ---- 5) JvcsExternalDll.dll (nova ou original) e runtime -------------------
 echo.
-echo ==== Runtime da JvcsExternalDll ^(JEDI VCS 2.5.0.1030^) ====
+echo ==== JvcsExternalDll ^(%BLD_EXTDLL%^) e runtime ====
 rem  (chamadas explicitas: um FOR expandiria *.jvcs/*.chm na pasta atual)
-call :copy_extdll
+if "%BLD_EXTDLL%"=="nova" (call :copy_newdll) else (call :copy_extdll)
 call :copy_rt "fvcscrypt.dll" req
 call :copy_rt "zipdll.dll" req
 call :copy_rt "unzdll.dll" req
@@ -300,6 +314,42 @@ if /i not "%BLD_HASH%"=="%BLD_EXTDLL_SHA256%" (
 echo [OK] JvcsExternalDll.dll - de %BLD_CPSRC% ^(SHA-256 da 2.5.0.1030 confere^)
 goto :eof
 
+rem ==========================================================================
+rem  :copy_newdll  - JvcsExternalDll.dll NOVA (port Delphi 13, F5) de
+rem  bin\client\Win32: precisa exportar JEDIVCSDLLINIT e nao ser a 2.5.0.1030
+rem ==========================================================================
+:copy_newdll
+set "BLD_NEWDLL=%BLD_NEWDLLDIR%\JvcsExternalDll.dll"
+if not exist "%BLD_NEWDLL%" (
+    echo [FALHOU] JvcsExternalDll.dll nova nao encontrada: "%BLD_NEWDLL%"
+    echo          Gere com: tools\compilar.bat dll Release Win32  ^(ou use: %~nx0 %BLD_CFG% original^)
+    set "BLD_RESULT=2"
+    goto :eof
+)
+call :sha256 "%BLD_NEWDLL%" BLD_HASH
+if /i "%BLD_HASH%"=="%BLD_EXTDLL_SHA256%" (
+    echo [FALHOU] "%BLD_NEWDLL%" e a 2.5.0.1030 original, nao a nova
+    set "BLD_RESULT=2"
+    goto :eof
+)
+if exist "%BLD_OBJDUMP%" (
+    "%BLD_OBJDUMP%" -p "%BLD_NEWDLL%" 2>nul | findstr /c:"JEDIVCSDLLINIT" >nul
+    if errorlevel 1 (
+        echo [FALHOU] "%BLD_NEWDLL%" nao exporta JEDIVCSDLLINIT
+        set "BLD_RESULT=2"
+        goto :eof
+    )
+)
+copy /y "%BLD_NEWDLL%" "%BLD_OUTDIR%\" >nul 2>&1
+if errorlevel 1 (
+    echo [FALHOU] nao foi possivel copiar "%BLD_NEWDLL%" ^(arquivo em uso pela IDE?^)
+    set "BLD_RESULT=2"
+    goto :eof
+)
+if exist "%BLD_NEWDLLDIR%\JvcsExternalDll.map" copy /y "%BLD_NEWDLLDIR%\JvcsExternalDll.map" "%BLD_OUTDIR%\" >nul 2>&1
+echo [OK] JvcsExternalDll.dll NOVA - de %BLD_NEWDLLDIR% ^(SHA-256 %BLD_HASH%^)
+goto :eof
+
 :try_extdll
 if not exist "%~1\JvcsExternalDll.dll" goto :eof
 call :sha256 "%~1\JvcsExternalDll.dll" BLD_HASH
@@ -402,15 +452,20 @@ goto :eof
 
 rem ---- Mensagens de uso/erro ------------------------------------------------
 :usage
-echo Uso: %~nx0 [Debug^|Release]
-echo      Padrao: Release. Gera bin\ideclient\Win32\JvcsExpertBDS^<nn^>.dll e copia
-echo      o runtime da JvcsExternalDll.dll original para a mesma pasta.
+echo Uso: %~nx0 [Debug^|Release] [nova^|original]
+echo      Padrao: Release nova. Gera bin\ideclient\Win32\JvcsExpertBDS^<nn^>.dll e copia
+echo      a JvcsExternalDll.dll ^(nova = bin\client\Win32, port Delphi 13; original =
+echo      2.5.0.1030 de 3rdparty\referencia-2.5.0.1030^) e o runtime para a mesma pasta.
 echo      Defina BDSROOT para usar outra instalacao do RAD Studio ^(ex.: ...\Studio\23.0^).
 echo      Defina JVCS_INSTALL se o JEDI VCS 2.5 nao estiver em ProgramFiles^(x86^)\JEDI\JVCS.
 endlocal & exit /b 0
 
 :bad_cfg
 echo [ERRO] Configuracao invalida: "%BLD_CFG%". Use Debug ou Release.
+endlocal & exit /b 1
+
+:bad_extdll
+echo [ERRO] DLL invalida: "%BLD_EXTDLL%". Use nova ou original.
 endlocal & exit /b 1
 
 :no_rsvars
