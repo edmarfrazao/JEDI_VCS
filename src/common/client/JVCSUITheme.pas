@@ -99,6 +99,10 @@ procedure JVCSUIApplyThemeToForm(AForm: TCustomForm);
 { tema do Delphi gravado em HKCU\<ABaseKey>\Theme, valor "Theme"
   (Light, Dark, Mountain Mist, Custom + VCLStyle). Result = conseguiu ler. }
 function JVCSUIReadDelphiTheme(const ABaseKey: string; out ADark: Boolean): Boolean;
+{ tema aplicado pela IDE, gravado pelo expert na variavel de ambiente do
+  processo JVCS_IDE_THEME (Light|Dark). Tem prioridade sobre o registro.
+  Result = variavel presente e valida. }
+function JVCSUIReadHostThemeEnv(out ADark: Boolean): Boolean;
 { chave base do Delphi do processo hospedeiro (bds.exe): Software\Embarcadero\
   BDS\<versao> (ou <-r> da linha de comando); '' se o host nao for o bds.exe }
 function JVCSUIGuessDelphiBaseKey: string;
@@ -745,13 +749,26 @@ begin
   Result := 'Software\Embarcadero\' + Prod + '\' + Ver;
 end;
 
+function JVCSUIReadHostThemeEnv(out ADark: Boolean): Boolean;
+var
+  S: string;
+begin
+  // v2026: o expert grava o tema APLICADO pela IDE (IOTAIDEThemingServices)
+  // na variavel de ambiente do processo e a atualiza quando o tema muda; o
+  // valor do registro (HKCU\...\Theme) nem sempre reflete o tema em uso
+  S := Trim(GetEnvironmentVariable('JVCS_IDE_THEME'));
+  ADark := SameText(S, 'Dark');
+  Result := ADark or SameText(S, 'Light');
+end;
+
 procedure JVCSUIRefreshHostTheme;
 var
   Dark: Boolean;
 begin
   if not GFollowDelphi then
     Exit;
-  if JVCSUIReadDelphiTheme(GDelphiBaseKey, Dark) then
+  if JVCSUIReadHostThemeEnv(Dark) or
+     JVCSUIReadDelphiTheme(GDelphiBaseKey, Dark) then
     JVCSUISetHostTheme(Dark)
   else
   begin

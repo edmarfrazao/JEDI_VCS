@@ -137,6 +137,22 @@ teste na IDE.
   relido a cada janela do JEDI VCS que abre (`TJVCSForm.DoCreate/DoShow`) e repassado a
   `JVCSUISetHostTheme`; trocar o tema da IDE vale na próxima janela aberta (a IDE grava o registro ao
   trocar o tema; não há notificação em tempo real sem mudar a ABI).
+- **Tema real da IDE (13/10/2026).** O valor do registro nem sempre é o tema em uso: no Delphi 11 do usuário a
+  IDE estava **clara** e `HKCU\Software\Embarcadero\BDS\22.0\Theme\Theme` = `Dark`, e as janelas do JEDI VCS
+  ficavam escuras. Agora o **expert** lê o tema aplicado pela ToolsAPI (`IOTAIDEThemingServices250`, igual no
+  11, 12 e 13): `IDEThemingEnabled = False` → claro; senão luminância (ITU-R 601) de
+  `StyleServices.GetSystemColor(clWindow)` < 128 → escuro; sem `StyleServices`, o nome de `ActiveTheme`
+  contendo "Dark". O resultado vai para a variável de ambiente **do processo** `JVCS_IDE_THEME` = `Light` ou
+  `Dark` (`SetEnvironmentVariable`), gravada em `TJVCSWizard.StartUp` **antes** do `JEDIVCSDLLINIT` e
+  regravada pelo `INTAIDEThemingServicesNotifier.ChangedTheme` (existe no 11, 12 e 13) quando o usuário troca
+  o tema. A DLL (`JVCSUIReadHostThemeEnv` em `JVCSUIRefreshHostTheme`) usa a variável se ela for `Light` ou
+  `Dark`; senão cai na leitura do registro acima. ABI inalterada; código em `JVCSExpertNotifiers`
+  (`JvcsThemeInstall`/`JvcsThemeUninstall`, log `JVCS_IDE_THEME=... (tema "...", clWindow=$..., luminancia N)`
+  no log do expert). O expert continua só com `rtl`/`vcl`/`xmlrtl`: símbolos novos importados
+  `Vcl.Themes.TCustomStyleServices.GetSystemColor` e `System.Pos` (presentes nos `.bpl` de 11.3, 12 e 13.1/13.2;
+  `verificar-expert.ps1 -Permitidos rtl,vcl,xmlrtl` com 0 ausentes, inclusive contra `ref-bpl\13.1` e
+  `ref-bpl\12`). Conferido no host interativo: com `JVCS_IDE_THEME=Dark` o login sai escuro com o
+  host/Windows claros; sem a variável, claro.
 - **Risco avaliado (VCL Style dentro da IDE):** a DLL tem a própria VCL (estática). O estilo global dela
   (`TStyleManager`) só pinta os controles VCL da DLL, **mas** o motor de estilos instala um hook
   `WH_CBT` no thread da IDE que estiliza janelas de sistema criadas no thread (`#32768` menus, `#32770`
@@ -226,6 +242,19 @@ dos forms depois do `OnShow`/`OnActivate`. `compilar-expert.bat Release nova` at
 original). Não testado na DLL: varredura de forms (o modo `-formsweep` é do EXE) e o scan de ToDo.
 Observação: o `compilar-expert.bat` copia para `bin\ideclient\Win32` o `jedivcsdiff.exe` do 2.5.0.1030
 (`3rdparty\referencia-2.5.0.1030`), não o Diff portado.
+
+### 4A.5d Login e aviso "sem projeto" ao mesmo tempo (13/10/2026)
+
+Sintoma (Delphi 11, sem projeto aberto): ao abrir o login pelo menu JEDI VCS apareciam juntos o "Server Login"
+e o aviso "IDE returns no active IDE project. JEDI VCS's functionality will be only partly available."
+(com "Don't show this message again"); o login ficava bloqueado até fechar o aviso. Causa: o aviso era
+mostrado em `TVCSLoad.FormActivate` (`Create.pas`), isto é, com o login já na tela e modal, e voltava a cada
+reativação do form. Correção: `TVCSLoad.CheckIDEProject(AWarn)` (só `IDEDLL`) lê o projeto da IDE e, com
+`AWarn`, mostra o aviso; `TJVCSClient.DoOpen` (`JediVCSDLL.dpr`) chama `CheckIDEProject(True)` **antes** do
+`ShowModal`, e o `FormActivate` só atualiza `sProjectName`/`bProjectOpen` (`CheckIDEProject(False)`).
+Conferido no host interativo (`testar-dll-interativo.bat -verbs "Connect Server"`, sem `-project`) com
+captura das janelas do processo: primeiro só o `TDSAMessageForm` "Warning" (Fake IDE desabilitada, nenhum
+`TVCSLoad`); depois de fechá-lo, só o "Server Login"; 0 AV, 0 exceção Delphi.
 
 ### 4A.6 Host interativo
 
