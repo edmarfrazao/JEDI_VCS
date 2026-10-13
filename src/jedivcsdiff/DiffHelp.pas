@@ -25,6 +25,7 @@ Known Issues:
 Unit history:
 
 2004/04/12  THuber    - Created during move from hlp => chm Online Help
+2026/10/12  v2026     - HtmlHelpW declarado localmente; sem JclDebug
 
 -----------------------------------------------------------------------------*)
 {$I JEDI.INC}
@@ -39,9 +40,6 @@ unit DiffHelp;
 interface
 
 uses
-  {$IFDEF DEBUG}
-  JclDebug,
-  {$ENDIF}
   Windows, Forms, Sysutils;
 
 // include help context definitions
@@ -52,8 +50,12 @@ procedure ShowHelpContext(App: TApplication; Ctx: Integer);
 
 implementation
 
-uses
-  HtmlHlp;
+// v2026: HtmlHelpW declarado aqui (antes: unit HtmlHlp externa)
+const
+  HH_HELP_CONTEXT = $000F;
+
+function HtmlHelp(hwndCaller: HWND; pszFile: PWideChar; uCommand: UINT;
+  dwData: DWORD_PTR): HWND; stdcall; external 'hhctrl.ocx' name 'HtmlHelpW' delayed;
 
 //------------------------------------------------------------------------------
 

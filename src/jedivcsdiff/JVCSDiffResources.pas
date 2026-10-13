@@ -25,6 +25,7 @@ Unit history:
 
 2004/11/12  USchuster - new unit
 2007/05/01  USchuster - SynEdit 2.0.5
+2026/10/12  v2026     - textos do port Delphi 13 (SynEdit pyscripter, About, interface)
 
 -----------------------------------------------------------------------------*)
 
@@ -43,10 +44,17 @@ resourcestring
   JVCSRES_Compare_engine_based_on_code_by_Armin_L46_Biernaczyk46 =
     'Compare engine based on code by Armin L. Biernaczyk.';
   JVCSRES_Edit_controls47_Syntax_Highlighter58_Opensource_TSynEdit_146146 =
-    'Edit controls/ Syntax Highlighter: Opensource TSynEdit 2.0.5';
+    'Edit controls/ Syntax Highlighter: Opensource SynEdit (pyscripter/SynEdit).';
   JVCSRES_JEDI_VCS_Diff47Merge_Utility_ = 'JEDI VCS Diff/Merge Utility ';
   JVCSRES_Beta = 'Beta';
   JVCSRES_Filedate58_37s = 'Filedate: %s';
+  JVCSRES_About_JEDI_VCS_Diff = 'About JEDI VCS Diff/Merge Utility';
+  JVCSRES_Version_information = 'Version information';
+  JVCSRES_Credits = 'Credits';
+  JVCSRES_Command_line = 'Command line';
+
+  //DiffEditorProp.pas (v2026)
+  JVCSRES_System_default = 'System default';
 
   //DiffCustomKW.pas
   JVCSRES_Add_Reserved_Word = 'Add Reserved Word';

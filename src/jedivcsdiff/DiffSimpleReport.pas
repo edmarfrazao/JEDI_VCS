@@ -33,6 +33,9 @@ Unit history:
                       - res strings and displayed strings changed to resourcestrings
 2008/12/22  THuber    - Baseclass changed to TJVCSForm
 2011/01/15  USchuster - changed font to Tahoma
+2026/10/12  v2026     - port Delphi 13: TSaveDialog no lugar do TFavSaveDialog, registro
+                        via DiffUtils (no lugar do RegAcc), visualizacao propria
+                        (no lugar do TVCSListView)
 
 -----------------------------------------------------------------------------*)
 
@@ -79,6 +82,8 @@ type
     procedure SaveToFile;
     procedure Print;
     procedure HTMLReport;
+    function ExecuteSaveDialog(const ATitle, AFilter, ADefaultExt,
+      AFileName: string; out ATargetFileName: string): Boolean;
     {$IFDEF RTFREPORT}
     procedure RTFReport;
     {$ENDIF RTFREPORT}
@@ -99,8 +104,8 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  ShellAPI, Printers, ClipBrd, Historylist, FavOpenDialog, RegAcc, DiffMain,
-  ListView, DiffHelp, JVCSDiffResources;
+  ShellAPI, Printers, ClipBrd, Historylist, DiffUtils, DiffMain,
+  DiffHelp, JVCSDiffResources, JVCSUIScale;
 
 {$R *.dfm}
 
@@ -129,14 +134,15 @@ end;
 procedure TVCSSimpleReport.FormCreate(Sender: TObject);
 begin
   try
-    case RegReadInteger(HKCU, RegDiffBase, 'SReportTarget', 0) of
+    JVCSUIApplyToForm(Self); // v2026: fonte/escala da interface
+    case DiffRegReadInteger(HKEY_CURRENT_USER, RegDiffBase, 'SReportTarget', 0) of
       0: rbClipBoard.Checked := True;
       1: rbSave.Checked := True;
       2: rbPrint.Checked := True;
       3: rbHTML.Checked := True;
       4: rbRTF.Checked := True;
     end;
-    cbShowResult.Checked := RegReadBool(HKCU, RegDiffBase,
+    cbShowResult.Checked := DiffRegReadBool(HKEY_CURRENT_USER, RegDiffBase,
       'SReportShow', False);
     EnableShowResult;
   finally
@@ -167,9 +173,9 @@ begin
   if rbPrint.Checked then LastTarget := 2;
   if rbHTML.Checked then LastTarget := 3;
   if rbRTF.Checked then LastTarget := 4;
-  RegWriteInteger(HKCU, RegDiffBase, 'SReportTarget',
+  DiffRegWriteInteger(HKEY_CURRENT_USER, RegDiffBase, 'SReportTarget',
     LastTarget);
-  RegWriteBool(HKCU, RegDiffBase, 'SReportShow',
+  DiffRegWriteBool(HKEY_CURRENT_USER, RegDiffBase, 'SReportShow',
     cbShowResult.Checked);
 end;
 
@@ -197,21 +203,72 @@ end;
 //------------------------------------------------------------------------------
 
 procedure TVCSSimpleReport.btnPreviewClick(Sender: TObject);
+var
+  Preview: TForm;
+  Memo: TMemo;
 begin
-  VCSListView := TVCSListView.Create(Application);
+  // v2026: visualizacao local (antes: TVCSListView da unit ListView do EXE)
+  Preview := TForm.CreateNew(Application);
   try
-    VCSListView.Caption := JVCSRES_Preview;
-    VCSListView.Left := Left + 40;
-    VCSListView.Top := Top + 40;
-    VCSListView.Width := Screen.Width - (Left + 40) - 150;
-    VCSListView.Height := Screen.Height - (Top + 40) - 100;
-    VCSListView.SetFontName('Courier New');
-    VCSListView.EnableWordWrap(False);
-    VCSListView.SetUpText(ReportString);
-    VCSListView.ShowModal;
+    Preview.Caption := JVCSRES_Preview;
+    Preview.Position := poDesigned;
+    Preview.Left := Left + 40;
+    Preview.Top := Top + 40;
+    Preview.Width := Screen.Width - (Left + 40) - 150;
+    Preview.Height := Screen.Height - (Top + 40) - 100;
+    Preview.KeyPreview := True;
+    Memo := TMemo.Create(Preview);
+    Memo.Parent := Preview;
+    Memo.Align := alClient;
+    Memo.ReadOnly := True;
+    Memo.WordWrap := False;
+    Memo.ScrollBars := ssBoth;
+    Memo.Font.Name := JVCSUIFontSettings.EffectiveEditorFontName;
+    Memo.Font.Size := JVCSUIFontSettings.EffectiveEditorFontSize;
+    Memo.Lines.Text := ReportString;
+    JVCSUIApplyToForm(Preview);
+    Preview.ShowModal;
   finally
-    VCSListView.Free;
-    VCSListView := nil;
+    Preview.Free;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+{ v2026: TSaveDialog nativo no lugar do TFavSaveDialog; a lista de pastas
+  recentes (THistoryList em RegDiffMRU, valores 1..n) continua sendo gravada
+  e a mais recente vira a pasta inicial do dialogo }
+function TVCSSimpleReport.ExecuteSaveDialog(const ATitle, AFilter, ADefaultExt,
+  AFileName: string; out ATargetFileName: string): Boolean;
+var
+  Dlg: TSaveDialog;
+  Dirs: THistoryList;
+begin
+  ATargetFileName := '';
+  Dirs := THistoryList.Create;
+  Dlg := TSaveDialog.Create(Self);
+  try
+    Dirs.MaxLen := DiffRegReadInteger(HKEY_CURRENT_USER, RegDiffBase, 'FileDlgMRU', 10);
+    Dirs.LoadFromReg(RegDiffMRU);
+    Dlg.Title := ATitle;
+    Dlg.Options := [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing];
+    Dlg.Filter := AFilter;
+    Dlg.FileName := AFileName;
+    if (SavePath = '') and (Dirs.Count > 0) then
+      Dlg.InitialDir := Dirs[0]
+    else
+      Dlg.InitialDir := SavePath;
+    Dlg.DefaultExt := ADefaultExt;
+    Result := Dlg.Execute;
+    if Result then
+    begin
+      ATargetFileName := Dlg.FileName;
+      Dirs.AddString(ExtractFilePath(ATargetFileName));
+      Dirs.SaveToReg(RegDiffMRU);
+    end;
+  finally
+    Dlg.Free;
+    Dirs.Free;
   end;
 end;
 
@@ -247,44 +304,12 @@ var
   CurrentString,
   ShortModulName: string;
   ResultStringList: TStringList;
-  FAVDirectories: THistoryList;
   DlgResult: Boolean;
-  FavSaveDialog: TFavSaveDialog;
   SMSize,
   ExecResult: Integer;
 begin
   OutPutString := ReportString;
-  FavSaveDialog := TFavSaveDialog.Create(Application);
-  try
-    with FavSaveDialog do
-    begin
-      Title := JVCSRES_Save_report_to_file;
-      Options := [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing];
-      Filter := JVCSRES_Text_files_404246txt411244246txt124All_files_4042464241124424642;
-      FileName := SaveFileName;
-      InitialDir := SavePath;
-      DefaultExt := 'txt';
-      MaxCount := RegReadInteger(HKCU, RegDiffBase,
-          'FileDlgMRU', 10);
-      // Favorites
-      FAVDirectories := THistoryList.Create;
-      try
-        FAVDirectories.MaxLen := MaxCount;
-        FAVDirectories.LoadFromReg(RegDiffMRU);
-        Favorites.Assign(FAVDirectories);
-        DlgResult := FavSaveDialog.Execute;
-        FAVDirectories.Clear;
-        FAVDirectories.Assign(Favorites);
-        // store recent list
-        FAVDirectories.SaveToReg(RegDiffMRU);
-        TargetFileName := FileName;
-      finally
-        FAVDirectories.Free;
-      end;
-    end; // with SaveDialog1 do begin
-  finally
-    FavSaveDialog.Free;
-  end;
+  DlgResult := ExecuteSaveDialog(JVCSRES_Save_report_to_file, JVCSRES_Text_files_404246txt411244246txt124All_files_4042464241124424642, 'txt', SaveFileName, TargetFileName);
 
   if not DlgResult then Exit;
 
@@ -308,7 +333,7 @@ begin
       end;
     end;
     try
-      ResultStringList.SaveToFile(TargetFileName);
+      ResultStringList.SaveToFile(TargetFileName, DiffBestEncoding(ResultStringList.Text));
     except
       Windows.Beep(500, 100);
       MessageBox(WindowHandle, PChar(Format(JVCSRES_Error_while_trying_to_save_the_file_37s,
@@ -412,7 +437,7 @@ begin
     Printer.Canvas.TextOut(10, iLinePos, '');
     Inc(iLinePos, wTextHeight);
   end;
-//  if RegReadBool(HKCU, sBaseRegistryKey + crbPrinter, 'PrintHeader', False) then begin
+//  if DiffRegReadBool(HKEY_CURRENT_USER, sBaseRegistryKey + crbPrinter, 'PrintHeader', False) then begin
 //  end;
 
   try
@@ -467,9 +492,7 @@ var
   TargetFileName,
   OutPutString,
   CurrentString: string;
-  FAVDirectories: THistoryList;
   DlgResult: Boolean;
-  FavSaveDialog: TFavSaveDialog;
 
   function RemoveWhiteSpace(SourceString: string): string;
   begin
@@ -483,37 +506,7 @@ var
 
 begin
   OutPutString := ReportString;
-  FavSaveDialog := TFavSaveDialog.Create(Application);
-  try
-    with FavSaveDialog do
-    begin
-      Title := JVCSRES_Save_report_to_HTML_file;
-      Options := [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing];
-      Filter := JVCSRES_HTML_files_404246htm594246html411244246htm594246html124All_files_4042464241124424642;
-      FileName := ChangeFileExt(SaveFileName, '.htm');
-      InitialDir := SavePath;
-      DefaultExt := 'htm';
-      MaxCount := RegReadInteger(HKCU, RegDiffBase,
-          'FileDlgMRU', 10);
-      // Favorites
-      FAVDirectories := THistoryList.Create;
-      try
-        FAVDirectories.MaxLen := MaxCount;
-        FAVDirectories.LoadFromReg(RegDiffMRU);
-        Favorites.Assign(FAVDirectories);
-        DlgResult := FavSaveDialog.Execute;
-        FAVDirectories.Clear;
-        FAVDirectories.Assign(Favorites);
-        // store recent list
-        FAVDirectories.SaveToReg(RegDiffMRU);
-        TargetFileName := FileName;
-      finally
-        FAVDirectories.Free;
-      end;
-    end; // with SaveDialog1 do begin
-  finally
-    FavSaveDialog.Free;
-  end;
+  DlgResult := ExecuteSaveDialog(JVCSRES_Save_report_to_HTML_file, JVCSRES_HTML_files_404246htm594246html411244246htm594246html124All_files_4042464241124424642, 'htm', ChangeFileExt(SaveFileName, '.htm'), TargetFileName);
 
   if not DlgResult then Exit;
 
@@ -647,7 +640,7 @@ begin
       if Pos('$stop$', HTMLLines.Strings[I]) > 0 then
         HTMLLines.Strings[I] := '<p></p>';
     try
-      HTMLLines.SaveToFile(TargetFileName);
+      HTMLLines.SaveToFile(TargetFileName, DiffBestEncoding(HTMLLines.Text));
     except
       Windows.Beep(500, 100);
       MessageBox(WindowHandle, PChar(Format(JVCSRES_Error_while_trying_to_save_the_file_37s,
@@ -695,9 +688,7 @@ var
   OutPutString,
   CurrentString,
   CurrentRTFString: string;
-  FAVDirectories: THistoryList;
   DlgResult: Boolean;
-  FavSaveDialog: TFavSaveDialog;
   RTFFont: TFont;
 
   function GetFontTableName(Font: TFont): string;
@@ -737,43 +728,18 @@ var
   end;
 
   procedure StreamWriteStr(var MS: TMemoryStream; S: string);
+  var
+    A: AnsiString;
   begin
-    MS.Write(S[1], Length(S));
+    // v2026: RTF em bytes ANSI (nsicpg1252); antes gravava metade da UTF-16
+    A := AnsiString(S);
+    if Length(A) > 0 then
+      MS.Write(A[1], Length(A));
   end;
 
 begin
   OutPutString := ReportString;
-  FavSaveDialog := TFavSaveDialog.Create(Application);
-  try
-    with FavSaveDialog do
-    begin
-      Title := JVCSRES_Save_report_to_RTF_file;
-      Options := [ofOverwritePrompt, ofHideReadOnly, ofEnableSizing];
-      Filter := JVCSRES_RTF_files_404246rtf411244246rtf124All_files_4042464241124424642;
-      FileName := ChangeFileExt(SaveFileName, '.rtf');
-      InitialDir := SavePath;
-      DefaultExt := 'rtf';
-      MaxCount := RegReadInteger(HKCU, RegDiffBase,
-          'FileDlgMRU', 10);
-      // Favorites
-      FAVDirectories := THistoryList.Create;
-      try
-        FAVDirectories.MaxLen := MaxCount;
-        FAVDirectories.LoadFromReg(RegDiffMRU);
-        Favorites.Assign(FAVDirectories);
-        DlgResult := FavSaveDialog.Execute;
-        FAVDirectories.Clear;
-        FAVDirectories.Assign(Favorites);
-        // store recent list
-        FAVDirectories.SaveToReg(RegDiffMRU);
-        TargetFileName := FileName;
-      finally
-        FAVDirectories.Free;
-      end;
-    end; // with SaveDialog1 do begin
-  finally
-    FavSaveDialog.Free;
-  end;
+  DlgResult := ExecuteSaveDialog(JVCSRES_Save_report_to_RTF_file, JVCSRES_RTF_files_404246rtf411244246rtf124All_files_4042464241124424642, 'rtf', ChangeFileExt(SaveFileName, '.rtf'), TargetFileName);
 
   if not DlgResult then Exit;
 

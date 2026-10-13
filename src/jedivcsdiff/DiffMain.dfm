@@ -59,7 +59,7 @@ object fm_Main: Tfm_Main
   OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
-  object dfsStatusBar1: TdfsStatusBar
+  object StatusBar1: TStatusBar
     Left = 0
     Top = 392
     Width = 947
@@ -68,29 +68,17 @@ object fm_Main: Tfm_Main
       item
         Alignment = taCenter
         Text = '0 - 0/000'
-        Enabled = True
         Width = 100
-        AutoFit = False
       end
       item
-        PanelType = sptEllipsisText
         Text = 'Delta 000 Lines/ 000 Blocks'
-        Enabled = True
         Width = 150
-        AutoFit = False
-        Hint = '...'
       end
       item
-        GaugeAttrs.Color = clActiveCaption
-        PanelType = sptEllipsisText
-        Enabled = True
         Width = 50
-        AutoFit = False
-        Hint = '...'
       end>
     ParentShowHint = False
     ShowHint = True
-    SimplePanel = False
   end
   object Panel7: TPanel
     Left = 0
@@ -319,12 +307,11 @@ object fm_Main: Tfm_Main
       ShowHint = True
       TabOrder = 0
       Wrapable = False
-      object rcbSource: TJvComboBox
+      object rcbSource: TComboBox
         Left = 4
         Top = 0
         Width = 350
         Height = 21
-        DotNetHighlighting = True
         ItemHeight = 13
         TabOrder = 0
       end
@@ -333,12 +320,11 @@ object fm_Main: Tfm_Main
         Top = 0
         Action = acBrowseSource
       end
-      object rcbTarget: TJvComboBox
+      object rcbTarget: TComboBox
         Left = 377
         Top = 0
         Width = 350
         Height = 21
-        DotNetHighlighting = True
         ItemHeight = 13
         TabOrder = 1
       end
@@ -438,7 +424,24 @@ object fm_Main: Tfm_Main
           Gutter.Font.Height = -11
           Gutter.Font.Name = 'Terminal'
           Gutter.Font.Style = []
-          Gutter.Width = 35
+          Gutter.Bands = <
+            item
+              Kind = gbkMarks
+              Width = 13
+            end
+            item
+              Kind = gbkLineNumbers
+            end
+            item
+              Kind = gbkFold
+            end
+            item
+              Kind = gbkTrackChanges
+            end
+            item
+              Kind = gbkMargin
+              Width = 3
+            end>
           Lines.Strings = (
             'mwceSource')
           MaxUndo = 10
@@ -515,6 +518,24 @@ object fm_Main: Tfm_Main
           Gutter.Font.Height = -11
           Gutter.Font.Name = 'Terminal'
           Gutter.Font.Style = []
+          Gutter.Bands = <
+            item
+              Kind = gbkMarks
+              Width = 13
+            end
+            item
+              Kind = gbkLineNumbers
+            end
+            item
+              Kind = gbkFold
+            end
+            item
+              Kind = gbkTrackChanges
+            end
+            item
+              Kind = gbkMargin
+              Width = 3
+            end>
           Gutter.Visible = False
           Lines.Strings = (
             'mwceTarget')
@@ -2834,12 +2855,6 @@ object fm_Main: Tfm_Main
       OnClick = Delete1Click
     end
   end
-  object JvMruListSource: TJvMruList
-    OnEnumText = JvMruListSourceEnumText
-    Active = False
-    Left = 80
-    Top = 8
-  end
   object SynDfmSyn1: TSynDfmSyn
     Left = 440
     Top = 168
@@ -2945,12 +2960,6 @@ object fm_Main: Tfm_Main
     WantBracesParsed = False
     Left = 568
     Top = 264
-  end
-  object JvMruListTarget: TJvMruList
-    OnEnumText = JvMruListTargetEnumText
-    Active = False
-    Left = 368
-    Top = 8
   end
   object SynEditSearch1: TSynEditSearch
     Left = 344

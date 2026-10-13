@@ -146,10 +146,12 @@ set "PRJ_dll_NAME=JediVCSDLL"
 set "PRJ_dll_DEFINES=IDEDLL;EXT_IDE_INTF;LANGUAGE;DelphiPersonalEdition"
 set "PRJ_dll_PATH="
 
+rem  diff (F3): sem LANGUAGE (dxgettext ainda nao portado; a JVCL nao entra no Diff)
+rem  e sem ..\jedivcs (o Diff nao depende mais das units do EXE)
 set "PRJ_diff_DIR=src\jedivcsdiff"
 set "PRJ_diff_NAME=JEDIVCSDiff"
-set "PRJ_diff_DEFINES=LANGUAGE;DelphiPersonalEdition"
-set "PRJ_diff_PATH=..\jedivcs"
+set "PRJ_diff_DEFINES=DelphiPersonalEdition"
+set "PRJ_diff_PATH="
 
 set "PRJ_console_DIR=src\jvcs"
 set "PRJ_console_NAME=jvcs"

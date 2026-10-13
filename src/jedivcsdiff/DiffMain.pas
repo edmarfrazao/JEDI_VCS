@@ -52,6 +52,14 @@ Unit history:
 2008/01/13  USchuster - applied fix for POSIX files by "Gergely" (Mantis #4330)
 2008/12/27  THuber    - Introduced theming, better VISTA support, cosmetic changes
 2011/01/15  USchuster - changed font to Tahoma
+2026/10/12  v2026     - port Delphi 13 (Unicode, SynEdit pyscripter):
+                        TStatusBar + TProgressBar no lugar do dfsStatusBar,
+                        TComboBox + TDiffMruList no lugar do TJvComboBox/TJvMruList,
+                        TSynEditMark.Create(Editor), banda de marks do gutter,
+                        leitura com deteccao de codificacao (ANSI/UTF-8/UTF-16)
+                        e gravacao na mesma codificacao, sem ThemeMgr/ItemProp/JCL,
+                        fonte/escala (JVCSUIScale) e tema (JVCSUITheme),
+                        parametros /log: e /close para teste sem interacao
 
 -----------------------------------------------------------------------------*)
 
@@ -70,12 +78,11 @@ interface
 uses
   Windows, Messages, Forms, SysUtils, Graphics, Menus, Dialogs, ExtCtrls,
   StdCtrls, ComCtrls, Buttons, ImgList, Controls, Classes, ActnList,
-  JvCombobox, JvComponent, JvMRUList,
   SynHighlighterCss, SynHighlighterHtml,
   SynHighlighterGeneral,
   SynEditHighlighter, SynHighlighterJScript,
   SynHighlighterPas, SynEditTypes,
-  SynEdit, ToolWin, dfsStatusBar, SynHighlighterXML,
+  SynEdit, ToolWin, SynHighlighterXML,
   SynHighlighterAsm, SynHighlighterVB, SynHighlighterTclTk,
   SynHighlighterSQL, SynHighlighterPython, SynHighlighterProgress,
   SynHighlighterPHP, SynHighlighterPerl, SynHighlighterBat,
@@ -83,11 +90,7 @@ uses
   SynHighlighterInno, SynHighlighterIni, SynHighlighterFoxpro,
   SynHighlighterFortran, SynHighlighterIDL, SynHighlighterCPM,
   SynHighlighterCAC, SynHighlighterCache, SynHighlighterCpp,
-  SynHighlighterDfm, JvExStdCtrls, SynEditMiscClasses, SynEditSearch,
-  {$IFNDEF  DELPHI7_UP}
-    ThemeMgr,
-  {$ENDIF}
-  JvComponentBase;
+  SynHighlighterDfm, SynEditMiscClasses, SynEditSearch, DiffUtils;
 
 const
   RegDiffBase     = 'Software\JEDI\JEDIVCSDiff\';
@@ -105,7 +108,7 @@ type
     File1: TMenuItem;
     Edit1: TMenuItem;
     Help1: TMenuItem;
-    dfsStatusBar1: TdfsStatusBar;
+    StatusBar1: TStatusBar;
     Panel7: TPanel;
     ActionList1: TActionList;
     acBrowseSource: TAction;
@@ -300,7 +303,6 @@ type
     spBtnLineViewLeft: TSpeedButton;
     LineView: TMemo;
     ShowcompleteLines1: TMenuItem;
-    JvMruListSource: TJvMruList;
     SynDfmSyn1: TSynDfmSyn;
     SynCppSyn1: TSynCppSyn;
     SynCacheSyn1: TSynCacheSyn;
@@ -324,9 +326,8 @@ type
     SynVBSyn1: TSynVBSyn;
     SynAsmSyn1: TSynAsmSyn;
     SynXMLSyn1: TSynXMLSyn;
-    rcbSource: TJvComboBox;
-    rcbTarget: TJvComboBox;
-    JvMruListTarget: TJvMruList;
+    rcbSource: TComboBox;
+    rcbTarget: TComboBox;
     SynEditSearch1: TSynEditSearch;
     procedure FormCreate(Sender: TObject);
     procedure FormResize(Sender: TObject);
@@ -395,18 +396,20 @@ type
     procedure spBtnLineViewLeftClick(Sender: TObject);
     procedure spBtnLineViewRightClick(Sender: TObject);
     procedure spBtnLineViewCloseClick(Sender: TObject);
-    procedure JvMruListSourceEnumText(Sender: TObject; Value: string;
-      Index: Integer);
-    procedure JvMruListTargetEnumText(Sender: TObject; Value: string;
-      Index: Integer);
     procedure FormDestroy(Sender: TObject);
   private
-    {$IFNDEF  DELPHI7_UP}
-      FThemeManager : TThemeManager;
-    {$ENDIF}
+    FMruSource: TDiffMruList;
+    FMruTarget: TDiffMruList;
+    FGauge: TProgressBar;
+    FFileEncodings: array [1..2] of TEncoding;
+    FFileHasBOM: array [1..2] of Boolean;
+    FResultLogFile: string;
+    FCloseAfterCompare: Boolean;
+    FParamsDone: Boolean;
+    FCompareResult: Integer;
     ActiveEditorView: TSynEdit;
     FileNames: array [1..2] of string;
-    SourceFiles: array [1..2] of Textfile;
+    SourceFiles: array [1..2] of TDiffTextReader;
     LastLine: array [1..2] of Integer;
     SyncMarker,
     SourceLineNr,
@@ -448,17 +451,26 @@ type
     procedure DoCompare;
     procedure SaveSettings;
     procedure ShowHexDiff(const BaseLineText, TargetLineText: string);
-  protected
-    procedure CreateParams(var Params: TCreateParams); override;
-    procedure WMSyscommand(var Message: TWmSysCommand); message WM_SYSCOMMAND;
-    procedure WMActivate(var Message: TWMActivate);
+    procedure FillMruCombo(ACombo: TComboBox; AMru: TDiffMruList);
+    procedure StatusBar1Resize(Sender: TObject);
+    procedure WriteResultLog(const AText: string);
+    procedure ShowMsg(const AText: string; AFlags: Cardinal);
+    procedure ThemeChanged(Sender: TObject);
   public
+    { cores "logicas" dos editores (podem ser cores de sistema, ex. clWindow;
+      sao gravadas assim no registro e traduzidas pelo tema em ApplyAppearance) }
+    EditorColor,
+    EditorTextColor,
+    EditorSelForeground,
+    EditorSelBackground: TColor;
+    { aplica fonte/escala (JVCSUIScale) e cores do tema (JVCSUITheme) }
+    procedure ApplyAppearance;
   end;
 
 var
   fm_Main: Tfm_Main;
-  WhiteSpace: set of Char = [#9, #32];
-  LineEnd: set of Char = [#10, #13];
+  WhiteSpace: set of AnsiChar = [#9, #32];
+  LineEnd: set of AnsiChar = [#10, #13];
 
 implementation
 
@@ -466,8 +478,9 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext, JVCSLanguage,
   {$ENDIF LANGUAGE}
-  ShellAPI, Registry, CheckSum, DiffSimpleReport, ItemProp,
-  DiffHelp, DiffEditorProp, DiffHLProp, JclFileUtils, DiffAbout, JVCSDiffResources;
+  ShellAPI, Registry, CheckSum, DiffSimpleReport,
+  DiffHelp, DiffEditorProp, DiffHLProp, DiffAbout, JVCSDiffResources,
+  CommCtrl, Themes, JVCSUIScale, JVCSUITheme;
 
 {$R *.dfm}
 
@@ -478,29 +491,41 @@ var
   FontSize: Integer;
   FontName: string;
   CmntSet: TCommentStyles;
-  JclFileVersionInfo: TJclFileVersionInfo;
+  UISettings: TJVCSUIFontSettings;
 begin
   try
     GetDir(0, ActDir);
-    {$IFNDEF  DELPHI7_UP}
-      FThemeManager := TThemeManager.Create(self);
-    {$ENDIF ~DELPHI7_UP}
-    // fixes VISTA Taskbarsupport
-    ShowWindow(Application.Handle, SW_HIDE);
-    SetWindowLong ( Application.Handle, GWL_EXSTYLE
-                  , GetWindowLong(Application.Handle, GWL_EXSTYLE) and not WS_EX_APPWINDOW or WS_EX_TOOLWINDOW);
-    ShowWindow(Application.Handle, SW_SHOW);
+    // v2026: barra de tarefas via Application.MainFormOnTaskbar (dpr)
+
+    // status bar nativa: o painel 2 recebe uma TProgressBar como gauge
+    FGauge := TProgressBar.Create(Self);
+    FGauge.Parent := StatusBar1;
+    FGauge.Min := 0;
+    FGauge.Max := 100;
+    FGauge.Visible := False;
+    StatusBar1.OnResize := StatusBar1Resize;
+    StatusBar1Resize(StatusBar1);
+
+    // imagens das marks com alfa (o gutter do SynEdit atual desenha via Direct2D)
+    DiffMakeImageList32(MarkImages);
+    DiffMakeImageList32(ToolImages);
+    // banda de marks do gutter (SynEdit pyscripter): cabe a imagem das marks
+    if Assigned(mwceSource.Gutter.Band[gbkMarks]) then
+      mwceSource.Gutter.Band[gbkMarks].Width := MarkImages.Width + 4;
+
     with TRegistry.Create do
     begin
       try
         RootKey := HKEY_CURRENT_USER;
         OpenKeyReadOnly(RegDiffBase + 'Window');
+        // v2026: posicao/tamanho gravados em unidades de 96 dpi (como o
+        // original, que nao era DPI-aware) e convertidos para o DPI atual
         if ValueExists('X') then
         begin
-          Top := ReadInteger('Y');
-          Left := ReadInteger('X');
-          Width := ReadInteger('W');
-          Height := ReadInteger('H');
+          Top := MulDiv(ReadInteger('Y'), Screen.PixelsPerInch, 96);
+          Left := MulDiv(ReadInteger('X'), Screen.PixelsPerInch, 96);
+          Width := MulDiv(ReadInteger('W'), Screen.PixelsPerInch, 96);
+          Height := MulDiv(ReadInteger('H'), Screen.PixelsPerInch, 96);
         end
         else
         begin
@@ -508,7 +533,7 @@ begin
           Left := (Screen.Width - Width) div 2;
         end;
         if ValueExists('SplitterPos') then
-          Panel3.Width := ReadInteger('SplitterPos')
+          Panel3.Width := MulDiv(ReadInteger('SplitterPos'), Screen.PixelsPerInch, 96)
         else
           Panel3.Width := Panel4.Width div 2;
         CloseKey;
@@ -618,14 +643,18 @@ begin
     acEnableEditor.Enabled :=  not EnableLeftEdit;
 
     // Version
-    JclFileVersionInfo := TJclFileVersionInfo.Create(Application.ExeName);
-    try
-      fm_Main.Caption := fm_Main.Caption + ' V' + JclFileVersionInfo.ProductVersion;
-    finally
-      JclFileVersionInfo.Free;
-    end;
+    fm_Main.Caption := fm_Main.Caption + ' V' +
+      DiffFileVersionValue(Application.ExeName, 'ProductVersion');
 
     EnumerateHighlighters;
+
+    // v2026: a fonte comum dos editores (JVCSUIScale, EditorFontName/Size em
+    // HKCU\Software\JEDI\JEDIVCS\Options) prevalece sobre FontName/FontSize do Diff
+    UISettings := JVCSUIFontSettings;
+    if UISettings.EditorFontName <> '' then
+      FontName := UISettings.EditorFontName;
+    if UISettings.EditorFontSize > 0 then
+      FontSize := UISettings.EditorFontSize;
 
     mwceSource.Font.Name := FontName;
     mwceSource.Font.Size := FontSize;
@@ -634,20 +663,28 @@ begin
     mwceTarget.RightEdge := mwceSource.RightEdge;
     mwceTarget.ExtraLineSpacing := mwceSource.ExtraLineSpacing;
     mwceTarget.TabWidth := mwceSource.TabWidth;  
-    mwceTarget.Color := mwceSource.Color;
-    mwceTarget.Font.Color := mwceSource.Font.Color;
-    mwceTarget.SelectedColor.Foreground := mwceSource.SelectedColor.Foreground;
-    mwceTarget.SelectedColor.Background := mwceSource.SelectedColor.Background;
+    EditorColor := mwceSource.Color;
+    EditorTextColor := mwceSource.Font.Color;
+    EditorSelForeground := mwceSource.SelectedColor.Foreground;
+    EditorSelBackground := mwceSource.SelectedColor.Background;
+
+    SourceFiles[1] := TDiffTextReader.Create;
+    SourceFiles[2] := TDiffTextReader.Create;
 
     ClearEditorWindows;
     mwceSourceEnter(mwceSource);
 
-    JvMruListSource.SubKey := RegDiffMRU + '\Base';
-    JvMruListSource.EnumItems;
+    // MRU no formato do TJvMruList (MRUList + a..j)
+    FMruSource := TDiffMruList.Create(RegDiffMRU + '\Base');
+    FMruSource.Load;
+    FillMruCombo(rcbSource, FMruSource);
+    FMruTarget := TDiffMruList.Create(RegDiffMRU + '\CompareTo');
+    FMruTarget.Load;
+    FillMruCombo(rcbTarget, FMruTarget);
 
-    JvMruListTarget.SubKey := RegDiffMRU + '\CompareTo';
-    JvMruListTarget.EnumItems;
-
+    // fonte/escala e tema
+    ApplyAppearance;
+    JVCSUIOnThemeChanged := ThemeChanged;
   finally
     {$IFDEF LANGUAGE}
     TextDomain('jedivcsdiff');
@@ -668,6 +705,10 @@ var
   CurrentParameter: string;
 begin
   Application.ProcessMessages;
+  // v2026: os parametros so valem na primeira ativacao (antes, ao fechar
+  // qualquer dialogo VCL, /s: /t: eram reaplicados e /autostart comparava de novo)
+  if FParamsDone then
+    Exit;
   AutoCompare := False;
   Msg := '';
   for I := 1 to ParamCount do
@@ -698,8 +739,21 @@ begin
     end;
     if Pos('/autostart', LowerCase(ParamStr(I))) > 0 then
       AutoCompare := True;
+    // v2026 (teste sem interacao): /log:<arquivo> grava o resultado da
+    // comparacao no arquivo (sem a caixa de resultado); /close fecha o
+    // programa depois da comparacao automatica (exit code 0 = iguais,
+    // 1 = diferentes, 2 = erro)
+    if Pos('/log:', LowerCase(ParamStr(I))) = 1 then
+    begin
+      CurrentParameter := ParamStr(I);
+      Delete(CurrentParameter, 1, 5);
+      FResultLogFile := CurrentParameter;
+    end;
+    if LowerCase(ParamStr(I)) = '/close' then
+      FCloseAfterCompare := True;
   end; // for I := 1 to ParamCount do begin
 
+  FParamsDone := True;
   if AutoCompare then StartTimer.Enabled := True;
 end;
 
@@ -709,6 +763,12 @@ procedure Tfm_Main.StartTimerTimer(Sender: TObject);
 begin
   StartTimer.Enabled := False;
   acCompareExecute(Self);
+  // v2026: /close (teste sem interacao) - exit code 0 iguais, 1 diferentes, 2 erro
+  if FCloseAfterCompare then
+  begin
+    ExitCode := FCompareResult;
+    Close;
+  end;
 end;
 
 //------------------------------------------------------------------------------
@@ -736,9 +796,9 @@ begin
   tbEnableEditor.Down := False;
   acEnableEditor.Checked := False;
 
-  dfsStatusBar1.Panels[0].Text := '0 - 0/0';
-  dfsStatusBar1.Panels[1].Text := JVCSRES_Deltas58_0;
-  dfsStatusBar1.Panels[2].Text := '';
+  StatusBar1.Panels[0].Text := '0 - 0/0';
+  StatusBar1.Panels[1].Text := JVCSRES_Deltas58_0;
+  StatusBar1.Panels[2].Text := '';
 
   LoadInfo(nil);
 end;
@@ -791,32 +851,25 @@ end;
 procedure Tfm_Main.ShowStatusBarGauge(const ShowGauge,
   Indeterminate: Boolean);
 begin
-  with dfsStatusBar1.Panels[2] do
+  // v2026: TProgressBar dentro do painel 2 (antes: gauge do dfsStatusBar)
+  if ShowGauge then
   begin
-    if ShowGauge then
-    begin
-      Text := '';
-      Alignment := taCenter;
-      Paneltype := sptGauge;
-      if Indeterminate then
-      begin
-        GaugeAttrs.Position := 0;
-        GaugeAttrs.Speed := 5;
-        GaugeAttrs.Style := gsIndeterminate2;
-      end
-      else
-        GaugeAttrs.Style := gsPercent;
-      GaugeAttrs.Position := 0;
-    end
+    StatusBar1.Panels[2].Text := '';
+    StatusBar1Resize(StatusBar1);
+    if Indeterminate then
+      FGauge.Style := pbstMarquee
     else
-    begin
-      GaugeAttrs.Position := 0;
-      GaugeAttrs.Style := gsPercent;
-      Paneltype := sptNormal;
-      Alignment := taLeftJustify;
-    end;
-    dfsStatusBar1.Update;
+      FGauge.Style := pbstNormal;
+    FGauge.Position := 0;
+    FGauge.Visible := True;
+  end
+  else
+  begin
+    FGauge.Visible := False;
+    FGauge.Style := pbstNormal;
+    FGauge.Position := 0;
   end;
+  StatusBar1.Update;
 end;
 
 //------------------------------------------------------------------------------
@@ -824,13 +877,26 @@ end;
 procedure Tfm_Main.StatusBarGaugePos(Value: Word);
 begin
   if Value > 100 then Value := 100;
-  with dfsStatusBar1.Panels[2] do
-    if (Paneltype = sptGauge) and
-       (GaugeAttrs.Position <> Value) then
-    begin
-      GaugeAttrs.Position := Value;
-      dfsStatusBar1.Update;
-    end;
+  if FGauge.Visible and (FGauge.Position <> Value) then
+  begin
+    FGauge.Position := Value;
+    FGauge.Update;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure Tfm_Main.StatusBar1Resize(Sender: TObject);
+var
+  R: TRect;
+begin
+  if not Assigned(FGauge) then
+    Exit;
+  if StatusBar1.Perform(SB_GETRECT, 2, LPARAM(@R)) <> 0 then
+  begin
+    InflateRect(R, -1, -1);
+    FGauge.BoundsRect := R;
+  end;
 end;
 
 //=== Ausgabe der Unterschiede in eine Datei. ==================================
@@ -872,7 +938,7 @@ begin
   LineCount := 3;
 
   // Prepare progress bar
-  StatusBarBuffer := dfsStatusBar1.Panels[2].Text;
+  StatusBarBuffer := StatusBar1.Panels[2].Text;
   ShowStatusBarGauge(True, False);
   StatusBarGaugePos(0);
 
@@ -901,7 +967,7 @@ begin
     mwceTarget.EndUpdate;
   end;
   ShowStatusBarGauge(False, False);
-  dfsStatusBar1.Panels[2].Text := StatusBarBuffer;
+  StatusBar1.Panels[2].Text := StatusBarBuffer;
 
   Screen.Cursor := crDefault;
   VCSSimpleReport := TVCSSimpleReport.Create(self);
@@ -996,10 +1062,10 @@ begin
   I := Length(Result);
   while I > 0 do
   begin
-    if Result[I] in WhiteSpace then
+    if CharInSet(Result[I], WhiteSpace) then
     begin
       if (I > 1) and
-         (Result[I - 1] in WhiteSpace) then
+         (CharInSet(Result[I - 1], WhiteSpace)) then
       begin
         Delete(Result, I, 1);
         // IF last char deleted
@@ -1016,12 +1082,12 @@ begin
   end; // while I > 0 do
 
   if (Length(Result) > 0) and
-     (Result[1] in WhiteSpace) then
+     (CharInSet(Result[1], WhiteSpace)) then
     Delete(Result, 1, 1);
 
   I := Length(Result);
   if (I > 0) and
-     (Result[I] in WhiteSpace) then
+     (CharInSet(Result[I], WhiteSpace)) then
     Delete(Result, I, 1);
 
   // no need to search further if CR/LF is already stripped
@@ -1029,15 +1095,15 @@ begin
   begin
     I := Length(Result);
     if I > 2 then
-      if (Result[I] in LineEnd) and
-         (Result[I - 1] in LineEnd) and
-         (Result[I - 2] in WhiteSpace) then
+      if (CharInSet(Result[I], LineEnd)) and
+         (CharInSet(Result[I - 1], LineEnd)) and
+         (CharInSet(Result[I - 2], WhiteSpace)) then
         Delete(Result, I - 2, 1);
 
     I := Length(Result);
     if I > 1 then
-      if (Result[I] in LineEnd) and
-         (Result[I - 1] in WhiteSpace) then
+      if (CharInSet(Result[I], LineEnd)) and
+         (CharInSet(Result[I - 1], WhiteSpace)) then
         Delete(Result, I - 1, 1);
   end;
 end;
@@ -1118,7 +1184,7 @@ begin
   with mwceSource do
   begin
     Marks.ClearLine(CaretY);
-    Mark := TSynEditMark.Create;
+    Mark := TSynEditMark.Create(mwceSource);
     with Mark do
     begin
       Line := ALine;
@@ -1142,9 +1208,9 @@ procedure Tfm_Main.ReadLines(EditorWin, N: Integer);
 var
   Line: string;
 begin
-  while not Eof(SourceFiles[EditorWin]) and (N > 0) do
+  while not SourceFiles[EditorWin].Eof and (N > 0) do
   begin
-    Readln(SourceFiles[EditorWin], Line);
+    Line := SourceFiles[EditorWin].ReadLine;
 
     Inc(LastLine[EditorWin]);
     if EditorWin = 1 then
@@ -1206,9 +1272,9 @@ procedure Tfm_Main.GiveUp;
 var
   I: Integer;
 begin
-  if not Eof(SourceFiles[1]) then
+  if not SourceFiles[1].Eof then
     ReadLines(1, 30000);
-  if not Eof(SourceFiles[2]) then
+  if not SourceFiles[2].Eof then
     ReadLines(2, 30000);
 
   if (mwceTarget.Lines.Count > mwceSource.Lines.Count) then
@@ -1236,8 +1302,8 @@ var
   TargetLineText: string;
 begin
   Result := False;
-  if (not Eof(SourceFiles[1]) or (SyncMarker < LastLine[1])) and
-     (not Eof(SourceFiles[2]) or (SyncMarker < LastLine[2])) then
+  if (not SourceFiles[1].Eof or (SyncMarker < LastLine[1])) and
+     (not SourceFiles[2].Eof or (SyncMarker < LastLine[2])) then
   begin
     repeat
       if SyncMarker = LastLine[1] then ReadLines(1, 1);
@@ -1245,8 +1311,8 @@ begin
       Inc(SyncMarker);
       SourceLineText := StripString(mwceSource.Lines[SyncMarker - 1]);
       TargetLineText := StripString(mwceTarget.Lines[SyncMarker - 1]);
-    until (Eof(SourceFiles[1]) and (SyncMarker = LastLine[1])) or
-          (Eof(SourceFiles[2]) and (SyncMarker = LastLine[2])) or
+    until (SourceFiles[1].Eof and (SyncMarker = LastLine[1])) or
+          (SourceFiles[2].Eof and (SyncMarker = LastLine[2])) or
           (SourceLineText <> TargetLineText);
 
     //???
@@ -1258,8 +1324,8 @@ begin
           Dateien, so das ein Versuch zum Syncronisieren gestartet werden kann.
        2) Die Schleife wurde beendet, aber weil in einer Datei keine Zeilen
           mehr sind.  }
-    if (Eof(SourceFiles[1]) and (SyncMarker = LastLine[1])) or
-       (Eof(SourceFiles[2]) and (SyncMarker = LastLine[2])) then
+    if (SourceFiles[1].Eof and (SyncMarker = LastLine[1])) or
+       (SourceFiles[2].Eof and (SyncMarker = LastLine[2])) then
     begin
       if SourceLineText <> TargetLineText then
         Dec(SyncMarker);
@@ -1338,8 +1404,8 @@ begin
     Exit;
   end;
 
-  FileEnd[1] := (SearchMark[1] = LastLine[1]) and Eof(SourceFiles[1]);
-  FileEnd[2] := (SearchMark[2] = LastLine[2]) and Eof(SourceFiles[2]);
+  FileEnd[1] := (SearchMark[1] = LastLine[1]) and SourceFiles[1].Eof;
+  FileEnd[2] := (SearchMark[2] = LastLine[2]) and SourceFiles[2].Eof;
   if FileEnd[1] then C := 2 else C := 1;
   P := -1;
 
@@ -1349,7 +1415,7 @@ begin
     Inc(SearchMark[C]);
     if SearchMark[C] > LastLine[C] then ReadLines(C,1);
     // Testen, ob das Ende der Datei erreicht ist.
-    FileEnd[C] := (SearchMark[C] = LastLine[C]) and Eof(SourceFiles[C]);
+    FileEnd[C] := (SearchMark[C] = LastLine[C]) and SourceFiles[C].Eof;
     // Prüfen, ob syncronisiert werden kann.
     P := SearchLines(C, SearchMark[C] - K + 1,
       inv[C], SyncMarker + 1, SearchMark[inv[C]] - K + 1, K);
@@ -1430,57 +1496,67 @@ end;
 // This bit is stolen from stdivapi.pas
 function Tfm_Main.IsTextFile(const FileName: string): Boolean;
 
+    // v2026: reescrita sobre bytes (no Unicode o buffer de Char tinha 2 bytes
+    // por caractere). Mesma regra do original para ANSI: so a 1a linha (ate
+    // 255 bytes), #0 antes do fim de linha = binario, $FF no inicio = binario,
+    // caractere de controle que nao e espaco = binario. Novo: BOM UTF-8/UTF-16
+    // = texto; bytes >= $80 nao sao testados (aceita UTF-8 sem BOM).
     function IsTextStream(Stream: TStream): Boolean;
     const
       MaxLineLength = 255;
     var
-      LineBuffer: array [0..MaxLineLength] of Char;
-      CharFlags: array of Word;
-      I, Count: Integer;
-      P, S: PChar;
+      Buf: TBytes;
+      Enc: TEncoding;
+      I, Count, FirstZero, FirstCR, FirstLF, P: Integer;
     begin
       Result := False;
-      FillChar(LineBuffer, SizeOf(LineBuffer), 0);
       Stream.Position := 0;
       if Stream.Size > MaxLineLength then Count := MaxLineLength
       else Count := Stream.Size;
-      Stream.Read(LineBuffer, Count);
+      if Count = 0 then
+        Exit(True);
+      SetLength(Buf, Count);
+      Stream.ReadBuffer(Buf[0], Count);
+      Enc := nil;
+      if TEncoding.GetBufferEncoding(Buf, Enc, nil) > 0 then
+        Exit(True);
+      FirstZero := -1;
+      FirstCR := -1;
+      FirstLF := -1;
+      for I := 0 to Count - 1 do
+      begin
+        if (Buf[I] = 0) and (FirstZero < 0) then FirstZero := I;
+        if (Buf[I] = 13) and (FirstCR < 0) then FirstCR := I;
+        if (Buf[I] = 10) and (FirstLF < 0) then FirstLF := I;
+      end;
       // see if we can come up with an EOL (unless we read the whole file)
       if Count < Stream.Size then
       begin
-        P := StrPos(LineBuffer, #13);
-        if P = nil then
-          P := StrPos(LineBuffer, #10);
-        if P = nil then
+        P := -1;
+        if (FirstCR >= 0) and ((FirstZero < 0) or (FirstCR < FirstZero)) then
+          P := FirstCR
+        else
+        if (FirstLF >= 0) and ((FirstZero < 0) or (FirstLF < FirstZero)) then
+          P := FirstLF;
+        if P < 0 then
           Exit;
-        // terminate the string here
-        P^ := #0;
-        // check if there are any terminators prior to where we expect the EOL
-        S := @LineBuffer;
-        while S < P do
-        begin
-          if S^ = #0 then
-            Exit;
-          Inc(S);
-        end;
-      end;
-      Count := StrLen(LineBuffer);
+        Count := P;
+      end
+      else
+      if FirstZero >= 0 then
+        Count := FirstZero;
+      if Count = 0 then
+        Exit(True);
       // some editors place a $1A (26) as an EOF marker
-      if LineBuffer[Count - 1] = Char($1A) then
-      begin
-        LineBuffer[Count - 1] := #0;
+      if Buf[Count - 1] = $1A then
         Dec(Count);
-      end;
       // if first character is $FF, then it's likely not text
-      if LineBuffer[0] = Char($FF) then
+      if (Count > 0) and (Buf[0] = $FF) then
         Exit;
-      // get the char flags
-      SetLength(CharFlags, Count);
-      GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, LineBuffer, Count,
-        CharFlags[0]);
-      // check the CharFlags array to see if anything looks fishy
-      for I := Low(CharFlags) to High(CharFlags) do
-        if ((CharFlags[I] and C1_CNTRL) <> 0) and ((CharFlags[I] and $0F) = 0) then
+      // control characters other than white space look fishy
+      for I := 0 to Count - 1 do
+        if ((Buf[I] < $20) and not (Buf[I] in [9, 10, 11, 12, 13])) or
+           (Buf[I] = $7F) then
           Exit;
       // best guess is that it looks reasonable
       Result := True;
@@ -1516,11 +1592,7 @@ var
   begin
     result := not ((FileNames[1] = '') or (FileNames[2] = ''));
     if not result then
-      MessageBox( WindowHandle
-                , PChar(JVCSRES_You_must_enter_a_file_name_first46)
-                , cMessageBoxCaption
-                , MB_OK or MB_ICONINFORMATION
-                );
+      ShowMsg(JVCSRES_You_must_enter_a_file_name_first46, MB_OK or MB_ICONINFORMATION);
   end;
 
   // Check if files are existing
@@ -1528,14 +1600,8 @@ var
   begin
     result := (FileExists(FileNames[1]) and FileExists(FileNames[2]));
     if not result then
-      MessageBox( WindowHandle
-                , PChar ( Format( JVCSRES_File_6037s_and47or_37s62_not_found46
-                                , [FileNames[1], FileNames[2]]
-                                )
-                        )
-                , cMessageBoxCaption
-                , MB_OK or MB_ICONWARNING
-                );
+      ShowMsg(Format(JVCSRES_File_6037s_and47or_37s62_not_found46,
+        [FileNames[1], FileNames[2]]), MB_OK or MB_ICONWARNING);
   end;
 
   // Check if files can be opened
@@ -1563,15 +1629,12 @@ var
 
     result := (TestFileName = '');
     if not result then
-      MessageBox( WindowHandle
-                , PChar(JVCSRES_Could_not_open_file_for_reading58 + #10#13 +
-                        '<' + TestFileName + '>')
-                , cMessageBoxCaption
-                , MB_OK or MB_ICONWARNING
-                );
+      ShowMsg(JVCSRES_Could_not_open_file_for_reading58 + #10#13 +
+        '<' + TestFileName + '>', MB_OK or MB_ICONWARNING);
   end;
 
 begin
+  FCompareResult := 2;
   if SaveSourceChanges then
   begin
     Screen.Cursor := crHourGlass;
@@ -1590,17 +1653,11 @@ begin
       ShowStatusBarGauge(True, False);
       StatusBarGaugePos(0);
       // Get line count for the base file to provide progress information
-      AssignFile(SourceFiles[1], FileNames[1]);
-      try
-        Reset(SourceFiles[1]);
-        SourceLineCount := 0;
-        repeat
-          Readln(SourceFiles[1], MsgTxt);
-          Inc(SourceLineCount);
-        until Eof(SourceFiles[1]);
-      finally
-        CloseFile(SourceFiles[1]);
-      end;
+      // v2026: TDiffTextReader (codificacao detectada) no lugar do TextFile
+      SourceFiles[1].LoadFromFile(FileNames[1]);
+      SourceLineCount := SourceFiles[1].Lines.Count;
+      if SourceLineCount < 1 then
+        SourceLineCount := 1;
       StatusBarGaugePos(10);
 
       // Check if the files are plain text
@@ -1634,36 +1691,32 @@ begin
           MsgTxt := MsgTxt + JVCSRES_The_files_are_different46;
           mbIcon := MB_ICONWARNING;
         end;
-        MessageBox(WindowHandle, PChar(MsgTxt), cMessageBoxCaption, MB_OK or mbIcon);
+        if CRCVal1 = CRCVal2 then
+          FCompareResult := 0
+        else
+          FCompareResult := 1;
+        ShowMsg(MsgTxt, MB_OK or mbIcon);
         ShowStatusBarGauge(False, False);
         Exit;
       end;
 
       SetHighLighter;
 
-      with rcbSource do
-      begin
-        rcbSource.Items.Clear;
-        JvMruListSource.AddString(FileNames[1]);
-        JvMruListSource.EnumItems;
-        rcbSource.Text := FileNames[1];
-      end;
-      with rcbTarget do
-      begin
-        rcbTarget.Items.Clear;
-        JvMruListTarget.AddString(FileNames[2]);
-        JvMruListTarget.EnumItems;
-        rcbTarget.Text := FileNames[2];
-      end;
+      FMruSource.AddString(FileNames[1]);
+      FillMruCombo(rcbSource, FMruSource);
+      rcbSource.Text := FileNames[1];
+      FMruTarget.AddString(FileNames[2]);
+      FillMruCombo(rcbTarget, FMruTarget);
+      rcbTarget.Text := FileNames[2];
 
       DoCompare;
 
       ShowStatusBarGauge(False, False);
-      dfsStatusBar1.Panels[2].Text := Format(JVCSRES_Base58_37s_47_37s_bytes_124_Compare_to58_37s_47_37s_bytes,
-        [DateTimeToStr(FileDateToDateTime(FileAge(FileNames[1]))),
-         FormatFloat('#,', GetSizeOfFile(FileNames[1])),
-         DateTimeToStr(FileDateToDateTime(FileAge(FileNames[2]))),
-         FormatFloat('#,', GetSizeOfFile(FileNames[2]))]);
+      StatusBar1.Panels[2].Text := Format(JVCSRES_Base58_37s_47_37s_bytes_124_Compare_to58_37s_47_37s_bytes,
+        [DiffFileDateStr(FileNames[1]),
+         FormatFloat('#,', DiffGetFileSize(FileNames[1])),
+         DiffFileDateStr(FileNames[2]),
+         FormatFloat('#,', DiffGetFileSize(FileNames[2]))]);
 
       Screen.Cursor := crDefault;
 
@@ -1671,7 +1724,7 @@ begin
       begin
         MsgTxt := Format(JVCSRES_The_files_differ_by_37d_lines_4037d_Blocks4146,
           [DeltaLines, DeltaBlocks]);
-        dfsStatusBar1.Panels[1].Text := Format(JVCSRES_Delta_37d_Lines47_37d_Blocks,
+        StatusBar1.Panels[1].Text := Format(JVCSRES_Delta_37d_Lines47_37d_Blocks,
           [DeltaLines, DeltaBlocks]);
       end
       else
@@ -1706,8 +1759,18 @@ begin
         if acIgHTML.Checked then
           MsgTxt := MsgTxt + #10#13 + JVCSRES__45_HTML_Tags58_stripped + '.';
 
-        dfsStatusBar1.Panels[1].Text :=  JVCSRES_Delta58_4547_45;
+        StatusBar1.Panels[1].Text :=  JVCSRES_Delta58_4547_45;
       end;
+      if DeltaLines > 0 then
+        FCompareResult := 1
+      else
+        FCompareResult := 0;
+      if FResultLogFile <> '' then
+        WriteResultLog(MsgTxt + #13#10 + Format('Encoding: %s / %s',
+          [DiffEncodingName(FFileEncodings[1]), DiffEncodingName(FFileEncodings[2])]) +
+          #13#10 + Format('Lines: %d / %d', [SourceFiles[1].Lines.Count,
+          SourceFiles[2].Lines.Count]) + #13#10 + StatusBar1.Panels[1].Text)
+      else
       if ShowResultDialog1.Checked then
         MessageBox(WindowHandle, PChar(MsgTxt), cMessageBoxCaption,
           MB_OK or MB_ICONINFORMATION);
@@ -1751,34 +1814,37 @@ begin
     SourceHeader.Hint := FileNames[1];
     TargetHeader.Hint := FileNames[2];
 
-    AssignFile(SourceFiles[1], FileNames[1]);
-    try
-      AssignFile(SourceFiles[2], FileNames[2]);
-      try
-        Reset(SourceFiles[1]);
-        Reset(SourceFiles[2]);
-        //--- die eigentliche Compare Routine --------------------------------------
-        GoAhead := True;
-        while GoAhead and
-              (not Eof(SourceFiles[1]) or not Eof(SourceFiles[2])) do
-        begin
-          GoAhead := ReadUntilDiff;
-          if GoAhead and
-             (not Eof(SourceFiles[1]) or not Eof(SourceFiles[2])) then
-            GoAhead := ReSync;
-        end;
-        if not GoAhead then
-          GiveUp;
-      finally
-        //--------------------------------------------------------------------------
-        CloseFile(SourceFiles[2]);
-      end;
-    finally
-      CloseFile(SourceFiles[1]);
+    // v2026: arquivos lidos inteiros com a codificacao detectada (ANSI,
+    // UTF-8 com/sem BOM, UTF-16); a gravacao usa a mesma codificacao
+    SourceFiles[1].LoadFromFile(FileNames[1]);
+    SourceFiles[2].LoadFromFile(FileNames[2]);
+    FFileEncodings[1] := SourceFiles[1].Encoding;
+    FFileHasBOM[1] := SourceFiles[1].HasBOM;
+    FFileEncodings[2] := SourceFiles[2].Encoding;
+    FFileHasBOM[2] := SourceFiles[2].HasBOM;
+    //--- die eigentliche Compare Routine --------------------------------------
+    GoAhead := True;
+    while GoAhead and
+          (not SourceFiles[1].Eof or not SourceFiles[2].Eof) do
+    begin
+      GoAhead := ReadUntilDiff;
+      if GoAhead and
+         (not SourceFiles[1].Eof or not SourceFiles[2].Eof) then
+        GoAhead := ReSync;
     end;
+    if not GoAhead then
+      GiveUp;
+    //--------------------------------------------------------------------------
 
     mwceSource.CaretY := 0;
     mwceTarget.CaretY := 0;
+    // v2026: no SynEdit atual alterar Lines marca Modified; o texto carregado
+    // pela comparacao nao e uma alteracao do usuario
+    // (ClearUndo antes: o Modified deriva da lista de undo)
+    mwceSource.ClearUndo;
+    mwceTarget.ClearUndo;
+    mwceSource.Modified := False;
+    mwceTarget.Modified := False;
 
     DeltaLines := 0;
     for I := 0 to mwceSource.Marks.Count - 1 do
@@ -1965,11 +2031,11 @@ begin
     try
       RootKey := HKEY_CURRENT_USER;
       OpenKey(RegDiffBase + 'Window', True);
-      WriteInteger('Y', Top);
-      WriteInteger('X', Left);
-      WriteInteger('W', Width);
-      WriteInteger('H', Height);
-      WriteInteger('SplitterPos', Panel3.Width);
+      WriteInteger('Y', MulDiv(Top, 96, Screen.PixelsPerInch));
+      WriteInteger('X', MulDiv(Left, 96, Screen.PixelsPerInch));
+      WriteInteger('W', MulDiv(Width, 96, Screen.PixelsPerInch));
+      WriteInteger('H', MulDiv(Height, 96, Screen.PixelsPerInch));
+      WriteInteger('SplitterPos', MulDiv(Panel3.Width, 96, Screen.PixelsPerInch));
       CloseKey;
       OpenKey(RegDiffOptions, True);
       if rcbSource.Text <> '' then
@@ -1991,10 +2057,10 @@ begin
       WriteBool('EnableLeftEdit', EnableLeftEdit);
       WriteBool('EnableRightEdit', EnableRightEdit);
       WriteBool('ShowResultDialog', ShowResultDialog1.Checked);
-      WriteInteger('WinColor', mwceSource.Color);
-      WriteInteger('TextColor', mwceSource.Font.Color);
-      WriteInteger('SelForeground', mwceSource.SelectedColor.Foreground);
-      WriteInteger('SelBackground', mwceSource.SelectedColor.Background);
+      WriteInteger('WinColor', EditorColor);
+      WriteInteger('TextColor', EditorTextColor);
+      WriteInteger('SelForeground', EditorSelForeground);
+      WriteInteger('SelBackground', EditorSelBackground);
       CloseKey;
     finally
       Free;
@@ -2083,13 +2149,14 @@ procedure Tfm_Main.SaveChanges(SaveEditor: TSynEdit;
 var
   EditorText: string;
   EditorLines: TStringList;
+  Idx: Integer;
 begin
   if SaveEditor.Lines.Count > 0 then
   begin
     EditorText := SaveEditor.Text;
     // strip additional blank lines added by the compare engine from the file
     while (Length(EditorText) > 0) and
-          (EditorText[Length(EditorText)] in [' ', #10, #13]) do
+          CharInSet(EditorText[Length(EditorText)], [' ', #10, #13]) do
       System.Delete(EditorText, Length(EditorText), 1);
     EditorText := EditorText + #10#13;
 
@@ -2097,8 +2164,20 @@ begin
     EditorLines := TStringList.Create;
     try
       EditorLines.SetText(PChar(EditorText));
+      // v2026: grava na codificacao detectada ao comparar (ANSI/UTF-8/UTF-16,
+      // com ou sem BOM); arquivo novo ("salvar como") usa a do editor
+      if SaveEditor = mwceSource then
+        Idx := 1
+      else
+        Idx := 2;
+      if FFileEncodings[Idx] = nil then
+      begin
+        FFileEncodings[Idx] := TEncoding.ANSI;
+        FFileHasBOM[Idx] := False;
+      end;
+      EditorLines.WriteBOM := FFileHasBOM[Idx];
       try
-        EditorLines.SaveToFile(FileName);
+        EditorLines.SaveToFile(FileName, FFileEncodings[Idx]);
       except
         on E:Exception do
           MessageBox(WindowHandle,
@@ -2109,8 +2188,9 @@ begin
       EditorLines.Free;
     end;
   end;
-  SaveEditor.Modified := False;
+  // v2026: ClearUndo antes de Modified := False (o Modified deriva do undo)
   SaveEditor.ClearUndo;
+  SaveEditor.Modified := False;
   if SaveEditor = mwceSource then
     SourceFooter.Caption := ''
   else
@@ -2236,7 +2316,7 @@ begin
       Marks.ClearLine(CaretY);
       if (StripString(LineText) <> StripString(mwceTarget.LineText)) then
       begin
-        Mark := TSynEditMark.Create;
+        Mark := TSynEditMark.Create(mwceSource);
         with Mark do
         begin
           Line := CaretY;
@@ -2248,6 +2328,7 @@ begin
         end;
         Marks.Add(Mark);
       end;
+      InvalidateGutter;
     end;
 
     if Sender is TSynEdit then
@@ -2270,7 +2351,7 @@ procedure Tfm_Main.LoadInfo(const Sender: TObject);
 begin
   if Sender <> nil then
   begin
-    dfsStatusBar1.Panels[0].Text :=
+    StatusBar1.Panels[0].Text :=
       IntToStr((Sender as TSynEdit).CaretX) + ' - ' +
       IntToStr((Sender as TSynEdit).CaretY) + '/' +
       IntToStr((Sender as TSynEdit).Lines.Count);
@@ -2708,19 +2789,19 @@ begin
         IntToStr(pnEditorFont.Font.Size) + ' pt';
       speRightEdge.Value := mwceSource.RightEdge;
       speLineSpacing.Value := mwceSource.ExtraLineSpacing;
-      speTabWidth.AsInteger := mwceSource.TabWidth;
+      speTabWidth.Value := mwceSource.TabWidth;
       cbEnableLeftEditor.Checked := EnableLeftEdit;
       cbEnableRightEditor.Checked := EnableRightEdit;
       Top := fm_Main.Top + 100;
       Left := fm_Main.Left + 100;
       if ShowModal = mrOk then
       begin
-        mwceSource.MaxUndo := speMaxUndo.AsInteger;
+        mwceSource.MaxUndo := speMaxUndo.Value;
         mwceSource.Font.Assign(pnEditorFont.Font);
         mwceTarget.Font.Assign(pnEditorFont.Font);
-        mwceSource.RightEdge := speRightEdge.AsInteger;
-        mwceSource.ExtraLineSpacing := speLineSpacing.AsInteger;
-        mwceSource.TabWidth := speTabWidth.AsInteger;
+        mwceSource.RightEdge := speRightEdge.Value;
+        mwceSource.ExtraLineSpacing := speLineSpacing.Value;
+        mwceSource.TabWidth := speTabWidth.Value;
         mwceTarget.RightEdge := mwceSource.RightEdge;
         mwceTarget.ExtraLineSpacing := mwceSource.ExtraLineSpacing;
         mwceTarget.TabWidth := mwceSource.TabWidth;        
@@ -2732,6 +2813,17 @@ begin
         acEnableEditor.Checked := tbEnableEditor.Down;
         tbEnableEditor.Enabled :=  not EnableLeftEdit;
         acEnableEditor.Enabled :=  not EnableLeftEdit;
+        // v2026: interface (escala/fonte), fonte comum dos editores e tema;
+        // gravados em HKCU\Software\JEDI\JEDIVCS\Options e aplicados ja
+        JVCSUISaveFontSettings(GetUISettings(JVCSUIFontSettings));
+        JVCSUISaveThemeMode(GetThemeMode);
+        JVCSUISetFontSettings(GetUISettings(JVCSUIFontSettings), False);
+        JVCSUIApplyTheme(GetThemeMode);
+        ApplyAppearance;
+        mwceSource.Font.Name := pnEditorFont.Font.Name;
+        mwceSource.Font.Size := pnEditorFont.Font.Size;
+        mwceTarget.Font.Name := pnEditorFont.Font.Name;
+        mwceTarget.Font.Size := pnEditorFont.Font.Size;
       end;
     end;
   finally
@@ -3052,13 +3144,13 @@ begin
   Line := StripString(mwceSource.LineText);
   LineView.Text := LineView.Text + JVCSRES__Base___ASCII62+ ' ';
   for I := 1 to Length(Line) do
-    if (not (Line[I] in LineEnd)) then
+    if (not (CharInSet(Line[I], LineEnd))) then
       LineView.Text := LineView.Text + Line[I];
   LineView.Text := LineView.Text + #13#10;
   Line := StripString(mwceTarget.LineText);
   LineView.Text := LineView.Text + JVCSRES__Target_ASCII62 + ' ';
   for I := 1 to Length(Line) do
-    if (not (Line[I] in LineEnd)) then
+    if (not (CharInSet(Line[I], LineEnd))) then
       LineView.Text := LineView.Text + Line[I];
 end;
 
@@ -3083,71 +3175,111 @@ begin
   WholeLinePanel.Visible := False;
 end;
 
-procedure Tfm_Main.JvMruListSourceEnumText(Sender: TObject; Value: string;
-  Index: Integer);
+procedure Tfm_Main.FillMruCombo(ACombo: TComboBox; AMru: TDiffMruList);
+var
+  OldText: string;
 begin
-  // Assign to source edit
-  if Index = 0 then
-  begin
-    rcbSource.Text := Value;
-  end;
-  rcbSource.Items.Add(Value);
+  // v2026: no lugar do OnEnumText do TJvMruList (item 0 = texto do combo)
+  OldText := ACombo.Text;
+  ACombo.Items.Assign(AMru.Items);
+  if AMru.Items.Count > 0 then
+    ACombo.Text := AMru.Items[0]
+  else
+    ACombo.Text := OldText;
 end;
 
-procedure Tfm_Main.JvMruListTargetEnumText(Sender: TObject; Value: string;
-  Index: Integer);
+//------------------------------------------------------------------------------
+
+procedure Tfm_Main.WriteResultLog(const AText: string);
+var
+  L: TStringList;
 begin
-  // Assign to target edit
-  if Index = 0 then
-  begin
-    rcbTarget.Text := Value;
+  if FResultLogFile = '' then
+    Exit;
+  L := TStringList.Create;
+  try
+    if FileExists(FResultLogFile) then
+      L.LoadFromFile(FResultLogFile, TEncoding.UTF8);
+    L.Add(Format('[%s] /s:%s /t:%s', [FormatDateTime('yyyy-mm-dd hh:nn:ss', Now),
+      FileNames[1], FileNames[2]]));
+    L.Add(StringReplace(AText, #10#13, #13#10, [rfReplaceAll]));
+    L.Add(Format('Result: %d', [FCompareResult]));
+    L.Add('');
+    L.WriteBOM := False;
+    L.SaveToFile(FResultLogFile, TEncoding.UTF8);
+  finally
+    L.Free;
   end;
-  rcbTarget.Items.Add(Value);
 end;
+
+//------------------------------------------------------------------------------
+
+procedure Tfm_Main.ShowMsg(const AText: string; AFlags: Cardinal);
+begin
+  if FResultLogFile <> '' then
+    WriteResultLog(AText)
+  else
+    MessageBox(WindowHandle, PChar(AText), cMessageBoxCaption, AFlags);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure Tfm_Main.ApplyAppearance;
+var
+  EdFontName: string;
+  EdFontSize: Integer;
+begin
+  // fonte/escala da interface (JVCSUIScale); a janela principal mantem o tamanho.
+  // A fonte dos editores tem preferencia propria: o ScaleBy nao pode muda-la.
+  EdFontName := mwceSource.Font.Name;
+  EdFontSize := mwceSource.Font.Size;
+  JVCSUIApplyToForm(Self, True);
+  mwceSource.Font.Name := EdFontName;
+  mwceSource.Font.Size := EdFontSize;
+  mwceTarget.Font.Name := EdFontName;
+  mwceTarget.Font.Size := EdFontSize;
+  JVCSUIApplyToMenu(popmCompare);
+  JVCSUIApplyToMenu(popmSearch);
+  JVCSUIApplyToMenu(popmEditor);
+  StatusBar1Resize(StatusBar1);
+  // editores: as cores "logicas" (clWindow, clWindowText, clHighlight, ...)
+  // sao traduzidas pelo estilo ativo (tema claro/escuro); cores fixas ficam
+  mwceSource.StyleElements := [seBorder];
+  mwceTarget.StyleElements := [seBorder];
+  mwceSource.Color := JVCSUIColor(EditorColor);
+  mwceSource.Font.Color := JVCSUIColor(EditorTextColor);
+  mwceSource.SelectedColor.Foreground := JVCSUIColor(EditorSelForeground);
+  mwceSource.SelectedColor.Background := JVCSUIColor(EditorSelBackground);
+  mwceSource.Gutter.Color := JVCSUIColor(clBtnFace);
+  mwceSource.Gutter.Font.Color := JVCSUIColor(clWindowText);
+  mwceSource.Gutter.BorderColor := JVCSUIColor(clWindow);
+  mwceTarget.Color := mwceSource.Color;
+  mwceTarget.Font.Color := mwceSource.Font.Color;
+  mwceTarget.SelectedColor.Foreground := mwceSource.SelectedColor.Foreground;
+  mwceTarget.SelectedColor.Background := mwceSource.SelectedColor.Background;
+  mwceTarget.Gutter.Color := mwceSource.Gutter.Color;
+  mwceTarget.Gutter.Font.Color := mwceSource.Gutter.Font.Color;
+  mwceTarget.Gutter.BorderColor := mwceSource.Gutter.BorderColor;
+  HexView.Color := JVCSUIColor(clWindow);
+  HexView.Font.Color := JVCSUIColor(clWindowText);
+end;
+
+//------------------------------------------------------------------------------
+
+procedure Tfm_Main.ThemeChanged(Sender: TObject);
+begin
+  ApplyAppearance;
+end;
+
+//------------------------------------------------------------------------------
 
 procedure Tfm_Main.FormDestroy(Sender: TObject);
 begin
-  {$IFNDEF  DELPHI7_UP}
-  FreeAndNil(FThemeManager);
-  {$ENDIF ~DELPHI7_UP}
-end;
-
-procedure Tfm_Main.CreateParams(var Params: TCreateParams);
-begin
-  // fixes VISTA Taskbarsupport
-  inherited CreateParams(Params);
-  Params.ExStyle := Params.ExStyle and not WS_EX_TOOLWINDOW or WS_EX_APPWINDOW;
-end;
-
-procedure Tfm_Main.WMSyscommand(var Message: TWmSysCommand);
-begin
-  // fixes VISTA Taskbarsupport
-  case (Message.CmdType and $FFF0) of
-    SC_MINIMIZE:
-    begin
-      ShowWindow(Handle, SW_MINIMIZE);
-      Message.Result := 0;
-    end;
-    SC_RESTORE:
-    begin
-      ShowWindow(Handle, SW_RESTORE);
-      Message.Result := 0;
-    end;
-  else
-    inherited;
-  end;
-end;
-
-procedure Tfm_Main.WMActivate(var Message: TWMActivate);
-begin
-  // fixes VISTA Taskbarsupport
-  if (Message.Active = WA_ACTIVE) and not IsWindowEnabled(Handle) then
-  begin
-    SetActiveWindow(Application.Handle);
-    Message.Result := 0;
-  end else
-    inherited;
+  JVCSUIOnThemeChanged := nil;
+  FreeAndNil(FMruSource);
+  FreeAndNil(FMruTarget);
+  FreeAndNil(SourceFiles[1]);
+  FreeAndNil(SourceFiles[2]);
 end;
 
 end.
-

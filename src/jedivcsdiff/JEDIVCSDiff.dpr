@@ -40,6 +40,9 @@ Unit history:
 2005/07/04  THuber    - removed unnessary units (reduces exe size ~200KB)
 2005/12/21  THuber    - FastMM now default memory manager
 2006/06/09  CSchuette - added missing units to dpr file
+2026/10/12  v2026     - port Delphi 13: sem FastMM4, winxp.res e cursors.res; sem
+                        as units do EXE (ListView, VCSBase, ConfigStorage, ...);
+                        JVCSUIScale/JVCSUITheme (fonte, escala e tema)
 
 -----------------------------------------------------------------------------*)
 
@@ -49,39 +52,31 @@ program JEDIVCSDiff;
 {$I compopt.inc}
 
 {%File '..\credits.txt'}
-	
+
 uses
-  FastMM4,
   Windows,
   Forms,
   DiffMain in 'DiffMain.pas' {fm_Main},
-  ListView in '..\jedivcs\listview.pas',
-  VCSBase in '..\jedivcs\vcsbase.pas',
-  JVCSClientFunctions in '..\common\client\JVCSClientFunctions.pas',
-  JVCSClientConsts in '..\common\client\JVCSClientConsts.pas',
-  JVCSConnect in '..\common\client\JVCSConnect.pas',
-  JVCSTypes in '..\common\client\JVCSTypes.pas',
-  JVCSClientObj in '..\common\client\JVCSClientObj.pas',
-  JVCSClientObjBase in '..\common\client\JVCSClientObjBase.pas',
-  JVCSClientDispatcher in '..\common\client\JVCSClientDispatcher.pas',
+  DiffUtils in 'DiffUtils.pas',
   JVCSForms in '..\common\JVCSForms.pas',
-  JVCSCrypt in '..\common\client\JVCSCrypt.pas',
-  TZHandling in '..\common\client\TZHandling.pas',
-  ConfigStorage in '..\jedivcs\configstorage.pas',
-  JVCSGUIClientResources in '..\jedivcs\JVCSGUIClientResources.pas',
-  DiffEditorProp in 'DiffEditorProp.pas' {Tfm_EditorProp},
-  DiffCustomKW in 'DiffCustomKW.pas' {TCustomKW},
-  DiffSimpleReport in 'DiffSimpleReport.pas' {DiffSimpleReport},
-  DiffHLProp in 'DiffHLProp.pas' {fm_HighLightProp};
+  JVCSUIScale in '..\common\client\JVCSUIScale.pas',
+  JVCSUITheme in '..\common\client\JVCSUITheme.pas',
+  DiffEditorProp in 'DiffEditorProp.pas' {fm_EditorProp},
+  DiffCustomKW in 'DiffCustomKW.pas' {CustomKW},
+  DiffSimpleReport in 'DiffSimpleReport.pas' {VCSSimpleReport},
+  DiffHLProp in 'DiffHLProp.pas' {fm_HighLightProp},
+  DiffAbout in 'DiffAbout.pas';
 
 {$R *.res}
-{$R cursors.res}  // Cursor Resource
-{$R jvcsver.res}
-{$R \Projects\Jedivcs\src\comp\soft-gems\thememanager\Resources\winxp.res}   // Include Themingresource for WindowsXP
+{$R jvcsver.res}  // VERSIONINFO + manifesto (fonte: jvcsver.rc)
 
 begin
   CreateMutex(nil, False, 'JEDIVCSDiffMutex');
   Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  JVCSUIInitialize;           // fonte/escala da interface (JVCSUIScale)
+  JVCSUIThemeInitialize;      // tema claro/escuro (JVCSUITheme)
+  JVCSUIStartFollowingSystem; // acompanha a troca de tema do Windows
   Application.Title := 'JEDI VCS Diff/Merge';
   Application.CreateForm(Tfm_Main, fm_Main);
   Application.Run;

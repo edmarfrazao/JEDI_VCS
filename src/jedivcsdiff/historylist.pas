@@ -71,8 +71,11 @@ begin
   with Reg do begin
     RootKey := HKEY_CURRENT_USER;
     try
-      DeleteKey(Key);
+      // v2026: apaga so os valores 1..n (DeleteKey apagava tambem as
+      // subchaves MRU\Base e MRU\CompareTo do Diff)
       OpenKey(Key, true);
+      for i := 1 to 100 do
+        if ValueExists(IntToStr(i)) then DeleteValue(IntToStr(i));
       for i := 0 to Count-1 do
         WriteString(IntToStr(i + 1), Strings[i]);
       CloseKey;
