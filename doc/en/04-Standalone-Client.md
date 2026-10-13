@@ -3,8 +3,8 @@
 The standalone client `Jedivcs.exe` has every JEDI VCS 2.5 feature. Use it for administration (users,
 rights, server properties), for projects that are not Delphi projects, and when Delphi is not open.
 Previous: [03 Delphi IDE integration](03-Delphi-IDE-Integration.md). Next: [05 Using with AI](05-Using-with-AI.md).
-Full details (Portuguese): [manual 02](../manual/02-Cliente-Primeiro-Acesso.md) and
-[manual 04](../manual/04-Opcoes-do-Cliente.md).
+Full details (Portuguese): [manual 02](../pt/manual/02-Cliente-Primeiro-Acesso.md) and
+[manual 04](../pt/manual/04-Opcoes-do-Cliente.md).
 
 ## 1. Main window
 
@@ -77,4 +77,4 @@ enforce some options for everyone (global settings).
 | **Appearance** (new) | Scale, fonts and theme (section 2) |
 | **AI / Automation** (new) | Manual / Ask for confirmation / Automatic for check-out and check-in by AI ([05](05-Using-with-AI.md)) |
 
-Page by page with all options (Portuguese): [manual 04](../manual/04-Opcoes-do-Cliente.md).
+Page by page with all options (Portuguese): [manual 04](../pt/manual/04-Opcoes-do-Cliente.md).

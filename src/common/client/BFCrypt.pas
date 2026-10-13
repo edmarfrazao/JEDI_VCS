@@ -1,10 +1,10 @@
 (* JEDI VCS 2.5 Beta 2026 (port Delphi 13) - BFCrypt.pas. Licenca: MPL 1.1.
-   Codigo novo (sem a CryptoLib original), conforme doc\client\Algoritmos-Recuperados.md, secao 2.5. *)
+   Codigo novo (sem a CryptoLib original), conforme doc\pt\client\Algoritmos-Recuperados.md, secao 2.5. *)
 
 unit BFCrypt;
 
 
-{ Recriação compatível da unit BFCrypt do JEDI VCS 2.5 (doc\client\Algoritmos-Recuperados.md, seção 2).
+{ Recriação compatível da unit BFCrypt do JEDI VCS 2.5 (doc\pt\client\Algoritmos-Recuperados.md, seção 2).
   - Base64: alfabeto padrão, '=' de padding, sem quebra de linha, sobre BYTES.
   - Blowfish (CryptoLib TBlowFish): 16 rodadas, big-endian, ECB, sem IV, padding de zeros a múltiplo
     de 8, chave = bytes crus (8..65 bytes; fora disso o original ignora a chave). }

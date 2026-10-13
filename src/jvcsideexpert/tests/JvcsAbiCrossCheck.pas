@@ -5,7 +5,7 @@ unit JvcsAbiCrossCheck;
 
   - JVCSExpertABI x src\common\JVCSIDEInterfaceCommon.pas ORIGINAL (lado da
     JvcsExternalDll), compilada com os includes vazios de tests\abi-stub;
-  - posicao de cada campo x tabela 3.4 de doc\client\Expert-IDE-Analise.md
+  - posicao de cada campo x tabela 3.4 de doc\pt\client\Expert-IDE-Analise.md
     (record IDE: indice = coluna "#") e x a ordem dos records VCS, Notifier,
     History e Operation do fonte original. Cada campo recebe, PELO NOME, um
     marcador com o seu indice; o slot k do record tem de conter o marcador k;

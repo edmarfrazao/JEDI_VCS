@@ -36,7 +36,7 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 - IDEs antigas (Delphi 7 a 10.4): os 21 experts **originais** 2.5.0.1030 vêm de
   `3rdparty\experts-originais-2.5.0.1030` (seção 4A). O `gerar-instalador.bat` confere os 21 contra o
   `SHA256SUMS.txt` da pasta e falha se algum mudar.
-- Skill do Claude Code: `skills\jedi-vcs` (pasta inteira) entra no componente **Ferramentas da IA**.
+- Skill do Claude Code: `skills\pt\jedi-vcs` e `skills\en\jedi-vcs` (pastas inteiras) entram no componente **Ferramentas da IA**.
 
 ## 2. Instalar, reinstalar/reparar, desinstalar
 
@@ -71,14 +71,16 @@ Tudo marcado por padrão, exceto a tarefa "Usar o console novo na IA".
 | **Expert** (`ide`) | `JvcsExpertBDS<nn>.dll` + `JvcsExternalDll.dll` (e o runtime acima, que a DLL procura na própria pasta, inclusive o `JEDIVCSDiff.exe` do Compare). Registra o expert nas IDEs detectadas (seção 4) |
 | **IDEs antigas** (`ideold`, com subcomponentes `ideold\d7`, `ideold\bds1` … `ideold\bds21`) | Aparece só se alguma IDE antiga for detectada, com um subcomponente por IDE detectada (todos marcados). Instala o `JvcsExpertD7.dll`/`JvcsExpertBDS<n>.dll` **original** 2.5.0.1030 de cada IDE marcada, mais a `JvcsExternalDll.dll` **nova** e o runtime, e registra o expert na IDE (seção 4A) |
 | **.map** (`maps`) | `Jedivcs.map` e `JvcsExternalDll.map` ao lado dos módulos: o log de erros (`%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-exe|dll-*.log`, JclDebug) passa a mostrar unit/rotina/linha. ~14 MB cada sem compressão, poucos MB no setup (texto comprime bem). Diff, console e expert não usam `.map` |
-| **Ferramentas da IA** (`ai`) | `tools\ai` inteiro em `{app}\tools\ai`, byte a byte (os `.ps1` continuam UTF-8 com BOM e CRLF). Menu Iniciar: atalho para a pasta. Para usar num projeto: `{app}\tools\ai\instalar-no-projeto.ps1 -ProjectDir ...` (ver `tools\ai\LEIAME.md`). Também instala a **skill distribuível** `skills\jedi-vcs` (SKILL.md, README.md, `references\`, `scripts\`), byte a byte, em `{app}\tools\ai\skills\jedi-vcs` (ver "Skill do Claude Code" abaixo) |
+| **Ferramentas da IA** (`ai`) | `tools\ai` inteiro em `{app}\tools\ai`, byte a byte (os `.ps1` continuam UTF-8 com BOM e CRLF). Menu Iniciar: atalho para a pasta. Para usar num projeto: `{app}\tools\ai\instalar-no-projeto.ps1 -ProjectDir ...` (ver `tools\ai\LEIAME.md`). Também instala a **skill distribuível** nos dois idiomas, `skills\pt\jedi-vcs` e `skills\en\jedi-vcs` (SKILL.md, README.md, `references\`, `scripts\`), byte a byte, em `{app}\tools\ai\skills\pt\jedi-vcs` e `{app}\tools\ai\skills\en\jedi-vcs`; numa atualização, a pasta antiga `{app}\tools\ai\skills\jedi-vcs` (beta 4) é removida (ver "Skill do Claude Code" abaixo) |
 | tarefa `aiconsole` (desmarcada) | Grava `jvcsExe={app}\jvcs.exe` na seção `[ai]` de `%APPDATA%\JEDI\JVCS\config.ini`, com o mesmo algoritmo do `jvcs-ai.ps1 config set` (UTF-8 com BOM, CRLF, resto do arquivo preservado; `checkout=`/`checkin=` intactos). O valor anterior é guardado e volta na desinstalação (ou se a tarefa for desmarcada numa reinstalação); se o `config.ini` foi criado pelo instalador e ficou vazio, ele é apagado |
 
 **Skill do Claude Code:** o instalador **não** copia a skill para o perfil do usuário. Para que o Claude
-Code a use em todos os projetos, copie a pasta (feche o Claude Code antes):
+Code a use em todos os projetos, copie a pasta de **um** idioma (as duas se chamam `jedi-vcs`; feche o Claude
+Code antes):
 
 ```
-robocopy "C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai\skills\jedi-vcs" "%USERPROFILE%\.claude\skills\jedi-vcs" /E
+robocopy "C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai\skills\pt\jedi-vcs" "%USERPROFILE%\.claude\skills\jedi-vcs" /E
+rem em inglês: ...\tools\ai\skills\en\jedi-vcs
 ```
 
 Troque o caminho de origem se instalou em outra pasta; com `/CURRENTUSER` ele fica em
@@ -167,10 +169,10 @@ dele.
 |---|---|---|
 | Delphi 7, 2007, XE3, 10.4 | testado com chaves falsas (seção 6) | **não testado** |
 | Demais (C#Builder 1, Delphi 8, 2005, 2006, 2009, 2010, XE, XE2, XE4–XE8, 10–10.3) | mesmo código, não exercitado | **não testado** |
-| Delphi 11/12/13 | expert **novo** (seção 4), não usa os originais | ver `doc\client\Port-DLL-IDE.md` |
+| Delphi 11/12/13 | expert **novo** (seção 4), não usa os originais | ver `doc\pt\client\Port-DLL-IDE.md` |
 
 O teste da ABI fora da IDE (`src\jvcsideexpert\tests\testar-dll.bat nova`) passou com a DLL do pacote.
-O teste real (XE3 em outro PC) está em `doc\client\Port-DLL-IDE.md`, seção 5B.
+O teste real (XE3 em outro PC) está em `doc\pt\client\Port-DLL-IDE.md`, seção 5B.
 
 Limitações herdadas do expert original, que a DLL nova não corrige:
 
@@ -244,7 +246,7 @@ Resultado: **43 verificações, 0 falhas**.
 | `delphi32.exe` rodando (cópia renomeada do `ping.exe`) | setup abortado (código 7), nada instalado, registro intacto |
 | Instalação completa | `JvcsExpertBDS10/21/5.dll` e `JvcsExpertD7.dll` copiados, com hash igual ao de `3rdparty`; `JvcsExpertBDS7.dll` **não** copiado (2010 não detectado); `JvcsExternalDll.dll` nova e runtime na pasta; sem `zipdll`/`borlndmm` |
 | Registro | XE3 e 2007 → `{app}\JvcsExpertBDS<n>.dll`, com o valor anterior guardado (`old.<id>.prev`); 10.4 e D7 criados; `OutroExpert` intacto; nada na chave do 2010 nem em `Experts x64` |
-| Skill | os 6 arquivos de `skills\jedi-vcs` em `{app}\tools\ai\skills\jedi-vcs`, byte a byte; nada copiado para `%USERPROFILE%\.claude\skills` |
+| Skill | os 6 arquivos de `skills\pt\jedi-vcs` e os 6 de `skills\en\jedi-vcs` em `{app}\tools\ai\skills\pt\jedi-vcs` e `{app}\tools\ai\skills\en\jedi-vcs`, byte a byte; nada copiado para `%USERPROFILE%\.claude\skills` |
 | Reinstalar com `/COMPONENTS=…` sem `ideold\bds21` | `JVCSIDEClient` do 10.4 removido; XE3 continua registrado e o valor anterior dele não se perde |
 | Reinstalar na mesma pasta (com `JvcsExpertBDS21.dll`) sem `/COMPONENTS` | aceito; repete a seleção anterior (10.4 continua fora); com `/COMPONENTS` incluindo `ideold\bds21`, o 10.4 volta a ser registrado |
 | Desinstalar | XE3 e 2007 voltam ao expert **original** 2.5.0.1030; 10.4 e D7 removidos; `OutroExpert` intacto; arquivos removidos |
@@ -252,6 +254,12 @@ Resultado: **43 verificações, 0 falhas**.
 
 `tools\gerar-instalador.bat` com um hash alterado no `SHA256SUMS.txt`: `[FALHOU] experts originais
 2.5.0.1030 ...: ERRO JvcsExpertD7.dll`, código 1, instalador não gerado.
+
+**Skills por idioma (13/10/2026):** setup gerado com `--sem-build` (log do ISCC sem erro), instalado em
+silêncio com `/CURRENTUSER /DIR=<scratchpad> /COMPONENTS="client,ai"`, `/AICONFIG`, `/BDSKEY` e
+`/OLDIDEROOT` numa chave de teste: `tools\ai\skills\pt\jedi-vcs` e `tools\ai\skills\en\jedi-vcs` com hash
+igual ao do repositório; reinstalado por cima de uma pasta `tools\ai\skills\jedi-vcs` simulada (beta 4),
+que o `[InstallDelete]` removeu; desinstalado sem sobras (pasta, entrada de desinstalação e chave de teste).
 
 ## Escolha por Delphi
 

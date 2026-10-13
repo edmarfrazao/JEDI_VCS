@@ -2,8 +2,8 @@
 
 How to check that the expert is loaded and how to use JEDI VCS inside Delphi.
 Previous: [02 Installation](02-Installation.md). Next: [04 Standalone client](04-Standalone-Client.md).
-Full details (Portuguese): [manual 03](../manual/03-Integracao-com-o-Delphi.md) and
-[manual 02](../manual/02-Cliente-Primeiro-Acesso.md).
+Full details (Portuguese): [manual 03](../pt/manual/03-Integracao-com-o-Delphi.md) and
+[manual 02](../pt/manual/02-Cliente-Primeiro-Acesso.md).
 
 ## 1. Check that the expert is loaded
 

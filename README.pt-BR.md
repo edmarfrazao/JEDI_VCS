@@ -11,9 +11,9 @@ mesmo.
 
 [Download](https://github.com/edmarfrazao/JEDI_VCS/releases) ·
 [Novidades](news/pt/README.md) ·
-[Manual](doc/manual/README.md) ·
-[Documentação](doc/README.md) ·
-[IA](doc/ia/README.md) ·
+[Manual](doc/pt/manual/README.md) ·
+[Documentação](doc/pt/README.md) ·
+[IA](doc/pt/ia/README.md) ·
 [Licença](LICENSE)
 
 ## English summary
@@ -38,7 +38,7 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 | Delphi | testado em **Delphi 11, 12 e 13** (IDE de 32 bits) |
 | Plataforma | Win32 (roda em Windows x64 e ARM64 por emulação) |
 | Servidor | JEDI VCS **2.5 Beta 3** (Firebird) — não portado, sem alteração |
-| Fases | console, Diff, EXE, DLL da IDE, expert e instalador prontos; ver [Status](doc/common/Status.md) |
+| Fases | console, Diff, EXE, DLL da IDE, expert e instalador prontos; ver [Status](doc/pt/common/Status.md) |
 
 É uma **beta**: use com um servidor de teste ou com backup do banco antes de adotar em produção.
 
@@ -55,7 +55,7 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 - **Famílias de arquivos:** `.pas` + `.dfm` + `.fmx` no mesmo check-in.
 - **Console** `jvcs.exe` para scripts e para a IA.
 - **IA:** wrapper e skill para o Claude Code fazer checkout/check-in com aprovação humana e preservando a
-  codificação ANSI dos fontes ([doc/ia](doc/ia/README.md)).
+  codificação ANSI dos fontes ([doc/pt/ia](doc/pt/ia/README.md)).
 - **Instalador** Inno Setup (pt-BR/inglês) que registra o expert só nas IDEs instaladas e desfaz tudo na
   desinstalação.
 
@@ -66,7 +66,7 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 | Usar o cliente | Windows 10/11; um servidor JEDI VCS 2.5 Beta 3 acessível (porta 2106) |
 | Integração com a IDE | Delphi 11, 12 ou 13 (qualquer atualização), **IDE de 32 bits**; nenhum componente de terceiros |
 | Compilar | Delphi 13 (referência) ou 11/12; JCL, JVCL, ICS 9.7 e Abbrevia (GetIt); SynEdit e VirtualTreeView vêm no repositório |
-| Servidor (se ainda não tem) | JEDI VCS Firebird Server 2.50 Beta 3 + Firebird 2.5 — ver [manual 01](doc/manual/01-Servidor-Instalacao-e-Configuracao.md) |
+| Servidor (se ainda não tem) | JEDI VCS Firebird Server 2.50 Beta 3 + Firebird 2.5 — ver [manual 01](doc/pt/manual/01-Servidor-Instalacao-e-Configuracao.md) |
 
 ## Instalação rápida
 
@@ -80,9 +80,9 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
    inicial é `sysdba` / `admin` (padrão do banco novo, **troque após o 1º login**).
 5. Abra seu projeto e use **Project Manager**, **Check In** e **Check Out**.
 
-Passo a passo completo: [manual 09 — Instalador](doc/manual/09-Instalador-do-Cliente.md),
-[02 — Primeiro acesso](doc/manual/02-Cliente-Primeiro-Acesso.md) e
-[03 — Integração com o Delphi](doc/manual/03-Integracao-com-o-Delphi.md).
+Passo a passo completo: [manual 09 — Instalador](doc/pt/manual/09-Instalador-do-Cliente.md),
+[02 — Primeiro acesso](doc/pt/manual/02-Cliente-Primeiro-Acesso.md) e
+[03 — Integração com o Delphi](doc/pt/manual/03-Integracao-com-o-Delphi.md).
 
 ## Compatibilidade com o servidor 2.5 Beta 3
 
@@ -103,7 +103,7 @@ tools\compilar-expert.bat Release nova       (JvcsExpertBDS37.dll; use /delphi:1
 tools\gerar-instalador.bat                   (instalador)
 ```
 
-Também é possível abrir `JediVCS2026.groupproj` na IDE. Detalhes: [Compilação](doc/fontes/Compilacao.md) e
+Também é possível abrir `JediVCS2026.groupproj` na IDE. Detalhes: [Compilação](doc/pt/fontes/Compilacao.md) e
 [tools/LEIAME-compilar.md](tools/LEIAME-compilar.md).
 
 ## Estrutura do repositório
@@ -119,29 +119,29 @@ Também é possível abrir `JediVCS2026.groupproj` na IDE. Detalhes: [Compilaç�
 | `tools` | scripts de build, verificação do expert, golden de protocolo, canal de testes, ferramentas de IA |
 | `setup` | instalador Inno Setup e `.reg` de desenvolvimento |
 | `3rdparty` | runtime do 2.5.0.1030 (`fvcscrypt.dll`, ajudas, listas) e binários de referência |
-| `skills\jedi-vcs` | skill para assistentes de IA |
-| `doc` | documentação (abaixo) |
+| `skills\pt`, `skills\en` | skill `jedi-vcs` para assistentes de IA, em português e em inglês ([skills](skills/README.md)) |
+| `doc\pt`, `doc\en` | documentação por idioma (abaixo); `doc\original` = arquivos do JEDI VCS original |
 
-Mapa detalhado: [doc/fontes](doc/fontes/README.md).
+Mapa detalhado: [doc/pt/fontes](doc/pt/fontes/README.md).
 
 ## Documentação
 
 | Para | Leia |
 |---|---|
-| Instalar e usar (servidor, cliente, IDE) | [Manual](doc/manual/README.md) |
-| Usar com IA | [doc/ia](doc/ia/README.md) e a skill [skills/jedi-vcs](skills/jedi-vcs/) |
-| Entender o código | [doc/fontes](doc/fontes/README.md) — arquitetura, units, compilação, convenções |
-| História, decisões, testes e release | [doc/processo](doc/processo/README.md) |
-| Situação atual e decisões datadas | [Status](doc/common/Status.md), [Decisões](doc/common/Decisoes.md) |
+| Instalar e usar (servidor, cliente, IDE) | [Manual](doc/pt/manual/README.md) |
+| Usar com IA | [doc/pt/ia](doc/pt/ia/README.md) e a skill [skills/pt/jedi-vcs](skills/pt/jedi-vcs/) |
+| Entender o código | [doc/pt/fontes](doc/pt/fontes/README.md) — arquitetura, units, compilação, convenções |
+| História, decisões, testes e release | [doc/pt/processo](doc/pt/processo/README.md) |
+| Situação atual e decisões datadas | [Status](doc/pt/common/Status.md), [Decisões](doc/pt/common/Decisoes.md) |
 | O que mudou em cada versão | [Novidades](news/pt/README.md) e [CHANGELOG](CHANGELOG.md) |
-| Índice completo | [doc/README.md](doc/README.md) |
+| Índice completo | [doc/pt/README.md](doc/pt/README.md) |
 
 ## IA
 
 O projeto inclui um fluxo para assistentes de IA (Claude Code e outros agentes) usarem o JEDI VCS com
 segurança: checkout automático só quando o arquivo local é igual ao servidor, check-in com aprovação e
 prefixo `[IA]`, e edição que preserva a codificação Windows-1252. Comece por
-[doc/ia/README.md](doc/ia/README.md); a skill está em [skills/jedi-vcs](skills/jedi-vcs/).
+[doc/pt/ia/README.md](doc/pt/ia/README.md); a skill está em [skills/pt/jedi-vcs](skills/pt/jedi-vcs/) (versão em inglês: [skills/en/jedi-vcs](skills/en/jedi-vcs/); ver [skills](skills/README.md)).
 
 ## Licenças
 
@@ -157,7 +157,7 @@ prefixo `[IA]`, e edição que preserva a codificação Windows-1252. Comece por
   This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.
 - Componentes: JCL/JVCL (MPL 1.1), SynEdit (MPL 1.1/GPL 2), VirtualTreeView (MPL 1.1/LGPL 2.1), ICS
   (freeware), Abbrevia (MPL 1.1); `fvcscrypt.dll` é o binário original redistribuído do instalador 2.50
-  Beta 3. Resumo: [Licenças](doc/common/Licencas.md) e [Componentes](doc/common/Componentes.md).
+  Beta 3. Resumo: [Licenças](doc/pt/common/Licencas.md) e [Componentes](doc/pt/common/Componentes.md).
 
 ## Créditos
 
@@ -172,4 +172,4 @@ prefixo `[IA]`, e edição que preserva a codificação Windows-1252. Comece por
 Issues e pull requests são bem-vindos. Antes de enviar: compile os quatro alvos em Debug e Release, rode os
 testes da área que mudou (golden do console para protocolo; harness para DLL/expert; `-formsweep` para
 forms) e descreva o que testou. Regras de codificação (fontes em Windows-1252, CRLF), defines e commits:
-[Convenções](doc/fontes/Convencoes.md).
+[Convenções](doc/pt/fontes/Convencoes.md).

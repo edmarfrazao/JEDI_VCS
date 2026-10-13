@@ -21,7 +21,7 @@ Purpose:
   - fonte da interface (nome + tamanho em pt) ou escala em %;
   - fonte dos menus (owner-draw quando difere do padrao do Windows);
   - fonte dos editores (SynEdit: Diff, Line History, visualizadores).
-  Ver doc\client\Requisito-Tamanho-Fonte.md e doc\client\Port-Diff.md.
+  Ver doc\pt\client\Requisito-Tamanho-Fonte.md e doc\pt\client\Port-Diff.md.
 
 Persistencia (padrao: registro, HKCU\Software\JEDI\JEDIVCS\Options):
   UIFontScale    Integer  escala em % (100 = sem escala; 80..250)

@@ -52,7 +52,7 @@ Releases: `v2.5.0.2026-beta1` (commit `5a31446`, 13/10) e `v2.5.0.2026-beta2` (c
 
 ## O que ainda falta (resumo)
 
-Detalhes em [Status](../common/Status.md) e nas seções "Pendências" de cada `doc/client/Port-*.md`.
+Detalhes em [Status](../common/Status.md) e nas seções "Pendências" de cada `doc/pt/client/Port-*.md`.
 
 - `JVCSTransport.pas` (isolar o MidWare) e suíte golden automatizada em várias code pages.
 - Restante da JVCL visual (~66 objetos, principalmente `TJvSpinEdit`) e da JCL.

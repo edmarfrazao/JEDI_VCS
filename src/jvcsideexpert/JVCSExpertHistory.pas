@@ -15,7 +15,7 @@ The Original Code is: JVCSExpertHistory.pas (JEDI VCS v2026)
 Unit JVCSExpertHistory - aba History da IDE (FileHistoryAPI)
 
   IOTAFileHistoryProvider "JEDI VCS File History Provider" sobre as 9 funcoes
-  de JEDIVCSDLLHISTORYINIT (doc\client\Expert-IDE-Analise.md, 3.6):
+  de JEDIVCSDLLHISTORYINIT (doc\pt\client\Expert-IDE-Analise.md, 3.6):
 
     Get_Count      -> GetModuleHistoryCount(nome)
     GetAuthor(i)   -> GetModuleHistoryAuthor

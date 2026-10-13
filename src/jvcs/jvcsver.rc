@@ -1,5 +1,5 @@
 /* VERSIONINFO do console JEDI VCS (v2026). O jvcsver.res e gerado a partir
-   deste arquivo com brcc32 (ver doc\client\Port-Console.md):
+   deste arquivo com brcc32 (ver doc\pt\client\Port-Console.md):
      brcc32 -fojvcsver.res jvcsver.rc
    A versao enviada no LOGIN NAO vem daqui: o console manda 239 fixo
    (JVCSConnect.pas), valor aceito pelo servidor 2.5 (exige cliente >= 2.20). */

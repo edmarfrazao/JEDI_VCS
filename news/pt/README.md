@@ -17,7 +17,7 @@ portado para o Delphi moderno (servidor 2.5 Beta 4 sem alterações, protocolo i
 | [Beta 1](2026-10-13-beta1.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1) — substituída pela beta 2 | Primeiro instalador: cliente, Diff, console e expert do Delphi 13.2 |
 
 Histórico técnico completo em [`CHANGELOG.md`](../../CHANGELOG.md). Como cada versão é testada e publicada:
-[`doc/processo/05-Processo-de-Release.md`](../../doc/processo/05-Processo-de-Release.md).
+[`doc/pt/processo/05-Processo-de-Release.md`](../../doc/pt/processo/05-Processo-de-Release.md).
 
 ## Política de publicação
 

@@ -38,7 +38,7 @@ O script, em ordem:
 
 Saída: `setup\Output\JediVCS-2.5-Beta2026-Setup.exe` (fora do git). Log: `tools\logs\gerar-instalador.log`.
 Avisos que não bloqueiam mas devem ser lidos: build Debug mais novo que o Release, `.map` ausente, DLL de
-`bin\ideclient` diferente da de `bin\client`. Detalhes: [setup/LEIAME](../../setup/LEIAME.md).
+`bin\ideclient` diferente da de `bin\client`. Detalhes: [setup/LEIAME](../../../setup/LEIAME.md).
 
 ## 2. Testar aqui
 
@@ -60,7 +60,7 @@ Avisos que não bloqueiam mas devem ser lidos: build Debug mais novo que o Relea
 2. `canal.ps1 aguardar -Id NNNN -TimeoutMin 60` e ler a resposta com `canal.ps1 ler -Id NNNN`.
 3. Falhou em alguma IDE → corrigir, novo commit, voltar ao passo 1 do fluxo.
 
-Ver [tools/canal/LEIA-PRIMEIRO.md](../../tools/canal/LEIA-PRIMEIRO.md).
+Ver [tools/canal/LEIA-PRIMEIRO.md](../../../tools/canal/LEIA-PRIMEIRO.md).
 
 ## 4. Publicar
 

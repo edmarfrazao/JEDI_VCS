@@ -91,13 +91,13 @@ O primeiro item foi acrescentado: os pacotes de design (`SynEditDD370`, `Virtual
 
 ### 4.4 `Experts`
 
-Contém `Beyond Compare IDE Package` e, desde 12/10/2026 18:00, **`JVCSIDEClient`** = `D:\Delphi\JediVCS\v2026\bin\ideclient\Win32\JvcsExpertBDS37.dll` (backup da chave antes da gravação: `_backup_getit_20261012\Experts_antes_jvcs.reg`). Só na IDE de 32 bits; não registrar em `Experts x64`. Ver [src\jvcsideexpert\LEIAME.md](../../src/jvcsideexpert/LEIAME.md) para o comando de registro e a opção de teste isolado `bds.exe -rJVCSTeste`.
+Contém `Beyond Compare IDE Package` e, desde 12/10/2026 18:00, **`JVCSIDEClient`** = `D:\Delphi\JediVCS\v2026\bin\ideclient\Win32\JvcsExpertBDS37.dll` (backup da chave antes da gravação: `_backup_getit_20261012\Experts_antes_jvcs.reg`). Só na IDE de 32 bits; não registrar em `Experts x64`. Ver [src\jvcsideexpert\LEIAME.md](../../../src/jvcsideexpert/LEIAME.md) para o comando de registro e a opção de teste isolado `bds.exe -rJVCSTeste`.
 
 ### 4.5 `EnvOptions.proj`
 
 Arquivo: `%APPDATA%\Embarcadero\BDS\37.0\EnvOptions.proj` (última gravação 12/10/2026 16:52:59). É o Library Path que o **MSBuild** de linha de comando lê. Contém as entradas do GetIt por plataforma e **ainda cita** `$(BDSCatalogRepository)\VirtualTreeview_by_JamSoftware-13\8.3\source\` em várias plataformas. Como a pasta continua existindo, isso é inofensivo hoje, mas pode colocar duas versões do VTV no caminho. Está listado em [Status.md](Status.md) como pendência.
 
-O `dcc32` de linha de comando **não lê** o Library Path da IDE nem o `EnvOptions.proj`; por isso o `tools\compilar.bat` monta os caminhos sozinho ([tools\LEIAME-compilar.md](../../tools/LEIAME-compilar.md)).
+O `dcc32` de linha de comando **não lê** o Library Path da IDE nem o `EnvOptions.proj`; por isso o `tools\compilar.bat` monta os caminhos sozinho ([tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md)).
 
 ## 5. Backups e como reverter
 

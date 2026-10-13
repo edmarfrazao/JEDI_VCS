@@ -2,10 +2,10 @@
 
 Plano de execução, em fases ordenadas por dependência, para portar o **cliente** JEDI VCS 2.5 (Beta 3) para o Delphi 13.2 Florence Professional, mantendo a compilação em Delphi 11/12.
 
-- **Base:** `doc\common\Inventario-Componentes.md`. As referências entre colchetes, como **[R7]**, remetem à linha de mesmo número (#7) da tabela da seção 4 do inventário ("Riscos de compatibilidade com o servidor 2.5 Beta 3"); "crítico 1.x/Cx" remete à seção 6.
+- **Base:** `doc\pt\common\Inventario-Componentes.md`. As referências entre colchetes, como **[R7]**, remetem à linha de mesmo número (#7) da tabela da seção 4 do inventário ("Riscos de compatibilidade com o servidor 2.5 Beta 3"); "crítico 1.x/Cx" remete à seção 6.
 - **Data:** 2026-10-12.
 - **Situação de partida (2026-10-12):**
-  - A árvore `v2026` já existe, com fontes base vindos das cópias de `jedivcsdll` e `.dpr` de `ConverterBackup` (ver `doc\common\LEIAME-Origem.md`).
+  - A árvore `v2026` já existe, com fontes base vindos das cópias de `jedivcsdll` e `.dpr` de `ConverterBackup` (ver `doc\pt\common\LEIAME-Origem.md`).
   - No Delphi 13.2 estão instalados via GetIt: JCL/JVCL 2026.08, ICS 9.7, VirtualTreeView 8.3, SynEdit TurboPack 2025.03 e Abbrevia 2026.10 (`README.md`).
   - O `tools\compilar.bat` funciona em modo `dcc32`, mas nenhum dos 4 projetos compila ainda (primeiras falhas no `tools\LEIAME-compilar.md`).
   - O `3rdparty` já tem `fvcscrypt.dll`, os CHM e os binários de referência 2.5.0.1030, e o cliente oficial está instalado em `C:\Program Files (x86)\JEDI\JVCS`.
@@ -161,7 +161,7 @@ Falta só conferir, no registro da instalação ou no script do instalador, o va
 - Guardar em `tools\golden\captures\` (proposta), com o roteiro exato usado.
 - Se houver uma IDE antiga com o expert 2.5.0.1030 (até BDS 21), registrar o nome de projeto que ele devolve para um projeto de amostra **[R13]**.
 
-**0.7 Consultas somente leitura no banco** (resultado registrado em `doc\server\`):
+**0.7 Consultas somente leitura no banco** (resultado registrado em `doc\pt\server\`):
 - `BLOBS.ORIGCRC` × CRC do diretório central do ZIP, numa amostra ampla **[R7]**;
 - método (offset 8) e flags (bit 0) dos blobs **[R9]**;
 - blobs que não começam com `PK` (Blowfish) **[R10]**;

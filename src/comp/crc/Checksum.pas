@@ -1,7 +1,7 @@
 unit Checksum;
 
 { JEDI VCS 2.5 Beta 2026 - recriacao fiel da unit Checksum do JEDI VCS 2.5.
-  Ver doc\client\Algoritmos-Recuperados.md, secao 1.
+  Ver doc\pt\client\Algoritmos-Recuperados.md, secao 1.
 
   CRC-32 IEEE (polinomio refletido $EDB88320, inicio $FFFFFFFF, XOR final
   $FFFFFFFF) = System.ZLib.crc32 = CRC do ZIP. O arquivo e lido em blocos de

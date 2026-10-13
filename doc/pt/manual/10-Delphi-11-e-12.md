@@ -1,7 +1,7 @@
 # 10. Delphi 11 e 12: checklist depois de instalar
 
 Roteiro curto para deixar o Delphi 11 Alexandria (BDS 22.0) ou o 12 Athens (BDS 23.0) prontos para compilar o
-JEDI VCS 2.5 Beta 2026 e usar o expert. Detalhes: [tools\LEIAME-compilar.md](../../tools/LEIAME-compilar.md),
+JEDI VCS 2.5 Beta 2026 e usar o expert. Detalhes: [tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md),
 [Ambiente](../common/Ambiente.md) e [Versões](../common/Versoes.md).
 
 > **Atenção:** feche a IDE (`bds.exe`) antes de mexer em pacotes, registro ou `EnvOptions.proj`.

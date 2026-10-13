@@ -188,7 +188,7 @@ CRCString(FileName):
 ```pascal
 unit Checksum;
 
-{ Recriação fiel da unit Checksum do JEDI VCS 2.5 (ver doc\client\Algoritmos-Recuperados.md, seção 1).
+{ Recriação fiel da unit Checksum do JEDI VCS 2.5 (ver doc\pt\client\Algoritmos-Recuperados.md, seção 1).
   CRC-32 IEEE (poly refletido $EDB88320, init $FFFFFFFF, xorout $FFFFFFFF) = System.ZLib.crc32. }
 
 {$R-}{$Q-}
@@ -525,7 +525,7 @@ O formato do `.bflck` é **ECB puro**: `cifrado = BF_ECB(texto || 0x00 × ((8 - 
 ```pascal
 unit BFCrypt;
 
-{ Recriação compatível da unit BFCrypt do JEDI VCS 2.5 (doc\client\Algoritmos-Recuperados.md, seção 2).
+{ Recriação compatível da unit BFCrypt do JEDI VCS 2.5 (doc\pt\client\Algoritmos-Recuperados.md, seção 2).
   - Base64: alfabeto padrão, '=' de padding, sem quebra de linha, sobre BYTES.
   - Blowfish (CryptoLib TBlowFish): 16 rodadas, big-endian, ECB, sem IV, padding de zeros a múltiplo
     de 8, chave = bytes crus (8..65 bytes; fora disso o original ignora a chave). }

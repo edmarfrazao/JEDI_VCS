@@ -1,6 +1,6 @@
 # tools\ai — JEDI VCS para a IA (Claude Code)
 
-Versão **1.1.1** (12/10/2026). Camada 0 do ADR-001 (`doc\common\ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`):
+Versão **1.1.1** (12/10/2026). Camada 0 do ADR-001 (`doc\pt\common\ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`):
 a IA faz checkout e check-in das units Delphi usando o console **original** `jvcs.exe` 2.5.0.1030
 (Delphi 2007), sempre por trás de um wrapper PowerShell que torna o console seguro para automação.
 
@@ -12,10 +12,10 @@ a IA faz checkout e check-in das units Delphi usando o console **original** `jvc
 | `hooks\stop.ps1` | Hook `Stop`: lembra os checkouts da sessão que ficaram presos (só avisa, nunca bloqueia) |
 | `lib\jvcs-ai-common.ps1` | Funções comuns (JSON, config.ini, codificação, contexto de agente, aprovação, auditoria) |
 | `claude\settings.template.json` | Modelo dos hooks e das regras `allow`/`ask`/`deny` |
-| `claude\skills\jvcs\SKILL.md` | Skill que ensina a IA o fluxo (por projeto; a variante global distribuível é `skills\jedi-vcs` na raiz do repositório) |
+| `claude\skills\jvcs\SKILL.md` | Skill que ensina a IA o fluxo (por projeto; a variante global distribuível é `skills\pt\jedi-vcs`, ou `skills\en\jedi-vcs` em inglês, na raiz do repositório) |
 | `instalar-no-projeto.ps1` | Instala hooks, regras e skill num projeto e (se pedido) grava o modo |
 
-Guia de uso (instalação, modos, fluxo, segurança, problemas): `doc\ia\README.md`.
+Guia de uso (instalação, modos, fluxo, segurança, problemas): `doc\pt\ia\README.md`.
 
 Requisitos: Windows PowerShell 5.1, `C:\Program Files (x86)\JEDI\JVCS\jvcs.exe` 2.5.0.1030 com
 `FVCSCrypt.dll`, uma **identidade salva com senha** (GUI: Server Login → "Store Password with identity"),
@@ -108,7 +108,7 @@ próprio wrapper aplica os modos, e `deny` > `ask` > `allow` (`-Confirmed`/`-Dis
 continuam perguntando ou negados). A skill manda usar exatamente essa forma (barras normais); outra forma
 cai no fluxo normal (pergunta).
 
-**Desvio da especificação (registrar em `doc\common\Decisoes.md`):** no modo `confirm` o hook **não**
+**Desvio da especificação (registrar em `doc\pt\common\Decisoes.md`):** no modo `confirm` o hook **não**
 devolve `permissionDecision: "ask"`. O PreToolUse roda antes da aprovação e não consegue agir depois dela;
 aprovada a edição, o `Edit` falharia com `EPERM` no arquivo somente leitura (testado). A confirmação passa
 para o **comando de checkout** (`-Confirmed` + regra `ask`), que é a ação que muda o servidor, e acontece

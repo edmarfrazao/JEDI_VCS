@@ -17,7 +17,7 @@ Unit JVCSExpertProjMenu - menu de contexto do Project Manager
   Usa IOTAProjectMenuItemCreatorNotifier + IOTAProjectManagerMenu
   (AddMenuItemCreatorNotifier), e NAO a INTAProjectMenuCreatorNotifier
   (deprecated no Delphi 13) usada pelo expert BDS21. Mesmos itens e
-  operacoes do original (doc\client\Expert-IDE-Analise.md, 3.6):
+  operacoes do original (doc\pt\client\Expert-IDE-Analise.md, 3.6):
 
   Arquivo (sFileContainer): submenu "JEDI VCS" com Check In/Put, Check Out,
     Get, -, Reload, -, Compare, Diff, History

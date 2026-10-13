@@ -119,7 +119,8 @@ if "%GI_NEXP%"=="0" (
 for %%F in (fvcscrypt.dll jedivcs.chm jedivcsdiff.chm htm_rep.htm ffdef.jvcs ulist.jvcs vcllist.jvcs vcllistbcb.jvcs verinf.jvcs) do call :check_file "%GI_RT%\%%F"
 call :check_old
 call :check_file "%GI_ROOT%\tools\ai\jvcs-ai.ps1"
-call :check_file "%GI_ROOT%\skills\jedi-vcs\SKILL.md"
+call :check_file "%GI_ROOT%\skills\pt\jedi-vcs\SKILL.md"
+call :check_file "%GI_ROOT%\skills\en\jedi-vcs\SKILL.md"
 call :check_file "%GI_ROOT%\doc\original\license.txt"
 if exist "%GI_CLIENT%\Jedivcs.map" (call :log "[OK] Jedivcs.map presente (componente .map)") else (call :log "[AVISO] Jedivcs.map ausente: o componente .map vai sem ele")
 if exist "%GI_IDE%\JvcsExternalDll.map" (call :log "[OK] JvcsExternalDll.map presente (componente .map)") else (call :log "[AVISO] JvcsExternalDll.map ausente: o componente .map vai sem ele")

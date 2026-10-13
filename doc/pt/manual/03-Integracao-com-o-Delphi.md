@@ -1,6 +1,6 @@
 # 03. Integração com o Delphi
 
-Como instalar, verificar e remover o expert **JEDI VCS 2.5 Beta 2026** no **Delphi 13.2 Florence** (BDS 37.0, IDE de **32 bits**). Detalhes técnicos: [src\jvcsideexpert\LEIAME.md](../../src/jvcsideexpert/LEIAME.md).
+Como instalar, verificar e remover o expert **JEDI VCS 2.5 Beta 2026** no **Delphi 13.2 Florence** (BDS 37.0, IDE de **32 bits**). Detalhes técnicos: [src\jvcsideexpert\LEIAME.md](../../../src/jvcsideexpert/LEIAME.md).
 
 > **Regra de ouro: feche o Delphi (`bds.exe`) antes de mexer no registro.** A IDE regrava o registro e o `EnvOptions.proj` ao fechar e **desfaz** qualquer mudança feita com ela aberta. Foi exatamente isso que fez o expert não carregar na primeira tentativa: as mudanças de registro não chegaram à IDE. Confira no Gerenciador de Tarefas que não há `bds.exe` rodando.
 

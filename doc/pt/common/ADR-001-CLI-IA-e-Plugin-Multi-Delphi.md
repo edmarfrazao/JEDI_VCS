@@ -77,7 +77,7 @@
 | Experts originais `JvcsExpertBDS1..21.dll` | De 40 a 84 KB cada, um por versão. Importam `rtlNNN/vclNNN/vclactnbandNNN/designideNNN.bpl` (conferido nos binários: BDS21 → `*270.bpl`) | Prova de que o modelo "fino por versão + núcleo único" **já existia dentro do processo** e que o fino sempre dependeu dos pacotes da versão |
 | `jvcs.exe` 2.5.0.1030 (console) | Subsistema console, PE32. Comandos `listprojects`, `listproject`, `openproject`, `listlocks`, `checkin`, `checkout`, `undocheckout`, `getmodule`, `labelproject`, `syncproject[group]`, `input`, `help`. Aceita `/` ou `-` nas opções (`jvcs.dpr:166`). Instalado em `C:\Program Files (x86)\JEDI\JVCS` | Utilizável com wrapper (§3) |
 | Núcleo de protocolo (`src\common\client`) | 185 classes de request sem interface (`JVCSClientObj.pas`), `JVCSConnect.pas` (`ClientVersion := 239`), `JVCSCrypt.pas`, `JVCSClientDispatcher.pas` | Base do `JVCSCore`. **Não existe camada de serviços**: as regras estão em `jvcs.dpr` (variáveis globais e prompts) e nos forms da GUI (`ChkInSingle`, `ChkOutSingle`, `Syncronice`; 3.921 usos de `AppSrvClient1` em 49 units) |
-| Port | F0 em andamento; F1–F4 não iniciadas; o console não compila (FastMM4); F5 trilha 5A (expert) em andamento; F6 "bloqueada pela FVCSCrypt" | `doc\common\Status.md` |
+| Port | F0 em andamento; F1–F4 não iniciadas; o console não compila (FastMM4); F5 trilha 5A (expert) em andamento; F6 "bloqueada pela FVCSCrypt" | `doc\pt\common\Status.md` |
 | Ambiente | Windows 11 ARM64 (x86 e x64 emulados), Windows PowerShell 5.1, Git. **Sem** Node, Python real, `jq` ou pwsh 7. Delphi 13 com `bin64\bds.exe`, `bin\dcc64.exe`, `lib\win64\release\{rtl,vcl,vclactnband,xmlrtl,designide}.dcp` e `bin64\{rtl,vcl,vclactnband,designide}370.bpl`. Registro: `App x64` em `HKCU\Software\Embarcadero\BDS\37.0`; chave `Experts x64` já usada pelo Beyond Compare. Claude Code 2.1.295 neste ambiente (`AI_AGENT=claude-code_2-1-295_agent`) | O expert Win64 **já pode ser compilado**. O `Status.md` está desatualizado: a F6 diz "Instalar a plataforma Win64 (ausente hoje)" |
 
 ### 2.2 Fatos que pesam na decisão
@@ -895,14 +895,14 @@ O mesmo pedido pelo pipe:
 ## Anexo B: referências
 
 - Relatórios de origem e documentos do projeto:
-  - `D:\Delphi\JediVCS\v2026\doc\client\Expert-IDE-Analise.md`
+  - `D:\Delphi\JediVCS\v2026\doc\pt\client\Expert-IDE-Analise.md`
   - `D:\Delphi\JediVCS\v2026\src\jvcsideexpert\LEIAME.md`
-  - `D:\Delphi\JediVCS\v2026\doc\common\Plano-de-Port.md`
-  - `D:\Delphi\JediVCS\v2026\doc\common\Decisoes.md`
-  - `D:\Delphi\JediVCS\v2026\doc\common\Status.md`
-  - `D:\Delphi\JediVCS\v2026\doc\common\Inventario-Componentes.md`
-  - `D:\Delphi\JediVCS\v2026\doc\client\Requisito-Tamanho-Fonte.md`
-  - `D:\Delphi\JediVCS\v2026\doc\client\jvcs_params.txt`
+  - `D:\Delphi\JediVCS\v2026\doc\pt\common\Plano-de-Port.md`
+  - `D:\Delphi\JediVCS\v2026\doc\pt\common\Decisoes.md`
+  - `D:\Delphi\JediVCS\v2026\doc\pt\common\Status.md`
+  - `D:\Delphi\JediVCS\v2026\doc\pt\common\Inventario-Componentes.md`
+  - `D:\Delphi\JediVCS\v2026\doc\pt\client\Requisito-Tamanho-Fonte.md`
+  - `D:\Delphi\JediVCS\v2026\doc\pt\client\jvcs_params.txt`
   - `D:\skills\delphi\references\ide64-experts.md`
 - Fontes:
   - `D:\Delphi\JediVCS\v2026\src\jvcs\jvcs.dpr`
@@ -1008,7 +1008,7 @@ A revisão foi somente leitura. Nenhum binário do JVCS foi executado, e nada fo
 ## Adendo 12/10/2026 — resultado do teste e decisões do usuário
 
 - **F-A não se aplica ao servidor em uso:** o servidor de teste (2.50 Beta 3 **com branching**) aceitou o mesmo usuário `sysdba` na IDE e na CLI ao mesmo tempo; a IDE continuou conectada. O `DELETE FROM transact` de `SrvOBJMain.pas:514-520` é do build sem branching; o build com `BRANCHOBJECTS` usa lista de sessões. R-1 fechado para este servidor; R-20 (chamadas paralelas da IA) continua mitigado pelo mutex por precaução.
-- **Decisões:** D1 = identidade salva do usuário (com prefixo `[IA]`); D10 = (a) preservar codificação; D4 = checkout automático por hook + check-in com aprovação; D3 = camada 0 (wrapper) primeiro. Ver `doc\common\Decisoes.md`.
+- **Decisões:** D1 = identidade salva do usuário (com prefixo `[IA]`); D10 = (a) preservar codificação; D4 = checkout automático por hook + check-in com aprovação; D3 = camada 0 (wrapper) primeiro. Ver `doc\pt\common\Decisoes.md`.
 - Ciclo testado com o `jvcs.exe` original: `checkout 4` → edição → `checkin 4 "..."` → versão 0.2, lock liberado, arquivos somente leitura.
 
 ## Adendo 2 (12/10/2026) — achados da implementação do wrapper (`tools\ai`)

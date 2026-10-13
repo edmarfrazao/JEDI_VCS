@@ -27,7 +27,7 @@ Purpose:
     ("ImmersiveColorSet") quando JVCSUIStartFollowingSystem for chamada.
   - Dentro da IDE (fase F5): o expert informa o tema da IDE por
     JVCSUISetHostTheme(IsDark) (ou atribuindo JVCSUIHostIsDark); a DLL nao
-    le o tema da IDE sozinha. Ver doc\client\Port-Diff.md.
+    le o tema da IDE sozinha. Ver doc\pt\client\Port-Diff.md.
   A leitura/gravacao usa as mesmas funcoes de armazenamento de JVCSUIScale
   (JVCSUIReadInteger/JVCSUIWriteInteger + JVCSUIOptionsKey).
 

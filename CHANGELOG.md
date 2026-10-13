@@ -7,6 +7,12 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+### Alterado
+- Documentação e skill organizadas por idioma: `doc/pt` (toda a documentação em português), `doc/en` e
+  `doc/README.md` como seletor de idioma; skill `jedi-vcs` em `skills/pt/jedi-vcs` e, nova, em inglês em
+  `skills/en/jedi-vcs` (mesmo nome: instale só uma). O instalador copia as duas para
+  `tools\ai\skills\pt\jedi-vcs` e `tools\ai\skills\en\jedi-vcs` e remove a pasta antiga `tools\ai\skills\jedi-vcs`.
+
 ### Corrigido
 - (em andamento) AV ao clicar na barra de ferramentas do JEDI VCS dentro de IDEs antigas (ex.: XE3).
 
@@ -16,7 +22,7 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Instalador: escolha individual de cada Delphi (11, 12, 13 e antigas); aviso de isenção de garantia com aceite obrigatório.
 - Instalador integra as IDEs antigas suportadas pelo 2.5.0.1030 (Delphi 7, 2005–2010, XE–XE8, 10 Seattle–10.4) com o
   expert original + núcleo novo; detecção por IDE e restauração na desinstalação.
-- Skill `jedi-vcs` para o Claude Code no instalador; guia de uso com IA (`doc/ia`).
+- Skill `jedi-vcs` para o Claude Code no instalador; guia de uso com IA (`doc/pt/ia`).
 - Documentação: README, processo do port, fontes, novidades e changelog.
 
 ### Corrigido

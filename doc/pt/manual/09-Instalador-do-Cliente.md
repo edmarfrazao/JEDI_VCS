@@ -2,7 +2,7 @@
 
 Como instalar, reparar e remover o cliente portado (standalone, Diff, console, expert do Delphi e
 ferramentas da IA) com o instalador `JediVCS-2.5-Beta2026-Setup.exe`. Detalhes técnicos, decisões e
-testes: [setup\LEIAME.md](../../setup/LEIAME.md).
+testes: [setup\LEIAME.md](../../../setup/LEIAME.md).
 
 ## 1. Onde está o instalador
 
@@ -33,7 +33,7 @@ testes: [setup\LEIAME.md](../../setup/LEIAME.md).
    | Expert para o Delphi | Menu **JEDI VCS** na IDE de 32 bits; a linha mostra os Delphi detectados |
    | IDEs antigas detectadas | Só aparece se houver um Delphi de 7 a 10.4 Sydney instalado, com uma linha por IDE detectada. Instala o expert **original** 2.5.0.1030 daquela IDE ligado ao cliente novo (seção 4A) |
    | Arquivos `.map` | O log de erros passa a dizer unit e linha (útil para relatar erro) |
-   | Ferramentas da IA | `tools\ai` (wrapper, hooks) e a skill `jedi-vcs` do Claude Code em `tools\ai\skills\jedi-vcs`, dentro da pasta instalada. Para usar a skill, copie-a para `%USERPROFILE%\.claude\skills\jedi-vcs` (ver [setup\LEIAME.md](../../setup/LEIAME.md), seção 3) |
+   | Ferramentas da IA | `tools\ai` (wrapper, hooks) e a skill `jedi-vcs` do Claude Code em `tools\ai\skills\pt\jedi-vcs` (português) e `tools\ai\skills\en\jedi-vcs` (inglês), dentro da pasta instalada. Para usar a skill, copie **uma** delas para `%USERPROFILE%\.claude\skills\jedi-vcs` (ver [setup\LEIAME.md](../../../setup/LEIAME.md), seção 3) |
 
 5. Tarefas: atalho na área de trabalho (marcado) e **"Usar o console novo na IA"** (desmarcado: marque
    só se quiser que a automação por IA use o `jvcs.exe` novo em vez do original).

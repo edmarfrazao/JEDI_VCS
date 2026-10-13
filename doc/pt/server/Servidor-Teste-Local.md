@@ -25,8 +25,8 @@
 
 ## Próximos passos de teste
 1. Cliente (Delphi 13 ou `jedivcs.exe`): identidade `192.168.0.10:2106`, usuário `sysdba`, senha `admin` → trocar a senha.
-2. Criar usuário administrador pessoal e usuário **IA** com poucos direitos (ver `doc\common\Credenciais.md` §c.8/c.10).
-3. Tools → File Families Manager: família `.pas` com Child `.dfm;.fmx;` (ver `doc\client\Checkin-Familias-FMX.md`).
+2. Criar usuário administrador pessoal e usuário **IA** com poucos direitos (ver `doc\pt\common\Credenciais.md` §c.8/c.10).
+3. Tools → File Families Manager: família `.pas` com Child `.dfm;.fmx;` (ver `doc\pt\client\Checkin-Familias-FMX.md`).
 4. Criar um projeto de teste, check-in/check-out, histórico; capturas "golden" de tráfego para o port.
 5. Verificar se o servidor permite duas sessões do mesmo usuário (GUI + CLI) — ver `Credenciais.md`, achado de sessão única.
 ## Atualização do banco para o esquema 2.5 (branching) — feita em 12/10/2026

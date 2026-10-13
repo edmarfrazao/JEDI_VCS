@@ -90,7 +90,7 @@ Use um projeto com nome próprio: o JEDI VCS recusa os nomes padrão do Delphi (
 ### Skill global (opcional)
 
 Para ter o fluxo em qualquer projeto, sem hooks, instale a skill distribuível `jedi-vcs`
-(ver [`skills/jedi-vcs/README.md`](../../skills/jedi-vcs/README.md)). Ela não substitui o instalador:
+(ver [`skills/pt/jedi-vcs/README.md`](../../../skills/pt/jedi-vcs/README.md) e [`skills/README.md`](../../../skills/README.md)). Ela não substitui o instalador:
 hooks e regras `allow`/`ask`/`deny` só vêm com `instalar-no-projeto.ps1`.
 
 ## 4. Confiança da pasta no Claude Code

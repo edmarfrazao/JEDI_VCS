@@ -39,7 +39,7 @@ todos os computadores cairiam no mesmo projeto. O wrapper ignora `Project1`/`Pac
 automática do projeto.
 
 **Solução.** No Delphi, **Save Project As** e **Save As** de cada unit com nomes próprios; feche e
-reabra o projeto e crie-o no servidor. Detalhes: `doc/manual/02-Cliente-Primeiro-Acesso.md` §8.2.
+reabra o projeto e crie-o no servidor. Detalhes: `doc/pt/manual/02-Cliente-Primeiro-Acesso.md` §8.2.
 
 ## Caminho do projeto diferente do registrado no servidor (`pathMismatch`, 5)
 

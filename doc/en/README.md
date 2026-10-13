@@ -36,14 +36,14 @@ ported to Delphi 11, 12 and 13, fully compatible with the existing **JEDI VCS 2.
 
 | Topic | Link |
 |---|---|
-| Full documentation index | [doc/README.md](../README.md) |
-| User manual (server installation, first access, IDE, all client options, command line, passwords, troubleshooting, installer) | [manual](../manual/README.md) |
-| Server installation and configuration (Firebird, port 2106, backup) | [manual 01](../manual/01-Servidor-Instalacao-e-Configuracao.md) |
-| Client options, page by page | [manual 04](../manual/04-Opcoes-do-Cliente.md) |
-| Command line (`jvcs.exe`) | [manual 06](../manual/06-Linha-de-Comando.md) |
-| Default passwords and security | [manual 07](../manual/07-Senhas-Padrao-e-Seguranca.md) |
-| AI guide (full) | [ia](../ia/README.md) |
-| Source code, architecture and build | [fontes](../fontes/README.md) |
-| Port history, decisions, tests and release process | [processo](../processo/README.md) |
+| Full documentation index | [doc/pt/README.md](../pt/README.md) |
+| User manual (server installation, first access, IDE, all client options, command line, passwords, troubleshooting, installer) | [manual](../pt/manual/README.md) |
+| Server installation and configuration (Firebird, port 2106, backup) | [manual 01](../pt/manual/01-Servidor-Instalacao-e-Configuracao.md) |
+| Client options, page by page | [manual 04](../pt/manual/04-Opcoes-do-Cliente.md) |
+| Command line (`jvcs.exe`) | [manual 06](../pt/manual/06-Linha-de-Comando.md) |
+| Default passwords and security | [manual 07](../pt/manual/07-Senhas-Padrao-e-Seguranca.md) |
+| AI guide (full) | [ia](../pt/ia/README.md) |
+| Source code, architecture and build | [fontes](../pt/fontes/README.md) |
+| Port history, decisions, tests and release process | [processo](../pt/processo/README.md) |
 | Installer (technical) | [setup/LEIAME.md](../../setup/LEIAME.md) |
 | Technical changelog | [CHANGELOG.md](../../CHANGELOG.md) |

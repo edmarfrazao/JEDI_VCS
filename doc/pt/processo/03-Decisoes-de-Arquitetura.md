@@ -122,7 +122,7 @@ Do ADR-001 e de [Decisoes](../common/Decisoes.md):
 - checkout/check-in em **três modos** configuráveis: manual, **confirmação** (padrão) e auto;
 - primeiro o wrapper sobre o `jvcs.exe`, depois o port.
 
-Documentação de uso: [doc/ia](../ia/README.md).
+Documentação de uso: [doc/pt/ia](../ia/README.md).
 
 ## D-11. MidWare e licença
 

@@ -7,7 +7,7 @@ Próximo: [02 Linha do tempo](02-Linha-do-Tempo.md). Índice do processo: [READM
 
 O **JEDI VCS** (sucessor do FreeVCS) é um sistema de controle de versão cliente/servidor feito em Delphi
 para equipes Delphi. A linha 2.x é do Project JEDI; os principais autores foram **Thomas Huber**,
-**Uwe Schuster** e equipe (ver [`doc/original/credits.txt`](../original/credits.txt)). Peças:
+**Uwe Schuster** e equipe (ver [`doc/original/credits.txt`](../../original/credits.txt)). Peças:
 
 | Peça | O que faz |
 |---|---|
@@ -66,4 +66,4 @@ O port foi feito em dois dias intensos (12 e 13/10/2026) por **Edmar Frazão** c
 (Anthropic) como par de programação: análise estática dos binários, port das units, scripts de build,
 testes contra um servidor 2.5 Beta 3 local e documentação em português. Cada decisão relevante foi
 registrada em [Decisoes](../common/Decisoes.md) e cada fase em [Status](../common/Status.md) e nos
-documentos `doc/client/Port-*.md`.
+documentos `doc/pt/client/Port-*.md`.

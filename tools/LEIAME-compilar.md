@@ -196,7 +196,7 @@ compilar-expert.bat [/delphi:11|12|13 | /bds:22|23|37] [Debug|Release] [nova|ori
   (`tools\gerar-toolsapi.ps1`, gerada do `source\ToolsAPI` da instalação, em `dcu\...\expert\toolsapi`, fora do git)
   via unit alias. Motivo: com runtime packages cada unit de pacote no grafo de `uses` vira import da sua
   `initialization`, e o grafo do `DockForm` muda entre atualizações (o expert do 13.2 não carregava no 13.1).
-  Detalhes e política: `doc\client\Port-DLL-IDE.md`, seção 5A.
+  Detalhes e política: `doc\pt\client\Port-DLL-IDE.md`, seção 5A.
 - Verificação a cada build: export `INITWIZARD0001`, imports `rtl<pkg>`/`vcl<pkg>`, **nenhum** `designide<pkg>`
   e `tools\verificar-expert.ps1 -Permitidos rtl,vcl,xmlrtl -Inits` contra os `.bpl` da própria instalação.
   O Delphi 11 não traz `llvm-objdump`: o script usa o do 13/12 se existir.
@@ -348,7 +348,7 @@ sem condicional (ver pendências).
 ## Pendências conhecidas (diagnóstico de 12/10/2026, Debug Win32)
 
 **Atualização (port do console, 12/10/2026):** o `console` já compila em Win32 Debug e
-Release e passa no golden contra o servidor de teste (ver `doc\client\Port-Console.md`).
+Release e passa no golden contra o servidor de teste (ver `doc\pt\client\Port-Console.md`).
 Por que `JVCSCONSOLECLIENT` vai no `-D`: as units de `..\jedivcs` (ex.: `JVCSClasses.pas`)
 leem o `compopt.inc` da própria pasta, não o do console. Depois de um build Win32 OK o
 script copia `3rdparty\fvcscrypt.dll` para `bin\client\Win32` (se ainda não estiver lá).

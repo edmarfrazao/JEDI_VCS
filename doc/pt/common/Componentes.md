@@ -58,7 +58,7 @@ Estado verificado em **12/10/2026** (leitura do registro da IDE, do `CatalogRepo
 
 ## 3. Units ausentes e sua destinação
 
-Units que o código referencia e que **não existem** em lugar nenhum (nem fonte nem DCU). Lista de [LEIAME-Origem.md](LEIAME-Origem.md) e [tools\LEIAME-compilar.md](../../tools/LEIAME-compilar.md); detalhes em [Inventário 3.8](Inventario-Componentes.md).
+Units que o código referencia e que **não existem** em lugar nenhum (nem fonte nem DCU). Lista de [LEIAME-Origem.md](LEIAME-Origem.md) e [tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md); detalhes em [Inventário 3.8](Inventario-Componentes.md).
 
 | Unit | Quem usa | Origem original | Situação | Licença | Substituição nativa planejada |
 |---|---|---|---|---|---|

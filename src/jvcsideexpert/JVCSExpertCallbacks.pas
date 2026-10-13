@@ -15,7 +15,7 @@ The Original Code is: JVCSExpertCallbacks.pas (JEDI VCS v2026)
 Unit JVCSExpertCallbacks - as 24 callbacks de TExternalIDEFunctionRec
 
   Implementacao (DLL -> IDE) equivalente a do expert JvcsExpertBDS21.dll
-  (doc\client\Expert-IDE-Analise.md, 3.4), com as correcoes da secao 6.3:
+  (doc\pt\client\Expert-IDE-Analise.md, 3.4), com as correcoes da secao 6.3:
   - toda callback e stdcall e tem try/except: nenhuma excecao atravessa a
     fronteira; em erro devolve 0/False/'' ;
   - copias para os buffers de 256 bytes da DLL sao LIMITADAS a 255 bytes + #0

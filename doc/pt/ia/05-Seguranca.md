@@ -13,7 +13,7 @@ O que protege seus fontes e sua senha quando uma IA usa o JEDI VCS, e o que **n�
   `/password` ou `-password`.
 - Limite: a identidade salva pelo cliente 2.5 fica em Base64 no registro do usuário. Qualquer processo
   do mesmo usuário do Windows pode lê-la; as regras dificultam, não impedem. A evolução prevista é o
-  Gerenciador de Credenciais do Windows (`doc/common/Credenciais.md`).
+  Gerenciador de Credenciais do Windows (`doc/pt/common/Credenciais.md`).
 
 ### Recomendações
 
