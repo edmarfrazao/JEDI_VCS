@@ -1,5 +1,7 @@
 # JEDI VCS 2.5 Beta 2026 — English user guide
 
+> ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](../../DISCLAIMER.md).
+
 This guide explains what you need to install and use **JEDI VCS 2.5 Beta 2026**: the JEDI VCS 2.5 client
 ported to Delphi 11, 12 and 13, fully compatible with the existing **JEDI VCS 2.5 Beta 3 server**
 (Firebird). Project overview, download and licenses: [README.en.md](../../README.en.md).
