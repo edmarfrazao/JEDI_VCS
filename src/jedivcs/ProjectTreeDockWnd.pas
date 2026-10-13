@@ -165,7 +165,7 @@ uses
   JvGnugettext,
   {$ENDIF LANGUAGE}
   DBModule, SelectProjectID, VCSBase, JVCSMruList, JVCSClientObj, JVCSGUIClientResources,
-  JVCSTypes, ConfigStorage, JvJCLUtils;
+  JVCSTypes, ConfigStorage, JvJCLUtils, JVCSUITheme;
 
 {$R *.dfm}
 
@@ -658,9 +658,9 @@ begin
   R.Top := R.Top + 2;
   R.Right := R.Left;
   if Sender.Selected[PaintInfo.Node] and Sender.Focused then
-    PaintInfo.Canvas.Font.Color := clHighlightText
+    PaintInfo.Canvas.Font.Color := JVCSUITextColor(Sender, clHighlightText)
   else
-    PaintInfo.Canvas.Font.Color := clWindowText;
+    PaintInfo.Canvas.Font.Color := JVCSUITextColor(Sender, clWindowText); // v2026: cor do estilo (tema escuro)
   SetBKMode(PaintInfo.Canvas.Handle, TRANSPARENT);
   ItemHtDraw(PaintInfo.Canvas, R, [], Data^.Text, False);
 end;

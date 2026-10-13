@@ -100,6 +100,9 @@ type
 
 implementation
 
+uses
+  JVCSUITheme;
+
 function JVCSLVCompare(lParam1, lParam2, lParamSort: LPARAM): Integer; stdcall;
 begin
   Result := TJVCSListView(lParamSort).DoCompare(TListItem(lParam1), TListItem(lParam2));
@@ -322,6 +325,9 @@ begin
   begin
     Canvas.Font.Assign(Font);
     CallDrawItem(Item, State);
+    // v2026: cores do sistema pelo estilo ativo (texto legivel no tema escuro)
+    Canvas.Font.Color := JVCSUITextColor(Self, Canvas.Font.Color);
+    Canvas.Brush.Color := JVCSUIBackColor(Self, Canvas.Brush.Color);
   end;
 end;
 
@@ -348,6 +354,8 @@ begin
       FOnDrawSubItem(Self, ACanvas, Item.Index, SubItem, Item.DisplayRect(drBounds),
         OwnerState, DefaultDrawing);
     end;
+    Canvas.Font.Color := JVCSUITextColor(Self, Canvas.Font.Color);
+    Canvas.Brush.Color := JVCSUIBackColor(Self, Canvas.Brush.Color);
   end;
 end;
 
