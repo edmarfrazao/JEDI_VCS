@@ -40,14 +40,14 @@ unit JVCSLabelHistory;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ComCtrls, JVCSListView, ExtCtrls, JVCSClientObj, JVCSGUIClientResources,
   VCSBase, JVCSBranchClientObj;
 
 type
   TProjectDiffMode = (pdmLabelToLabel, pdmLabelToLatest, pdmBranchpointToLatest);
 
-  TVCSLabelHistory = class(TForm)
+  TVCSLabelHistory = class(TJVCSForm)
     Panel1: TPanel;
     elvHistory: TJVCSListView;
     lbFromLabel: TLabel;

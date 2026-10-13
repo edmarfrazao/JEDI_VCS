@@ -42,13 +42,13 @@ unit JVCSCreateBranchDialog;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   JvWizard, JvWizardRouteMapSteps, JvExControls, JvComponent, StdCtrls,
   JvExStdCtrls, JvMemo, VCSBase, JVCSBranchClientObj, JVCSGUIClientResources,
   JVCSBranchTreeViewFrame, Buttons;
 
 type
-  TJVCSCreateBranchForm = class(TForm)
+  TJVCSCreateBranchForm = class(TJVCSForm)
     CreateBranchWizard: TJvWizard;
     CreateBranchWizardSteps: TJvWizardRouteMapSteps;
     wipParentBranch: TJvWizardInteriorPage;

@@ -40,13 +40,13 @@ unit JVCSSelectBranchDialog;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ExtCtrls, JVCSBranchTreeViewFrame, JVCSGUIClientResources;
 
 type
   TBranchSelectMode = (bsmOpen, bsmRemove);
 
-  TJVCSSelectBranchForm = class(TForm)
+  TJVCSSelectBranchForm = class(TJVCSForm)
     vtBranchFrame: TJVCSBranchTreeViewFrm;
     Panel1: TPanel;
     btnOK: TButton;

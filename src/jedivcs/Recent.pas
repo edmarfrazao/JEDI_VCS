@@ -52,11 +52,11 @@ uses
   {$IFDEF DEBUG}
   JclDebug,
   {$ENDIF DEBUG}
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, ImgList, FavOpenDialog;
 
 type
-  TVCSRecentProjects = class(TForm)
+  TVCSRecentProjects = class(TJVCSForm)
     PageControl1: TPageControl;
     Panel1: TPanel;
     Label2: TLabel;

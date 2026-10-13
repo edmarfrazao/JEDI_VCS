@@ -43,11 +43,11 @@ unit JVCSDockForm;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   ComCtrls;
 
 type
-  TJVCSDockableForm = class(TForm)
+  TJVCSDockableForm = class(TJVCSForm)
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     { Private declarations }

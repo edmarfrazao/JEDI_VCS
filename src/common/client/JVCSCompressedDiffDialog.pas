@@ -40,7 +40,7 @@ unit JVCSCompressedDiffDialog;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms,
   {$IFDEF HAS_UNIT_VARIANTS}
   Variants,
   {$ENDIF HAS_UNIT_VARIANTS}
@@ -50,7 +50,7 @@ uses
 type
   TCompressedDiffMode = (cdmLatestToLocal, cdmLocalToLatest);
 
-  TVCSCompressedDiff = class(TForm)
+  TVCSCompressedDiff = class(TJVCSForm)
     CompressedDiffFrame: TJVCSCompressedDiffFrm;
     Panel1: TPanel;
     Button1: TButton;

@@ -54,11 +54,11 @@ unit UnitFilter;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, Menus, JvExStdCtrls, JvTextListBox;
 
 type
-  TVCSUnitFilter = class(TForm)
+  TVCSUnitFilter = class(TJVCSForm)
     lblInfo: TLabel;
     btnOK: TButton;
     btnCancel: TButton;

@@ -262,7 +262,7 @@ unit ProjAdmin;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, Menus, ExtCtrls, ImgList, ComCtrls, Buttons, JVCSListView, ActnList,
   ToolWin, JVCSMruList, JvToolBar, mdMailSlot, ApsCli, RFormat, JVCSStatusBar,
   FavOpenDialog, JvComponent, JvPluginManager, JvComCtrls, JvSplitter,
@@ -348,7 +348,7 @@ const
   sitRID = 12;
 
 type
-  TVCSProjAdmin = class(TForm, IJVCSProjectManager)
+  TVCSProjAdmin = class(TJVCSForm, IJVCSProjectManager)
     PopupMenu1: TPopupMenu;
     miOpenFile: TMenuItem;
     StateImageList: TImageList;
@@ -2372,7 +2372,10 @@ end;
 
 procedure TVCSProjAdmin.SetServerStatus;
 begin
-  if AppSrvClientConnected then 
+  // v2026: logado (ServerUserID > 0) = conectado, mesmo que o socket esteja
+  // momentaneamente fechado (na IDE o painel mostrava "Not connected" com o
+  // projeto listado)
+  if AppSrvClientConnected or (ServerUserID > 0) then
     dfsStatusBar.Panels[4].Text :=
       DataModule1.AppSrvClient1.Server
   else

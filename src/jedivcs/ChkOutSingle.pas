@@ -90,12 +90,12 @@ uses
   {$IFDEF DEBUG}
   JclDebug,
   {$ENDIF DEBUG}
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ExtCtrls, Buttons, ComCtrls, JvLED, JvCombobox, JvComponent,
   JVCSMruList, JvMemo, JvExStdCtrls, JvExControls, JvArrowButton, JVCSChkInOutCommon;
 
 type
-  TVCSChkOutSingle = class(TForm)
+  TVCSChkOutSingle = class(TJVCSForm)
     Panel1: TPanel;
     meComment: TJvMemo;
     Panel2: TPanel;

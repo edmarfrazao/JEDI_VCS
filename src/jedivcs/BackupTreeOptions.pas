@@ -45,11 +45,11 @@ unit BackupTreeOptions;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   Buttons, StdCtrls, ExtCtrls;
 
 type
-  TJVCSBackupTreeOptions = class(TForm)
+  TJVCSBackupTreeOptions = class(TJVCSForm)
     gbOutputStructure: TGroupBox;
     Label1: TLabel;
     Label2: TLabel;

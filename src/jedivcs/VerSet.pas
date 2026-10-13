@@ -71,7 +71,7 @@ unit VerSet;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, JvSpin, ComCtrls, Buttons, ExtCtrls, IniFiles, FavOpenDialog,
   Mask, JvExMask, JvMaskEdit;
 
@@ -89,7 +89,7 @@ type
   end;
 
 type
-  TVCSVerSet = class(TForm)
+  TVCSVerSet = class(TJVCSForm)
     tabVersionInfo: TPageControl;
     TabSheet1: TTabSheet;
     lblFileVersion: TLabel;

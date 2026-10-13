@@ -47,11 +47,11 @@ unit RenameProj;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ExtCtrls, ImgList, ComCtrls, Buttons;
 
 type
-  TVCSRenameProj = class(TForm)
+  TVCSRenameProj = class(TJVCSForm)
     SaveDialog1: TSaveDialog;
     Panel1: TPanel;
     btnRemove: TButton;

@@ -47,11 +47,11 @@ unit RemoveProj;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ExtCtrls, Buttons;
 
 type
-  TVCSRemoveProj = class(TForm)
+  TVCSRemoveProj = class(TJVCSForm)
     btnRemove: TButton;
     btnCancel: TButton;
     Image1: TImage;
