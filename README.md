@@ -50,3 +50,12 @@ Ver `tools\LEIAME-compilar.md`. Fase 1: somente **Win32** (FVCSCrypt.dll é 32 b
 - [ ] Midware portado (PAnsiChar, code page fixa) + teste "golden" de tráfego contra o servidor 2.5 Beta 3
 - [ ] Cliente standalone compilando
 - [ ] DLL da IDE + novo expert ToolsAPI (BDS 22/23/37)
+
+## Licença
+- Código do JEDI VCS: **Mozilla Public License 1.1** — ver [`LICENSE`](LICENSE) e [`doc/original/license.txt`](doc/original/license.txt).
+- Algumas partes têm licença própria, indicada no cabeçalho de cada arquivo. Resumo em [`doc/common/Licencas.md`](doc/common/Licencas.md).
+- **MidWare (F. Piette) — uso não comercial.** O transporte do cliente (`src/comp/midware`: `ApsCli`, `CBroker`, `RFormat`)
+  é uma versão **alterada** (port Unicode para Delphi 13 / ICS 9) do MidWare, freeware **somente para uso não comercial**.
+  Uso em aplicação comercial exige acordo com o autor. A substituição por um transporte próprio está planejada.
+
+  This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.

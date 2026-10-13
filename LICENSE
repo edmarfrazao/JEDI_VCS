@@ -7,6 +7,13 @@ Algumas partes sao doacoes ou derivacoes de outros desenvolvedores/bibliotecas
 com licencas proprias, identificadas no cabecalho de cada arquivo. Leia o aviso
 completo em doc/original/license.txt antes de reutilizar qualquer parte do codigo.
 
+MidWare (Francois Piette) - src/comp/midware: freeware SOMENTE para uso nao
+comercial; versao alterada (port Unicode para Delphi 13 / ICS 9), mantido o
+aviso original em cada arquivo. Uso em aplicacao comercial exige acordo com o
+autor.
+This product is based on MidWare. Freeware source code is available at
+http://www.overbyte.be.
+
 ================================================================================
 
 Mozilla Public License Version 1.1
