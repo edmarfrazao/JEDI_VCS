@@ -59,8 +59,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, ImgList, JvMemo, JVCSForms,
-  JvExStdCtrls;
+  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, ImgList, JVCSForms;
 
 const
   WM_REFRESHUSERLIST = WM_USER + 1;
@@ -89,7 +88,7 @@ type
     edIP: TEdit;
     cbLevel: TComboBox;
     spBtnEditIP: TSpeedButton;
-    meDescr: TJvMemo;
+    meDescr: TMemo;
     Panel1: TPanel;
     spBtnAdd: TSpeedButton;
     spBtnRemove: TSpeedButton;

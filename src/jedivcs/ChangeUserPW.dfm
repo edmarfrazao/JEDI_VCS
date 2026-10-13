@@ -84,36 +84,30 @@ object VCSChangeUserPW: TVCSChangeUserPW
     TabOrder = 4
     OnClick = btnCancelClick
   end
-  object pwedOldPW: TJvEdit
+  object pwedOldPW: TEdit
     Left = 8
     Top = 38
     Width = 185
     Height = 21
     PasswordChar = '*'
-    ProtectPassword = True
-    Modified = False
     TabOrder = 0
     OnChange = edOldPWChange
   end
-  object pwedPW: TJvEdit
+  object pwedPW: TEdit
     Left = 8
     Top = 78
     Width = 185
     Height = 21
     PasswordChar = '*'
-    ProtectPassword = True
-    Modified = False
     TabOrder = 1
     OnChange = edOldPWChange
   end
-  object pwedPW2: TJvEdit
+  object pwedPW2: TEdit
     Left = 8
     Top = 119
     Width = 185
     Height = 21
     PasswordChar = '*'
-    ProtectPassword = True
-    Modified = False
     TabOrder = 2
     OnChange = edOldPWChange
   end

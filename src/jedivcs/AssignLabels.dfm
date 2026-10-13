@@ -58,7 +58,7 @@ object VCSAssignLabels: TVCSAssignLabels
   OnResize = FormResize
   PixelsPerInch = 96
   TextHeight = 13
-  object JvSplitterTop: TJvSplitter
+  object JvSplitterTop: TSplitter
     Left = 0
     Top = 137
     Width = 462
@@ -110,7 +110,7 @@ object VCSAssignLabels: TVCSAssignLabels
     BevelOuter = bvNone
     Constraints.MinHeight = 125
     TabOrder = 1
-    object JvSplitterDesc: TJvSplitter
+    object JvSplitterDesc: TSplitter
       Left = 0
       Top = 196
       Width = 462
@@ -246,7 +246,7 @@ object VCSAssignLabels: TVCSAssignLabels
           TabOrder = 1
           OnClick = cbMaskClick
         end
-        object rcbLabelMask: TJvComboBox
+        object rcbLabelMask: TComboBox
           Left = 65
           Top = 28
           Width = 352

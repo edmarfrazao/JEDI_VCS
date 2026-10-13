@@ -128,7 +128,7 @@ object VCSToDoFilter: TVCSToDoFilter
         TabOrder = 1
         TabStop = True
       end
-      object cbProjects: TJvComboBox
+      object cbProjects: TComboBox
         Left = 10
         Top = 84
         Width = 199
@@ -176,7 +176,7 @@ object VCSToDoFilter: TVCSToDoFilter
         Caption = 'Current user'
         TabOrder = 1
       end
-      object cbUser: TJvComboBox
+      object cbUser: TComboBox
         Left = 10
         Top = 84
         Width = 199
@@ -265,7 +265,7 @@ object VCSToDoFilter: TVCSToDoFilter
         Caption = 'Pr&iority:'
         FocusControl = cbPriority
       end
-      object cbCategory: TJvComboBox
+      object cbCategory: TComboBox
         Left = 8
         Top = 28
         Width = 199
@@ -284,7 +284,7 @@ object VCSToDoFilter: TVCSToDoFilter
         Caption = '&Not finished tasks'
         TabOrder = 1
       end
-      object cbPriority: TJvComboBox
+      object cbPriority: TComboBox
         Left = 78
         Top = 64
         Width = 129

@@ -308,7 +308,7 @@ object VCSTextCompare: TVCSTextCompare
     Caption = '&Transfer short (8+3) file names'
     TabOrder = 6
   end
-  object ecbxSource: TJvComboBox
+  object ecbxSource: TComboBox
     Left = 64
     Top = 8
     Width = 287

@@ -91,13 +91,13 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
-  StdCtrls, ExtCtrls, Buttons, ComCtrls, JvLED, JvCombobox, JvComponent,
-  JVCSMruList, JvMemo, JvExStdCtrls, JvExControls, JvArrowButton, JVCSChkInOutCommon;
+  StdCtrls, ExtCtrls, Buttons, ComCtrls, JvLED, JvComponent,
+  JVCSMruList, JvExStdCtrls, JvExControls, JvArrowButton, JVCSChkInOutCommon;
 
 type
   TVCSChkOutSingle = class(TJVCSForm)
     Panel1: TPanel;
-    meComment: TJvMemo;
+    meComment: TMemo;
     Panel2: TPanel;
     btnCheckOut: TButton;
     btnCancel: TButton;
@@ -121,7 +121,7 @@ type
     lblModule: TLabel;
     Panel6: TPanel;
     lblVer: TLabel;
-    rcbxTargetFld: TJvComboBox;
+    rcbxTargetFld: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;

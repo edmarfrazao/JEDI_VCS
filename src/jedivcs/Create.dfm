@@ -271,15 +271,12 @@ object VCSLoad: TVCSLoad
           TabOrder = 1
           OnChange = IDChanged
         end
-        object pwUserPasswordEdit: TJvEdit
+        object pwUserPasswordEdit: TEdit
           Left = 219
           Top = 81
           Width = 94
           Height = 21
           PasswordChar = '*'
-          ProtectPassword = True
-          ClipboardCommands = [caPaste, caUndo]
-          Modified = False
           TabOrder = 4
           OnChange = UserPasswordEditChange
         end

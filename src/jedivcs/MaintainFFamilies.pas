@@ -54,7 +54,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, JvMemo, JvExStdCtrls, JVCSForms;
+  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, JVCSForms;
 
 type
   TVCSMaintainFFamilies = class(TJVCSForm)
@@ -74,7 +74,7 @@ type
     btnCancel: TButton;
     btnOK: TButton;
     Panel2: TPanel;
-    meDescr: TJvMemo;
+    meDescr: TMemo;
     Panel4: TPanel;
     Label1: TLabel;
     edParent: TEdit;

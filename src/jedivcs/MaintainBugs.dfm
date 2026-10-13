@@ -136,14 +136,11 @@ object VCSMaintainBugs: TVCSMaintainBugs
     BevelOuter = bvNone
     Constraints.MinHeight = 170
     TabOrder = 1
-    object meDescr: TJvMemo
+    object meDescr: TMemo
       Left = 0
       Top = 99
       Width = 291
       Height = 55
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       MaxLength = 2000
       TabOrder = 0

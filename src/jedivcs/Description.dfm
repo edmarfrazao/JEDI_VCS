@@ -57,14 +57,11 @@ object VCSDescription: TVCSDescription
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object meDescription: TJvMemo
+  object meDescription: TMemo
     Left = 0
     Top = 18
     Width = 342
     Height = 108
-    AutoSize = False
-    MaxLines = 0
-    HideCaret = False
     Align = alClient
     MaxLength = 2000
     ScrollBars = ssVertical

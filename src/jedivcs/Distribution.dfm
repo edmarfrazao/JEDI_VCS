@@ -255,7 +255,7 @@ object VCSDistribution: TVCSDistribution
       Caption = '&Include path information'
       TabOrder = 0
     end
-    object rcbxTargetFile: TJvComboBox
+    object rcbxTargetFile: TComboBox
       Left = 8
       Top = 24
       Width = 310

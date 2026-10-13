@@ -238,7 +238,7 @@ object VCSCompareFolders: TVCSCompareFolders
       Caption = 'I&nclude equal files'
       TabOrder = 3
     end
-    object rcbxBaseFolder: TJvComboBox
+    object rcbxBaseFolder: TComboBox
       Left = 88
       Top = 8
       Width = 369
@@ -249,7 +249,7 @@ object VCSCompareFolders: TVCSCompareFolders
       TabOrder = 7
       OnChange = rcbxBaseFolderChange
     end
-    object rcbxTargetFolder: TJvComboBox
+    object rcbxTargetFolder: TComboBox
       Left = 88
       Top = 36
       Width = 369

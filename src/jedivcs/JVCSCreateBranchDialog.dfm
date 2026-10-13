@@ -149,14 +149,11 @@ object JVCSCreateBranchForm: TJVCSCreateBranchForm
         Align = alBottom
         Caption = '&Description'
         TabOrder = 0
-        object memDescription: TJvMemo
+        object memDescription: TMemo
           Left = 2
           Top = 15
           Width = 388
           Height = 200
-          AutoSize = False
-          MaxLines = 0
-          HideCaret = False
           Align = alClient
           MaxLength = 2000
           ScrollBars = ssVertical

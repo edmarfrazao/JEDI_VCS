@@ -44,7 +44,7 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   JvWizard, JvWizardRouteMapSteps, JvExControls, JvComponent, StdCtrls,
-  JvExStdCtrls, JvMemo, VCSBase, JVCSBranchClientObj, JVCSGUIClientResources,
+  JvExStdCtrls, VCSBase, JVCSBranchClientObj, JVCSGUIClientResources,
   JVCSBranchTreeViewFrame, Buttons;
 
 type
@@ -57,7 +57,7 @@ type
     wipParentBranchSelection: TJvWizardInteriorPage;
     wipNameAndDescription: TJvWizardInteriorPage;
     gbDescription: TGroupBox;
-    memDescription: TJvMemo;
+    memDescription: TMemo;
     edBranchName: TEdit;
     Label1: TLabel;
     wipSummary: TJvWizardInteriorPage;

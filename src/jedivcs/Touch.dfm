@@ -295,7 +295,7 @@ object VCSTouch: TVCSTouch
       TabOrder = 1
       OnClick = btnReadClick
     end
-    object rcbxTouchFolder: TJvComboBox
+    object rcbxTouchFolder: TComboBox
       Left = 47
       Top = 8
       Width = 242

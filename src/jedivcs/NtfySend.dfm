@@ -117,14 +117,11 @@ object NtfySendForm: TNtfySendForm
     Align = alClient
     Caption = '&Message:'
     TabOrder = 1
-    object meMessage: TJvMemo
+    object meMessage: TMemo
       Left = 2
       Top = 15
       Width = 326
       Height = 127
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       ScrollBars = ssBoth
       TabOrder = 0

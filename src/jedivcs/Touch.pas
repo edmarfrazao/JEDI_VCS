@@ -59,8 +59,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ComCtrls, StdCtrls, CheckLst, ExtCtrls, Menus, Buttons, ImgList, JvCombobox,
-  JVCSMruList, JvExStdCtrls, JVCSForms;
+  ComCtrls, StdCtrls, CheckLst, ExtCtrls, Menus, Buttons, ImgList,
+  JVCSMruList, JVCSForms;
 
 type
   TVCSTouch = class(TJVCSForm)
@@ -86,7 +86,7 @@ type
     btnRead: TButton;
     Label2: TLabel;
     Image2: TImage;
-    rcbxTouchFolder: TJvComboBox;
+    rcbxTouchFolder: TComboBox;
     procedure btnTouchClick(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure rbExecutablesClick(Sender: TObject);

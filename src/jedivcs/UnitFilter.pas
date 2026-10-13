@@ -55,7 +55,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
-  StdCtrls, Menus, JvExStdCtrls, JvTextListBox;
+  StdCtrls, Menus;
 
 type
   TVCSUnitFilter = class(TJVCSForm)
@@ -70,7 +70,7 @@ type
     Label1: TLabel;
     Label2: TLabel;
     lblItems: TLabel;
-    extlbItems: TJvTextListBox;
+    extlbItems: TListBox;
     N1: TMenuItem;
     linedelimiter1: TMenuItem;
     procedure FormCreate(Sender: TObject);

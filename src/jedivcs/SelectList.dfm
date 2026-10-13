@@ -139,7 +139,7 @@ object VCSSelectList: TVCSSelectList
       OnChange = edFindChange
     end
   end
-  object exlbItems: TJvTextListBox
+  object exlbItems: TListBox
     Left = 0
     Top = 31
     Width = 302

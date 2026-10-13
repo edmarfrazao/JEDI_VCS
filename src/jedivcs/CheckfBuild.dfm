@@ -147,15 +147,11 @@ object VCSCheckfBuild: TVCSCheckfBuild
       OnClick = btnReportClick
     end
   end
-  object meResult: TJvMemo
+  object meResult: TMemo
     Left = 0
     Top = 0
     Width = 405
     Height = 166
-    AutoSize = False
-    ClipboardCommands = [caCopy]
-    MaxLines = 0
-    HideCaret = False
     Align = alClient
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText

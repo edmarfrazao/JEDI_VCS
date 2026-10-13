@@ -68,8 +68,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, JVCSFolderTree, ExtCtrls, Menus, Buttons,
-  JvCombobox, JvSearchFiles, JVCSMruList, JvExStdCtrls, JVCSForms;
+  StdCtrls, ComCtrls, JVCSFolderTree, ExtCtrls, Menus, Buttons, JvSearchFiles, JVCSMruList, JVCSForms;
 
 type
   TVCSSelectFolder = class(TJVCSForm)
@@ -97,7 +96,7 @@ type
     spBtnExclude: TSpeedButton;
     cbProjectFolders: TCheckBox;
     Label1: TLabel;
-    rcbxRecent: TJvComboBox;
+    rcbxRecent: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure btnNewClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);

@@ -126,15 +126,11 @@ object VCSListView: TVCSListView
       OnClick = btnCloseClick
     end
   end
-  object Memo1: TJvMemo
+  object Memo1: TMemo
     Left = 0
     Top = 0
     Width = 332
     Height = 142
-    AutoSize = False
-    ClipboardCommands = [caCopy]
-    MaxLines = 0
-    HideCaret = False
     Align = alClient
     Lines.Strings = (
       'Memo1')

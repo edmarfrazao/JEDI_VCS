@@ -55,13 +55,13 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ComCtrls, StdCtrls, Buttons, ExtCtrls, JvMemo, JvExStdCtrls, JVCSForms;
+  ComCtrls, StdCtrls, Buttons, ExtCtrls, JVCSForms;
 
 type
   TVCSCheckfBuild = class(TJVCSForm)
     Panel1: TPanel;
     btnCancel: TButton;
-    meResult: TJvMemo;
+    meResult: TMemo;
     btnCheck: TButton;
     btnRef: TButton;
     Help: TSpeedButton;

@@ -55,14 +55,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
-  JvSpin, StdCtrls, ExtCtrls, JVCSMruList, Buttons, Mask, JvMaskEdit,
-  JvEdit, JvMemo, JvExStdCtrls, JvExMask;
+  JvSpin, StdCtrls, ExtCtrls, JVCSMruList, Buttons, Mask, JvMaskEdit, JvExStdCtrls, JvExMask;
 
 type
   TVCSDirectSQL = class(TJVCSForm)
     Panel1: TPanel;
     Panel2: TPanel;
-    SQLMemo: TJvMemo;
+    SQLMemo: TMemo;
     btnClose: TButton;
     btnExecSQL: TButton;
     btnOpenSQL: TButton;

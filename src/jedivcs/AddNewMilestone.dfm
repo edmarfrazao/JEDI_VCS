@@ -78,14 +78,11 @@ object VCSAddMilestone: TVCSAddMilestone
     Align = alClient
     Caption = '&Description'
     TabOrder = 1
-    object meDescription: TJvMemo
+    object meDescription: TMemo
       Left = 2
       Top = 15
       Width = 269
       Height = 116
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       MaxLength = 2000
       TabOrder = 0

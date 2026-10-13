@@ -197,7 +197,7 @@ object VCSToDoEdit: TVCSToDoEdit
       ItemHeight = 13
       TabOrder = 3
     end
-    object rcbxCategory: TJvComboBox
+    object rcbxCategory: TComboBox
       Left = 74
       Top = 77
       Width = 206
@@ -276,14 +276,11 @@ object VCSToDoEdit: TVCSToDoEdit
     Align = alClient
     Caption = '&Description'
     TabOrder = 1
-    object meToDo: TJvMemo
+    object meToDo: TMemo
       Left = 2
       Top = 15
       Width = 284
       Height = 133
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       MaxLength = 2000
       ScrollBars = ssVertical

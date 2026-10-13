@@ -52,7 +52,7 @@ object VCSListEdit: TVCSListEdit
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object lbStrings: TJvListBox
+  object lbStrings: TListBox
     Left = 0
     Top = 0
     Width = 260
@@ -60,8 +60,6 @@ object VCSListEdit: TVCSListEdit
     Align = alClient
     ExtendedSelect = False
     ItemHeight = 13
-    Background.FillMode = bfmTile
-    Background.Visible = False
     TabOrder = 0
     OnClick = lbStringsClick
   end

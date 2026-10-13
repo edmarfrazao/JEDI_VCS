@@ -52,8 +52,7 @@ unit AddNewBug;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Forms, StdCtrls, Buttons, Controls,
-  JvMemo, ExtCtrls, JvExStdCtrls, JVCSForms;
+  Windows, Messages, SysUtils, Classes, Forms, StdCtrls, Buttons, Controls, ExtCtrls, JVCSForms;
 
 type
   TVCSAddBug = class(TJVCSForm)
@@ -62,9 +61,9 @@ type
     Help: TSpeedButton;
     btnOK: TButton;
     btnCancel: TButton;
-    meWorkaround: TJvMemo;
+    meWorkaround: TMemo;
     gbDesription: TGroupBox;
-    meDescription: TJvMemo;
+    meDescription: TMemo;
     pnlBugHead: TPanel;
     Label1: TLabel;
     edBug: TEdit;
