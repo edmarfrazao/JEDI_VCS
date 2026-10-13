@@ -10,7 +10,7 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 |---|---|
 | Nunca montei o servidor | [01](01-Servidor-Instalacao-e-Configuracao.md) → [02](02-Cliente-Primeiro-Acesso.md) → [03](03-Integracao-com-o-Delphi.md) → [07](07-Senhas-Padrao-e-Seguranca.md) |
 | O servidor já está de pé e quero só usar | [02](02-Cliente-Primeiro-Acesso.md) → [03](03-Integracao-com-o-Delphi.md) → [05](05-Familias-de-Arquivos.md) |
-| Sou colega e vou usar na minha máquina | [02](02-Cliente-Primeiro-Acesso.md) (identidade) → [03](03-Integracao-com-o-Delphi.md) (método B, só o expert) → [04](04-Opcoes-do-Cliente.md) |
+| Sou colega e vou usar na minha máquina | [09](09-Instalador-do-Cliente.md) (instalador) → [02](02-Cliente-Primeiro-Acesso.md) (identidade) → [03](03-Integracao-com-o-Delphi.md) (verificar o expert) → [04](04-Opcoes-do-Cliente.md) |
 | Algo deu errado | [08 Solução de problemas](08-Solucao-de-Problemas.md) |
 | Quero automatizar (build, scripts, IA) | [06 Linha de comando](06-Linha-de-Comando.md) e [07](07-Senhas-Padrao-e-Seguranca.md) |
 
@@ -26,6 +26,7 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 | [06 Linha de comando](06-Linha-de-Comando.md) | `jvcs.exe`: sintaxe, comandos, exemplos seguros, senha, o que não existe |
 | [07 Senhas padrão e segurança](07-Senhas-Padrao-e-Seguranca.md) | Tabela de senhas padrão, o que trocar, boas práticas |
 | [08 Solução de problemas](08-Solucao-de-Problemas.md) | Sintoma → causa → solução |
+| [09 Instalador do cliente](09-Instalador-do-Cliente.md) | Setup do JEDI VCS 2.5 Beta 2026: instalar, reparar, desinstalar, componentes, o que muda no Delphi, convivência com o cliente original |
 
 ## Como ler este manual
 

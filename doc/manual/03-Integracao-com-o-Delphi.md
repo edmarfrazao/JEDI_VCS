@@ -40,6 +40,13 @@ Para recompilar (Delphi **fechado**): `D:\Delphi\JediVCS\v2026\tools\compilar-ex
 
 O expert é registrado pelo valor `JVCSIDEClient` em `HKCU\Software\Embarcadero\BDS\37.0\Experts`, que é o mesmo nome que o instalador do JEDI VCS usa. Escolha **um** método, sempre com o Delphi fechado.
 
+### Método recomendado: o instalador
+
+`setup\Output\JediVCS-2.5-Beta2026-Setup.exe` instala o expert com a DLL nova e o runtime numa pasta só
+(`C:\Program Files (x86)\JEDI\JVCS 2026`), registra o `JVCSIDEClient` nas IDEs detectadas e devolve o valor
+anterior ao desinstalar. Passo a passo no [capítulo 09](09-Instalador-do-Cliente.md). Os métodos abaixo
+continuam valendo para desenvolvimento (pasta `bin\ideclient\Win32`).
+
 ### Método A: importar o `.reg` (só esta máquina)
 
 ```
