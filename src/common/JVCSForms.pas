@@ -25,6 +25,10 @@ Unit history:
 2008/12/22  THuber    introduced unit for various fixes:
                       - fixing z-order problem together with VISTA Taskbar code for Delphi<2007
 2009/01/05  THuber    VISTA Taskbar fix needs to commented out for >= Delphi2007
+2026/10/13  v2026     aparencia (F4/F5): fonte/escala (JVCSUIScale), fonte dos
+                      menus e dos editores SynEdit e tema (JVCSUITheme) em todos
+                      os forms quando JVCSFormsApplyAppearance = True (EXE e DLL;
+                      o Diff continua aplicando por conta propria)
 
 -----------------------------------------------------------------------------*)
 
@@ -36,7 +40,7 @@ unit JVCSForms;
 interface
 
 uses
-  Forms, Controls;
+  Windows, Messages, Classes, Forms, Controls, Menus;
 
 type
   TJVCSForm = class(TForm)
@@ -47,11 +51,277 @@ type
 {$IFNDEF IDEDLL}
     procedure CreateParams(var Params: TCreateParams); override;
 {$ENDIF ~IDEDLL}
+    procedure DoCreate; override;
+    procedure DoShow; override;
+    procedure WndProc(var Message: TMessage); override;
   public
     { Public declarations }
   end;
 
+var
+  { liga a aplicacao automatica da aparencia (fonte/escala, menus, editores e
+    tema) em TJVCSForm.DoCreate e, com JVCSInstallAppearanceHook, nos forms que
+    nao herdam de TJVCSForm (mensagens, dialogos da JVCL). Ligado pelo EXE e
+    pela DLL (JVCSClientAppearance); o Diff aplica sozinho. }
+  JVCSFormsApplyAppearance: Boolean = False;
+
+{ aplica a aparencia em uso a um form. AForce = reaplica mesmo com a fonte
+  padrao (depois de o usuario mudar as opcoes). }
+procedure JVCSApplyAppearanceToForm(AForm: TCustomForm; AForce: Boolean = False);
+{ reaplica em todos os forms abertos (depois de gravar as opcoes) }
+procedure JVCSApplyAppearanceToAllForms;
+{ instala/remove o tratamento dos forms que nao herdam de TJVCSForm
+  (Screen.OnActiveFormChange, encadeado com o handler anterior) }
+procedure JVCSInstallAppearanceHook;
+procedure JVCSRemoveAppearanceHook;
+
+{ DLL dentro da IDE: os menus da IDE (VCL Style com SystemHooks/shMenus) tem um
+  hook de thread (WH_CBT) que pinta TODA janela de menu #32768 do thread,
+  inclusive os submenus e popups dos forms da DLL. Como a VCL da DLL e outra
+  (estatica), o hook da IDE nao acha o TMenuItem e le o texto do item com
+  GetMenuItemInfo(MIIM_STRING); item owner-draw (menu com Images) nao tem texto
+  e sai em branco. A correcao grava o Caption (+ atalho) como texto do item
+  (MIIM_STRING; continua owner-draw) a cada WM_INITMENUPOPUP: o hook da IDE
+  passa a desenhar o texto com as cores do tema da IDE (claro ou escuro). }
+procedure JVCSInstallHostMenuFix;
+{ grava o texto dos itens owner-draw de AMenu achando o TMenuItem em AMenus }
+procedure JVCSFixOwnerDrawMenuText(AMenu: HMENU; const AMenus: array of TMenu);
+
 implementation
+
+uses
+  SysUtils, JVCSUIScale, JVCSUITheme;
+
+type
+  TControlAccess = class(TControl);
+
+  TJVCSAppearanceHook = class
+  private
+    FOldHandler: TNotifyEvent;
+  public
+    procedure ActiveFormChange(Sender: TObject);
+  end;
+
+var
+  GHook: TJVCSAppearanceHook = nil;
+
+function InheritsFromClassName(AObj: TObject; const AClassName: string): Boolean;
+var
+  C: TClass;
+begin
+  Result := False;
+  C := AObj.ClassType;
+  while C <> nil do
+  begin
+    if SameText(C.ClassName, AClassName) then
+      Exit(True);
+    C := C.ClassParent;
+  end;
+end;
+
+function EditorFontCustomized: Boolean;
+var
+  S: TJVCSUIFontSettings;
+begin
+  S := JVCSUIFontSettings;
+  Result := (S.EditorFontName <> '') or (S.EditorFontSize > 0);
+end;
+
+{ popup menus e editores SynEdit (inclusive dentro de frames); o SynEdit e
+  reconhecido pelo nome da classe para esta unit nao depender do SynEdit }
+procedure ApplyToComponents(AOwner: TComponent; AMenus, AEditors: Boolean);
+var
+  I: Integer;
+  C: TComponent;
+begin
+  for I := 0 to AOwner.ComponentCount - 1 do
+  begin
+    C := AOwner.Components[I];
+    if AMenus and (C is TPopupMenu) then
+      JVCSUIApplyToMenu(TPopupMenu(C))
+    else
+    if AEditors and (C is TControl) and InheritsFromClassName(C, 'TCustomSynEdit') then
+      JVCSUIAssignEditorFont(TControlAccess(C).Font);
+    if C.ComponentCount > 0 then
+      ApplyToComponents(C, AMenus, AEditors);
+  end;
+end;
+
+procedure JVCSApplyAppearanceToForm(AForm: TCustomForm; AForce: Boolean);
+var
+  S: TJVCSUIFontSettings;
+  KeepSize: Boolean;
+begin
+  if not Assigned(AForm) then
+    Exit;
+  S := JVCSUIFontSettings;
+  // com a fonte padrao o form fica como no DFM (layout original)
+  if AForce or not S.IsDefaultUI then
+  begin
+    // a janela principal mantem o tamanho (so o conteudo acompanha); no EXE
+    // a primeira janela criada (antes de Application.MainForm) e a principal
+    KeepSize := (AForm = Application.MainForm) or
+      ((Application.MainForm = nil) and not IsLibrary and (Screen.FormCount <= 1));
+    JVCSUIApplyToForm(AForm, KeepSize);
+  end;
+  ApplyToComponents(AForm, AForce or not S.IsDefaultMenu, AForce or EditorFontCustomized);
+  JVCSUIApplyThemeToForm(AForm);
+end;
+
+procedure JVCSApplyAppearanceToAllForms;
+var
+  I: Integer;
+begin
+  for I := 0 to Screen.FormCount - 1 do
+    JVCSApplyAppearanceToForm(Screen.Forms[I], True);
+end;
+
+{ TJVCSAppearanceHook }
+
+procedure TJVCSAppearanceHook.ActiveFormChange(Sender: TObject);
+var
+  F: TCustomForm;
+begin
+  try
+    F := Screen.ActiveCustomForm;
+    // TJVCSForm ja foi tratado no DoCreate; aqui so os outros. A aplicacao e
+    // idempotente (fonte e altura iguais = nada muda).
+    if JVCSFormsApplyAppearance and Assigned(F) and not (F is TJVCSForm) then
+      JVCSApplyAppearanceToForm(F);
+  except
+    // a aparencia nunca derruba a janela
+  end;
+  if Assigned(FOldHandler) then
+    FOldHandler(Sender);
+end;
+
+procedure JVCSInstallAppearanceHook;
+begin
+  if Assigned(GHook) then
+    Exit;
+  GHook := TJVCSAppearanceHook.Create;
+  GHook.FOldHandler := Screen.OnActiveFormChange;
+  Screen.OnActiveFormChange := GHook.ActiveFormChange;
+end;
+
+procedure JVCSRemoveAppearanceHook;
+begin
+  if not Assigned(GHook) then
+    Exit;
+  if Assigned(Screen) and
+     (TMethod(Screen.OnActiveFormChange).Data = Pointer(GHook)) then
+    Screen.OnActiveFormChange := GHook.FOldHandler;
+  FreeAndNil(GHook);
+end;
+
+//=== texto dos menus owner-draw (DLL na IDE) ===================================
+
+type
+  TJVCSPopupList = class(TPopupList)
+  protected
+    procedure WndProc(var Message: TMessage); override;
+  end;
+
+var
+  GFixMenuText: Boolean = False;
+
+procedure JVCSFixOwnerDrawMenuText(AMenu: HMENU; const AMenus: array of TMenu);
+var
+  I, J, N: Integer;
+  Info: TMenuItemInfo;
+  MI: TMenuItem;
+  S: string;
+begin
+  if AMenu = 0 then
+    Exit;
+  N := GetMenuItemCount(AMenu);
+  for I := 0 to N - 1 do
+  begin
+    FillChar(Info, SizeOf(Info), 0);
+    Info.cbSize := SizeOf(Info);
+    Info.fMask := MIIM_FTYPE or MIIM_ID or MIIM_STRING;
+    Info.dwTypeData := nil;
+    if not GetMenuItemInfo(AMenu, I, True, Info) then
+      Continue;
+    if (Info.fType and MFT_OWNERDRAW = 0) or (Info.fType and MFT_SEPARATOR <> 0) then
+      Continue;
+    MI := nil;
+    for J := Low(AMenus) to High(AMenus) do
+      if Assigned(AMenus[J]) then
+      begin
+        MI := AMenus[J].FindItem(Info.wID, fkCommand);
+        if Assigned(MI) then
+          Break;
+      end;
+    if not Assigned(MI) or MI.IsLine then
+      Continue;
+    // mesmo texto que a VCL usaria sem owner-draw (TMenuItem.AppendTo)
+    S := MI.Caption;
+    if (MI.ShortCut <> scNone) and (MI.Count = 0) then
+      S := S + #9 + ShortCutToText(MI.ShortCut);
+    if Info.cch = UINT(Length(S)) then
+      Continue; // ja tem o texto
+    FillChar(Info, SizeOf(Info), 0);
+    Info.cbSize := SizeOf(Info);
+    Info.fMask := MIIM_STRING;
+    Info.dwTypeData := PChar(S);
+    Info.cch := Length(S);
+    SetMenuItemInfo(AMenu, I, True, Info);
+  end;
+end;
+
+procedure TJVCSPopupList.WndProc(var Message: TMessage);
+var
+  Menus: array of TMenu;
+  I: Integer;
+begin
+  inherited WndProc(Message);
+  if GFixMenuText and (Message.Msg = WM_INITMENUPOPUP) then
+  try
+    SetLength(Menus, Count);
+    for I := 0 to Count - 1 do
+      Menus[I] := TMenu(Items[I]);
+    JVCSFixOwnerDrawMenuText(HMENU(Message.WParam), Menus);
+  except
+  end;
+end;
+
+procedure JVCSInstallHostMenuFix;
+var
+  Old: TPopupList;
+  P: TPopupMenu;
+begin
+  GFixMenuText := True;
+  if PopupList is TJVCSPopupList then
+    Exit;
+  // troca a PopupList da VCL (da DLL) por uma que tambem corrige o texto;
+  // Remove/Add (e nao Delete) para a janela da lista velha ser liberada
+  Old := PopupList;
+  PopupList := TJVCSPopupList.Create;
+  if Assigned(Old) then
+  begin
+    while Old.Count > 0 do
+    begin
+      P := TPopupMenu(Old[0]);
+      Old.Remove(P);
+      PopupList.Add(P);
+    end;
+    Old.Free;
+  end;
+end;
+
+{ TJVCSForm }
+
+procedure TJVCSForm.WndProc(var Message: TMessage);
+begin
+  inherited WndProc(Message);
+  // menu principal do form: WM_INITMENUPOPUP vem para o form
+  if GFixMenuText and (Message.Msg = WM_INITMENUPOPUP) then
+  try
+    JVCSFixOwnerDrawMenuText(HMENU(Message.WParam), [Menu]);
+  except
+  end;
+end;
 
 {$IFNDEF IDEDLL}
 procedure TJVCSForm.CreateParams(var Params: TCreateParams);
@@ -68,5 +338,36 @@ begin
   {$ENDIF ~DELPHI2007_UP}
 end;
 {$ENDIF ~IDEDLL}
+
+procedure TJVCSForm.DoCreate;
+begin
+  // antes do OnCreate (que restaura posicao/tamanho salvos)
+  if JVCSFormsApplyAppearance then
+  try
+    JVCSUIRefreshHostTheme;
+    JVCSApplyAppearanceToForm(Self);
+  except
+    // a aparencia nunca impede a criacao do form
+  end;
+  inherited DoCreate;
+end;
+
+procedure TJVCSForm.DoShow;
+begin
+  if JVCSFormsApplyAppearance then
+  try
+    // DLL: acompanha a troca de tema da IDE feita desde o ultimo form
+    JVCSUIRefreshHostTheme;
+    JVCSUIApplyThemeToForm(Self);
+  except
+    // idem
+  end;
+  inherited DoShow;
+end;
+
+initialization
+
+finalization
+  JVCSRemoveAppearanceHook;
 
 end.

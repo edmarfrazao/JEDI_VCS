@@ -83,6 +83,29 @@ procedure JVCSUISetHostTheme(IsDark: Boolean);
 procedure JVCSUIStartFollowingSystem;
 procedure JVCSUIStopFollowingSystem;
 
+{ Estilo por form (DLL dentro da IDE): com JVCSUIPerFormStyle = True o tema
+  NAO troca o estilo global (TStyleManager.SetStyle instalaria os style hooks
+  de sistema no thread da IDE e pintaria menus/dialogos da propria IDE); cada
+  form recebe Form.StyleName (estilo por controle, Delphi 11+). }
+var
+  JVCSUIPerFormStyle: Boolean = False;
+
+{ aplica o tema em uso a um form (so faz algo com JVCSUIPerFormStyle) }
+procedure JVCSUIApplyThemeToForm(AForm: TCustomForm);
+
+{ tema do Delphi gravado em HKCU\<ABaseKey>\Theme, valor "Theme"
+  (Light, Dark, Mountain Mist, Custom + VCLStyle). Result = conseguiu ler. }
+function JVCSUIReadDelphiTheme(const ABaseKey: string; out ADark: Boolean): Boolean;
+{ chave base do Delphi do processo hospedeiro (bds.exe): Software\Embarcadero\
+  BDS\<versao> (ou <-r> da linha de comando); '' se o host nao for o bds.exe }
+function JVCSUIGuessDelphiBaseKey: string;
+{ DLL na IDE: liga o estilo por form e passa a seguir o tema da IDE lido do
+  registro (ABaseKey = chave base da IDE; '' = JVCSUIGuessDelphiBaseKey) }
+procedure JVCSUIFollowDelphiIDE(const ABaseKey: string);
+{ rele o tema da IDE (se JVCSUIFollowDelphiIDE foi chamada) e chama
+  JVCSUISetHostTheme; barato, chamado a cada form criado/mostrado }
+procedure JVCSUIRefreshHostTheme;
+
 { cor de sistema traduzida pelo estilo ativo (clWindow, clWindowText, ...) }
 function JVCSUIColor(AColor: TColor): TColor;
 { barra de titulo escura no Windows 10 1809+/11 para forms sem VCL Style de borda }
@@ -217,11 +240,59 @@ begin
     Fn(AWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_OLD, @Value, SizeOf(Value));
 end;
 
+function DarkStyleAvailable: Boolean;
+begin
+  try
+    Result := TStyleManager.Style[cJVCSDarkStyleName] <> nil;
+  except
+    Result := False;
+  end;
+end;
+
+procedure JVCSUIApplyThemeToForm(AForm: TCustomForm);
+var
+  NewName: string;
+begin
+  if not JVCSUIPerFormStyle or not Assigned(AForm) then
+    Exit;
+  if GDark then
+    NewName := cJVCSDarkStyleName
+  else
+    NewName := '';
+  if not SameText(AForm.StyleName, NewName) then
+    AForm.StyleName := NewName;
+end;
+
+procedure ApplyPerFormTheme(AMode: TJVCSUIThemeMode);
+var
+  NewDark, Changed: Boolean;
+  I: Integer;
+begin
+  GMode := AMode;
+  NewDark := JVCSUIIsDarkMode(AMode);
+  if NewDark and not DarkStyleAvailable then
+    NewDark := False;
+  Changed := NewDark <> GDark;
+  GDark := NewDark;
+  if Changed then
+  begin
+    for I := 0 to Screen.FormCount - 1 do
+      JVCSUIApplyThemeToForm(Screen.Forms[I]);
+    if Assigned(JVCSUIOnThemeChanged) then
+      JVCSUIOnThemeChanged(nil);
+  end;
+end;
+
 procedure JVCSUIApplyTheme(AMode: TJVCSUIThemeMode);
 var
   NewDark, Changed: Boolean;
   StyleName: string;
 begin
+  if JVCSUIPerFormStyle then
+  begin
+    ApplyPerFormTheme(AMode);
+    Exit;
+  end;
   GMode := AMode;
   NewDark := JVCSUIIsDarkMode(AMode);
   if NewDark then
@@ -254,6 +325,119 @@ begin
   GHostDark := IsDark;
   if GMode = tmFollowHost then
     JVCSUIApplyTheme(GMode);
+end;
+
+//=== tema da IDE do Delphi (DLL) ===============================================
+
+var
+  GDelphiBaseKey: string = '';
+  GFollowDelphi: Boolean = False;
+
+function JVCSUIReadDelphiTheme(const ABaseKey: string; out ADark: Boolean): Boolean;
+var
+  Reg: TRegistry;
+  Key, Theme, Style: string;
+begin
+  Result := False;
+  ADark := False;
+  Key := ABaseKey;
+  while (Key <> '') and (Key[1] = '\') do
+    Delete(Key, 1, 1);
+  if Key = '' then
+    Exit;
+  Reg := TRegistry.Create(KEY_READ);
+  try
+    Reg.RootKey := HKEY_CURRENT_USER;
+    if Reg.OpenKeyReadOnly(IncludeTrailingPathDelimiter(Key) + 'Theme') and
+       Reg.ValueExists('Theme') then
+    try
+      Theme := Trim(Reg.ReadString('Theme'));
+      if SameText(Theme, 'Dark') then
+        ADark := True
+      else
+      if SameText(Theme, 'Custom') then
+      begin
+        // tema personalizado: escuro se o nome do VCL Style indicar
+        Style := '';
+        if Reg.ValueExists('VCLStyle') then
+          Style := Reg.ReadString('VCLStyle');
+        ADark := Pos('DARK', UpperCase(Style)) > 0;
+      end
+      else
+        ADark := False; // Light, Mountain Mist
+      Result := Theme <> '';
+    except
+      Result := False;
+    end;
+  finally
+    Reg.Free;
+  end;
+end;
+
+function HostFileVersionKey(const AExe: string): string;
+var
+  Size, Dummy: DWORD;
+  Buf: TBytes;
+  Info: PVSFixedFileInfo;
+  InfoLen: UINT;
+begin
+  Result := '';
+  Size := GetFileVersionInfoSize(PChar(AExe), Dummy);
+  if Size = 0 then
+    Exit;
+  SetLength(Buf, Size);
+  if GetFileVersionInfo(PChar(AExe), 0, Size, @Buf[0]) and
+     VerQueryValue(@Buf[0], '\', Pointer(Info), InfoLen) and (InfoLen > 0) then
+    Result := Format('%d.0', [HiWord(Info^.dwFileVersionMS)]);
+end;
+
+function JVCSUIGuessDelphiBaseKey: string;
+var
+  Exe, Ver, Prod, S: string;
+  I: Integer;
+begin
+  Result := '';
+  Exe := GetModuleName(0);
+  if not SameText(ExtractFileName(Exe), 'bds.exe') then
+    Exit;
+  Ver := HostFileVersionKey(Exe);
+  if Ver = '' then
+    Exit;
+  // bds.exe -r<Chave> usa Software\Embarcadero\<Chave>\<versao>
+  Prod := 'BDS';
+  for I := 1 to ParamCount do
+  begin
+    S := ParamStr(I);
+    if (Length(S) > 2) and CharInSet(S[1], ['-', '/']) and CharInSet(S[2], ['r', 'R']) then
+      Prod := Copy(S, 3, MaxInt);
+  end;
+  Result := 'Software\Embarcadero\' + Prod + '\' + Ver;
+end;
+
+procedure JVCSUIRefreshHostTheme;
+var
+  Dark: Boolean;
+begin
+  if not GFollowDelphi then
+    Exit;
+  if JVCSUIReadDelphiTheme(GDelphiBaseKey, Dark) then
+    JVCSUISetHostTheme(Dark)
+  else
+  begin
+    // sem tema da IDE: segue o Windows
+    GHostKnown := False;
+    if GMode = tmFollowHost then
+      JVCSUIApplyTheme(GMode);
+  end;
+end;
+
+procedure JVCSUIFollowDelphiIDE(const ABaseKey: string);
+begin
+  JVCSUIPerFormStyle := True;
+  GFollowDelphi := True;
+  GDelphiBaseKey := ABaseKey;
+  if GDelphiBaseKey = '' then
+    GDelphiBaseKey := JVCSUIGuessDelphiBaseKey;
 end;
 
 { TJVCSThemeWatcher }
