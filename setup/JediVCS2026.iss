@@ -176,7 +176,17 @@ Name: "custom"; Description: "{cm:TypeCustom}"; Flags: iscustom
 
 [Components]
 Name: "client"; Description: "{cm:CompClient}"; Types: full compact custom
-Name: "ide"; Description: "{cm:CompIde}"; Types: full custom
+Name: "ide"; Description: "{cm:CompIde}"; Types: full custom; Check: AnyNewIde
+; Um subcomponente por IDE nova: so aparece se a IDE estiver instalada e o expert estiver no pacote.
+#if Pos("22,", ExpertList) > 0
+Name: "ide\bds22"; Description: "Delphi 11 Alexandria (BDS 22.0)"; Types: full custom; Check: NewIdeAvailable('22')
+#endif
+#if Pos("23,", ExpertList) > 0
+Name: "ide\bds23"; Description: "Delphi 12 Athens (BDS 23.0)"; Types: full custom; Check: NewIdeAvailable('23')
+#endif
+#if Pos("37,", ExpertList) > 0
+Name: "ide\bds37"; Description: "Delphi 13 Florence (BDS 37.0)"; Types: full custom; Check: NewIdeAvailable('37')
+#endif
 ; IDEs antigas: so aparecem as detectadas (Check avaliado uma vez, no inicio).
 ; Nome do subcomponente = id da IDE (d7 ou bds<n>); tabela em OldIdeKey/OldIdeName.
 Name: "ideold"; Description: "{cm:CompIdeOld}"; Types: full custom; Check: AnyOldIde
@@ -492,6 +502,25 @@ begin
             (RegQueryStringValue(HKLM32, K, 'App', S) and FileExists(S));
 end;
 
+function NewIdeAvailable(const Ver: String): Boolean;
+begin
+  Result := InList(Ver, ExpertsInPackage) and IdeExists(BdsBase, Ver);
+end;
+
+function AnyNewIde: Boolean;
+var
+  L, Ver: String;
+begin
+  Result := False;
+  L := ExpertsInPackage;
+  while (L <> '') and not Result do
+  begin
+    Ver := NextItem(L);
+    if Ver <> '' then
+      Result := IdeExists(BdsBase, Ver);
+  end;
+end;
+
 function ExpertFileName(const Ver: String): String;
 begin
   Result := ExpandConstant('{app}\JvcsExpertBDS' + Ver + '.dll');
@@ -624,6 +653,11 @@ begin
       Continue;
     RemoveFromExpertsX64(Base, Ver);
     K := Base + '\' + Ver + '.0';
+    if not WizardIsComponentSelected('ide\bds' + Ver) then
+    begin
+      Log('Expert ' + Ver + ': ' + IdeName(Ver) + ' desmarcado pelo usuario; nao registrado');
+      Continue;
+    end;
     if not IdeExists(Base, Ver) then
     begin
       Log('Expert ' + Ver + ': ' + IdeName(Ver) + ' nao instalado (' + K + ', valor App); nao registrado');
