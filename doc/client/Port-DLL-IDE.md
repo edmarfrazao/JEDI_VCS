@@ -203,12 +203,29 @@ de mensagens: "Internal Notify ... not active").
   aberto pela IDE não foi reproduzido fora dela (o host não tem projeto da IDE). O log vai mostrar o
   resto.
 
+### 4A.5b Correções de 13/10/2026 (mesmas fontes do EXE)
+
+Detalhes em [Port-Standalone.md](Port-Standalone.md) §4.4:
+- **Lentidão ao abrir o projeto** (~20 s com 4 módulos): o Project Manager copiava todos os ícones da
+  lista de imagens do sistema do processo (`bds.exe`) até o índice de cada arquivo; agora copia só o
+  ícone usado. Host com 306 ícones pré-carregados: laço local 209 ms → 49 ms.
+- **Senha da identidade**: o Connect não grava mais senha vazia; o checkbox "Store Password with
+  identity" reflete a identidade selecionada.
+- **Aparência**: valores de outro tipo no registro não derrubam mais a DLL; `JVCSClientAppearanceInit`
+  em `try/except` com log.
+- **View → Appearance / Font Size...** também no Project Manager da DLL.
+
 ### 4A.6 Host interativo
 
 ```
 src\jvcsideexpert\tests\testar-dll-interativo.bat -verbs "Connect Server,Project Manager" -stop %TEMP%\jvcs-stop.txt
 src\jvcsideexpert\tests\testar-dll-interativo.bat -style "C:\Program Files (x86)\Embarcadero\Studio\37.0\Redist\styles\vcl\WindowsModernDark.vsf" -verbs "Project Manager"
 ```
+
+`-project <arquivo.dpr>` faz a callback `GetProjectName` devolver um projeto (o Project Manager abre o
+projeto como na IDE) e `-primeicons <n>` enche a lista de ícones do sistema do processo antes de carregar
+a DLL (simula a IDE já aberta). Ex.:
+`testar-dll-interativo.bat -project C:\...\Ex1\exemplo01.dpr -primeicons 600 -verbs "Connect Server,Project Manager"`.
 
 Mesmo bridge e callbacks do harness, com uma janela "Fake IDE" da classe `TAppBuilder`, VCL Style
 opcional no host (simula o tema da IDE), sem fechar janelas sozinho; o FINALIZE + `FreeLibrary` acontece
@@ -256,6 +273,14 @@ Release nova`, 12/10/2026). O registro do expert é o mesmo de antes (`JVCSIDECl
      indica o log `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-dll-AAAAMMDD.log`: envie o arquivo.
 10. VCS Properties → **AI / Automation** mostra os modos atuais do `config.ini` (nesta máquina, Automatic
     nos dois); trocar e confirmar com `tools\ai\jvcs-ai.ps1 config list -Text` (e voltar ao modo desejado).
+11. **Correções de 13/10/2026** (DLL nova copiada para `bin\ideclient\Win32` às 08:27):
+    - abrir o Exemplo01 no Project Manager: na janela Messages, `Local: (File size & attributes)` e
+      `Server request: (Modules without revision …)` devem ter tempos quase iguais (antes: +21 s);
+    - Connect com a DEFAULT e depois trocar de identidade no login e voltar: a senha da DEFAULT continua
+      salva (`tools\ai\jvcs-ai.ps1 identity -Text` mostra `hasPassword=True`); o checkbox "Store Password
+      with identity" aparece marcado nas identidades com senha salva;
+    - Project Manager → **View → Appearance / Font Size...** abre o VCS Properties na página Appearance;
+      a 150% as páginas User Interface, Appearance e AI / Automation não cortam rótulos.
 
 Para voltar à DLL original: feche o Delphi e rode `tools\compilar-expert.bat Release original`.
 
@@ -278,5 +303,7 @@ Para voltar à DLL original: feche o Delphi e rode `tools\compilar-expert.bat Re
   (precisa de notificação nova do expert, `IOTAIDEThemingServicesNotifier`, e de verbo/ABI nova), item
   "JEDI VCS → Tamanho da fonte..." no expert, ícones nos menus dentro da IDE (hbmpItem a partir da
   ImageList), reproduzir o fechamento do Project Manager com projeto aberto pela IDE.
-- **Lentidão a investigar**: no log do usuário, `Server request: (Modules without revision assigned to:
-  Exemplo01.dpr)` levou **24,5 s** (consulta do servidor ou do cliente; medir no console e no proxy).
+- ~~Lentidão ao abrir projeto~~ (21–24 s antes de `Modules without revision`): era o laço local do
+  `FillListView`, copiando todos os ícones da lista do sistema do `bds.exe`; corrigido em 13/10/2026
+  (Port-Standalone.md §4.4). **Conferir na IDE** com o log de DEBUG (`FillListView laco local: …`) ou
+  pelas mensagens do Project Manager.
