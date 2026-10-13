@@ -20,12 +20,13 @@ RegEx:   (?i)MANTIS +#*(?<bug>[\d]+)
 Last Modified: see History
 
 Known Issues:
-- define PCRE_STATICLINK or supply pcre3.dll for RegEx
+- (v2026) System.RegularExpressions; pcre3.dll nao e mais necessaria
 -----------------------------------------------------------------------------
 
 Unit history:
 
 2012/07/08  AKröber     - First Implementation
+2026/10/13  v2026      - JclPCRE -> System.RegularExpressions.TRegEx
 
 -----------------------------------------------------------------------------*)
 
@@ -42,14 +43,14 @@ procedure OpenExternalBugtracker;
 implementation
 
 uses
-  JclPCRE, Dialogs, VcsBase, ShellAPI;
+  System.RegularExpressions, Dialogs, VcsBase, ShellAPI;
 
 var
   LastBugReference: string = '';
 
 procedure CheckCommentForExternalBugtrackerReference(AListItem: TListItem; AMenuItem, ASeparator: TMenuItem);
 var
-  R: TJclRegEx;
+  M: TMatch;
   S: string;
 begin
   LastBugReference := '';
@@ -58,13 +59,24 @@ begin
     S := AListItem.SubItems[4];
     if S <> '' then
     begin
-      R := TJclRegEx.Create;
+      // v2026: System.RegularExpressions (PCRE da RTL) no lugar da JclPCRE.
+      // Grupo nomeado "bug"; sem ele, o 1o grupo; sem grupos, o trecho todo.
+      // Regex invalida nao derruba o historico (o item so fica oculto).
       try
-        R.Compile(sBugtrackerRegEx, False, False);
-        if R.Match(S) then
-          LastBugReference := R.NamedCaptures['bug'];
-      finally
-        R.Free;
+        M := TRegEx.Match(S, sBugtrackerRegEx);
+        if M.Success then
+        begin
+          try
+            LastBugReference := M.Groups['bug'].Value;
+          except
+            if M.Groups.Count > 1 then
+              LastBugReference := M.Groups[1].Value
+            else
+              LastBugReference := M.Value;
+          end;
+        end;
+      except
+        LastBugReference := '';
       end;
     end;
   end;
