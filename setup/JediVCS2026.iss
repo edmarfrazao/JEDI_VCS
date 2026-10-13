@@ -427,6 +427,22 @@ begin
   Result := (Value <> '') and SameDir(ExtractFileDir(Value), ExpandConstant('{app}'));
 end;
 
+{ A IDE de 64 bits (bin64\bds.exe, Delphi 12.3+ e 13) le "Experts x64", separada
+  da "Experts" da IDE de 32 bits. O expert e 32 bits (a JvcsExternalDll.dll e a
+  fvcscrypt.dll tambem): registrado SO em "Experts". Se algum valor nosso tiver
+  ido parar em "Experts x64" (registro manual), ele e removido. }
+procedure RemoveFromExpertsX64(const Base, Ver: String);
+var
+  K, Cur: String;
+begin
+  K := Base + '\' + Ver + '.0\Experts x64';
+  if RegQueryStringValue(HKCU, K, ExpertValueName, Cur) and IsOurExpert(Cur) then
+  begin
+    RegDeleteValue(HKCU, K, ExpertValueName);
+    Log('Expert ' + Ver + ': JVCSIDEClient removido de HKCU\' + K + ' (DLL de 32 bits nao carrega na IDE de 64 bits)');
+  end;
+end;
+
 procedure UnregisterExpert(const Ver: String);
 var
   ExpKey, Cur, Prev: String;
@@ -481,6 +497,7 @@ begin
     Ver := NextItem(L);
     if Ver = '' then
       Continue;
+    RemoveFromExpertsX64(Base, Ver);
     K := Base + '\' + Ver + '.0';
     ExpKey := K + '\Experts';
     if not IdeExists(Base, Ver) then

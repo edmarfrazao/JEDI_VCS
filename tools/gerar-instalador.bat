@@ -10,6 +10,11 @@ rem    tools\compilar.bat dll     Release Win32
 rem    tools\compilar.bat diff    Release Win32
 rem    tools\compilar.bat console Release Win32
 rem    tools\compilar-expert.bat  Release nova   (expert + DLL nova em bin\ideclient\Win32)
+rem    tools\compilar-expert.bat  /bds:22|23 Release nova  (so se o Delphi 11/12 estiver
+rem                               instalado; senao vai o JvcsExpertBDS22/23.dll que ja
+rem                               existir em bin\ideclient\Win32, se existir)
+rem  Cada JvcsExpertBDS<nn>.dll e conferido com tools\verificar-expert.ps1: so pode
+rem  importar rtl/vcl/xmlrtl e todos os simbolos tem de existir nos .bpl da versao.
 rem  --sem-build: so empacota o que ja esta em bin\ (nao compila nada).
 rem
 rem  Depois confere que os binarios esperados existem e tem FileVersion
@@ -36,6 +41,8 @@ set "GI_OUT=%GI_ROOT%\setup\Output\JediVCS-2.5-Beta2026-Setup.exe"
 set "GI_CLIENT=%GI_ROOT%\bin\client\Win32"
 set "GI_IDE=%GI_ROOT%\bin\ideclient\Win32"
 set "GI_RT=%GI_ROOT%\3rdparty"
+rem  versoes do Delphi alem do 13 cujos experts sao compilados, se instaladas
+set "GI_OTHERVERS=22 23"
 
 rem ---- Parametros -----------------------------------------------------------
 set "GI_BUILD=1"
@@ -89,6 +96,8 @@ call :build "%GI_TOOLS%\compilar.bat" dll Release Win32 || goto :build_fail
 call :build "%GI_TOOLS%\compilar.bat" diff Release Win32 || goto :build_fail
 call :build "%GI_TOOLS%\compilar.bat" console Release Win32 || goto :build_fail
 call :build "%GI_TOOLS%\compilar-expert.bat" Release nova || goto :build_fail
+rem  experts das outras versoes do Delphi: so as INSTALADAS (tools\versoes.ini)
+for %%V in (%GI_OTHERVERS%) do call :build_other %%V || goto :build_fail
 
 rem ---- 2) Verificacao dos binarios -------------------------------------------
 :verify
@@ -100,10 +109,7 @@ call :check_ver "%GI_CLIENT%\JEDIVCSDiff.exe"
 call :check_ver "%GI_CLIENT%\jvcs.exe"
 call :check_ver "%GI_IDE%\JvcsExternalDll.dll"
 set "GI_NEXP=0"
-for %%E in (22 23 37) do if exist "%GI_IDE%\JvcsExpertBDS%%E.dll" (
-    set /a GI_NEXP+=1
-    call :check_ver "%GI_IDE%\JvcsExpertBDS%%E.dll"
-)
+for %%E in (22 23 37) do call :check_expert %%E
 if "%GI_NEXP%"=="0" (
     call :log "[FALHOU] nenhum JvcsExpertBDS22/23/37.dll em %GI_IDE%"
     set "GI_FAIL=1"
@@ -133,6 +139,44 @@ call :log "[OK] instalador gerado: %GI_OUT% (%GI_SIZE% bytes)"
 echo.
 echo Pronto. Para instalar: execute o setup ^(feche o Delphi antes^). Veja setup\LEIAME.md.
 endlocal & exit /b 0
+
+rem ==========================================================================
+rem  :build_other BDS  - compila o expert da versao BDS (22, 23) se instalada
+rem ==========================================================================
+:build_other
+call "%GI_TOOLS%\versao-delphi.bat" %~1
+if errorlevel 1 (
+    call :log "[AVISO] versao %~1: %VD_ERR%"
+    exit /b 0
+)
+if not "%VD_INSTALLED%"=="1" (
+    call :log "[INFO] %VD_NAME% nao instalado: JvcsExpertBDS%~1.dll nao compilado (o pacote leva o que ja existir em bin\ideclient\Win32)"
+    exit /b 0
+)
+call :build "%GI_TOOLS%\compilar-expert.bat" /bds:%~1 Release nova
+exit /b %ERRORLEVEL%
+
+rem ==========================================================================
+rem  :check_expert BDS  - expert existe: versao, PE e simbolos (so rtl/vcl/xmlrtl)
+rem ==========================================================================
+:check_expert
+set "GI_EXP=%GI_IDE%\JvcsExpertBDS%~1.dll"
+if not exist "%GI_EXP%" goto :eof
+set /a GI_NEXP+=1
+call :check_ver "%GI_EXP%"
+set "GI_BPLDIR=%ProgramFiles(x86)%\Embarcadero\Studio\%~1.0\bin"
+if not exist "%GI_BPLDIR%" (
+    call :log "[AVISO] JvcsExpertBDS%~1.dll: BDS %~1.0 nao instalado aqui - simbolos nao conferidos"
+    goto :eof
+)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%GI_TOOLS%\verificar-expert.ps1" -Expert "%GI_EXP%" -BplDir "%GI_BPLDIR%" -Permitidos rtl,vcl,xmlrtl >>"%GI_LOG%" 2>&1
+if errorlevel 1 (
+    call :log "[FALHOU] JvcsExpertBDS%~1.dll: imports nao resolvidos ou pacote nao permitido (veja o log)"
+    set "GI_FAIL=1"
+) else (
+    call :log "[OK] JvcsExpertBDS%~1.dll: imports so de rtl/vcl/xmlrtl, todos resolvidos"
+)
+goto :eof
 
 rem ==========================================================================
 rem  :build SCRIPT ARGS...  - chama um script de compilacao e registra no log
