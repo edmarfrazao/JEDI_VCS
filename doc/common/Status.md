@@ -10,11 +10,11 @@ Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6), com o que
 | F1 | Midware portado, `JVCSTransport.pas`, teste golden | **Em andamento**: Midware portado (Unicode, cp1252, ICS 9) e golden de fio do console idêntico ao original; faltam `JVCSTransport.pas`, pacote design-time e suíte golden automatizada (ACP 65001, en-US) |
 | F2 | Núcleo do cliente e console `jvcs.exe` | **Console pronto e validado** (Win32 Debug/Release, golden idêntico ao 2.5.0.1030, ver [Port-Console.md](../client/Port-Console.md)); faltam os helpers nativos (sem JCL/Abbrevia), `BFCrypt.pas` e testes de sync/arquivo vazio/binário |
 | F3 | Infraestrutura comum de GUI e `JEDIVCSDiff.exe` | Não iniciada |
-| F4 | EXE standalone `Jedivcs.exe` | Não iniciada |
+| F4 | EXE standalone `Jedivcs.exe` | **1ª etapa pronta**: compila (Win32 Debug/Release, 0 erros, JVCL como ponte) e passou no teste básico contra o servidor de teste (login 250, projeto, checkout/check-in acentuado, undo checkout); ver [Port-Standalone.md](../client/Port-Standalone.md) |
 | F5 | DLL da IDE, novo expert ToolsAPI e setup | **Trilha 5A (expert) em andamento**; DLL e setup não iniciados |
 | F6 | Win64 / ARM64EC (opcional) | Não iniciada; bloqueada pela `fvcscrypt.dll` |
 
-**Console:** `tools\compilar.bat console Debug|Release Win32` gera `bin\client\Win32\jvcs.exe`, validado contra o servidor de teste (12/10/2026). Os outros 3 projetos do cliente (`exe`, `dll`, `diff`) ainda não compilam. Só o expert (`JvcsExpertBDS37.dll`) e as bibliotecas fixadas (SynEdit, VTV) compilam.
+**Console:** `tools\compilar.bat console Debug|Release Win32` gera `bin\client\Win32\jvcs.exe`, validado contra o servidor de teste (12/10/2026). **EXE standalone:** `tools\compilar.bat exe Debug|Release Win32` gera `bin\client\Win32\Jedivcs.exe` (1ª etapa da F4, ver [Port-Standalone.md](../client/Port-Standalone.md)). A `dll` ainda não compila. Só o expert (`JvcsExpertBDS37.dll`) e as bibliotecas fixadas (SynEdit, VTV) compilam.
 
 ## Erros atuais do `tools\compilar.bat all`
 
@@ -22,7 +22,7 @@ Fonte: logs em `tools\logs\compilar_<chave>_Win32_Debug.log`, gerados em 12/10/2
 
 | Projeto | Erro | Causa e correção |
 |---|---|---|
-| `exe` (`Jedivcs.dpr`) | `F2613 Unit 'FastMM4' not found` | Os `.dpr` originais usam `FastMM4` e `src\comp\fastmm` não existe no layout novo. Remover a unit do `uses` e usar o gerenciador de memória embutido (`ReportMemoryLeaksOnShutdown` sob `DEBUG`). Previsto em F4 (4.1) |
+| `exe` (`Jedivcs.dpr`) | ~~`F2613 Unit 'FastMM4' not found`~~ **Resolvido** (F4, compila: ver Port-Standalone.md) | Os `.dpr` originais usam `FastMM4` e `src\comp\fastmm` não existe no layout novo. Remover a unit do `uses` e usar o gerenciador de memória embutido (`ReportMemoryLeaksOnShutdown` sob `DEBUG`). Previsto em F4 (4.1) |
 | `diff` (`JEDIVCSDiff.dpr`) | `F2613 Unit 'FastMM4' not found` | Idem. Previsto em F3 (3.7) |
 | `console` (`jvcs.dpr`) | ~~`F1026 File not found: '..\comp\fastmm\FastMM4.pas'`~~ | **Resolvido** (FastMM4 removido; compila e passa no golden, ver [Port-Console.md](../client/Port-Console.md)) |
 | `dll` (`JediVCSDLL.dpr`) | `E2029 Identifier expected but ',' found` em `src\common\JVCSIDESettings.pas(99)`, seguido de `E2003` (`DelphiHKEY`, `RegKeyExists`, `RegGetKeyNames`, `RegReadString`), `E2012` e `F2063 Could not compile used unit 'JVCSIDESettings.pas'` (chamada em `JVCSIDEInterface.pas(2378)`) | `JVCSIDESettings.pas` usa `{$ifdef WINDOWS}`, símbolo que o Delphi 13 não define (só `MSWINDOWS`). Correção definitiva no fonte: trocar por `MSWINDOWS` (F5 5.3, na linha 95 conforme o plano). Contorno só no script, sem editar o fonte: `set JVCS_EXTRA_DEFS=WINDOWS` |
@@ -97,7 +97,8 @@ Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win
 
 ## F4: EXE standalone
 
-- [ ] Lote 4.1 esqueleto e login (`Create`, `ProjAdmin`, `mdmailslot`, `TJVCSListView`)
+- [x] **1ª etapa (12/10/2026)**: `tools\compilar.bat exe Debug|Release Win32` com 0 erros → `bin\client\Win32\Jedivcs.exe` (2.5.0.2026, "2.5 Beta 2026", pré-lançamento; LOGIN 250). Sem FastMM4, `REPORTDLL`, `LANGUAGE`, plugins e notificação; `BRANCHING` + `JVCS_NOBRANCHUI` (menu Branch oculto, HEAD fixo). Substitutos novos: `TJVCSListView` (EnhListView), `TJVCSStatusBar` (dfsStatusBar), `FavOpenDialog`, `TJVCSFolderTree` (SystemTreeView), `JVCSFileSearch` (RekScan), `BFCrypt`, `mwPasLex` mínimo; VTV V8.5 e SynEdit pyscripter ajustados. Teste contra o servidor: login, abrir `exemplo01.dpr`, checkout/check-in de `uPrincipal.pas` com comentário acentuado (0.8 → **0.9**, arquivo baixado pelo console igual ao enviado), histórico, undo checkout, sem locks. Detalhes e pendências: [Port-Standalone.md](../client/Port-Standalone.md)
+- [ ] Lote 4.1 esqueleto e login (`Create`, `ProjAdmin`, `mdmailslot`, `TJVCSListView`) — compila e funciona; faltam `mdmailslot` (só compila), `TJvToolBar`/`TJvEdit` → nativos, `ThemeMgr`/`JclSecurity`
 - [ ] Lote 4.2 operações com o servidor (`ChkInSingle`, `ChkOutSingle`, `Syncronice`, `Backup`, etc.)
 - [ ] Lote 4.3 History, Line History, Compressed Diff (VT V8, SynEdit, `textdiff`, `mwPasLex`)
 - [ ] Lote 4.4 forms de manutenção (JVCL visual → nativo)
