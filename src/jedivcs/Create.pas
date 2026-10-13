@@ -208,6 +208,13 @@ type
 
   public
     { Public-Deklarationen }
+    {$IFDEF IDEDLL}
+    // v2026: le o projeto ativo da IDE e, sem projeto, mostra o aviso
+    // "IDE returns no active IDE project" ANTES do ShowModal (antes vinha no
+    // OnActivate, com o login ja na tela: dois modais ao mesmo tempo, e o
+    // aviso voltava a cada reativacao do form)
+    procedure CheckIDEProject(const AWarn: Boolean);
+    {$ENDIF IDEDLL}
   end;
 
 //  TfvcsEncrypt2 = function(Value: ShortString; Key: Double): ShortString;
@@ -346,14 +353,11 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TVCSLoad.FormActivate(Sender: TObject);
 {$IFDEF IDEDLL}
+procedure TVCSLoad.CheckIDEProject(const AWarn: Boolean);
 var
   Ext: string;
-{$ENDIF IDEDLL}
 begin
-  Application.ProcessMessages;
-  {$IFDEF IDEDLL}
   sProjectName := IDEInterface.GetProjectName;
   Ext := ExtractFileExt(sProjectName);
   // Projektdatei geöffnet?
@@ -370,7 +374,7 @@ begin
       (AnsiLowerCase(Ext) = ('.dproj')) or
       (AnsiLowerCase(Ext) = ('.' + sIDEPackage)));
 
-  if not bProjectOpen then
+  if AWarn and (not bProjectOpen) then
   begin
     UseRegistry := True;
     DontShowMsgText := JVCSRES_38Don39t_show_this_message_again46;
@@ -384,6 +388,17 @@ begin
       , idOk
       );
   end;
+end;
+{$ENDIF IDEDLL}
+
+//------------------------------------------------------------------------------
+
+procedure TVCSLoad.FormActivate(Sender: TObject);
+begin
+  Application.ProcessMessages;
+  {$IFDEF IDEDLL}
+  // o aviso de "sem projeto" e mostrado por quem abre o login, antes do ShowModal
+  CheckIDEProject(False);
   {$ENDIF IDEDLL}
   pwUserPasswordEdit.SetFocus;
   if cbAutologin.Checked then
