@@ -108,6 +108,8 @@ var
   Unknown: IUnknown;
   LList: TList;
 begin
+  if Self = nil then // v2026: ver RemoveClient
+    Exit;
   if AClient.GetInterface(IID_IJVCSRefresh, Unknown) then
   begin
     LList := FClientList.LockList;

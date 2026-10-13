@@ -74,7 +74,7 @@ function YesNoMessageBox(const AMessage: string): Boolean;
 implementation
 
 uses
-  VCSBase;
+  SysUtils, VCSBase;
 
 const
   ctkOwnDSAMsg = 99;
@@ -244,22 +244,48 @@ end;
   already registered". Agora cada uso pega um ID livre e o texto da marca e
   registrado uma vez (contador). }
 var
-  GDSAIDsInUse: Integer = 0;
   GDSACheckMarkRefs: Integer = 0;
 
 const
   cDSAIDBase = 26000;
 
-function AcquireDSAID: Integer;
+{ v2026 (F4, 3a etapa): o contador da 1a versao nao era seguro (IDs liberados
+  fora de ordem) e o mesmo NOME reentrante (ex.: 'SyncRes' com o primeiro
+  dialogo ainda aberto) levantava "DSA dialog named ... is already assigned to
+  another dialog ID". Agora: ID = o primeiro realmente livre; nome ja
+  registrado = reutiliza o registro existente (sem registrar/desregistrar). }
+
+function DSAIDInUse(AID: Integer): Boolean;
+var
+  I: Integer;
 begin
-  Result := cDSAIDBase + GDSAIDsInUse;
-  Inc(GDSAIDsInUse);
+  Result := False;
+  for I := 0 to DSACount - 1 do
+    if DSAItem(I).ID = AID then
+      Exit(True);
 end;
 
-procedure ReleaseDSAID;
+function FindDSAByName(const AName: string): Integer;
+var
+  I: Integer;
 begin
-  if GDSAIDsInUse > 0 then
-    Dec(GDSAIDsInUse);
+  for I := 0 to DSACount - 1 do
+    if SameText(DSAItem(I).Name, AName) then
+      Exit(DSAItem(I).ID);
+  Result := -1;
+end;
+
+function UseDSA(const AName: string; AStorage: TDSAStorage; out AOwned: Boolean): Integer;
+begin
+  AOwned := False;
+  Result := FindDSAByName(AName);
+  if Result >= 0 then
+    Exit;
+  Result := cDSAIDBase;
+  while DSAIDInUse(Result) do
+    Inc(Result);
+  RegisterDSA(Result, AName, '', AStorage, ctkOwnDSAMsg);
+  AOwned := True;
 end;
 
 procedure AcquireCheckMarkText(const AText: string);
@@ -285,9 +311,12 @@ function DSAIdentsMessageDlg(const Msg: string; AType: TMsgDlgType;
 var
   CStorage: TDSAJVCSConfigStorage;
   LID: Integer;
+  Owned, MarkAcquired: Boolean;
 begin
   CStorage := nil;
-  LID := AcquireDSAID;
+  Owned := False;
+  MarkAcquired := False;
+  LID := -1;
   try
     CStorage := TDSAJVCSConfigStorage.Create(Filename);
 
@@ -297,15 +326,17 @@ begin
       Delete(DontShowMsgText, Length(DontShowMsgText), 1);
 
     AcquireCheckMarkText(DontShowMsgText);
-    RegisterDSA(LID, ID, '', CStorage, ctkOwnDSAMsg);
+    MarkAcquired := True;
+    LID := UseDSA(ID, CStorage, Owned);
     SetDSAState(LID, GetDSAState(LID), DefaultResult);
 
     Result := DSAMessageDlg(LID, Msg, AType, AButtons, HelpCtx);
 
   finally
-    UnRegisterDSA(LID);
-    ReleaseDSAID;
-    ReleaseCheckMarkText;
+    if Owned then
+      UnRegisterDSA(LID);
+    if MarkAcquired then
+      ReleaseCheckMarkText;
     CStorage.Free;
   end;
 end;
@@ -314,20 +345,22 @@ function DSAIdentsGetState(Filename, ID: string): Boolean;
 var
   CStorage: TDSAJVCSConfigStorage;
   LID: Integer;
+  Owned: Boolean;
 begin
   CStorage := nil;
-  LID := AcquireDSAID;
+  Owned := False;
+  LID := -1;
   try
     CStorage := TDSAJVCSConfigStorage.Create(Filename);
-    RegisterDSA(LID, ID, '', CStorage, ctkOwnDSAMsg);
+    LID := UseDSA(ID, CStorage, Owned);
 
     //why "not" ? - DFS.DSA... does the same and it seam to be the
     //same result
     Result := not GetDSAState(LID);
 
   finally
-    UnRegisterDSA(LID);
-    ReleaseDSAID;
+    if Owned then
+      UnRegisterDSA(LID);
     CStorage.Free;
   end;
 end;
@@ -337,12 +370,14 @@ var
   CStorage: TDSAJVCSConfigStorage;
   LID: Integer;
   DefaultResult: Integer;
+  Owned: Boolean;
 begin
   CStorage := nil;
-  LID := AcquireDSAID;
+  Owned := False;
+  LID := -1;
   try
     CStorage := TDSAJVCSConfigStorage.Create(Filename);
-    RegisterDSA(LID, ID, '', CStorage, ctkOwnDSAMsg);
+    LID := UseDSA(ID, CStorage, Owned);
 
     GetDSAState(LID, DefaultResult);
     //why "not" ? - DFS.DSA... does the same and it seam to be the
@@ -350,8 +385,8 @@ begin
     SetDSAState(LID, not Value, DefaultResult);
 
   finally
-    UnRegisterDSA(LID);
-    ReleaseDSAID;
+    if Owned then
+      UnRegisterDSA(LID);
     CStorage.Free;
   end;
 end;
