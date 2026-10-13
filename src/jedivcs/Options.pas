@@ -376,6 +376,7 @@ type
     lblAICheckout: TLabel;
     lblAICheckin: TLabel;
     lblAIHelp: TLabel;
+    lblAIPath: TLabel;
     lblAIFile: TLabel;
     cbAICheckout: TComboBox;
     cbAICheckin: TComboBox;
@@ -539,6 +540,7 @@ uses
   {$ENDIF DEBUG}
   , JVCSDialogs
   , JVCSClientAppearance
+  , JVCSErrorLog
   ;
 
 {$R *.dfm}
@@ -588,9 +590,11 @@ begin
   FAICheckinLoaded := JVCSAIReadMode(cJVCSAIKeyCheckin);
   cbAICheckout.ItemIndex := Ord(FAICheckoutLoaded);
   cbAICheckin.ItemIndex := Ord(FAICheckinLoaded);
-  lblAIFile.Caption := 'Stored in ' + JVCSAIConfigPath +
-    ' ([ai] checkout= / checkin=), read by tools\ai\jvcs-ai.ps1 (Claude Code). ' +
-    'Valid for all projects of this Windows user.';
+  // caminho numa linha propria (reticencias se nao couber; completo no hint)
+  lblAIPath.Caption := 'Stored in ' + JVCSAIConfigPath;
+  lblAIPath.Hint := JVCSAIConfigPath;
+  lblAIFile.Caption := '([ai] checkout= / checkin=), read by tools\ai\jvcs-ai.ps1 ' +
+    '(Claude Code). Valid for all projects of this Windows user.';
 end;
 
 function SameFontSettings(const A, B: TJVCSUIFontSettings): Boolean;
@@ -840,7 +844,15 @@ begin
   Screen.Cursor := crHourGlass;
   try
     cbUseFileStorage.Checked := not UseRegistryStorage;
-    LoadAppearanceAndAI;
+    // v2026: erro ao ler aparencia/IA (registro de outra versao, config.ini
+    // inacessivel...) vai para o log; a pagina fica com os valores padrao e o
+    // resto do dialogo carrega normalmente
+    try
+      LoadAppearanceAndAI;
+    except
+      on E: Exception do
+        JVCSLogException(E, 'Options.LoadAppearanceAndAI');
+    end;
 
     ShowHint :=
       jvcsReadBool(sBaseRegistryKey + crbOptions, 'ShowToolTip', True);
@@ -2162,7 +2174,16 @@ begin
     {$ENDIF IDEDLL}
 
     SetDSAMSettings;
-    SaveAppearanceAndAI;
+    try
+      SaveAppearanceAndAI;
+    except
+      on E: Exception do
+      begin
+        JVCSLogException(E, 'Options.SaveAppearanceAndAI');
+        WarnMessageBox('Appearance/AI settings: ' + E.Message + #13#10 +
+          'Details: ' + JVCSErrorLogFile);
+      end;
+    end;
   finally
     Screen.Cursor := crDefault;
     if not jvcsUpdateStorageObject then

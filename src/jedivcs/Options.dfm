@@ -180,9 +180,9 @@ object VCSOptions: TVCSOptions
       OnChange = edArchLimitChange
     end
     object ccbxLVOut: TJvColorComboBox
-      Left = 142
+      Left = 154
       Top = 188
-      Width = 145
+      Width = 133
       Height = 20
       ColorDialogText = '(Other...)'
       DroppedDownWidth = 145
@@ -191,9 +191,9 @@ object VCSOptions: TVCSOptions
       OnChange = edArchLimitChange
     end
     object ccbxLVNA: TJvColorComboBox
-      Left = 142
+      Left = 154
       Top = 214
-      Width = 145
+      Width = 133
       Height = 20
       ColorDialogText = '(Other...)'
       DroppedDownWidth = 145
@@ -211,9 +211,9 @@ object VCSOptions: TVCSOptions
       OnClick = cbShowLVColorClick
     end
     object ccbxLVNew: TJvColorComboBox
-      Left = 142
+      Left = 154
       Top = 162
-      Width = 145
+      Width = 133
       Height = 20
       ColorNameMap.Strings = (
         'clBlack'
@@ -2426,10 +2426,11 @@ object VCSOptions: TVCSOptions
     end
     object lblUIFont: TLabel
       Left = 8
-      Top = 52
+      Top = 50
       Width = 160
-      Height = 13
+      Height = 18
       AutoSize = False
+      EllipsisPosition = epEndEllipsis
       Caption = 'System default'
     end
     object lblMenuFontCaption: TLabel
@@ -2441,10 +2442,11 @@ object VCSOptions: TVCSOptions
     end
     object lblMenuFont: TLabel
       Left = 8
-      Top = 96
+      Top = 94
       Width = 160
-      Height = 13
+      Height = 18
       AutoSize = False
+      EllipsisPosition = epEndEllipsis
       Caption = 'Same as interface'
     end
     object lblEditorFontCaption: TLabel
@@ -2456,10 +2458,11 @@ object VCSOptions: TVCSOptions
     end
     object lblEditorFont: TLabel
       Left = 8
-      Top = 140
+      Top = 138
       Width = 160
-      Height = 13
+      Height = 18
       AutoSize = False
+      EllipsisPosition = epEndEllipsis
       Caption = 'Consolas, 10 pt'
     end
     object lblTheme: TLabel
@@ -2604,11 +2607,23 @@ object VCSOptions: TVCSOptions
         'ix.'
       WordWrap = True
     end
-    object lblAIFile: TLabel
+    object lblAIPath: TLabel
       Left = 0
       Top = 180
       Width = 286
-      Height = 66
+      Height = 16
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 'config.ini'
+      EllipsisPosition = epPathEllipsis
+      ParentShowHint = False
+      ShowHint = True
+    end
+    object lblAIFile: TLabel
+      Left = 0
+      Top = 198
+      Width = 286
+      Height = 50
       Anchors = [akLeft, akTop, akRight]
       AutoSize = False
       Caption = 'config.ini'
