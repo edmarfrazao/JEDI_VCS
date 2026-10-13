@@ -37,7 +37,7 @@ pelo menos um projeto falhou (ou parâmetro/instalação inválidos).
 | `exe` | `Jedivcs.dpr` (EXE standalone) | `src\jedivcs` | `USECLIENTDISPATCHER;LANGUAGE` | - |
 | `dll` | `JediVCSDLL.dpr` (DLL da IDE) | `src\jedivcs` | `IDEDLL;EXT_IDE_INTF;LANGUAGE;DelphiPersonalEdition` | - |
 | `diff` | `JEDIVCSDiff.dpr` | `src\jedivcsdiff` | `LANGUAGE;DelphiPersonalEdition` | `..\jedivcs` |
-| `console` | `jvcs.dpr` | `src\jvcs` | `DelphiPersonalEdition` | `..\jedivcs` |
+| `console` | `jvcs.dpr` | `src\jvcs` | `DelphiPersonalEdition;JVCSCONSOLECLIENT;BRANCHING` | `..\jedivcs` |
 
 Para incluir/alterar projeto ou define, edite só as variáveis `PRJ_<chave>_*` e
 `ALL_PROJECTS` no topo do `.bat`.
@@ -220,7 +220,14 @@ sem condicional (ver pendências).
 
 ## Pendências conhecidas (diagnóstico de 12/10/2026, Debug Win32)
 
-Nenhum dos 4 projetos compila ainda; o script e os caminhos funcionam e o compilador
+**Atualização (port do console, 12/10/2026):** o `console` já compila em Win32 Debug e
+Release e passa no golden contra o servidor de teste (ver `doc\client\Port-Console.md`).
+Por que `JVCSCONSOLECLIENT` vai no `-D`: as units de `..\jedivcs` (ex.: `JVCSClasses.pas`)
+leem o `compopt.inc` da própria pasta, não o do console. Depois de um build Win32 OK o
+script copia `3rdparty\fvcscrypt.dll` para `bin\client\Win32` (se ainda não estiver lá).
+O restante desta seção continua valendo para `exe`, `dll` e `diff`.
+
+Nenhum dos 4 projetos compilava no diagnóstico; o script e os caminhos funcionam e o compilador
 para no primeiro erro fatal:
 
 - **FastMM4**: não existe `src\comp\fastmm` no layout novo. `exe` e `diff` falham com

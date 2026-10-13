@@ -356,6 +356,8 @@ set /a "BLD_NOK+=1"
 set "BLD_RES_%BLD_K%=OK"
 set "BLD_SEC_%BLD_K%=%BLD_SECS%"
 echo [OK] %BLD_K% %BLD_PLAT% %BLD_CFG% - %BLD_SECS% s - log: %BLD_LOG%
+rem  FVCSCrypt.dll (32 bits) e necessaria ao lado do EXE/DLL para o LOGIN
+if /i "%BLD_PLAT%"=="Win32" if exist "%BLD_ROOT%\3rdparty\fvcscrypt.dll" if not exist "%BLD_ROOT%\bin\client\Win32\fvcscrypt.dll" copy /y "%BLD_ROOT%\3rdparty\fvcscrypt.dll" "%BLD_ROOT%\bin\client\Win32\" >nul
 goto :eof
 
 :bo_fail
