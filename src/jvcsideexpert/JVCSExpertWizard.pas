@@ -473,6 +473,9 @@ end;
 // a abertura do projeto que a IDE ja carregou.
 procedure TJVCSWizard.StartUp(AReplayProject: Boolean);
 begin
+  // tema aplicado pela IDE -> JVCS_IDE_THEME, antes do INIT (a DLL le no
+  // "Follow Delphi"; o registro nem sempre reflete o tema em uso)
+  JvcsThemeInstall;
   // INIT -> HISTORYINIT -> OPERATIONINIT
   if FBridge.Load then
   begin
@@ -574,6 +577,7 @@ begin
     DeallocateHWnd(FMsgWnd);
     FMsgWnd := 0;
   end;
+  try JvcsThemeUninstall; except JvcsLogCurrentException('Shutdown.ThemeUninstall'); end;
   try RemoveKeyBinding; except JvcsLogCurrentException('Shutdown.RemoveKeyBinding'); end;
   try UnregisterProjectMenu; except JvcsLogCurrentException('Shutdown.UnregisterProjectMenu'); end;
   try UnregisterHistoryProvider; except JvcsLogCurrentException('Shutdown.UnregisterHistoryProvider'); end;

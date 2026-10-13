@@ -35,8 +35,18 @@ Unit JVCSExpertNotifiers - notificacoes da IDE -> ifn*/ien* da DLL
   pendente" garante UMA notificacao ienAfterCompile por BeforeCompile, seja
   qual for a versao de AfterCompile que a IDE chamar.
 
+  Tema da IDE (JvcsThemeInstall/JvcsThemeUninstall): o tema APLICADO pela IDE
+  (IOTAIDEThemingServices250: IDEThemingEnabled + luminancia de
+  StyleServices.GetSystemColor(clWindow); sem StyleServices, o nome do tema)
+  vai para a variavel de ambiente do processo JVCS_IDE_THEME = Light|Dark,
+  gravada antes do JEDIVCSDLLINIT e atualizada pelo
+  INTAIDEThemingServicesNotifier.ChangedTheme (existe no 11, 12 e 13). A DLL
+  usa essa variavel no "Follow Delphi" (sem mudar a ABI); o registro
+  (HKCU\...\Theme) nem sempre reflete o tema em uso.
+
   Historico:
   2026/10/12  v2026 - nova unit
+  2026/10/13  v2026 - JVCS_IDE_THEME (tema real da IDE para a DLL)
 -----------------------------------------------------------------------------*)
 
 unit JVCSExpertNotifiers;
@@ -111,11 +121,31 @@ type
       const AProjectName: string);
   end;
 
+  // tema da IDE -> JVCS_IDE_THEME (ver cabecalho)
+  TJVCSThemeNotifier = class(TNotifierObject, IOTANotifier,
+    INTAIDEThemingServicesNotifier)
+  protected
+    { INTAIDEThemingServicesNotifier }
+    procedure ChangingTheme;
+    procedure ChangedTheme;
+  end;
+
+const
+  cJvcsIdeThemeEnvVar = 'JVCS_IDE_THEME';
+
+// le o tema aplicado pela IDE; False = servico indisponivel
+function JvcsDetectIDETheme(out ADark: Boolean; out ADesc: string): Boolean;
+// grava JVCS_IDE_THEME (ou apaga, se o tema nao puder ser lido)
+procedure JvcsUpdateIDEThemeEnv;
+// JvcsUpdateIDEThemeEnv + notifier de troca de tema (chamar antes do INIT)
+procedure JvcsThemeInstall;
+procedure JvcsThemeUninstall;
+
 implementation
 
 uses
-  System.StrUtils, JVCSExpertABI, JVCSExpertUtils, JVCSExpertDllBridge,
-  JVCSExpertCallbacks;
+  Winapi.Windows, Vcl.Graphics, Vcl.Themes, System.StrUtils, JVCSExpertABI,
+  JVCSExpertUtils, JVCSExpertDllBridge, JVCSExpertCallbacks;
 
 function BridgeReady: Boolean;
 begin
@@ -458,6 +488,133 @@ begin
   for I := FCloseNotifiers.Count - 1 downto 0 do
     if (FCloseNotifiers[I] as TObject) = ANotifier then
       FCloseNotifiers.Delete(I);
+end;
+
+//=== tema da IDE -> JVCS_IDE_THEME =============================================
+
+var
+  GThemeNotifierIntf: INTAIDEThemingServicesNotifier = nil;
+  GThemeNotifierIndex: Integer = -1;
+
+function JvcsDetectIDETheme(out ADark: Boolean; out ADesc: string): Boolean;
+var
+  Svc: IOTAIDEThemingServices250;
+  SS: TCustomStyleServices;
+  ThemeName: string;
+  C: TColor;
+  Lum: Integer;
+begin
+  Result := False;
+  ADark := False;
+  ADesc := '';
+  try
+    if not Supports(BorlandIDEServices, IOTAIDEThemingServices250, Svc) then
+    begin
+      ADesc := 'IOTAIDEThemingServices indisponivel';
+      Exit;
+    end;
+    ThemeName := Svc.ActiveTheme;
+    if not Svc.IDEThemingEnabled then
+    begin
+      // tema da IDE desligado: janelas com as cores do Windows (claras)
+      ADesc := Format('tema "%s", IDEThemingEnabled=False', [ThemeName]);
+      Result := True;
+      Exit;
+    end;
+    SS := Svc.StyleServices;
+    if Assigned(SS) then
+    begin
+      C := SS.GetSystemColor(clWindow);
+      if C < 0 then
+        C := TColor(GetSysColor(C and $FF));
+      // luminancia (ITU-R 601) da cor de fundo das janelas do tema em uso
+      Lum := (299 * (C and $FF) + 587 * ((C shr 8) and $FF) +
+        114 * ((C shr 16) and $FF)) div 1000;
+      ADark := Lum < 128;
+      ADesc := Format('tema "%s", clWindow=$%.6x, luminancia %d', [ThemeName, Integer(C), Lum]);
+      Result := True;
+    end
+    else
+    if ThemeName <> '' then
+    begin
+      ADark := Pos('DARK', UpperCase(ThemeName)) > 0;
+      ADesc := Format('tema "%s" (sem StyleServices)', [ThemeName]);
+      Result := True;
+    end;
+  except
+    JvcsLogCurrentException('JvcsDetectIDETheme');
+    Result := False;
+  end;
+end;
+
+procedure JvcsUpdateIDEThemeEnv;
+const
+  cValue: array[Boolean] of string = ('Light', 'Dark');
+var
+  Dark: Boolean;
+  Desc: string;
+begin
+  if JvcsDetectIDETheme(Dark, Desc) then
+  begin
+    SetEnvironmentVariable(cJvcsIdeThemeEnvVar, PChar(cValue[Dark]));
+    JvcsLogFmt('%s=%s (%s)', [cJvcsIdeThemeEnvVar, cValue[Dark], Desc]);
+  end
+  else
+  begin
+    // sem a informacao a DLL cai na leitura do registro
+    SetEnvironmentVariable(cJvcsIdeThemeEnvVar, nil);
+    JvcsLogFmt('%s nao definido (%s)', [cJvcsIdeThemeEnvVar, Desc]);
+  end;
+end;
+
+procedure JvcsThemeInstall;
+var
+  Svc: IOTAIDEThemingServices250;
+begin
+  JvcsUpdateIDEThemeEnv;
+  if GThemeNotifierIndex >= 0 then
+    Exit;
+  try
+    if Supports(BorlandIDEServices, IOTAIDEThemingServices250, Svc) then
+    begin
+      GThemeNotifierIntf := TJVCSThemeNotifier.Create;
+      GThemeNotifierIndex := Svc.AddNotifier(GThemeNotifierIntf);
+      JvcsLogFmt('INTAIDEThemingServicesNotifier instalado (indice %d)', [GThemeNotifierIndex]);
+    end;
+  except
+    JvcsLogCurrentException('JvcsThemeInstall');
+  end;
+end;
+
+procedure JvcsThemeUninstall;
+var
+  Svc: IOTAIDEThemingServices250;
+begin
+  try
+    if (GThemeNotifierIndex >= 0) and
+      Supports(BorlandIDEServices, IOTAIDEThemingServices250, Svc) then
+      Svc.RemoveNotifier(GThemeNotifierIndex);
+  except
+    JvcsLogCurrentException('JvcsThemeUninstall');
+  end;
+  GThemeNotifierIndex := -1;
+  GThemeNotifierIntf := nil;
+end;
+
+{ TJVCSThemeNotifier }
+
+procedure TJVCSThemeNotifier.ChangingTheme;
+begin
+end;
+
+procedure TJVCSThemeNotifier.ChangedTheme;
+begin
+  // a DLL rele JVCS_IDE_THEME a cada janela do JEDI VCS criada/mostrada
+  try
+    JvcsUpdateIDEThemeEnv;
+  except
+    JvcsLogCurrentException('TJVCSThemeNotifier.ChangedTheme');
+  end;
 end;
 
 end.
