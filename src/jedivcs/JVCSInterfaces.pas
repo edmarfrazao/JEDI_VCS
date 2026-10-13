@@ -125,6 +125,10 @@ var
   Index: Integer;
   LList: TList;
 begin
+  // v2026: forms destruidos no DoneApplication (depois do finalization desta
+  // unit, que libera o RefreshDispatcher) chamavam RemoveClient em nil (AV)
+  if Self = nil then
+    Exit;
   LList := FClientList.LockList;
   try
     Index := LList.IndexOf(AClient);
