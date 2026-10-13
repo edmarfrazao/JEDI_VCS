@@ -189,6 +189,10 @@ type
     Send_Messages,
     Send_SMTP: Boolean;
     IdCBIndex: Integer;
+    // v2026: senha da identidade so muda por acao explicita do usuario
+    FLoadingIdentity,     // ReadIdentity preenchendo os campos (nao e edicao)
+    FPasswordEdited,      // usuario editou a senha desde a ultima troca de identidade
+    FSavePWUserChanged: Boolean; // usuario clicou em "Store password"
     ServerTime: Double;
     // CSchiffler: moved ping here to be dynamically created (Mantis #4124)
     Ping1: TPing;
@@ -855,8 +859,12 @@ begin
     cbAutologin.Checked);
   jvcsWriteBool(sBaseRegistryKey + crbOptions, 'UseCurrentIP',
    cbUseCurrentIP.Checked);
-  jvcsWriteBool(sBaseRegistryKey + crbOptions, 'SavePassword',
-    cbSavePW.Checked);
+  // v2026: SavePassword e so o padrao para identidades sem senha salva; o
+  // estado do checkbox acompanha a identidade, entao so grava se o usuario
+  // clicou nele
+  if FSavePWUserChanged then
+    jvcsWriteBool(sBaseRegistryKey + crbOptions, 'SavePassword',
+      cbSavePW.Checked);
 
   if not jvcsUpdateStorageObject then
     MessageBox(
@@ -1047,6 +1055,8 @@ end;
 
 procedure TVCSLoad.UserPasswordEditChange(Sender: TObject);
 begin
+  if not FLoadingIdentity then
+    FPasswordEdited := True;
   if GetKeyState(VK_CAPITAL) then
     lblSrvMsg.Caption := JVCSRES_Remember_that_caps_lock_may_interfere_with_passwords46
   else
@@ -1223,6 +1233,9 @@ procedure TVCSLoad.ReadIdentity(IdentityName: string);
 var
   Password: string;
 begin
+  FLoadingIdentity := True;
+  try
+  Password := '';
   if IdentityName <> '' then
   begin
     ServerEdit.Text :=
@@ -1248,9 +1261,21 @@ begin
     UserEdit.Text := '';
     pwUserPasswordEdit.Clear;
   end;
+  // v2026: o checkbox mostra se ESTA identidade tem senha salva; sem senha
+  // salva vale o padrao global (SavePassword)
+  if Password <> '' then
+    cbSavePW.Checked := True
+  else
+    cbSavePW.Checked :=
+      jvcsReadBool(sBaseRegistryKey + crbOptions, 'SavePassword', False);
+  FPasswordEdited := False;
+  FSavePWUserChanged := False;
   //check for local settings CB
   UseCurrentIP;
   IdCBIndex := cbxIdentity.ItemIndex;
+  finally
+    FLoadingIdentity := False;
+  end;
 end;
 
 //=== Write changes to Ini file ================================================
@@ -1297,9 +1322,20 @@ begin
     jvcsWriteString(sBaseRegistryKey + crbIdentity + '\' + NewIdentity, 'Port', PortEdit.Text);
     jvcsWriteString(sBaseRegistryKey + crbIdentity + '\' + NewIdentity, 'User', UserEdit.Text);
     //save the PW?
+    // v2026: nunca apaga a senha salva sem acao explicita. Antes, com
+    // "Store password" desmarcado (padrao global), todo Connect gravava a
+    // senha VAZIA na identidade selecionada (ex.: DEFAULT com senha salva pelo
+    // jvcs-ai.ps1). Agora:
+    //  - marcado: grava a senha digitada; vazia so se o usuario apagou a senha;
+    //  - desmarcado pelo usuario (clique): apaga a senha salva;
+    //  - desmarcado sem clique: nao mexe na senha salva.
     if cbSavePW.Checked then
-      jvcsWriteString(sBaseRegistryKey + crbIdentity + '\' + NewIdentity, 'Password', Base64Encode(pwUserPasswordEdit.Text))
+    begin
+      if (pwUserPasswordEdit.Text <> '') or FPasswordEdited then
+        jvcsWriteString(sBaseRegistryKey + crbIdentity + '\' + NewIdentity, 'Password', Base64Encode(pwUserPasswordEdit.Text));
+    end
     else
+    if FSavePWUserChanged then
       jvcsWriteString(sBaseRegistryKey + crbIdentity + '\' + NewIdentity, 'Password', '');
     jvcsWriteInteger(sBaseRegistryKey + crbIdentity, 'LastUsedID', I);
   end else
@@ -1313,8 +1349,9 @@ end;
 
 procedure TVCSLoad.cbSavePWClick(Sender: TObject);
 begin
-  if not FCreating then
+  if not FCreating and not FLoadingIdentity then
   begin
+    FSavePWUserChanged := True;
     if cbSavePW.Checked then
     begin
       BeepIfSet;
