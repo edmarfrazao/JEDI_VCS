@@ -10,6 +10,12 @@
 /dcu/
 /lib/
 /setup/Output/
+# Versao gerada de tools\versao.ini (tools\gerar-versao.ps1, a cada compilacao)
+/src/common/jvcsversao.rh
+/src/jedivcs/jvcsver.res
+/src/jedivcsdiff/jvcsver.res
+/src/jvcs/jvcsver.res
+
 *.dcu
 *.dcp
 *.bpl
