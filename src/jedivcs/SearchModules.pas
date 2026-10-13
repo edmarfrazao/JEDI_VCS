@@ -69,7 +69,7 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ComCtrls, StdCtrls, Buttons, ExtCtrls, Menus, EnhListView, JvCombobox,
+  ComCtrls, StdCtrls, Buttons, ExtCtrls, Menus, JVCSListView, JvCombobox,
   JVCSMruList, JvExStdCtrls, ImgList, JVCSForms;
 
 type
@@ -82,7 +82,7 @@ type
     Addtocurrentproject1: TMenuItem;
     Help: TSpeedButton;
     btnReport: TButton;
-    elvResult: TdfsEnhListView;
+    elvResult: TJVCSListView;
     ModuleHistory1: TMenuItem;
     N1: TMenuItem;
     rcbxMask: TJvComboBox;

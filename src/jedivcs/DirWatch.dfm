@@ -120,7 +120,7 @@ object VCSDirWatch: TVCSDirWatch
       OnClick = btnReportClick
     end
   end
-  object elvFiles: TdfsEnhListView
+  object elvFiles: TJVCSListView
     Left = 0
     Top = 0
     Width = 342

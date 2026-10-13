@@ -261,7 +261,7 @@ object VCSCompareFolders: TVCSCompareFolders
       OnChange = rcbxBaseFolderChange
     end
   end
-  object elvCompareResult: TdfsEnhListView
+  object elvCompareResult: TJVCSListView
     Left = 0
     Top = 0
     Width = 532

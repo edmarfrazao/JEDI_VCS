@@ -60,7 +60,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  JVCSDockForm, StdCtrls, ExtCtrls, ComCtrls, EnhListView, ToolWin, ImgList,
+  JVCSDockForm, StdCtrls, ExtCtrls, ComCtrls, JVCSListView, ToolWin, ImgList,
   Menus, JVCSInterfaces, JVCSThreads;
 
 const
@@ -88,7 +88,7 @@ type //USc 23.11.2003 should be moved into JVCSTypes because it's also defined i
     ToolButton41: TToolButton;
     ShowProjectBugsToolButton: TToolButton;
     ShowModuleBugsToolButton: TToolButton;
-    elvBugs: TdfsEnhListView;
+    elvBugs: TJVCSListView;
     Splitter2: TSplitter;
     mmoBug: TMemo;
     ToolButton1: TToolButton;

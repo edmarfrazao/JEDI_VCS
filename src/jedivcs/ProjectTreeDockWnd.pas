@@ -74,7 +74,7 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   JVCSDockForm, ComCtrls, JvComCtrls, ImgList, Menus, JVCSInterfaces,
   JVCSDataClasses, JVCSThreads, JvExComCtrls, JVCSProjectTreeUnit,
-  VirtualTrees, StdCtrls, ExtCtrls;
+  VirtualTrees, VirtualTrees.Types, VirtualTrees.DrawTree, StdCtrls, ExtCtrls;
 
 type
   TJVCSDockProjectTree = class(TJVCSDockableForm, IJVCSRefresh)
@@ -104,7 +104,7 @@ type
     procedure mnHideprojectswithoutanyrightsClick(Sender: TObject);
     procedure VSTHierarchyGetText(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-      var CellText: WideString);
+      var CellText: string);
     procedure VSTHierarchyInitNode(Sender: TBaseVirtualTree; ParentNode,
       Node: PVirtualNode; var InitialStates: TVirtualNodeInitStates);
     procedure VSTHierarchyInitChildren(Sender: TBaseVirtualTree;
@@ -520,7 +520,7 @@ end;
 
 procedure TJVCSDockProjectTree.VSTHierarchyGetText(
   Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var CellText: WideString);
+  TextType: TVSTTextType; var CellText: string);
 var
   Data: ^TCustomProjectTreeItem;
 begin

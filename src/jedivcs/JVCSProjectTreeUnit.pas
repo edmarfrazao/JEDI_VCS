@@ -43,7 +43,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs, ComCtrls, JVCSConnect, JVCSClasses, JVCSDataClasses,
-  JclStrings, JclResources, VirtualTrees;
+  JclStrings, JclResources, VirtualTrees, VirtualTrees.Types;
 
 type
   TProjectTreeProjectData = class(TObject)

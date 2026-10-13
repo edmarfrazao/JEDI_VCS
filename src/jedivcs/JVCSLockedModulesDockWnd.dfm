@@ -36,7 +36,7 @@ inherited JVCSDockLockedModulesWindow: TJVCSDockLockedModulesWindow
       OnClick = tbSaveWIPClick
     end
   end
-  object elvLockedModules: TdfsEnhListView
+  object elvLockedModules: TJVCSListView
     Tag = 1
     Left = 0
     Top = 24

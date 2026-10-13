@@ -57,8 +57,14 @@ function ViewTheModule(const WH: HWND; const CurrentModule: string;
 implementation
 
 uses
-  ShellAPI, JVCSClientConsts, VCSProcBase, VCSBase, ItemProp, Options, ConfigStorage, JVCSGUIClientResources,
+  ShellAPI, JVCSClientConsts, VCSProcBase, VCSBase, Options, ConfigStorage, JVCSGUIClientResources,
   JVCSClientFunctions;
+
+// v2026: substitui ItemProp.PerformDefaultAction (FreeVCS, sem fonte): dialogo "Abrir com"
+procedure PerformDefaultAction(const AFileName: string; AWnd: HWND);
+begin
+  ShellExecute(AWnd, 'openas', PChar(AFileName), nil, nil, SW_SHOWNORMAL);
+end;
 
 function ViewTheModule(const WH: HWND; const CurrentModule: string;
   var Msg: string): Boolean;

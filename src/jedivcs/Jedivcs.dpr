@@ -126,7 +126,6 @@ program JediVCS;
 {%File '..\credits.txt'}
 
 uses
-  FastMM4,
   Windows,
   Forms,
   Dialogs,
@@ -135,6 +134,7 @@ uses
   ExceptDlg,
   {$ENDIF JCL_DEBUG_DATA}
   JclStrings,
+  JvDynControlEngineVCL, // v2026: registra o DefaultDynControlEngine (dialogos DSA da JVCL)
   ProjAdmin in 'ProjAdmin.pas' {VCSProjAdmin},
   Progress in 'Progress.pas' {VCSProgress},
   AddNewFamily in 'AddNewFamily.pas' {VCSAddFamily},
@@ -265,7 +265,7 @@ uses
 {$R strings.res} // String Resource
 {$R cursors.res} // Cursor Resource
 {$R icon.res}    // Taskbar icon
-{$R \Projects\Jedivcs\src\comp\soft-gems\thememanager\Resources\winxp.res}   // Include Themingresource for WindowsXP
+{$R jedivcsmanifest.res} // v2026: manifest (temas/comctl32 v6, DPI) no lugar do winxp.res
 
 var
   JVCSMutex: THandle;

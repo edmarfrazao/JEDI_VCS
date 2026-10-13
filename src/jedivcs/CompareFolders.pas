@@ -61,7 +61,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, Buttons, ExtCtrls, ComCtrls, EnhListView, ImgList,
+  StdCtrls, Buttons, ExtCtrls, ComCtrls, JVCSListView, ImgList,
   Menus, JvCombobox, JVCSMruList, JvExStdCtrls,JVCSForms;
 
 type
@@ -76,7 +76,7 @@ type
     btnCompare: TButton;
     btnReport: TButton;
     btnClose: TButton;
-    elvCompareResult: TdfsEnhListView;
+    elvCompareResult: TJVCSListView;
     StateImageList: TImageList;
     SysImageList: TImageList;
     lblResult: TLabel;
@@ -137,7 +137,7 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  ShellAPI, SelectFolder, VCSBase, VCSProcBase, RekScan,  SimpleReport, CheckSum,
+  ShellAPI, SelectFolder, VCSBase, VCSProcBase, JVCSFileSearch,  SimpleReport, CheckSum,
   ConfigStorage, JVCSGUIClientResources;
 
 {$R *.dfm}

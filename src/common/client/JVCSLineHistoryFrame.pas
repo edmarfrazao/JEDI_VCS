@@ -96,8 +96,8 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   JVCSLineHistoryUnit, SynEdit, JVCSLineHistoryHighlighterUnit, Contnrs, StdCtrls, ExtCtrls,
   ComCtrls, Menus, Buttons, ImgList, ActnList, JclFileUtils, JclSysInfo,
-  VirtualTrees, SynEditTypes, SynEditSearch, JVCSLineHistorySettingsDialog, JVCSClientFunctions,
-  JVCSDialogs;
+  VirtualTrees, VirtualTrees.Types, SynEditTypes, SynEditSearch, JVCSLineHistorySettingsDialog,
+  JVCSClientFunctions, JVCSDialogs;
 
 type
   TRevisionColor = class(TObject)
@@ -202,15 +202,13 @@ type
       Node: PVirtualNode; var ChildCount: Cardinal);
     procedure vstSummaryGetText(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-      var CellText: WideString);
+      var CellText: string);
     procedure vstSummaryBeforeItemErase(Sender: TBaseVirtualTree;
       TargetCanvas: TCanvas; Node: PVirtualNode; ItemRect: TRect;
       var ItemColor: TColor; var EraseAction: TItemEraseAction);
     procedure vstSummaryCompareNodes(Sender: TBaseVirtualTree; Node1,
       Node2: PVirtualNode; Column: TColumnIndex; var Result: Integer);
-    procedure vstSummaryHeaderClick(Sender: TVTHeader;
-      Column: TColumnIndex; Button: TMouseButton; Shift: TShiftState; X,
-      Y: Integer);
+    procedure vstSummaryHeaderClick(Sender: TVTHeader; HitInfo: TVTHeaderHitInfo); // v2026: assinatura do VTV V8
     procedure vstSummaryFocusChanged(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex);
     procedure spBtnPrevLineClick(Sender: TObject);
@@ -299,7 +297,7 @@ type
 implementation
 
 uses
-  JVCSLineHistoryPropertyStorage;
+  JVCSLineHistoryPropertyStorage, JVCSSynEditUtils;
 
 {$R *.dfm}
 
@@ -953,11 +951,7 @@ var
   CurrentGutterWidth: Integer;
 begin
   LH := FSynEdit.LineHeight;
-  {$IFDEF UNISYNEDIT}
-  CurrentGutterWidth := FSynEdit.Gutter.Width;
-  {$ELSE}
-  CurrentGutterWidth := FSynEdit.GutterWidth;
-  {$ENDIF UNISYNEDIT}
+  CurrentGutterWidth := FSynEdit.GutterWidth; // v2026: SynEdit pyscripter (GutterWidth = soma das bandas)
   if (FLastBitmapTopLine <> FSynEdit.TopLine) or (FLastBitmapLineCount <> FSynEdit.LinesInWindow) or
     (FBitmap.Width <> CurrentGutterWidth) or (FHighlightY <> FLastHighlightY) then
   begin
@@ -1208,7 +1202,7 @@ begin
     finally
       OrderList.Free;
     end;
-    FSynEdit.Gutter.Width := NextX;
+    SetCustomGutterBandWidth(FSynEdit, NextX); // v2026: banda gbkCustom (SynEdit pyscripter)
   finally
     FontBitmap.Free;
   end;
@@ -2377,7 +2371,7 @@ end;
 
 procedure TJVCSLineHistoryFrm.vstSummaryGetText(Sender: TBaseVirtualTree;
   Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-  var CellText: WideString);
+  var CellText: string);
 var
   NodeData: ^TObject;
   RevisionSummary: TJVCSLineHistoryRevisionSummary;
@@ -2501,10 +2495,12 @@ begin
 end;
 
 procedure TJVCSLineHistoryFrm.vstSummaryHeaderClick(Sender: TVTHeader;
-  Column: TColumnIndex; Button: TMouseButton; Shift: TShiftState; X,
-  Y: Integer);
+  HitInfo: TVTHeaderHitInfo);
+var
+  Column: TColumnIndex;
 begin
-  if Button = mbLeft then
+  Column := HitInfo.Column;
+  if HitInfo.Button = mbLeft then
   begin
     with Sender do
     begin

@@ -76,7 +76,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, SortGrid, ExtCtrls, Menus, ComCtrls, ImgList, Buttons, JvCombobox,
+  StdCtrls, ExtCtrls, Menus, ComCtrls, ImgList, Buttons, JvCombobox,
   JvExStdCtrls, JVCSForms;
 
 type

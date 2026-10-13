@@ -149,7 +149,7 @@ begin
       Result := 5;
       Exit;
     end;
-    if (not BlowFishDecode(ZipOwner, EncodeKey, ZipFile,
+    if (not BlowFishDecode(ZipOwner, Base64DecodeBytes(jvcsReadString(sBaseRegistryKey + crbOptions, 'EncodeKey', '')), ZipFile,
       ChangeFileExt(ZipFile, '.ulock'))) then
     begin
       ErrMsg := JVCSRES_BlowFishDecode_failed;

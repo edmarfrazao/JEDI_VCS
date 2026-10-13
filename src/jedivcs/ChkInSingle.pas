@@ -1661,7 +1661,7 @@ begin
             //--- Cipher begin -------------------------------------------------
             if EncryptModuleData then
             begin
-              if not BlowFishEncode(Self, EncodeKey, ZipFile,
+              if not BlowFishEncode(Self, Base64DecodeBytes(jvcsReadString(sBaseRegistryKey + crbOptions, 'EncodeKey', '')), ZipFile,
                 ChangeFileExt(ZipFile, '.bflck')) then
               begin
                 BeepIfSet;

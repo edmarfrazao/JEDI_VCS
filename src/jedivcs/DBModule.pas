@@ -57,7 +57,7 @@ unit DBModule;
 {$I jedi.inc}
 {$I compopt.inc}
 
-{$DEFINE LZH}
+// v2026: LZH/CipherLz removidos (Decisoes.md). Resposta iniciada por #$FF vira erro.
 
 interface
 
@@ -67,11 +67,7 @@ uses
   {$IFDEF DEBUG}
   JclDebug,
   {$ENDIF DEBUG}
-  {$IFDEF LZH}
-  CipherLz;
-  {$ELSE}
-  Cipher;
-  {$ENDIF LZH}
+  System.Types;
 
 type
   TDataModule1 = class(TDataModule)
@@ -286,50 +282,12 @@ end;
 
 //------------------------------------------------------------------------------
 
-{$IFDEF LZH}
 procedure TDataModule1.AppSrvClient1BeforeSendRequest(Sender: TObject);
-var
-  Dst: PAnsiChar;
-  DstLen: Longint;
 begin
-  if not EncryptServerData then
-    Exit;
-  Encrypt(AppSrvClient1.RequestHeader, AppSrvClient1.RequestHeaderLen,
-    AppSrvClient1.RequestBody, AppSrvClient1.RequestBodyLen,
-    Dst, DstLen, 1);
-  Dst[0] := #$FF;
-  AppSrvClient1.RequestHeader := Dst;
-  AppSrvClient1.RequestHeaderLen := DstLen;
-  AppSrvClient1.RequestBody := nil;
-  AppSrvClient1.RequestBodyLen := 0;
-  iServTraffic := iServTraffic + AppSrvClient1.Request.DataBufferCount;
+  // v2026: sem cifragem do trafego (EncryptServerData e sempre False)
+  if EncryptServerData then
+    raise Exception.Create('JEDI VCS: cifragem LZH do trafego nao e suportada nesta versao');
 end;
-{$ELSE}
-procedure TDataModule1.AppSrvClient1BeforeSendRequest(Sender: TObject);
-var
-  Dst: PAnsiChar;
-  DstLen: Integer;
-  Key: Integer;
-begin
-  if not EncryptServerData then
-    Exit;
-  Key := Ord('0');
-  { Encrypt will allocate new memory for encrypted data which takes a
-    little bit more space than original data.
-    Memory will be freed in the OnAfterSendRequest event handler.     }
-  Encrypt(AppSrvClient1.RequestHeader, AppSrvClient1.RequestHeaderLen,
-    Dst, DstLen, Key, 2);
-  AppSrvClient1.RequestHeader := Dst;
-  AppSrvClient1.RequestHeaderLen := DstLen;
-  Dst[0] := #3;     // This will let the server know we use encrypted data
-  Dst[1] := Chr(Key);
-  Encrypt(AppSrvClient1.RequestBody, AppSrvClient1.RequestBodyLen,
-    Dst, DstLen, Key, 0);
-  AppSrvClient1.RequestBody := Dst;
-  AppSrvClient1.RequestBodyLen := DstLen;
-  iServTraffic := iServTraffic + AppSrvClient1.Request.DataBufferCount;
-end;
-{$ENDIF LZH}
 
 //------------------------------------------------------------------------------
 
@@ -362,56 +320,22 @@ end;
 
 //------------------------------------------------------------------------------
 
-{$IFDEF LZH}
 procedure TDataModule1.AppSrvClient1BeforeProcessReply(Sender: TObject;
   var CmdBuf: PAnsiChar; var CmdLen: Integer);
-var
-  Dst: PAnsiChar;
-  DstLen: Longint;
 begin
-  // Check if we have some encrypted data
-  FEncryptFlag := not ((CmdLen < 3) or (CmdBuf[0] <> #$FF));
-  if not FEncryptFlag then
-    Exit;
-
-  // We've got encrypted data. Decrypt. First byte is a flag, ignore.
-  Decrypt(CmdBuf + 1, CmdLen - 1, Dst, DstLen);
-  CmdBuf := Dst;
-  CmdLen := DstLen;
+  // v2026: resposta cifrada (LZH, 1o byte #$FF) nao e suportada
+  FEncryptFlag := (CmdLen >= 3) and (CmdBuf[0] = #$FF);
+  if FEncryptFlag then
+    raise Exception.Create('JEDI VCS: resposta cifrada (LZH) do servidor nao e suportada nesta versao');
 end;
-{$ELSE}
-procedure TDataModule1.AppSrvClient1BeforeProcessReply(Sender: TObject;
-  var CmdBuf: PAnsiChar; var CmdLen: Integer);
-var
-  Cnt: Integer;
-begin
-  // Check if we have some encrypted data
-  if (CmdLen < 3) or (CmdBuf[0] <> #3) then
-    Exit;
-
-  // We've got encrypted data. Decrypt on same place.
-  Decrypt(CmdBuf, CmdLen, CmdBuf, Cnt);
-
-  CmdLen := Cnt;
-end;
-{$ENDIF LZH}
 
 //------------------------------------------------------------------------------
 
-{$IFDEF LZH}
-procedure TDataModule1.AppSrvClient1AfterProcessReply(Sender: TObject;
-  var CmdBuf: PAnsiChar; var CmdLen: Integer);
-begin
-  if FEncryptFlag then
-    FreeMem(CmdBuf, CmdLen);
-end;
-{$ELSE}
 procedure TDataModule1.AppSrvClient1AfterProcessReply(Sender: TObject;
   var CmdBuf: PAnsiChar; var CmdLen: Integer);
 begin
   // Nothing to do
 end;
-{$ENDIF LZH}
 
 //------------------------------------------------------------------------------
 

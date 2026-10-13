@@ -62,7 +62,7 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ImgList, ComCtrls, EnhListView, Buttons, StdCtrls, ExtCtrls, Menus, JVCSForms;
+  ImgList, ComCtrls, JVCSListView, Buttons, StdCtrls, ExtCtrls, Menus, JVCSForms;
 
 type
   TVCSDirWatch = class(TJVCSForm)
@@ -73,7 +73,7 @@ type
     btnAdd: TButton;
     Help: TSpeedButton;
     btnReport: TButton;
-    elvFiles: TdfsEnhListView;
+    elvFiles: TJVCSListView;
     PopupMenu1: TPopupMenu;
     SelectAll1: TMenuItem;
     UnselectAll1: TMenuItem;

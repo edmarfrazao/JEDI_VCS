@@ -217,13 +217,19 @@ procedure ShellOpenParentFolder(const AFileName: string);
 implementation
 
 uses
-  HtmlHlp,
   {$IFDEF LANGUAGE}
   JvGnugettext, JVCSLanguage,
   {$ENDIF LANGUAGE}
   SysUtils, ShellAPI, Dialogs, Printers, FileCtrl, JVCSDialogs, ConfigStorage,
   JVCSMruList, Math, JclStrings, JclFileUtils, JclSysInfo, JVCSClientFunctions,
   JVCSGUIClientResources, Registry, Menus, DBModule, JVCSClientObj;
+
+// v2026: HtmlHelpW declarado aqui (sai a unit HtmlHlp)
+const
+  HH_HELP_CONTEXT = $000F;
+
+function HtmlHelp(hwndCaller: HWND; pszFile: PChar; uCommand: UINT;
+  dwData: NativeUInt): HWND; stdcall; external 'hhctrl.ocx' name 'HtmlHelpW' delayed;
 
 //------------------------------------------------------------------------------
 
@@ -287,6 +293,14 @@ end;
 
 function GlobalSettingValue(Nr: Integer): Boolean;
 begin
+  {$IFNDEF JVCS_NOTIFY}
+  // v2026: notificacao (mailslot/SMTP) desligada - opcao global 16 = enviar mensagens
+  if Nr = 16 then
+  begin
+    Result := False;
+    Exit;
+  end;
+  {$ENDIF ~JVCS_NOTIFY}
   Result :=
     (jvcsReadString(sBaseRegistryKey + crbOptions + '\CCS',
     'Option' + IntToStr(Nr), '1') = '2');
@@ -715,7 +729,7 @@ begin
     if not (Value[I] in ['0'..'9', '+', '-']) then 
     begin
       Delete(Value, I, 1);
-      Insert(DecimalSeparator, Value, I);
+      Insert(FormatSettings.DecimalSeparator, Value, I);
       Break;
     end;
   try
@@ -1401,8 +1415,21 @@ function GetJVCSAppProductVersionInt: Integer;
 var
   sVer: string;
   slVersions: TStringList;
+  JclFileVersionInfo: TJclFileVersionInfo;
 begin
-  sVer := GetJVCSAppProductVersion;
+  // v2026: o ProductVersion textual agora e "2.5 Beta 2026"; a versao do LOGIN
+  // vem do PRODUCTVERSION numerico (2,5,0,2026 -> 2*100 + 5*10 + 0 = 250, igual
+  // ao 2.5.0.1030).
+  JclFileVersionInfo := TJclFileVersionInfo.Create(GetSelfFileName);
+  try
+    sVer := Format('%d.%d.%d.%d',
+      [HiWord(JclFileVersionInfo.FixedInfo.dwProductVersionMS),
+       LoWord(JclFileVersionInfo.FixedInfo.dwProductVersionMS),
+       HiWord(JclFileVersionInfo.FixedInfo.dwProductVersionLS),
+       LoWord(JclFileVersionInfo.FixedInfo.dwProductVersionLS)]);
+  finally
+    JclFileVersionInfo.Free;
+  end;
   slVersions := TStringList.Create;
   try
     StrToStrings(sVer, '.', slVersions);

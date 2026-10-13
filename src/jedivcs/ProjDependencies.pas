@@ -59,7 +59,7 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ImgList, ComCtrls, EnhListView, Buttons, StdCtrls, ExtCtrls, Menus;
+  ImgList, ComCtrls, JVCSListView, Buttons, StdCtrls, ExtCtrls, Menus;
 
 type
   TVCSProjectDependencies = class(TForm)
@@ -68,7 +68,7 @@ type
     btnClose: TButton;
     btnParse: TButton;
     Help: TSpeedButton;
-    elvExternals: TdfsEnhListView;
+    elvExternals: TJVCSListView;
     btnReport: TButton;
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -364,6 +364,8 @@ begin
     {$ENDIF IDEDLL}
     PasParser := TmwPasLex.Create;
     try
+      MS.Seek(0, soEnd); // v2026: o lexer precisa do terminador #0
+      MS.WriteData(Byte(0));
       PasParser.Origin := MS.Memory;
       //hu01.12.2002       while PasParser.TokenID <> tkNull do
       while PasParser.TokenID <> ptNull do

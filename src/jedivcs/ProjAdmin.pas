@@ -263,8 +263,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, Menus, ExtCtrls, ImgList, ComCtrls, Buttons, EnhListView, ActnList,
-  ToolWin, JVCSMruList, JvToolBar, mdMailSlot, ApsCli, RFormat, dfsStatusBar,
+  StdCtrls, Menus, ExtCtrls, ImgList, ComCtrls, Buttons, JVCSListView, ActnList,
+  ToolWin, JVCSMruList, JvToolBar, mdMailSlot, ApsCli, RFormat, JVCSStatusBar,
   FavOpenDialog, JvComponent, JvPluginManager, JvComCtrls, JvSplitter,
   JVCSDataClasses, JVCSInterfaces, JvExExtCtrls, JvExComCtrls, JVCSClasses,
   JvComponentBase, JVCSLineHistoryDefaultProvider, JVCSLineHistoryFrame,
@@ -312,7 +312,7 @@ const
   WM_IDEACTIVATION = WM_APP + 102; // for activation of projectadmin from IDE
   {$ENDIF IDEDLL}
 
-  {$I ..\stdplugin\jedivcspluginmsgconst.inc}
+  {$I JEDIVCSPluginMsgConst.inc} // v2026: arquivo local (a pasta stdplugin nao existe)
 
   SrvTimeCnt = '  /%0.2f s';
 
@@ -642,7 +642,7 @@ type
     View1: TMenuItem;
     N55: TMenuItem;
     Panel1: TPanel;
-    dfsStatusBar: TdfsStatusBar;
+    dfsStatusBar: TJVCSStatusBar;
     acSynchronize: TAction;
     ToolButton37: TToolButton;
     ToolButton38: TToolButton;
@@ -706,7 +706,7 @@ type
     pgMain: TPageControl;
     tsDefault: TTabSheet;
     JvSplitter1: TJvSplitter;
-    elvModules: TdfsEnhListView;
+    elvModules: TJVCSListView;
     tvHierachyPlaceholder: TPanel;
     miLineHistory: TMenuItem;
     pmnPageControlMain: TPopupMenu;
@@ -1141,7 +1141,9 @@ uses
   AssignLabels, AddShareModule, MaintainFFamilies, Description, SelectProjectID,
   MaintainUsers, ServerOptions,
   {$IFNDEF REPORTDLL}
+  {$IFNDEF JVCS_NOREPORTS}
   Report,
+  {$ENDIF ~JVCS_NOREPORTS}
   {$ENDIF ~REPORTDLL}
   Std_ListView, SearchModules, ProjectRights, ChangeUserPW, Whoami,
   AssignMilestones, Syncronice, MergeVersion, Options, About, Branch,
@@ -1293,6 +1295,9 @@ begin
     ReportDLLHandle := 0;
     acPrintReports.Visible := (FileExists(ExtractFilePath(Application.ExeName) + cJVCSReportDll));
     {$ENDIF REPORTDLL}
+    {$IFDEF JVCS_NOREPORTS}
+    acPrintReports.Visible := False; // v2026: relatorios desligados (Decisoes.md)
+    {$ENDIF JVCS_NOREPORTS}
     {$IFNDEF IDEDLL}
     FIcon := TIcon.Create;
     FIcon.Handle := LoadIcon(hInstance, 'TB_ICON');
@@ -2014,7 +2019,9 @@ begin
       PluginFolder := sDLLDirectory + 'Plugin\Standalone';
       PluginKind := plgDLL;
       {$ENDIF IDEDLL}
-      uilPluginManager1.LoadPlugins;
+      {$IFDEF JVCS_PLUGINS}
+      uilPluginManager1.LoadPlugins; // v2026: plugins desligados (Decisoes.md)
+      {$ENDIF JVCS_PLUGINS}
     end;
 
     {$IFDEF IDEDLL}
@@ -2507,13 +2514,13 @@ begin
     // Selected = TopItem ?
     if Selected = TopItem then 
       Exit;
-    // zurück auf Position 0
+    // zurï¿½ck auf Position 0
     BeginUpdate;
     try
       I := Items.Count;
       while (TopItem <> Items[0]) and (I > 0) do 
       begin
-        Scroll(0, - 10); // Texthöhe = 8
+        Scroll(0, - 10); // Texthï¿½he = 8
         Dec(I);
       end;
       EndUpdate;
@@ -4458,7 +4465,7 @@ begin
                       JVCSRES_Do_you_wish_to_add_it_now63);
                     VCSYes2AllDlg.ShowCheckBox(True);
                     VCSYes2AllDlg.SetCheckBoxCaption(JVCSRES_38Don39t_ask_me_further_about_this_file46);
-                    {  Achtung! Wenn dieser Text geändert wird, muß die Routine im
+                    {  Achtung! Wenn dieser Text geï¿½ndert wird, muï¿½ die Routine im
                        Yes2All Dialog angepasst werden!  }
                     { english: if you use an other string with VCSYes2AllDlg.SetCheckBoxCaption
                         than TVCSYes2AllDlg.CheckBox1Click has to be adjusted }
@@ -4641,7 +4648,7 @@ begin
     Exit;
   end; // if not FileExists(ModuleName) then begin
 
-  //--- Ungültige Zeichen ------------------------------------------------------
+  //--- Ungï¿½ltige Zeichen ------------------------------------------------------
   if not IsValidModuleName(ExtractFileName(FileName), Mess) then 
   begin
     MessageBox(WindowHandle, PChar(Format('<%s>' + #13#10 + '%s' + #13#10 +
@@ -5329,8 +5336,8 @@ begin
     try
       repeat // until I >= elvModules.Items.Count;
       {  keine for - to Schleife, sonst wird nach
-         löschen über die Liste hinausgelesen  }
-        Inc(I); // Start mit 1, da bei gelöschtem Eintrag
+         lï¿½schen ï¿½ber die Liste hinausgelesen  }
+        Inc(I); // Start mit 1, da bei gelï¿½schtem Eintrag
         // in der gl. Zeile weitergesucht wird
         WasSelectedRow := elvModules.Items[I - 1].Selected;
         if elvModules.Items[I - 1].Selected then
@@ -5448,7 +5455,7 @@ begin
           // Message Window
           AddMessage(Format(JVCSRES_Removed_from_project58_37s_45_Success, [ModuleToDelete]),
             msclNormal);
-          Dec(I); // gelöscht => eine Zeile zurück
+          Dec(I); // gelï¿½scht => eine Zeile zurï¿½ck
         end; // if ListBox1.Selected[I] then begin
         NextEntry :
         if (Sender is TVCSProgress) and (WasSelectedRow) then
@@ -6170,9 +6177,15 @@ begin
   acProjectTree.Enabled := ServerConnected;
   {$ENDIF IDEDLL}
   {$IFDEF BRANCHING}
+  {$IFDEF JVCS_NOBRANCHUI}
+  mmiNewBranch.Enabled := False;
+  mmiOpenBranch.Enabled := False;
+  mmiRemoveBranch.Enabled := False;
+  {$ELSE}
   mmiNewBranch.Enabled := nServerVersion >= 250;
   mmiOpenBranch.Enabled := nServerVersion >= 250;
   mmiRemoveBranch.Enabled := nServerVersion >= 250;
+  {$ENDIF JVCS_NOBRANCHUI}
   {$ENDIF BRANCHING}
   mmiVCSBrowser.Enabled := nServerVersion >= 250;
 end;
@@ -7234,6 +7247,9 @@ begin
   end; // else if FuncPtr <> nil then begin
   bStopRefresh := False;
   {$ELSE}
+  {$IFDEF JVCS_NOREPORTS}
+  Exit; // v2026: relatorios desligados (Decisoes.md)
+  {$ELSE}
   bStopRefresh := True;
   VCSReport := TVCSReport.Create(Application);
   try
@@ -7242,9 +7258,10 @@ begin
     VCSReport.Free;
   end;
   bStopRefresh := False;
+  {$ENDIF JVCS_NOREPORTS}
   {$ENDIF REPORTDLL}
 
-  // Temporäre Files von QRPreview
+  // Temporï¿½re Files von QRPreview
   // TMP - Verzeichnis ?
   I := 255;
   SetLength(TMPDirectory, I);
@@ -7883,8 +7900,8 @@ begin
       I := 0;
       repeat // until I >= elvModules.Items.Count;
       {  keine for - to Schleife, sonst wird nach
-         löschen über die Liste hinausgelesen  }
-        Inc(I); // Start mit 1, da bei gelöschtem Eintrag
+         lï¿½schen ï¿½ber die Liste hinausgelesen  }
+        Inc(I); // Start mit 1, da bei gelï¿½schtem Eintrag
         // in der gl. Zeile weitergesucht wird
         if elvModules.Items[I - 1].Selected then 
         begin
@@ -7901,7 +7918,7 @@ begin
             CurrModule := elvModules.Items[I - 1].SubItems[sitPath] + LowerCase(CurrModule);
             CustFiltItems.Add(CurrModule);
             elvModules.Items.Delete(I - 1);
-            Dec(I); // gelöscht => eine Zeile zurück
+            Dec(I); // gelï¿½scht => eine Zeile zurï¿½ck
             // Message Window
             AddMessage(Format(JVCSRES_Module_added_to_custom_view_filter58_37s, [CurrModule]), msclNormal);
           end; // else if (elvModules.Items[I].SubItems[sitState] := 'Out') and...
@@ -10484,7 +10501,7 @@ begin
           cMsgBoxCaption, MB_OK);
         Exit;
       end;
-      // Textlänge in der Spalte?
+      // Textlï¿½nge in der Spalte?
       SetLength(oaColumnsWidth, Columns.Count);
       for I := 0 to Columns.Count - 1 do 
       begin
@@ -10960,8 +10977,8 @@ begin
           Exit;
         end;
         // remove all thousand separators
-        Str1 := JclStrings.StrRemoveChars(Str1, [ThousandSeparator]);
-        Str2 := JclStrings.StrRemoveChars(Str2, [ThousandSeparator]);
+        Str1 := JclStrings.StrRemoveChars(Str1, [FormatSettings.ThousandSeparator]);
+        Str2 := JclStrings.StrRemoveChars(Str2, [FormatSettings.ThousandSeparator]);
         if StrToInt64Def(Str1, 0) > StrToInt64Def(Str2, 0) then
           CompResult := 1
         else
@@ -10970,7 +10987,7 @@ begin
     sitCount, sitMID, sitRID: // Count, MID, RID
       SortAs := saNumeric;
     sitDate: // Date
-{ //USc 10.04.2004 using TdfsEnhListView's internal TDateTime sort is buggy - see mantis #1557
+{ //USc 10.04.2004 using TJVCSListView's internal TDateTime sort is buggy - see mantis #1557
       SortAs := saDateTime;
 }
       CompResult := CompareDateTimeStrs(Item1.SubItems[SortColumn], Item2.SubItems[SortColumn]);
@@ -12069,7 +12086,19 @@ end;
 procedure TVCSProjAdmin.Loaded;
 begin
   inherited Loaded;
+  {$IFDEF JVCS_NOBRANCHUI}
+  // v2026: menu Branch oculto; a GUI fica sempre no HEAD ("main"), sem troca de
+  // branch (Decisoes.md). O protocolo continua o do servidor 2.50 (BRANCHING).
+  Branch1.Visible := False;
+  {$ELSE}
   Branch1.Visible := True;
+  {$ENDIF JVCS_NOBRANCHUI}
+  {$IFNDEF JVCS_PLUGINS}
+  Plugins1.Visible := False; // v2026: plugins desligados (Decisoes.md)
+  {$ENDIF ~JVCS_PLUGINS}
+  {$IFNDEF JVCS_NOTIFY}
+  Notify1.Visible := False;  // v2026: notificacao mailslot/SMTP desligada (Decisoes.md)
+  {$ENDIF ~JVCS_NOTIFY}
   //workaround to make the branch menu item visible
   MenuBar1.Menu := nil;
   MenuBar1.Menu := MainMenu1;  

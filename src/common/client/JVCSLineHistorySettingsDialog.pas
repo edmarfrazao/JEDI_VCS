@@ -41,7 +41,7 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, JVCSLineHistoryUnit, JvExExtCtrls,
   JvOfficeColorButton, JvExControls, JvColorBox, JvColorButton,
-  JvGradient, VirtualTrees, Buttons, JvDialogs, JVCSForms, JvExtComponent;
+  JvGradient, VirtualTrees, VirtualTrees.Types, Buttons, JvDialogs, JVCSForms, JvExtComponent;
 
 type
   TJVCSLineHistorySettingsDlg = class(TJVCSForm)
@@ -72,7 +72,7 @@ type
     procedure cbtnRevisionFromColorChange(Sender: TObject);
     procedure VSTUserColorsGetText(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-      var CellText: WideString);
+      var CellText: string);
     procedure spBtnClearClick(Sender: TObject);
     procedure VSTUserColorsAfterCellPaint(Sender: TBaseVirtualTree;
       TargetCanvas: TCanvas; Node: PVirtualNode; Column: TColumnIndex;
@@ -168,7 +168,7 @@ end;
 
 procedure TJVCSLineHistorySettingsDlg.VSTUserColorsGetText(
   Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex;
-  TextType: TVSTTextType; var CellText: WideString);
+  TextType: TVSTTextType; var CellText: string);
 begin
   CellText := '';
   if Column = 0 then

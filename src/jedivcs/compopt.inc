@@ -27,7 +27,6 @@ Unit history:
   {$A+,B-,E-,F-,G+,H+,I+,J+,K-,M-,N+,P+,S-,T-,U-,V+,W-,X+,Y+,Z1}
   {$MINSTACKSIZE $00004000}
   {$MAXSTACKSIZE $00100000}
-  {$IMAGEBASE $00400000}
   {$APPTYPE GUI}
 
   {.$DEFINE IDEDLL}         (* IDE expert version *)
@@ -36,7 +35,10 @@ Unit history:
     {.$DEFINE EXT_IDE_INTF}  (* create external IDE Interface *)
   {$ENDIF}
 
-  {$DEFINE REPORTDLL}       (* reports extern *)
+  {.$DEFINE REPORTDLL}      (* reports extern - v2026: desligado, ver JVCS_NOREPORTS *)
+  {$IFNDEF REPORTDLL}
+    {$DEFINE JVCS_NOREPORTS} (* v2026: sem jedivcsreport.dll e sem unit Report *)
+  {$ENDIF}
 
   {$DEFINE BLOWFISH}
   //???
@@ -44,9 +46,10 @@ Unit history:
 
   {.$DEFINE REQTEST}
 
-  {$DEFINE RELEASE}        (* release version *)
+  // v2026: DEBUG ou RELEASE vem da linha de comando (tools\compilar.bat / .dproj)
+  {.$DEFINE RELEASE}        (* release version *)
   {.$DEFINE BETA}           (* beta version *)
-  {$DEFINE DEBUG}          (* basic debug informations *)
+  {.$DEFINE DEBUG}          (* basic debug informations *)
   {.$DEFINE DEBUGMSG}       (* basic debug informations *)
 
   {$IFDEF DEBUG}
@@ -70,9 +73,10 @@ Unit history:
   {.$DEFINE CHODEBUG}      (* check out debug informations *)
   {.$DEFINE NOTFDBG}       (* debug information FreeVCS notifier *)
   {.$DEFINE SHCHANGENTFY}  (* debug information Register Table changed *)
-  {$IFOPT d+}
-   {$DEFINE MEMCHECK}      (* changable: let memcheck search for memory leaks *)
-  {$ENDIF}
+  // v2026: MemCheck desligado (gerenciador de memoria embutido do Delphi)
+  {.$IFOPT d+}
+   {.$DEFINE MEMCHECK}      (* changable: let memcheck search for memory leaks *)
+  {.$ENDIF}
   {$IFDEF MEMCHECK}
     {$W+}
     {$DEFINE USE_JEDI_JCL}  (* needs memcheck v2.67 *)

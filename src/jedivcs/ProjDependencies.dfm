@@ -118,7 +118,7 @@ object VCSProjectDependencies: TVCSProjectDependencies
       OnClick = btnReportClick
     end
   end
-  object elvExternals: TdfsEnhListView
+  object elvExternals: TJVCSListView
     Left = 0
     Top = 0
     Width = 492

@@ -70,7 +70,7 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   StdCtrls, ExtCtrls, Menus, Buttons, Grids, ComCtrls,
-  EnhListView, JVCSForms;
+  JVCSListView, JVCSForms;
 
 type
   TVCSStdListView = class(TJVCSForm)
@@ -84,7 +84,7 @@ type
     Restoreproject1: TMenuItem;
     N1: TMenuItem;
     Help: TSpeedButton;
-    elv: TdfsEnhListView;
+    elv: TJVCSListView;
     popmCompDate: TPopupMenu;
     CopyModulesto1: TMenuItem;
     SelectAll1: TMenuItem;
@@ -1166,8 +1166,8 @@ begin
           if Str1 <> Str2 then
           begin
             // remove all thousand separators
-            Str1 := JclStrings.StrRemoveChars(Str1, [ThousandSeparator]);
-            Str2 := JclStrings.StrRemoveChars(Str2, [ThousandSeparator]);
+            Str1 := JclStrings.StrRemoveChars(Str1, [FormatSettings.ThousandSeparator]);
+            Str2 := JclStrings.StrRemoveChars(Str2, [FormatSettings.ThousandSeparator]);
             if StrToInt64Def(Str1, 0) > StrToInt64Def(Str2, 0) then
               CompResult := 1
             else

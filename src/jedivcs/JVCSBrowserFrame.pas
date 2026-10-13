@@ -39,7 +39,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
-  Dialogs, ImgList, VirtualTrees, StdCtrls, ExtCtrls, JVCSConnect, Contnrs,
+  Dialogs, ImgList, VirtualTrees, VirtualTrees.Types, StdCtrls, ExtCtrls, JVCSConnect, Contnrs,
   JVCSNewClientObj, TZHandling, ShellAPI, JVCSInterfaces, Menus;
 
 type
@@ -66,7 +66,7 @@ type
     procedure btnRefreshClick(Sender: TObject);
     procedure VSTGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType;
-      var CellText: WideString);
+      var CellText: string);
     procedure VSTGetImageIndex(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Kind: TVTImageKind; Column: TColumnIndex; var Ghosted: Boolean;
       var ImageIndex: Integer);
@@ -601,7 +601,7 @@ begin
 end;
 
 procedure TJVCSBrowserFrm.VSTGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
-  Column: TColumnIndex; TextType: TVSTTextType; var CellText: WideString);
+  Column: TColumnIndex; TextType: TVSTTextType; var CellText: string);
 var
   ListItem: TListFileItem;
   S: string;
