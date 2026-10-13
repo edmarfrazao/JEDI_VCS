@@ -7,7 +7,7 @@ Unit CBroker;
 Interface
 
 uses
-  SysUtils, Classes,
+  Windows, SysUtils, Classes,
   {$IFNDEF NOFORMS}
   StdCtrls,
   {$ENDIF}
@@ -53,7 +53,7 @@ Type
     FOnRequestDone: TRequestDone;
     FFuncRequestDone: TRequestDone;
 
-    FUserData: LongInt;
+    FUserData: NativeInt;
     FIniFileName: String;
 
     // PL 12/07/2003 destruction of FAppSrvClient, this is to have notification for the destruction
@@ -115,7 +115,7 @@ Type
     FObjectCount: Integer;
 
     FAppSrvClient: TAppSrvClient;
-    FUserData: LongInt;
+    FUserData: NativeInt;
     FIniFileName: String;
 
     FOnDisplay: TCliDisplayEvent;
@@ -144,7 +144,7 @@ Type
     Property    ObjectCount: Integer           
       read FObjectCount;
   published
-    Property UserData: LongInt              
+    Property UserData: NativeInt             
       read  FUserData
       write FUserData;
     Property IniFileName: String                  
@@ -173,8 +173,6 @@ procedure Register;
 
 Implementation
 
-Uses
-  Windows;
 
 procedure Register;
 begin

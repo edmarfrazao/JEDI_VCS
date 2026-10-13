@@ -163,14 +163,17 @@ interface
 // USc 25/08/2003 moved the comma's into the IFDEF's - is a bit easier because
 // the old solution (comma after unitname) will always need another unit before
 // the semicolon.
+{ JVCS edition (JEDI VCS 2.5 Beta 2026): port Unicode (Delphi 2009+).        }
+{ O buffer continua em bytes (PAnsiChar/AnsiChar); os textos sao convertidos }
+{ string <-> bytes pela code page fixa MWCodePage (padrao 1252, a ACP das    }
+{ estacoes que gravaram o banco), para manter o fio identico ao cliente      }
+{ Delphi 2007. Blobs passam como bytes, sem conversao.                       }
 uses
-    Windows, SysUtils
+    Windows, SysUtils, System.AnsiStrings
 {$IFDEF MAKECOMPONENT}
     ,Classes
 {$ENDIF}
-{$IFDEF COMPILER6_UP}
     ,Variants
-{$ENDIF}
 //USc 25/08/2003 exclude Db in Personal Edition
 {$IFNDEF DelphiPersonalEdition}
     ,Db   // TBookmark, TLocateOption, TLocateOptions
@@ -185,6 +188,21 @@ const
     FieldSeparator  = #18;   { Ascii DC2 }
     RecordSeparator = #20;   { Ascii DC4 }
     EscMarker       = #127;
+
+var
+    { Code page usada para converter textos (string) em bytes no fio e     }
+    { vice-versa. Configuravel; o padrao 1252 reproduz o cliente original.  }
+    MWCodePage : Word = 1252;
+
+type
+    { Bytes no fio (sem conversao implicita de code page) }
+    TMWRawString = RawByteString;
+
+{ Converte texto Unicode em bytes na code page MWCodePage }
+function  MWStrToBytes(const S : String) : RawByteString;
+{ Converte bytes (code page MWCodePage) em texto Unicode }
+function  MWBytesToStr(const B : RawByteString) : String;
+function  MWBufToStr(P : PAnsiChar; Len : Integer) : String;
 
 type
     MWBufferException     = class(Exception);
@@ -231,23 +249,23 @@ type
     TMWBuffer = class(TObject)
 {$ENDIF}
     private
-        FDataBuffer      : PChar;            { Buffer start                    }
+        FDataBuffer      : PAnsiChar;            { Buffer start                    }
         FDataBufferSize  : LongInt;          { Total buffer size               }
         FDataBufferCount : LongInt;          { How many characters used        }
         FHeaderSize      : LongInt;          { Reserved space for a header     }
         FFieldCount      : Integer;          { How many fileds in current rec  }
         FRecordCount     : Integer;          { Total number of records         }
-        FFldSep          : Char;             { Field separator                 }
-        FRecSep          : Char;             { Record separator                }
-        FEscSep          : Char;             { Special character marker        }
-        FRecordPointer   : PChar;            { Current record pointer          }
+        FFldSep          : AnsiChar;             { Field separator                 }
+        FRecSep          : AnsiChar;             { Record separator                }
+        FEscSep          : AnsiChar;             { Special character marker        }
+        FRecordPointer   : PAnsiChar;            { Current record pointer          }
         FHitEof          : Boolean;          { We hit the end of file          }
         FHitBof          : Boolean;          { We hit the begin of file        }
         FHasData         : Boolean;          { Is there any data in the buffer }
         FHasAllocated    : Boolean;          { Do we have allocated memory     }
         FAutoExpand      : LongInt;          { How many we can realloc         }
         FMetaDataLayout  : String;           { MetaData 'M'                    }
-        FPSessionID      : PChar;            { Used for MetaData 'I'           }
+        FPSessionID      : PAnsiChar;            { Used for MetaData 'I'           }
     protected
         procedure RaiseException(const Where: String);
         function  GetFields(nIndex : Integer) : String;
@@ -258,17 +276,17 @@ type
         function  GetBof : Boolean;
         procedure SetFields(nIndex : Integer; newValue : String);
         procedure SetDataBufferSize(newValue : LongInt);
-        procedure SetDataBuffer(newValue : PChar);
+        procedure SetDataBuffer(newValue : PAnsiChar);
         procedure SetHasData(newValue : Boolean);
-        function  GetFieldPtr(nIndex : Integer) : PChar;
+        function  GetFieldPtr(nIndex : Integer) : PAnsiChar;
         function  GetFieldSize(nIndex : Integer) : Integer;
-        function  GetNextFieldPtr(Cur : PChar) : PChar;
-        function  GetEscapedLength(Src : PChar; Len : Integer) : Integer;
-        function  GetUnEscapedLength(p : PChar; q : PChar) : Integer;
+        function  GetNextFieldPtr(Cur : PAnsiChar) : PAnsiChar;
+        function  GetEscapedLength(Src : PAnsiChar; Len : Integer) : Integer;
+        function  GetUnEscapedLength(p : PAnsiChar; q : PAnsiChar) : Integer;
         procedure MoveEscaped(const Source; var Dest; Count : Integer);
-        function  GetMetaData(nIndex : Integer; Delim : Char) : String;
-        function  SkipMetaData(P : PChar;            // From where to scan
-                               Q : PChar) : PChar;   // Up to that address
+        function  GetMetaData(nIndex : Integer; Delim : AnsiChar) : String;
+        function  SkipMetaData(P : PAnsiChar;            // From where to scan
+                               Q : PAnsiChar) : PAnsiChar;   // Up to that address
         // USc 25/08/2003 new function InternalSort(it's basicly the old public
         // Sort function)
         procedure InternalSort(BuildKey       : TMWBufferSortBuildKey;
@@ -370,13 +388,13 @@ type
         {:Check if a field number is valid }
         function    IsValidFields(nIndex : Integer) : Boolean;
         function    ExpandBuffer(pSize : PInteger; Requested : LongInt) : Boolean;
-        procedure   WriteDataBuffer(Src : PChar; Len : LongInt);
+        procedure   WriteDataBuffer(Src : PAnsiChar; Len : LongInt);
         {:Inject metadata into the buffer. Normally it is done before writing
           any data field. But it is allowed to insert metadata anywhere in the
           buffer provided the user know what to do with it. This is for example
           used when a result set is made out of several DB result sets. Each
           one having his own metadata. }
-        procedure   AppendMetaData(Delim : Char; Src : PChar; Len : LongInt);
+        procedure   AppendMetaData(Delim : AnsiChar; Src : PAnsiChar; Len : LongInt);
         {:SetMetaDataLayout initialize MetaData for later use by method
           GetFieldByNameAsString or to be inserted into the buffer before any
           data. Normally you call SetMetaDataLayout at server side to inject
@@ -408,8 +426,8 @@ type
           nul date. }
         function    GetFieldByNumAsDateTime(nIndex : Integer) : TDateTime;
         procedure   Assign(Source: TPersistent); override;
-        procedure   SetPSessionID(const Value : PChar);
-        property PSessionID : PChar                read   FPSessionID
+        procedure   SetPSessionID(const Value : PAnsiChar);
+        property PSessionID : PAnsiChar                read   FPSessionID
                                                    write  SetPSessionID;
         {:The indexed Fields[] property gives access to the current record's
           fields. Works with string type field only. For blobs, use
@@ -429,7 +447,7 @@ type
           front of all fields, with an 'M' delimiter. To get this MetaData back,
           use MetData[0, 'M']. If you then call SetMetaDataLayout with thise
           value, you'll be able to use FieldByNameAsString[]. }
-        property MetaData[nIndex : Integer; Delim : Char] : String
+        property MetaData[nIndex : Integer; Delim : AnsiChar] : String
                                                     read  GetMetaData;
         {:Returns the field type. This is not related to MetaData but a layer
           below. Use FieldInfoByName() to get field type extracted from
@@ -459,14 +477,14 @@ type
         {:Gives access to the underlaying data buffer. Writing this value
           allows to allocate a buffer for data storage. If the buffer is forced
           then the component cannot expand it as needed to write fields. }
-        property DataBuffer : PChar                 read  FDataBuffer
+        property DataBuffer : PAnsiChar                 read  FDataBuffer
                                                     write SetDataBuffer;
         {:The size in bytes of the data present in the buffer. }
         property DataBufferCount : LongInt          read  FDataBufferCount
                                                     write FDataBufferCount;
         {:The EscSep property set or get the character used to escape data
           in the buffer.}
-        property EscSep          : Char             read  FEscSep
+        property EscSep          : AnsiChar             read  FEscSep
                                                     write FEscSep;
     published
         {:The size in bytes of the current buffer. Assigning a value to this
@@ -500,6 +518,46 @@ implementation
 const
     CR = #13;
     LF = #10;
+
+
+{* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
+function MWStrToBytes(const S : String) : RawByteString;
+var
+    Len : Integer;
+begin
+    Result := '';
+    if S = '' then
+        Exit;
+    Len := LocaleCharsFromUnicode(MWCodePage, 0, PWideChar(S), Length(S),
+                                  nil, 0, nil, nil);
+    SetLength(Result, Len);
+    if Len > 0 then
+        LocaleCharsFromUnicode(MWCodePage, 0, PWideChar(S), Length(S),
+                               PAnsiChar(Result), Len, nil, nil);
+    SetCodePage(Result, MWCodePage, FALSE);
+end;
+
+
+{* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
+function MWBufToStr(P : PAnsiChar; Len : Integer) : String;
+var
+    WLen : Integer;
+begin
+    Result := '';
+    if (P = nil) or (Len <= 0) then
+        Exit;
+    WLen := UnicodeFromLocaleChars(MWCodePage, 0, P, Len, nil, 0);
+    SetLength(Result, WLen);
+    if WLen > 0 then
+        UnicodeFromLocaleChars(MWCodePage, 0, P, Len, PWideChar(Result), WLen);
+end;
+
+
+{* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
+function MWBytesToStr(const B : RawByteString) : String;
+begin
+    Result := MWBufToStr(PAnsiChar(B), Length(B));
+end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
@@ -572,7 +630,7 @@ end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
-procedure TMWBuffer.SetDataBuffer(newValue : PChar);
+procedure TMWBuffer.SetDataBuffer(newValue : PAnsiChar);
 begin
     if FHasAllocated then begin
         FHasAllocated := FALSE;
@@ -596,10 +654,10 @@ end;
 { Get the pointer on the given field in the current record.                 }
 { If empty field, then the returned value point to the field separator,     }
 { if non existant field, then returned value point to the record separator. }
-function TMWBuffer.GetFieldPtr(nIndex : Integer) : PChar;
+function TMWBuffer.GetFieldPtr(nIndex : Integer) : PAnsiChar;
 var
-    p      : PChar;                { Data pointer        }
-    q      : PChar;                { End of data pointer }
+    p      : PAnsiChar;                { Data pointer        }
+    q      : PAnsiChar;                { End of data pointer }
     nCount : Integer;
 begin
     if FRecordPointer = nil then begin     { 24/12/98 }
@@ -632,9 +690,9 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 { Given a field pointer, return the pointer to the next field               }
 { If last field is passed, then the pointer point to the record separator.  }
-function TMWBuffer.GetNextFieldPtr(Cur : PChar) : PChar;
+function TMWBuffer.GetNextFieldPtr(Cur : PAnsiChar) : PAnsiChar;
 var
-    q : PChar;
+    q : PAnsiChar;
 begin
     Result := Cur;
     q      := @FDataBuffer[FDataBufferCount];   { End of all records }
@@ -650,7 +708,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 function TMWBuffer.GetFieldType(nIndex : Integer) : TMWFieldType;
 var
-    p, q : PChar;
+    p, q : PAnsiChar;
 begin
     if not FHasData then begin
         SetLastError(ERROR_INVALID_PARAMETER);
@@ -696,12 +754,12 @@ end;
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 function TMWBuffer.SkipMetaData(
-    P : PChar;            // From where to scan (point to ESC marker)
-    Q : PChar) : PChar;   // Up to that address
+    P : PAnsiChar;            // From where to scan (point to ESC marker)
+    Q : PAnsiChar) : PAnsiChar;   // Up to that address
 var
-    C : Char;
+    C : AnsiChar;
 begin
-    C := Chr(Ord(P[1]) xor $20);
+    C := AnsiChar(Ord(P[1]) xor $20);
     Result := P + 2;     { Skip past delimiter }
     while Result < q do begin
         if Result^ = FEscSep then begin
@@ -764,12 +822,13 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 function TMWBuffer.GetFields(nIndex : Integer) : String;
 var
-    p      : PChar;                { Data pointer        }
-    q      : PChar;                { End of data pointer }
-    c      : Char;
+    p      : PAnsiChar;                { Data pointer        }
+    q      : PAnsiChar;                { End of data pointer }
+    c      : AnsiChar;
     I      : Integer;
-    r      : PChar;
+    r      : PAnsiChar;
     Len    : Integer;
+    A      : RawByteString;        { JVCS: bytes do campo (MWCodePage) }
 begin
     if not FHasData then begin
         SetLastError(ERROR_INVALID_PARAMETER);
@@ -784,6 +843,8 @@ begin
     { Check if missing call to method First }
     if FRecordPointer = nil then
         First;
+
+    A := '';
 
     { Find requested field pointer }
     p := GetFieldPtr(nIndex);
@@ -872,28 +933,31 @@ begin
                 Len := 512
             else
                 Len := Len + Len;
-            SetLength(Result, Len);
-            r := @Result[I];
+            SetLength(A, Len);
+            r := @A[I];
         end;
         r^ := c;
         Inc(r);
 
-        // Go to next char to be processed
+        // Go to next AnsiChar to be processed
         Inc(p);
     end;
     // Adjust the length to the exact computed value
     if I <> Len then
-        SetLength(Result, I);
+        SetLength(A, I);
+    // JVCS: bytes -> texto pela code page do protocolo
+    Result := MWBytesToStr(A);
 end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 { Metadata is assumed to be before data                                     }
-function  TMWBuffer.GetMetaData(nIndex : Integer; Delim : Char) : String;
+function  TMWBuffer.GetMetaData(nIndex : Integer; Delim : AnsiChar) : String;
 var
-    p        : PChar;                { Data pointer        }
-    q        : PChar;                { End of data pointer }
-    DelimEnd : Char;
+    p        : PAnsiChar;                { Data pointer        }
+    q        : PAnsiChar;                { End of data pointer }
+    DelimEnd : AnsiChar;
+    A        : RawByteString;     { JVCS: bytes da metadata }
 begin
     if not FHasData then begin
         SetLastError(ERROR_INVALID_PARAMETER);
@@ -916,10 +980,10 @@ begin
     Q := @FDataBuffer[FDataBufferCount];
 
     { Default to empty metadata }
-    Result   := '';
+    A        := '';
 
     { Compute ending delimiter }
-    DelimEnd := Chr(Ord(Delim) xor $20);
+    DelimEnd := AnsiChar(Ord(Delim) xor $20);
 
     { Parse all metadata to find requested one and skip field type }
     while (P[0] = FEscSep) and ((Q - P) >= 2) do begin
@@ -936,14 +1000,14 @@ begin
                 if P^ = FEscSep then begin
                     Inc(P);
                     if P^ = FEscSep then
-                        Result := Result + P^
+                        A := A + P^
                     else if P^ = DelimEnd then
                         break
                     else
-                        Result := Result + FEscSep + P^;
+                        A := A + FEscSep + P^;
                 end
                 else
-                    Result := Result + p^;
+                    A := A + p^;
                 Inc(p);
             end;
         end
@@ -953,16 +1017,17 @@ begin
         else
             break;         { Seems to be part of data }
     end;
+    Result := MWBytesToStr(A);
 end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.MoveEscaped(const Source; var Dest; Count : Integer);
 type
-    TBytes = array[0..MaxInt - 1] of Char;
+    TBytes = array[0..MaxInt - 1] of AnsiChar;
 var
     I, J : Integer;
-    Ch   : Char;
+    Ch   : AnsiChar;
 begin
     J := 0;
     for I := 0 to Count - 1 do begin
@@ -1008,7 +1073,7 @@ end;
 { Compute the required size for a buffer to hold some data once it has been }
 { "escaped" for special characters.                                         }
 function TMWBuffer.GetEscapedLength(
-    Src : PChar;             { Start of data }
+    Src : PAnsiChar;             { Start of data }
     Len : integer)           { End of data   }
     : Integer;
 begin
@@ -1036,8 +1101,8 @@ end;
 { Compute the required size for a buffer to hold some data once it has been }
 { "unescaped" for special characters.                                       }
 function TMWBuffer.GetUnEscapedLength(
-    p : PChar;             { Start of data }
-    q : PChar)             { End of data   }
+    p : PAnsiChar;             { Start of data }
+    q : PAnsiChar)             { End of data   }
     : Integer;
 begin
     Result := 0;
@@ -1071,8 +1136,8 @@ end;
 { Return the field size, in bytes                                           }
 function TMWBuffer.GetFieldSize(nIndex : Integer) : Integer;
 var
-    p      : PChar;                { Data pointer        }
-    q      : PChar;                { End of data pointer }
+    p      : PAnsiChar;                { Data pointer        }
+    q      : PAnsiChar;                { End of data pointer }
 begin
     if not FHasData then begin
         SetLastError(ERROR_INVALID_PARAMETER);
@@ -1111,10 +1176,10 @@ function TMWBuffer.MoveFieldData(
     DataSize : Integer;
     var FieldType : TMWFieldType) : integer;
 var
-    p      : PChar;                { Data pointer        }
-    q      : PChar;                { End of data pointer }
-    c      : Char;
-    Dst    : PChar;
+    p      : PAnsiChar;                { Data pointer        }
+    q      : PAnsiChar;                { End of data pointer }
+    c      : AnsiChar;
+    Dst    : PAnsiChar;
     Cnt    : LongInt;
 begin
     if not FHasData then begin
@@ -1144,7 +1209,7 @@ begin
 
     { Copy data until next separator or end of data }
     Cnt := 0;
-    Dst := PChar(Data);
+    Dst := PAnsiChar(Data);
     while (Cnt < DataSize) and
           (p < q) and (p^ <> FFldSep) and (p^ <> FRecSep) do begin
         if p^ <> FEscSep then
@@ -1188,11 +1253,11 @@ function TMWBuffer.GetStreamField(
     Data          : TStream;
     var FieldType : TMWFieldType) : integer;
 var
-    p      : PChar;                { Data pointer        }
-    q      : PChar;                { End of data pointer }
-    c      : Char;
-    Dst    : PChar;
-    Buf    : array [0..1023] of char;
+    p      : PAnsiChar;                { Data pointer        }
+    q      : PAnsiChar;                { End of data pointer }
+    c      : AnsiChar;
+    Dst    : PAnsiChar;
+    Buf    : array [0..1023] of AnsiChar;
     Cnt    : LongInt;
 begin
     if not FHasData then begin
@@ -1304,7 +1369,7 @@ end;
 { Check if a field exists in the current record  24/12/98                   }
 function TMWBuffer.IsValidFields(nIndex : Integer) : Boolean;
 var
-    Start : PChar;
+    Start : PAnsiChar;
 begin
     Result := FALSE;
     if nIndex < 0 then
@@ -1322,23 +1387,25 @@ end;
 procedure TMWBuffer.SetFields(nIndex : Integer; newValue : String);
 var
     FldLen  : Integer;
-    Start   : PChar;    { Requested field start }
-    Stop    : PChar;    { Next field start      }
+    Start   : PAnsiChar;    { Requested field start }
+    Stop    : PAnsiChar;    { Next field start      }
     SupLen  : Integer;  { Supplemental length   }
     aSize   : Integer;
     RqBytes : Integer;
+    B       : RawByteString;  { JVCS: novo valor em bytes }
 begin
     if (nIndex < 0) then begin
         SetLastError(ERROR_INVALID_PARAMETER);
         RaiseException('Invalid field index');
     end;
 
+    B      := MWStrToBytes(newValue);
     Start  := GetFieldPtr(nIndex);
     if Start^ = FRecSep then
         RaiseException('Invalid field index (non existant field)');
     Stop   := GetNextFieldPtr(Start);
     FldLen := Stop - Start - 1;
-    SupLen := GetEscapedLength(PChar(newValue), Length(newValue)) - FldLen;
+    SupLen := GetEscapedLength(PAnsiChar(B), Length(B)) - FldLen;
     if SupLen > 0 then begin
         { new value is longer than existing one }
         if (FDataBufferCount + SupLen) >= FDataBufferSize then begin
@@ -1359,16 +1426,16 @@ begin
     end;
 
     { Move the new value above the old one }
-    if Length(newValue) > 0 then
-        MoveEscaped(newValue[1], Start^, Length(newValue));
+    if Length(B) > 0 then
+        MoveEscaped(B[1], Start^, Length(B));
 end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 function TMWBuffer.GetFieldCount : Integer;
 var
-    p      : PChar;                { Data pointer        }
-    q      : PChar;                { End of data pointer }
+    p      : PAnsiChar;                { Data pointer        }
+    q      : PAnsiChar;                { End of data pointer }
 begin
     if not FHasData then begin
         Result := 0;
@@ -1500,8 +1567,8 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.Next;
 var
-    q          : PChar;
-    oldPointer : PChar;
+    q          : PAnsiChar;
+    oldPointer : PAnsiChar;
 begin
     if (not FHasData) or (FRecordPointer = nil) then
         Exit;
@@ -1561,7 +1628,7 @@ begin
     until (FRecordPointer^ = FRecSep) or
           (FRecordPointer <= @FDataBuffer[FHeaderSize + 3]);
 
-    { Stay on the first char for the first field }
+    { Stay on the first AnsiChar for the first field }
     if FRecordPointer > @FDataBuffer[FHeaderSize + 3] then
         Inc(FRecordPointer);
     { 24/12/98 }
@@ -1587,8 +1654,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 function TMWBuffer.GetBookmark: TBookmark;
 begin
-    { TODO -oFL : To be review for FPC port }
-    //Result := TBookmark(Tell);
+    Result := TBookmark(Tell);   // JVCS: revertida a edicao -oFL
 end;
 
 
@@ -1602,8 +1668,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.GotoBookmark(Bookmark: TBookmark);
 begin
-    { TODO -oFL : To be review for FPC port }
-    //Seek(TPosition(Bookmark));
+    Seek(TPosition(Bookmark));   // JVCS: revertida a edicao -oFL
 end;
 
 
@@ -1695,7 +1760,7 @@ begin
     I     := Start;
 
     { Skip over white spaces }
-    while (I <= Length(Src)) and (Src[I] in [' ', #9, #13, #10]) do
+    while (I <= Length(Src)) and (CharInSet(Src[I], [' ', #9, #13, #10])) do
         Inc(I);
 
     while TRUE do begin
@@ -1704,7 +1769,7 @@ begin
             break;
 
         { Get Delimiter }
-        if Src[I] in ['''', '"'] then begin
+        if CharInSet(Src[I], ['''', '"']) then begin
             Delim := Src[I];
             Inc(I);
         end
@@ -1734,7 +1799,7 @@ begin
         { Continue with next field }
         if Delim <> ',' then begin
             { Skip over white spaces }
-            while (I <= Length(Src)) and (Src[I] in [' ', #9, #13, #10]) do
+            while (I <= Length(Src)) and (CharInSet(Src[I], [' ', #9, #13, #10])) do
                 Inc(I);
         end;
         if (I <= Length(Src)) and (Src[I] <> ',') then
@@ -1744,7 +1809,7 @@ begin
             break;
         Inc(I);
         { Skip over white spaces }
-        while (I <= Length(Src)) and (Src[I] in [' ', #9, #13, #10]) do
+        while (I <= Length(Src)) and (CharInSet(Src[I], [' ', #9, #13, #10])) do
             Inc(I);
         if I > Length(Src) then
             break;
@@ -1778,7 +1843,7 @@ end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
-procedure TMWBuffer.SetPSessionID(const Value : PChar);
+procedure TMWBuffer.SetPSessionID(const Value : PAnsiChar);
 begin
     FPSessionID := Value;
     // Should add code to replace any existing SessionID already pushed in
@@ -1789,7 +1854,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.Rewrite;
 var
-    Dst : PChar;
+    Dst : PAnsiChar;
 begin
     FHitEof := TRUE;
     FHitBof := TRUE;
@@ -1814,7 +1879,7 @@ begin
     FHasData         := TRUE;
     First;                          // 15/02/99
     if (FPSessionID <> nil) and (FPSessionID^ <> #0) then
-        AppendMetaData('I', FPSessionID, StrLen(FPSessionID));
+        AppendMetaData('I', FPSessionID, System.AnsiStrings.StrLen(FPSessionID));
 end;
 
 
@@ -1953,7 +2018,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.AppendRecord(From : TMWBuffer);
 var
-    Src   : PChar;
+    Src   : PAnsiChar;
     nDst  : LongInt;
     Len   : Integer;
     aSize : LongInt;
@@ -1992,20 +2057,19 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 { Append fields to the last record                                          }
 procedure TMWBuffer.AppendFields(Args : array of const);
-type
-    PInteger = ^Integer;
+{ JVCS edition: textos Unicode (vtUnicodeString, vtWideString, vtWideChar,  }
+{ vtPWideChar, Variant) sao convertidos para bytes em MWCodePage; AnsiString, }
+{ ShortString, PAnsiChar e AnsiChar passam como bytes, sem conversao. O       }
+{ tamanho vem de Length (nao trunca no #0).                                   }
 const
     ErrMsg = 'Buffer too small';
 var
     nArg      : Integer;
     V         : TVarRec;
-    Src       : PChar;
+    Src       : PAnsiChar;
     SrcSize   : Integer;
-    Buf       : String;
+    Buf       : RawByteString;
     aSize     : LongInt;
-{$IFNDEF DelphiPersonalEdition}
-    aField    : TField;    //USc 25/08/2003 exclude TField in Personal Edition
-{$ENDIF}
     Count     : Integer;
     HighBound : Integer;
     LowBound  : Integer;
@@ -2019,7 +2083,8 @@ begin
         raise MWBufferException.Create('Can''t append data, buffer full');
 
     if (FieldCount = 1) and (FMetaDataLayout > '') then begin
-        AppendMetaData('M', PChar(FMetaDataLayout), Length(FMetaDataLayout));
+        Buf := MWStrToBytes(FMetaDataLayout);
+        AppendMetaData('M', PAnsiChar(Buf), Length(Buf));
         FMetaDataLayout := '';        { 17/02/2002 }
     end;
 
@@ -2036,106 +2101,90 @@ begin
             end;
         vtAnsiString:    // FP 23/12/98
             begin
-                Src     := PChar(V.VAnsiString);
+                Src     := PAnsiChar(V.VAnsiString);
                 if Src = nil then
                     SrcSize := 0
-                else begin
-{$IFDEF BCB}
-                    // BCB bug: when passing an empty string, data pointer
-                    // is not null but point to a zero length string constant
-                    // This bug will make impossible to use a string with a nul
-                    // byte as first character...
-                    if Src^ = #0 then
-                        SrcSize := 0
-                    else
-                        SrcSize := PInteger(PChar(V.VAnsiString) - SizeOf(Integer))^;
-{$ELSE}
-                    // Not very legal code, there should be a better way to
-                    // retrieve the string length !
-                    SrcSize := PInteger(PChar(V.VAnsiString) - SizeOf(Integer))^;
-{$ENDIF}
-                end;
+                else
+                    SrcSize := Length(AnsiString(V.VAnsiString));
+            end;
+        vtUnicodeString:
+            begin
+                Buf     := MWStrToBytes(UnicodeString(V.VUnicodeString));
+                Src     := PAnsiChar(Buf);
+                SrcSize := Length(Buf);
+            end;
+        vtWideString:
+            begin
+                Buf     := MWStrToBytes(WideString(V.VWideString));
+                Src     := PAnsiChar(Buf);
+                SrcSize := Length(Buf);
             end;
         vtPChar:
             begin
                 if V.VPChar <> nil then
-                    Src := V.VPchar
+                    Src := V.VPChar
                 else
                     Src := nil;
             end;
+        vtPWideChar:
+            begin
+                if V.VPWideChar <> nil then
+                    Buf := MWStrToBytes(String(V.VPWideChar))
+                else
+                    Buf := '';
+                Src     := PAnsiChar(Buf);
+                SrcSize := Length(Buf);
+            end;
         vtBoolean:
             begin
-                Buf := IntToStr(Ord(V.VBoolean));
-                Src := PChar(Buf);
+                Buf     := RawByteString(IntToStr(Ord(V.VBoolean)));
+                Src     := PAnsiChar(Buf);
+                SrcSize := Length(Buf);
             end;
         vtInteger:
             begin
-                Buf := IntToStr(V.VInteger);
-                Src := PChar(Buf);
+                Buf     := RawByteString(IntToStr(V.VInteger));
+                Src     := PAnsiChar(Buf);
+                SrcSize := Length(Buf);
             end;
-{$IFDEF VER140} { Delphi 6 }
         vtInt64:
             begin
-                Buf := IntToStr(V.VInt64^);       // 30/03/02
-                Src := PChar(Buf);
+                Buf     := RawByteString(IntToStr(V.VInt64^));
+                Src     := PAnsiChar(Buf);
+                SrcSize := Length(Buf);
             end;
-{$ENDIF}
-{$IFDEF VER150} { Delphi 7 }
-        vtInt64:
-            begin
-                Buf := IntToStr(V.VInt64^);       // 06/05/03
-                Src := PChar(Buf);
-            end;
-{$ENDIF}
         vtExtended:
             begin
-                Buf := FloatToStrEx(V.VExtended^); // 29/01/99
-                Src := PChar(Buf);
+                Buf     := MWStrToBytes(FloatToStrEx(V.VExtended^)); // 29/01/99
+                Src     := PAnsiChar(Buf);
+                SrcSize := Length(Buf);
             end;
         vtChar:
             begin
-                Buf := V.VChar;
-                Src := PChar(Buf);
+                Buf     := V.VChar;
+                Src     := PAnsiChar(Buf);
+            end;
+        vtWideChar:
+            begin
+                Buf     := MWStrToBytes(String(V.VWideChar));
+                Src     := PAnsiChar(Buf);
             end;
         vtObject:
             begin
-// USc 25/08/2003 exclude TField in Personal Edition
-{$IFNDEF DelphiPersonalEdition}
-                if V.VObject is TField then begin
-                    aField := TField(V.VObject);
-                    if V.VObject is TBlobField then begin
-{$IFDEF VER90} // 26/11/98 added ftBlob and ftMemo
-                        SrcSize := TBlobField(aField).Size;
-{$ELSE}
-{$IFDEF VER93}
-                        SrcSize := TBlobField(aField).Size;
-{$ELSE}
-                        SrcSize := TBlobField(aField).BlobSize;
-{$ENDIF}
-{$ENDIF}
-                        Src     := PChar(TBlobField(aField).Value);
-                    end
-                    else if aField.DataType in [ftDate, ftTime, ftDateTime] then
-                        Src := PChar(DateTimeToMWFormat(aField.AsDateTime))
-                    else
-                        Src := PChar(aField.AsString);
-                end
-                else
-{$ENDIF}
-                    RaiseException('AppendFields: Unsupported object type ' +
-                                   V.VObject.ClassName);
+                RaiseException('AppendFields: Unsupported object type ' +
+                               V.VObject.ClassName);
             end;
         vtVariant:
             begin
                 Count := VarArrayDimCount(V.VVariant^);
                 if Count = 0 then begin
                     if (TVarData(V.VVariant^).VType and varByRef) <> 0 then
-                        Buf := PVariant(TVarData(V.VVariant^).VPointer)^
-                    else if V.VVariant^ = Null then
+                        Buf := MWStrToBytes(PVariant(TVarData(V.VVariant^).VPointer)^)
+                    else if VarIsNull(V.VVariant^) then
                         Buf := ''
                     else
-                        Buf := V.VVariant^;
-                    Src     := PChar(Buf);
+                        Buf := MWStrToBytes(V.VVariant^);
+                    Src     := PAnsiChar(Buf);
                     WriteDataBuffer(Src, -1);
                 end
                 else begin
@@ -2146,8 +2195,8 @@ begin
                     LowBound  := VarArrayLowBound(V.VVariant^, 1);
                     HighBound := VarArrayHighBound(V.VVariant^, 1);
                     for I := LowBound to HighBound do begin
-                        Buf     := V.VVariant^[I];
-                        Src     := PChar(Buf);
+                        Buf     := MWStrToBytes(V.VVariant^[I]);
+                        Src     := PAnsiChar(Buf);
                         WriteDataBuffer(Src, -1);
                     end;
                 end;
@@ -2169,7 +2218,7 @@ end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
-procedure TMWBuffer.AppendMetaData(Delim : Char; Src : PChar; Len : LongInt);
+procedure TMWBuffer.AppendMetaData(Delim : AnsiChar; Src : PAnsiChar; Len : LongInt);
 var
     aSize   : LongInt;
     Flag    : Boolean;                                      // 03/03/2005
@@ -2193,7 +2242,7 @@ begin
     if not ExpandBuffer(@aSize, 3) then
         raise MWBufferException.Create('Cannot append data, buffer full');
     FDataBuffer[FDataBufferCount - 3] := FEscSep;
-    FDataBuffer[FDataBufferCount - 2] := Chr(Ord(Delim) xor $20);
+    FDataBuffer[FDataBufferCount - 2] := AnsiChar(Ord(Delim) xor $20);
     //FDataBuffer[FDataBufferCount - 1] := FFldSep;      // 03/03/2005
     //FDataBuffer[FDataBufferCount]     := FRecSep;      // 03/03/2005
     //FDataBuffer[FDataBufferCount + 1] := FRecSep;      // 03/03/2005
@@ -2229,7 +2278,7 @@ end;
 { Update DataBufferCount.                                                   }
 { If Len argument is positive or nul, then copy the specified length        }
 { else if Len < 0 then copy until nul byte (nul terminated string).         }
-procedure TMWBuffer.WriteDataBuffer(Src : PChar; Len : LongInt);
+procedure TMWBuffer.WriteDataBuffer(Src : PAnsiChar; Len : LongInt);
 const
     ErrMsg = 'Buffer too small';
 var
@@ -2241,7 +2290,7 @@ begin
         if Src = nil then
             Len := 0
         else
-            Len := StrLen(Src);
+            Len := System.AnsiStrings.StrLen(Src);
     end;
 
     { Be sure to have enough room in data buffer }
@@ -2356,7 +2405,7 @@ const
     ErrMsg = 'Buffer too small';
 var
     nDst  : Integer;
-    Buf   : PChar;
+    Buf   : PAnsiChar;
     Len   : Integer;
     Cnt   : LongInt;
     aSize : LongInt;
@@ -2376,14 +2425,14 @@ begin
         Inc(nDst);
         FDataBuffer[nDst] := 'T';          { For field Type }
         Inc(nDst);
-        FDataBuffer[nDst] := Chr(Ord('0') + Ord(FldType));
+        FDataBuffer[nDst] := AnsiChar(Ord('0') + Ord(FldType));
         Inc(FDataBufferCount, 3);
     end;
 
     if Data is TMemoryStream then begin
         { We can optimize for a TMemoryStream because we have direct }
         { access to data in memory                                   }
-        WriteDataBuffer(PChar(TMemoryStream(Data).Memory) +
+        WriteDataBuffer(PAnsiChar(TMemoryStream(Data).Memory) +
                         TMemoryStream(Data).Position,
                         Data.Size - TMemoryStream(Data).Position);
     end
@@ -2434,7 +2483,7 @@ begin
         Inc(nDst);
         FDataBuffer[nDst] := 'T';          { For field Type }
         Inc(nDst);
-        FDataBuffer[nDst] := Chr(Ord('0') + Ord(FldType));
+        FDataBuffer[nDst] := AnsiChar(Ord('0') + Ord(FldType));
         Inc(FDataBufferCount, 3);
     end;
 
@@ -2445,7 +2494,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.Delete;
 var
-    Start : PChar;
+    Start : PAnsiChar;
     Len   : Integer;
     Len1  : Integer;
 begin
@@ -2586,15 +2635,15 @@ begin
     while (I <= Length(Src)) and (Src[I] = ' ') do
         Inc(I);
     { Convert first integer as time field }
-    while (I <= Length(Src)) and (Src[I] in ['0'..'9']) do begin
+    while (I <= Length(Src)) and (CharInSet(Src[I], ['0'..'9'])) do begin
         Result.Time := Result.Time * 10 + Ord(Src[I]) - Ord('0');
         Inc(I);
     end;
     { skip delimiters }
-    while (I <= Length(Src)) and (not (Src[I] in ['0'..'9'])) do
+    while (I <= Length(Src)) and (not (CharInSet(Src[I], ['0'..'9']))) do
         Inc(I);
     { convert second integer as date field }
-    while (I <= Length(Src)) and (Src[I] in ['0'..'9']) do begin
+    while (I <= Length(Src)) and (CharInSet(Src[I], ['0'..'9'])) do begin
         Result.Date := Result.Date * 10 + Ord(Src[I]) - Ord('0');
         Inc(I);
     end;
@@ -2611,7 +2660,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.SaveToStream(Stream : TStream);
 var
-    Buffer : String;
+    Buffer : AnsiString;
 begin
     // Check if TMWBuffer is correctly constructed
     if (DataBufferCount < 0) or
@@ -2619,9 +2668,9 @@ begin
        ((DataBufferCount > 0) and (DataBuffer = nil))  then
         raise MWBufferException.Create('Data corrupted');
     if DataBufferCount < 100000000 then
-        Buffer := 'MWBUFFER1' + Format('%8.8d', [DataBufferCount])
+        Buffer := AnsiString('MWBUFFER1' + Format('%8.8d', [DataBufferCount]))
     else
-        Buffer := 'MWBUFFER2' + Format('%10.10d', [DataBufferCount]);
+        Buffer := AnsiString('MWBUFFER2' + Format('%10.10d', [DataBufferCount]));
     Stream.WriteBuffer(Buffer[1], Length(Buffer));
     if DataBuffer <> nil then
         Stream.WriteBuffer(DataBuffer^, DataBufferCount);
@@ -2633,7 +2682,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TMWBuffer.LoadFromStream(Stream : TStream);
 var
-    Buffer : String;
+    Buffer : AnsiString;
     Count  : LongInt;
     Len    : Integer;
 begin
@@ -2660,7 +2709,7 @@ begin
         raise MWBufferException.Create('Invalid format');
     end;
 
-    Len := StrToIntDef(Buffer, -1);
+    Len := StrToIntDef(String(Buffer), -1);
     if Len < 0 then begin
         Rewrite;
         raise MWBufferException.Create('Data corrupted');
@@ -2903,7 +2952,7 @@ end;
 function stpblk(PValue : PChar) : PChar;
 begin
     Result := PValue;
-    while Result^ in [' ', #9, #10, #13] do
+    while CharInSet(Result^, [' ', #9, #10, #13]) do
         Inc(Result);
 end;
 
@@ -2919,7 +2968,7 @@ begin
     i      := 1;
     while (i <= Length(Value)) and (Value[i] = ' ') do
         i := i + 1;
-    if (i <= Length(Value)) and (Value[i] in ['+', '-']) then begin
+    if (i <= Length(Value)) and (CharInSet(Value[i], ['+', '-'])) then begin
         Sign := Value[i];
         Inc(i);
     end;
@@ -2939,7 +2988,7 @@ begin
     Dst    := '';
     while TRUE do begin
         Delim := Result^;
-        if Delim in [';', #0] then
+        if CharInSet(Delim, [';', #0]) then
             break;
         Dst := Dst + UpperCase(Result^);
         Inc(Result);
