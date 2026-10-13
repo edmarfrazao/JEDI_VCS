@@ -111,6 +111,21 @@ procedure JVCSUIRefreshHostTheme;
 
 { cor de sistema traduzida pelo estilo ativo (clWindow, clWindowText, ...) }
 function JVCSUIColor(AColor: TColor): TColor;
+
+{ v2026: cor de texto para desenho proprio (owner-draw/custom draw): converte as
+  cores do sistema (clWindowText, clHighlightText...) pelas do estilo ativo e,
+  no tema escuro, clareia cores escuras demais para o fundo (ex.: clNavy).
+  Sem estilo (ou com seFont fora de StyleElements) devolve a cor original. }
+function JVCSUITextColor(AControl: TControl; AColor: TColor): TColor;
+
+{ v2026: cor de fundo para desenho proprio: cores do sistema (clWindow,
+  clBtnFace...) pelas do estilo ativo; sem estilo devolve a original. }
+function JVCSUIBackColor(AControl: TControl; AColor: TColor): TColor;
+
+{ v2026: no tema escuro, clareia os pixels escuros das image lists usadas por
+  toolbars, menus e listas do form (contornos pretos somem no fundo escuro);
+  no claro, devolve as imagens originais. Idempotente. }
+procedure JVCSUIAdaptImagesToTheme(AForm: TCustomForm);
 { barra de titulo escura no Windows 10 1809+/11 para forms sem VCL Style de borda }
 procedure JVCSUISetDarkTitleBar(AWnd: HWND; ADark: Boolean);
 
@@ -119,7 +134,8 @@ implementation
 {$R JVCSUIStyles.res}
 
 uses
-  Registry, Themes, Styles, JVCSUIScale;
+  Registry, Themes, Styles, System.Math, System.Generics.Collections, Vcl.ImgList,
+  Winapi.CommCtrl, Vcl.ComCtrls, Vcl.Menus, System.TypInfo, JVCSUIScale;
 
 const
   cPersonalizeKey = 'Software\Microsoft\Windows\CurrentVersion\Themes\Personalize';
@@ -243,9 +259,348 @@ begin
     Fn(AWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_OLD, @Value, SizeOf(Value));
 end;
 
+function ColorLum(C: TColor): Integer;
+var
+  RGB: Cardinal;
+begin
+  RGB := ColorToRGB(C);
+  Result := (GetRValue(RGB) * 299 + GetGValue(RGB) * 587 + GetBValue(RGB) * 114) div 1000;
+end;
+
+function JVCSUITextColor(AControl: TControl; AColor: TColor): TColor;
+var
+  RGB: Cardinal;
+  Bg: Integer;
+begin
+  Result := AColor;
+  if not TStyleManager.IsCustomStyleActive then
+    Exit;
+  if Assigned(AControl) and not (seFont in AControl.StyleElements) then
+    Exit;
+  Result := StyleServices.GetSystemColor(AColor);
+  Bg := ColorLum(StyleServices.GetSystemColor(clWindow));
+  if (Bg < 110) and (ColorLum(Result) < 140) then
+  begin
+    // escuro sobre escuro: mistura 60% com branco (mantem o matiz)
+    RGB := ColorToRGB(Result);
+    Result := TColor(Winapi.Windows.RGB(
+      GetRValue(RGB) + (255 - GetRValue(RGB)) * 6 div 10,
+      GetGValue(RGB) + (255 - GetGValue(RGB)) * 6 div 10,
+      GetBValue(RGB) + (255 - GetBValue(RGB)) * 6 div 10));
+  end;
+end;
+
+function JVCSUIBackColor(AControl: TControl; AColor: TColor): TColor;
+begin
+  Result := AColor;
+  if not TStyleManager.IsCustomStyleActive then
+    Exit;
+  if Assigned(AControl) and not (seClient in AControl.StyleElements) then
+    Exit;
+  Result := StyleServices.GetSystemColor(AColor);
+end;
+
+type
+  TJVCSImageAdapter = class(TComponent)
+  private
+    FOriginals: TObjectDictionary<TCustomImageList, TImageList>;
+    FGlyphs: TObjectDictionary<TComponent, TBitmap>;
+  protected
+    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+    procedure Adapt(AList: TCustomImageList; ADark: Boolean);
+    procedure AdaptGlyph(AComp: TComponent; ADark: Boolean);
+  end;
+
+var
+  GImageAdapter: TJVCSImageAdapter = nil;
+
+constructor TJVCSImageAdapter.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FOriginals := TObjectDictionary<TCustomImageList, TImageList>.Create([doOwnsValues]);
+  FGlyphs := TObjectDictionary<TComponent, TBitmap>.Create([doOwnsValues]);
+end;
+
+destructor TJVCSImageAdapter.Destroy;
+var
+  L: TCustomImageList;
+  C: TComponent;
+begin
+  for L in FOriginals.Keys do
+    L.RemoveFreeNotification(Self);
+  FOriginals.Free;
+  for C in FGlyphs.Keys do
+    C.RemoveFreeNotification(Self);
+  FGlyphs.Free;
+  inherited Destroy;
+end;
+
+procedure TJVCSImageAdapter.Notification(AComponent: TComponent; Operation: TOperation);
+begin
+  inherited Notification(AComponent, Operation);
+  if (Operation = opRemove) and (AComponent is TCustomImageList) and Assigned(FOriginals) then
+    FOriginals.Remove(TCustomImageList(AComponent));
+  if (Operation = opRemove) and Assigned(FGlyphs) then
+    FGlyphs.Remove(AComponent);
+end;
+
+{ adapta uma imagem 24/32 bits ao fundo escuro: pixels neutros (pouco
+  saturados) tem a luminosidade invertida; pixels coloridos escuros
+  (luminosidade < 100) clareiam mantendo matiz e saturacao }
+procedure LightenDarkPixels(ABmp: TBitmap; AMask: TBitmap);
+var
+  X, Y: Integer;
+  P: PRGBQuad;
+  M: PRGBQuad;
+  R, G, B, Mx, Mn, L, NewL: Integer;
+  K: Double;
+begin
+  ABmp.PixelFormat := pf32bit;
+  if Assigned(AMask) then
+    AMask.PixelFormat := pf32bit;
+  for Y := 0 to ABmp.Height - 1 do
+  begin
+    P := ABmp.ScanLine[Y];
+    if Assigned(AMask) then
+      M := AMask.ScanLine[Y]
+    else
+      M := nil;
+    for X := 0 to ABmp.Width - 1 do
+    begin
+      // mascara branca = transparente
+      if not (Assigned(M) and (M^.rgbRed > 127)) then
+      begin
+        R := P^.rgbRed;
+        G := P^.rgbGreen;
+        B := P^.rgbBlue;
+        Mx := Max(R, Max(G, B));
+        Mn := Min(R, Min(G, B));
+        L := (Mx + Mn) div 2;
+        if Mx - Mn < 40 then
+        begin
+          // neutro (preto, cinza, branco): inverte a luminosidade na faixa
+          // 60..235 (contorno preto -> claro, preenchimento branco -> escuro)
+          NewL := 235 - L * 175 div 255;
+          R := Max(0, Min(255, R - L + NewL));
+          G := Max(0, Min(255, G - L + NewL));
+          B := Max(0, Min(255, B - L + NewL));
+          P^.rgbRed := R;
+          P^.rgbGreen := G;
+          P^.rgbBlue := B;
+        end
+        else
+        if L < 100 then
+        begin
+          NewL := 235 - L;   // 0 -> 235, 99 -> 136
+          if L = 0 then
+          begin
+            R := NewL; G := NewL; B := NewL;
+          end
+          else
+          begin
+            K := NewL / L;
+            R := Min(255, Round(R * K));
+            G := Min(255, Round(G * K));
+            B := Min(255, Round(B * K));
+          end;
+          P^.rgbRed := R;
+          P^.rgbGreen := G;
+          P^.rgbBlue := B;
+        end;
+      end;
+      Inc(P);
+      if Assigned(M) then
+        Inc(M);
+    end;
+  end;
+end;
+
+procedure TJVCSImageAdapter.Adapt(AList: TCustomImageList; ADark: Boolean);
+var
+  Orig: TImageList;
+  I: Integer;
+  Info: TImageInfo;
+  Img, Msk: TBitmap;
+  W, H: Integer;
+begin
+  if not Assigned(AList) or (AList.Count = 0) then
+    Exit;
+  if not ADark then
+  begin
+    if FOriginals.TryGetValue(AList, Orig) then
+    begin
+      AList.Assign(Orig);
+      AList.RemoveFreeNotification(Self);
+      FOriginals.Remove(AList);
+    end;
+    Exit;
+  end;
+  if FOriginals.ContainsKey(AList) then
+    Exit;
+  // so listas com mascara (as dos DFMs antigos); 32 bits com alfa ficam como estao
+  if (AList.ColorDepth = cd32Bit) or not AList.Masked then
+    Exit;
+  Orig := TImageList.Create(nil);
+  try
+    Orig.Assign(AList);
+  except
+    Orig.Free;
+    raise;
+  end;
+  FOriginals.Add(AList, Orig);
+  AList.FreeNotification(Self);
+  W := AList.Width;
+  H := AList.Height;
+  Img := TBitmap.Create;
+  Msk := TBitmap.Create;
+  try
+    AList.BeginUpdate;
+    try
+      for I := 0 to AList.Count - 1 do
+      begin
+        if not ImageList_GetImageInfo(AList.Handle, I, Info) then
+          Continue;
+        Img.SetSize(0, 0);
+        Img.PixelFormat := pf32bit;
+        Img.SetSize(W, H);
+        Msk.SetSize(0, 0);
+        Msk.PixelFormat := pf32bit;
+        Msk.SetSize(W, H);
+        Img.Canvas.Brush.Color := clBlack;
+        Img.Canvas.FillRect(Rect(0, 0, W, H));
+        Msk.Canvas.Brush.Color := clWhite;
+        Msk.Canvas.FillRect(Rect(0, 0, W, H));
+        ImageList_Draw(AList.Handle, I, Img.Canvas.Handle, 0, 0, ILD_IMAGE);
+        ImageList_Draw(AList.Handle, I, Msk.Canvas.Handle, 0, 0, ILD_MASK);
+        LightenDarkPixels(Img, Msk);
+        // a mascara volta monocromatica para o Replace
+        Msk.PixelFormat := pf1bit;
+        Img.PixelFormat := pf24bit;
+        // pixels transparentes ficam pretos na imagem (ILD_TRANSPARENT usa a mascara)
+        AList.Replace(I, Img, Msk);
+      end;
+    finally
+      AList.EndUpdate;
+    end;
+  finally
+    Img.Free;
+    Msk.Free;
+  end;
+end;
+
+procedure TJVCSImageAdapter.AdaptGlyph(AComp: TComponent; ADark: Boolean);
+var
+  Obj: TObject;
+  Glyph, Orig, Work, Mask: TBitmap;
+  X, Y: Integer;
+  TC: TColor;
+  PW: PRGBQuad;
+  PM: PRGBQuad;
+begin
+  if not IsPublishedProp(AComp, 'Glyph') or not PropIsType(AComp, 'Glyph', tkClass) then
+    Exit;
+  Obj := GetObjectProp(AComp, 'Glyph');
+  if not (Obj is TBitmap) or TBitmap(Obj).Empty then
+    Exit;
+  Glyph := TBitmap(Obj);
+  if not ADark then
+  begin
+    if FGlyphs.TryGetValue(AComp, Orig) then
+    begin
+      Glyph.Assign(Orig);
+      FGlyphs.Remove(AComp);
+    end;
+    Exit;
+  end;
+  if FGlyphs.ContainsKey(AComp) then
+    Exit;
+  Orig := TBitmap.Create;
+  Orig.Assign(Glyph);
+  FGlyphs.Add(AComp, Orig);
+  AComp.FreeNotification(Self);
+  // cor transparente do glifo = pixel inferior esquerdo (TransparentMode auto)
+  TC := ColorToRGB(Glyph.Canvas.Pixels[0, Glyph.Height - 1]);
+  Work := TBitmap.Create;
+  Mask := TBitmap.Create;
+  try
+    Work.Assign(Glyph);
+    Work.PixelFormat := pf32bit;
+    Mask.PixelFormat := pf32bit;
+    Mask.SetSize(Work.Width, Work.Height);
+    for Y := 0 to Work.Height - 1 do
+    begin
+      PW := Work.ScanLine[Y];
+      PM := Mask.ScanLine[Y];
+      for X := 0 to Work.Width - 1 do
+      begin
+        if RGB(PW^.rgbRed, PW^.rgbGreen, PW^.rgbBlue) = Cardinal(TC) then
+          PM^.rgbRed := 255
+        else
+          PM^.rgbRed := 0;
+        Inc(PW);
+        Inc(PM);
+      end;
+    end;
+    LightenDarkPixels(Work, Mask);
+    Work.PixelFormat := pf24bit;
+    Glyph.Assign(Work);
+  finally
+    Work.Free;
+    Mask.Free;
+  end;
+end;
+
+procedure JVCSUIAdaptImagesToTheme(AForm: TCustomForm);
+
+  procedure Walk(AOwner: TComponent);
+  var
+    I: Integer;
+    C: TComponent;
+  begin
+    for I := 0 to AOwner.ComponentCount - 1 do
+    begin
+      C := AOwner.Components[I];
+      if C is TToolBar then
+      begin
+        GImageAdapter.Adapt(TToolBar(C).Images, GDark);
+        GImageAdapter.Adapt(TToolBar(C).HotImages, GDark);
+      end
+      else
+      if C is TMenu then
+        GImageAdapter.Adapt(TMenu(C).Images, GDark)
+      else
+      if C is TListView then
+        GImageAdapter.Adapt(TListView(C).StateImages, GDark);
+      if C is TControl then
+        GImageAdapter.AdaptGlyph(C, GDark);
+      if C.ComponentCount > 0 then
+        Walk(C);
+    end;
+  end;
+
+begin
+  if not Assigned(AForm) then
+    Exit;
+  if not Assigned(GImageAdapter) then
+  begin
+    if not GDark then
+      Exit;
+    GImageAdapter := TJVCSImageAdapter.Create(nil);
+  end;
+  try
+    Walk(AForm);
+  except
+    // imagens nunca derrubam a janela
+  end;
+end;
+
 procedure JVCSUIApplyThemeToForm(AForm: TCustomForm);
 begin
-  // o estilo e global (TStyleManager); nada por form por enquanto
+  // o estilo e global (TStyleManager); por form so as imagens (v2026)
+  JVCSUIAdaptImagesToTheme(AForm);
 end;
 
 procedure JVCSUIContainStyleHooks;
@@ -478,5 +833,6 @@ initialization
 
 finalization
   FreeAndNil(GWatcher);
+  FreeAndNil(GImageAdapter);
 
 end.

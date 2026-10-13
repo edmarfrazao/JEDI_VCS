@@ -1144,7 +1144,7 @@ uses
   ProjectHist, WCViewFilter, NtfySend, CrossRefList, CheckfBuild, MoveModules,
   RenameProj, RemoveProj, Purge, ProjectTree, DBModule, MaintainLabels, ClipBrd,
   AssignLabels, AddShareModule, MaintainFFamilies, Description, SelectProjectID,
-  MaintainUsers, ServerOptions,
+  MaintainUsers, ServerOptions, JVCSUITheme,
   {$IFNDEF REPORTDLL}
   {$IFNDEF JVCS_NOREPORTS}
   Report,
@@ -1664,7 +1664,7 @@ begin
     NoFoundIcon := 0;
 
     NtfyMsgCount := 0;
-    reMessage.SelAttributes.Color := clWindowText;
+    reMessage.SelAttributes.Color := JVCSUITextColor(reMessage, clWindowText);
     if mmiInternalNotifyactive.Checked then
     begin
       try
@@ -8479,7 +8479,7 @@ begin
   end;
   with reMessage do
   begin
-    SelAttributes.Color := MsgTextColor;
+    SelAttributes.Color := JVCSUITextColor(reMessage, MsgTextColor); // v2026: legivel no tema escuro
     Lines.Add(MsgStr);
     reMessage.Perform(EM_LINESCROLL, 0, 1);
   end; // with reMessage do begin

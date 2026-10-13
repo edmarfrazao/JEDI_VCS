@@ -146,7 +146,7 @@ uses
   ShellAPI, VCSProcBase, VCSBase, Checksum, JVCSDialogs, SelectFolder,
   HandleBlob, ApsCli, RFormat, DBModule, CommCtrl, AssignLabels, LoadModule,
   JVCSClientConsts, TZHandling, ConfigStorage, JVCSGUIClientResources,
-  JVCSClientFunctions;
+  JVCSClientFunctions, JVCSUITheme;
 
 {$R *.dfm}
 
@@ -488,19 +488,19 @@ begin
     Comment_I := AppSrvClient1.Answer.Fields[0];
     if Comment_I = '' then
     begin
-      rbChkInMemo.Font.Color := clWindowText;
+      rbChkInMemo.Font.Color := JVCSUITextColor(rbChkInMemo, clWindowText);
       Comment_I := JVCSRES_45_blank_45;
     end
     else 
-      rbChkInMemo.Font.Color := clNavy;
+      rbChkInMemo.Font.Color := JVCSUITextColor(rbChkInMemo, clNavy);
     Comment_O := AppSrvClient1.Answer.Fields[1];
     if Comment_O = '' then 
     begin
-      rbChkOutMemo.Font.Color := clWindowText;
+      rbChkOutMemo.Font.Color := JVCSUITextColor(rbChkOutMemo, clWindowText);
       Comment_O := JVCSRES_45_blank_45;
     end 
     else 
-      rbChkOutMemo.Font.Color := clNavy;
+      rbChkOutMemo.Font.Color := JVCSUITextColor(rbChkOutMemo, clNavy);
     rbChkInMemoClick(Self);
   end; // with DataModule1 do begin
 
