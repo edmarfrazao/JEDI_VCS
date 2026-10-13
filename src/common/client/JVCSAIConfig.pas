@@ -103,7 +103,20 @@ begin
   Result := TStringList.Create;
   if not FileExists(APath) then
     Exit;
-  Bytes := TFile.ReadAllBytes(APath);
+  // v2026: leitura compartilhada (o jvcs-ai.ps1 ou um editor pode estar com o
+  // arquivo aberto); sem acesso = valores padrao, nunca excecao
+  try
+    with TFileStream.Create(APath, fmOpenRead or fmShareDenyNone) do
+    try
+      SetLength(Bytes, Size);
+      if Length(Bytes) > 0 then
+        ReadBuffer(Bytes[0], Length(Bytes));
+    finally
+      Free;
+    end;
+  except
+    Exit;
+  end;
   if (Length(Bytes) >= 3) and (Bytes[0] = $EF) and (Bytes[1] = $BB) and (Bytes[2] = $BF) then
     Text := TEncoding.UTF8.GetString(Bytes, 3, Length(Bytes) - 3)
   else

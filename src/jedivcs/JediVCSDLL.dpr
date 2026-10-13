@@ -3766,7 +3766,12 @@ begin
       end;
       // v2026: aparencia (fonte/escala, menus, tema por form seguindo a IDE)
       JVCSErrorLogInstall(True);
-      JVCSClientAppearanceInit(sIDERegistryKey);
+      try
+        JVCSClientAppearanceInit(sIDERegistryKey);
+      except
+        on E: Exception do
+          JVCSLogException(E, 'JVCSClientAppearanceInit');
+      end;
       // Delphi or C++B?
       bIsCppBuilder := IDEInterface.JVCSIDESettings.IsIDEBCB;
       if bIsCppBuilder then

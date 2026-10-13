@@ -46,13 +46,44 @@ procedure JVCSClientAppearanceApplyAll;
 implementation
 
 uses
-  Forms, JVCSForms, JVCSUIScale, JVCSUITheme, ConfigStorage, VCSBase;
+  SysUtils, Forms, JVCSForms, JVCSUIScale, JVCSUITheme, ConfigStorage, VCSBase;
+
+// v2026: os valores de aparencia podem ter sido gravados por outra versao ou a
+// mao com outro tipo (ex.: UIFontScale REG_SZ "150"): TRegistry.ReadInteger
+// levanta ERegistryException e o EXE terminava na partida (ou ao abrir
+// Options). Leitura tolerante: tenta o tipo esperado, depois o outro, e por
+// fim o padrao; nunca levanta excecao.
+function SafeReadInteger(const Key, Name: string; Def: Integer): Integer;
+begin
+  try
+    Result := jvcsReadInteger(Key, Name, Def);
+  except
+    try
+      Result := StrToIntDef(Trim(jvcsReadString(Key, Name, '')), Def);
+    except
+      Result := Def;
+    end;
+  end;
+end;
+
+function SafeReadString(const Key, Name: string; Def: string): string;
+begin
+  try
+    Result := jvcsReadString(Key, Name, Def);
+  except
+    try
+      Result := IntToStr(jvcsReadInteger(Key, Name, 0));
+    except
+      Result := Def;
+    end;
+  end;
+end;
 
 procedure JVCSClientAppearanceInit(const AIDEBaseKey: string);
 begin
-  JVCSUIReadInteger := jvcsReadInteger;
+  JVCSUIReadInteger := SafeReadInteger;
   JVCSUIWriteInteger := jvcsWriteInteger;
-  JVCSUIReadString := jvcsReadString;
+  JVCSUIReadString := SafeReadString;
   JVCSUIWriteString := jvcsWriteString;
   JVCSUIOptionsKey := sBaseRegistryKey + crbOptions;
   JVCSUIInitialize;
