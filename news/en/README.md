@@ -36,7 +36,7 @@ Each release has an English page in this folder.
 - **AI / Automation page** in VCS Properties.
 - **Fixes:** slow project opening, Compare all, password-protected backup, Line History, saved password
   cleared on login, windows cut at 150–200%, error logs in `%LOCALAPPDATA%\JEDI\JVCS\logs`.
-- Known issues: some JVCL visual components remain; the 64-bit IDE is not supported; default project names
+- Known issues: the 64-bit IDE is not supported; default project names
   (`Project1`) are refused.
 
 ### Beta 1 (2026-10-13)

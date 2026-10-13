@@ -1,162 +1,149 @@
 # Status do port
 
-Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6), com o que já foi feito e os próximos passos. Estado em **13/10/2026**. Decisões: [Decisoes.md](Decisoes.md). Ambiente: [Ambiente.md](Ambiente.md).
+Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6) e lista consolidada do que ficou pendente. Estado em **13/10/2026, fim do dia** (beta 5 publicado). Decisões: [Decisoes.md](Decisoes.md). Ambiente: [Ambiente.md](Ambiente.md). Roteiro da IA e do multi-Delphi: [ADR-001](ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md).
 
 ## Resumo
 
 | Fase | Objetivo | Situação |
 |---|---|---|
-| F0 | Ambiente, dependências, build e linha de base | **Em andamento** (cerca de metade: ambiente e dependências do D13 prontos; faltam `.dproj`, D11/D12, cópias locais e linha de base golden) |
-| F1 | Midware portado, `JVCSTransport.pas`, teste golden | **Em andamento**: Midware portado (Unicode, cp1252, ICS 9) e golden de fio do console idêntico ao original; faltam `JVCSTransport.pas`, pacote design-time e suíte golden automatizada (ACP 65001, en-US) |
-| F2 | Núcleo do cliente e console `jvcs.exe` | **Console pronto e validado** (Win32 Debug/Release, golden idêntico ao 2.5.0.1030, ver [Port-Console.md](../client/Port-Console.md)); faltam os helpers nativos (sem JCL/Abbrevia), `BFCrypt.pas` e testes de sync/arquivo vazio/binário |
-| F3 | Infraestrutura comum de GUI e `JEDIVCSDiff.exe` | **Diff pronto** (Win32 Debug/Release, sem JVCL/JCL/DFS, testes por linha de comando iguais ao original) e **infraestrutura de aparência** (`JVCSUIScale`, `JVCSUITheme`); ver [Port-Diff.md](../client/Port-Diff.md) |
-| F4 | EXE standalone `Jedivcs.exe` | **1ª a 3ª etapas prontas**: compila (Win32 Debug/Release, 0 erros, JVCL como ponte) e passou no teste básico contra o servidor de teste (login 250, projeto, checkout/check-in acentuado, undo checkout); ver [Port-Standalone.md](../client/Port-Standalone.md); 2ª etapa: páginas Appearance (fonte/escala/tema) e AI / Automation em VCS Properties, log de erros ; 3ª etapa: varredura de todos os forms (0 EReadError, 0 handler com assinatura errada), testes funcionais dos recursos restantes, correções Unicode, JVCL visual simples → VCL, tema escuro legível |
-| F5 | DLL da IDE, novo expert ToolsAPI e setup | **Expert carregado na IDE; DLL nova compila e passa no harness**; aparência (tema seguindo a IDE, contido), menus legíveis no tema da IDE, janelas com dono = IDE, log de erros, **instalador** (13/10/2026); falta o teste completo na IDE |
-| F6 | Win64 / ARM64EC (opcional) | Não iniciada; bloqueada pela `fvcscrypt.dll` |
+| F0 | Ambiente, dependências, build e linha de base | **Concluída no essencial**: Delphi 11.3, 12 e 13.2 instalados; `.dproj` dos 4 alvos e do expert + `JediVCS2026.groupproj`; `tools\compilar.bat /delphi:11\|12\|13`; servidor de teste montado; decisões da 0.2 resolvidas (ver abaixo). Resta a varredura ampla do banco (0.7) |
+| F1 | Midware portado, `JVCSTransport.pas`, teste golden | **Em andamento**: Midware portado (Unicode, cp1252, ICS 9) e golden de fio do console idêntico ao original; faltam `JVCSTransport.pas`, pacote design-time e suíte golden automatizada |
+| F2 | Núcleo do cliente e console `jvcs.exe` | **Console pronto e validado** (golden idêntico ao 2.5.0.1030); JCL e JVCL ficam (decisão de 13/10); faltam `JVCSTransport` e testes de binário/arquivo vazio |
+| F3 | GUI comum e `JEDIVCSDiff.exe` | **Diff pronto** (sem JVCL/JCL/DFS) e infraestrutura de aparência; faltam tradução (`gnugettext`) e testes interativos |
+| F4 | EXE standalone `Jedivcs.exe` | **Funcional e publicado** (betas 1–5): todos os forms abrem, recursos testados contra o servidor, tema claro/escuro, escala 100–200%; JVCL mantida (decisão de 13/10); resta o lote 4.5 |
+| F5 | DLL da IDE, expert e setup | **Concluída para Win32**: DLL nova + experts `JvcsExpertBDS22/23/37` (sem `designide`, carregam em todas as atualizações) + expert original 2.5.0.1030 para Delphi 7 a 10.4; instalador Inno Setup com escolha por Delphi; testado em XE3, 11.1, 11.3, 12, 13.1 e 13.2 |
+| F6 | Win64 / ARM64EC (opcional) | Não iniciada; bloqueada pela `fvcscrypt.dll` (32 bits) |
 
-**Console:** `tools\compilar.bat console Debug|Release Win32` gera `bin\client\Win32\jvcs.exe`, validado contra o servidor de teste (12/10/2026). **EXE standalone:** `tools\compilar.bat exe Debug|Release Win32` gera `bin\client\Win32\Jedivcs.exe` (1ª etapa da F4, ver [Port-Standalone.md](../client/Port-Standalone.md)). **DLL da IDE:** `tools\compilar.bat dll Debug|Release Win32` gera `bin\client\Win32\JvcsExternalDll.dll` (ver [Port-DLL-IDE.md](../client/Port-DLL-IDE.md)). Os quatro alvos (`exe`, `dll`, `diff`, `console`) compilam com 0 erros em Debug e Release (13/10/2026).
+**Versão publicada:** beta 5, `2.5.0.2050` (tag `v2.5.0.2026-beta5`, pre-release no GitHub). Numeração em [Versoes.md](Versoes.md); novidades em `news/pt` e `news/en`.
 
-## Erros atuais do `tools\compilar.bat all`
+**Build:** `tools\compilar.bat all Release Win32` gera `Jedivcs.exe`, `JvcsExternalDll.dll`, `JEDIVCSDiff.exe` e `jvcs.exe` (0 erros); `tools\compilar-expert.bat` gera os experts por versão; `tools\gerar-instalador.bat` gera `setup\Output\JediVCS-2.5.0-Beta<N>-build<NNNN>-Setup.exe`.
 
-Fonte: logs em `tools\logs\compilar_<chave>_Win32_Debug.log`, gerados em 12/10/2026 às 16:41 (Debug Win32, Delphi 13.2, `dcc32 37.0`). Não foram reexecutados nesta consolidação. O compilador para no primeiro erro fatal, então cada projeto ainda esconde erros seguintes.
+**PCs de teste:** desenvolvimento (Delphi 11.3, 12, 13.2 + servidor de teste local); PC remoto com o servidor da empresa (Delphi 11, 12, 13.1, via canal OneDrive); PC com Delphi XE3 e 11.1 Enterprise.
 
-| Projeto | Erro | Causa e correção |
+---
+
+## Pendências (lista consolidada)
+
+Ordem sugerida de prioridade. Cada item remete à fase do plano ou ao marco do ADR-001.
+
+### A. Próximas — validação
+
+| # | Pendência | Origem |
 |---|---|---|
-| `exe` (`Jedivcs.dpr`) | ~~`F2613 Unit 'FastMM4' not found`~~ **Resolvido** (F4, compila: ver Port-Standalone.md) | Os `.dpr` originais usam `FastMM4` e `src\comp\fastmm` não existe no layout novo. Remover a unit do `uses` e usar o gerenciador de memória embutido (`ReportMemoryLeaksOnShutdown` sob `DEBUG`). Previsto em F4 (4.1) |
-| `diff` (`JEDIVCSDiff.dpr`) | ~~`F2613 Unit 'FastMM4' not found`~~ | **Resolvido** (F3: compila, ver [Port-Diff.md](../client/Port-Diff.md)) |
-| `console` (`jvcs.dpr`) | ~~`F1026 File not found: '..\comp\fastmm\FastMM4.pas'`~~ | **Resolvido** (FastMM4 removido; compila e passa no golden, ver [Port-Console.md](../client/Port-Console.md)) |
-| `dll` (`JediVCSDLL.dpr`) | `E2029 Identifier expected but ',' found` em `src\common\JVCSIDESettings.pas(99)`, seguido de `E2003` (`DelphiHKEY`, `RegKeyExists`, `RegGetKeyNames`, `RegReadString`), `E2012` e `F2063 Could not compile used unit 'JVCSIDESettings.pas'` (chamada em `JVCSIDEInterface.pas(2378)`) | `JVCSIDESettings.pas` usa `{$ifdef WINDOWS}`, símbolo que o Delphi 13 não define (só `MSWINDOWS`). Correção definitiva no fonte: trocar por `MSWINDOWS` (F5 5.3, na linha 95 conforme o plano). Contorno só no script, sem editar o fonte: `set JVCS_EXTRA_DEFS=WINDOWS` |
+| A1 | **Teste com o servidor da empresa (quinta, 15/10/2026)**: aplicar o [checklist de compatibilidade](Plano-de-Port.md#checklist-de-testes-de-compatibilidade-com-o-servidor-25-beta-3) com o banco real | Plano, checklist |
+| A2 | Nomes de projeto/módulo acentuados criados no novo aparecem iguais no antigo (e vice-versa) | Checklist [R1] |
+| A3 | Revisões antigas (amostra ampla do banco real) abertas pelo cliente novo; Sync por CRC sem falsos "modificados" | Checklist [R7–R9], F0 0.7 |
+| A4 | Teste de fumaça de Labels, Milestones, ToDo, Bugs, Browser e opções do servidor contra o banco real | Checklist |
+| A5 | Projeto já cadastrado reconhecido pela IDE com o mesmo ID do expert antigo (`GetProjectName`) | F5 [R13] |
+| A6 | Rodar com ACP 65001 ("Beta: UTF-8") e locale en-US | Checklist, F1 |
+| A7 | Teste ao vivo da skill em inglês (`skills/en/jedi-vcs`) | Docs/IA |
 
-Pendências que aparecerão a seguir (units ainda sem fonte nem DCU, com os defines atuais), conforme [tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md): `EnhListView`, `dfsStatusBar`, `FavOpenDialog`, `Checksum`, `BFCrypt`, `CipherLz`, `SortGrid`, `SystemTreeView`, `SystemControlPack`, `RekScan`, `HtmlHlp`, `mwPasLex`, `mwPasLexTypes`, `ItemProp`, `RegAcc`, `SynHighlighterMPerl` e `WSocket` (em `ApsCli.pas`); mais o `{$R ...winxp.res}` com caminho absoluto do ambiente antigo nos `.dpr`. Destino de cada uma: [Componentes.md](Componentes.md), seção 3.
+### B. Port — restante
 
-Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win32` e a compilação automática dos pacotes runtime Win64 (`exe Debug Win64`) compilam SynEdit e VTV sem erro. `tools\compilar-expert.bat` gera `JvcsExpertBDS37.dll` e confere exports/imports do PE.
+**JVCL e JCL ficam** (decisão de 13/10/2026, [Decisoes.md](Decisoes.md)): são projetos livres e mantidos pela comunidade JEDI. Os 56 componentes JVCL que restam nos DFMs **não serão trocados**; continuam linkados estaticamente nos binários compilados no Delphi 13 (o Delphi de destino não precisa de nenhum componente instalado). Os antigos lotes 4.4/4.6 ("JVCL visual → nativo", "nenhuma unit `Jv*` no EXE") saem do plano.
 
----
+| # | Pendência | Origem |
+|---|---|---|
+| B2 | Lote 4.5: `CompareFolders`, `LoadModule`, `SMTPSend`; `mdmailslot` só compila (notificação desligada) | F4 |
+| B4 | (opcional) Abbrevia → `System.Zip`; o Abbrevia (TurboPack) também é livre e mantido, então só se trouxer ganho | F2 |
+| B6 | `JVCSTransport.pas` (`IJVCSTransport` + Midware + fábrica) | F1 |
+| B7 | Pacote design-time `JVCSMidwareD.dpk` (`TAppSrvClient`, `TMWBuffer`) para abrir `DBModule` e outros forms no designer | F1 1.7 |
+| B8 | Suíte golden automatizada (ida e volta do `RFormat`, comparador; ACP 1252/65001, pt-BR/en-US) | F1 |
+| B9 | Remover ramo `INTERNAL_OLDOTA`/VCSManager da DLL | F5 5.4 |
+| B10 | Diff: tradução (`gnugettext`), teste interativo de gravação UTF-8 e comparação com revisão do servidor | F3 |
 
-## F0: Ambiente, dependências, build e linha de base
+### C. IA e arquitetura (ADR-001)
 
-- [x] Estrutura `v2026` e fontes base (cópia de menor edição Lazarus; `.dpr`/`compopt.inc` de `ConverterBackup`) — commit `3cb5f17`
-- [x] Inventário de componentes (9 famílias, 201 units, 21 riscos) e Plano de Port — `62f9c8f`
-- [x] Delphi 13.2 Professional instalado e verificado (`37.0.60952.8797`)
-- [x] JCL 2026.08, JVCL 2026.08, ICS 9.7 e Abbrevia 2026.10 instalados via GetIt
-- [x] SynEdit (pyscripter `84391a3`) e Virtual-TreeView V8.5 fixados em `src\comp` e instalados na IDE a partir de `lib\bpl\Win32`; SynEdit TurboPack e VTV 8.3 do GetIt removidos da IDE; backup em `C:\Users\Public\Documents\Embarcadero\Studio\37.0\_backup_getit_20261012`
-- [x] `tools\compilar.bat` (modo `dcc32`, alvo `libs`, ramo `msbuild` previsto) e `tools\LEIAME-compilar.md`
-- [x] Binários de referência 2.5.0.1030 e runtime em `3rdparty` (`fvcscrypt.dll`, CHM, `*.jvcs`, `htm_rep.htm`, `referencia-2.5.0.1030`)
-- [x] Análise estática do expert original (`doc\pt\client\Expert-IDE-Analise.md`), incluindo o valor de registro `JVCSIDEClient`
-- [x] Decisões registradas: escopo, IDE alvo, SynEdit/VTV, dependências, recursos desligados (relatórios, tradução, notificação, plugins, branching), LZH, Midware, teste de protocolo, plataforma, nome da versão, Git
-- [ ] Decisões da seção 0.2 ainda abertas: code page do fio (provável 1252), Blowfish de blobs, ShareMem na DLL, nome da DLL (sugestão `JvcsExternalDll.dll`), origem de JCL/JVCL no D11/D12
-- [ ] Delphi 11 (BDS 22) e Delphi 12 (BDS 23) instalados, com as mesmas dependências (JCL/JVCL do GitHub num commit equivalente ao 2026.08, ICS 9.7, SynEdit e VTV fixados, Abbrevia)
-- [ ] Os 4 `.dproj` (`Jedivcs`, `JediVCSDLL`, `JEDIVCSDiff`, `jvcs`) com defines, unit scope names, search path, saída, manifest e sem VerInfo; exercitar o ramo `msbuild` do `compilar.bat`; alinhar defines do script com a tabela da 0.3 (`DelphiPersonalEdition` no EXE)
-- [ ] Cópias locais: `src\comp\mwtools\mwPasLex*.pas` e `CastaliaParserDefines.inc` (renomeados), `src\comp\encryptedzip`, `src\comp\dxgettext\gnugettext.pas`, `src\common\jedi.inc`
-- [ ] Servidor 2.5 Beta 3 de teste montado pelo usuário (cópia do banco)
-- [ ] Capturas golden (`GET_SERVER_TIME`, `LOGIN`, `GET_PROJECT_LIST`, `CHECKIN_MODULE`, `GET_CHECKOUT_MODULE`, textos acentuados, erro) arquivadas em `tools\golden\captures\` (proposta)
-- [ ] Consultas somente leitura no banco (CRC, método/flags ZIP, blobs Blowfish, Line History, `lc_ctype`, tamanho do header)
-- [ ] Limpar o `EnvOptions.proj`, que ainda cita `VirtualTreeview_by_JamSoftware-13\8.3\source` no Library Path (risco de duas versões do VTV)
-- [ ] Commitar o estado atual: `doc/pt/common/Decisoes.md` (modificado), `src/jvcsideexpert/`, `tools/compilar-expert.bat`, `bin/ideclient/` (tem `.gitignore` próprio) e a documentação consolidada em `doc\`
+| # | Pendência | Marco |
+|---|---|---|
+| C1 | `jvcs.exe` com **modo moderno**: saída JSON, códigos de saída 0–12, `status`/`diff`/`log`, credenciais no Windows Credential Manager (sem senha na linha de comando), mutex por conta — substitui o wrapper `tools\ai\jvcs-ai.ps1` sobre o console antigo | M3 |
+| C2 | Servidor MCP no `jvcs.exe` (check-in sempre com aprovação humana) | M4a |
+| C3 | Expert Win64 + `jvcs-agent.exe` (núcleo fora do processo) para a IDE de 64 bits — só se a IDE de 64 bits for usada | M1 (Win64), M2 |
+| C4 | IA e GUI/IDE com o mesmo usuário sem "re-connect" (re-login transparente ou agente de sessão) — decidir na F4/F5 (ADR D11) | M6/M7 |
+| C5 | Mensagens do wrapper `jvcs-ai.ps1` e da skill por projeto só em português | Docs/IA |
+| C6 | Expor no wrapper `jvcs-ai.ps1` os comandos novos do console (`addproject`, `addmodule`, 1º check-in) e um `diff` contra a revisão do servidor (`getmodule rev= dest= noprompt`); hoje o wrapper usa o console original, que não tem esses comandos. Feito e testado no console novo em 13/10 (Port-Console.md §5) | M3 |
+| C7 | Wrapper e `edit-preserve.ps1` deduzem o projeto pelos `.dpr` da pasta: com mais de um `.dpr` ou projeto com outro nome, exigem `-Project` (e o `edit-preserve` não faz o checkout automático) | Docs/IA |
+| C8 | Remover pelo standalone os módulos de teste quebrados do projeto `ex2.dpr` no servidor de teste (IDs 5–9) | Teste |
 
-**Próximos passos:** (1) criar os `.dproj`; (2) remover `FastMM4` dos `.dpr` e trocar `WINDOWS` por `MSWINDOWS` para o build chegar a erros de código do cliente; (3) obter as cópias locais; (4) com o servidor de teste, capturar a linha de base golden e rodar as consultas 0.7; (5) instalar Delphi 11/12.
+### D. Decisões em aberto
 
----
+| # | Decisão | Situação |
+|---|---|---|
+| D1 | Licença não comercial do Midware ao distribuir cliente, CLI e agente | Adiada; aviso no About, README e LICENSE (13/10) |
+| D2 | Como a IA usa a conta do humano (ADR D11) | Decidir na F4/F5 |
 
-## F1: Midware portado e teste golden
+### E. Opcional
 
-- [x] `MWDefs.inc` com `OverbyteIcsDefs.inc` do ICS V9 (sem `USE_SSL`)
-- [x] `RFormat.pas` (`PAnsiChar`, code page fixa configurável `MWCodePage` = 1252, `AppendFields` com `vtUnicodeString`/`vtWideString`/`vtWideChar`/`vtPWideChar`/`vtInt64`, `vtExtended` com `FloatToStrF(ffGeneral,18)`; bookmarks restaurados)
-- [x] `ApsCli.pas` (`OverbyteIcsWSocket`, `SocketFamily := sfIPv4`, cabeçalho `AnsiString`, `AllocateHWnd` do `System.Classes`; sem migrar para `TIcsWndControl`)
-- [x] `CBroker.pas` (`FUserData: NativeInt`)
-- [x] Golden de fio do console (proxy de captura + normalizador em `tools\golden\console`): `GET_SERVER_TIME`, `LOGIN` (versão 239), `GET_PROJECT_INFORMATION`, `GET_LOCKED_MODULES`, `GET_CHECKOUT_MODULE` (blobs), `CHECKOUT_ONLY_MODULE`, `CHECKIN_MODULE` (blobs, comentário acentuado em cp1252) idênticos ao original — evidências em `doc\pt\client\golden-console`
-- [ ] `src\common\client\JVCSTransport.pas` (interface `IJVCSTransport` + `TJVCSMidwareTransport` + fábrica)
-- [ ] Pacote design-time `src\packages\JVCSMidwareD.dpk` (`TAppSrvClient`, `TMWBuffer`)
-- [ ] Suíte golden: ida e volta do `RFormat`, roteiro contra o servidor de teste, comparador que ignora hora, TransactionID e senha cifrada; rodar em ACP 1252 e 65001, pt-BR e en-US
-
-**Estado:** Midware em `src\comp\midware` compila no D13 Win32 (Debug com `$R+ $Q+` e Release) e é usado pelo console validado.
-
-## F2: Núcleo do cliente e console
-
-- [x] **Console `jvcs.exe` compilando (Win32 Debug/Release) e validado**: `listprojects`, `listproject`, `listlocks`, `getmodule` (inclusive `rev=`), `checkout`/`checkin` com comentário acentuado; saída e fio idênticos ao 2.5.0.1030; leitura cruzada (o original lê as revisões gravadas pelo novo e vice-versa). Detalhes: [Port-Console.md](../client/Port-Console.md)
-- [x] `Checksum.pas` recriada; validada contra o CRC gravado pelo original (`ORIGCRC` do `.dfm` igual nos dois consoles), contra o CRC do ZIP e os vetores de teste (`123456789` → `$CBF43926`, arquivo vazio → `'OK'`, 100 000 bytes = CRC do ZIP). Falta a varredura ampla do banco (0.7)
-- [x] Blob ZIP do check-in com a data do arquivo (correção para o Abbrevia 2026 em `TJVCSAbZipper`)
-- [x] `jvcs.dpr` sem `FastMM4`; `CRCInt` no check-in; versão `2.5 Beta 2026` no recurso; LOGIN continua 239
-- [ ] `JVCSZipUtils.pas` sobre `System.Zip` (ZIP de 1 item, nome sem path, data do arquivo, `IsZipBlob`)
-- [ ] `BFCrypt.pas` (Base64 nativo; Blowfish conforme a varredura)
-- [ ] `JVCSClientObjBase.pas`, `JVCSClientObj.pas`, `JVCSConnect.pas`, `JVCSClientDispatcher.pas`, `JVCSClientFunctions.pas`, `JVCSCrypt.pas`, `VCSCommon.pas`
-- [ ] Helpers `JVCSTrace`, `JVCSStrUtils`, `JVCSFileUtils` em `src\common`
-- [ ] `jvcs.dpr` sem JCL (ainda usa `JclFileUtils`, `JclStrings`, `JclDebug` do GetIt) e sem Abbrevia; sem JVCL já está
-- [ ] Confirmar com o usuário: `BRANCHING` ligado no console (necessário para saída idêntica ao original)
-- [ ] Critério: login, lista de projetos, sync por CRC, check-in/checkout cruzado com o cliente 2.5 Beta 3
-
-## F3: GUI comum e JEDIVCSDiff (piloto)
-
-- [x] **`JEDIVCSDiff.exe` compilando (12/10/2026)**: `tools\compilar.bat diff Debug|Release Win32` com 0 erros e 0 avisos; sem `Jv*`, `Jcl*`, `dfs*`, FastMM4 e sem as units do EXE (`..\jedivcs` fora do search path; `LANGUAGE` desligado até o `gnugettext`). Recurso 2.5.0.2026 / "2.5 Beta 2026" / pré-lançamento + manifesto. Detalhes: [Port-Diff.md](../client/Port-Diff.md)
-- [x] Diff (3.7): status bar nativa com gauge, MRU nativo no **mesmo formato** do `TJvMruList` (lido/gravado também pelo original), `TSpinEdit`/`TColorBox`, `TSynEditMark.Create(Editor)`, `Gutter.Bands` no DFM, `TSynHighlighterAttributes.Create(Name, FriendlyName)`, `RegAcc`/`FavSaveDialog`/`TVCSListView` → locais, `HtmlHelpW`, About próprio, leitura/gravação com detecção de codificação (ANSI/UTF-8/UTF-16)
-- [x] Teste por linha de comando (`/s: /t: /autostart` + novos `/log:` e `/close` com exit code): pares ANSI cp1252 e UTF-8 com acentos dão o mesmo resultado do original; ANSI × UTF-8 com BOM do mesmo texto = iguais (o original acusava diferença). Todos os forms abrem sem `EReadError` (harness), tema claro/escuro e 150% conferidos por captura de tela
-- [x] Infraestrutura de aparência: `src\common\client\JVCSUIScale.pas` (fonte/tamanho/escala da interface, menus owner-draw, fonte dos editores; chaves `UIFontScale`, `UIFontName`, `UIFontSize`, `MenuFontName`, `MenuFontSize`, `EditorFontName`, `EditorFontSize`) e `JVCSUITheme.pas` (`UITheme` 0 seguir host/1 claro/2 escuro; VCL Style "Windows Modern Dark" embutido; Windows via `AppsUseLightTheme` + `WM_SETTINGCHANGE`; IDE via `JVCSUISetHostTheme`). Aplicadas no Diff (grupo "User interface" em Editor Properties)
-- [ ] Teste interativo de gravação UTF-8, relatórios e ajuda; build D11/D12; chamada do Diff pelo EXE (comparar com revisão do servidor)
-- [x] Desejado em units compartilhadas: `TJVCSForm` aplica a aparência (13/10/2026); `JVCSBaseAboutDialog` sem `TJvRichEdit`/`JclFileUtils` (13/10/2026)
-- [ ] `JVCSLanguage` com `gnugettext` (ver Port-Diff.md, seção 5)
-- [ ] Recursos do EXE (`STRINGS.RC`, `CURSORS.RC`), units base (`ConfigStorage`, `VCSBase`, `JclDebug` → `JVCSTrace`), substitutos da JVCL não visual (`JVCSDialogs`, `JVCSMruList`, `JVCSThreads`), `VCSProcBase`, `DBModule`: seguem com o port do EXE (F4)
-
-## F4: EXE standalone
-
-- [x] **1ª etapa (12/10/2026)**: `tools\compilar.bat exe Debug|Release Win32` com 0 erros → `bin\client\Win32\Jedivcs.exe` (2.5.0.2026, "2.5 Beta 2026", pré-lançamento; LOGIN 250). Sem FastMM4, `REPORTDLL`, `LANGUAGE`, plugins e notificação; `BRANCHING` + `JVCS_NOBRANCHUI` (menu Branch oculto, HEAD fixo). Substitutos novos: `TJVCSListView` (EnhListView), `TJVCSStatusBar` (dfsStatusBar), `FavOpenDialog`, `TJVCSFolderTree` (SystemTreeView), `JVCSFileSearch` (RekScan), `BFCrypt`, `mwPasLex` mínimo; VTV V8.5 e SynEdit pyscripter ajustados. Teste contra o servidor: login, abrir `exemplo01.dpr`, checkout/check-in de `uPrincipal.pas` com comentário acentuado (0.8 → **0.9**, arquivo baixado pelo console igual ao enviado), histórico, undo checkout, sem locks. Detalhes e pendências: [Port-Standalone.md](../client/Port-Standalone.md)
-- [x] **2ª etapa (13/10/2026)**: VCS Properties → **Appearance** (escala, fontes da interface/menus/editores, tema seguir Windows/claro/escuro) e **AI / Automation** (checkout/check-in manual/confirmação/auto no `config.ini` do `jvcs-ai.ps1`, formato preservado); aparência aplicada em todos os forms (`TJVCSForm`, 20 forms convertidos); log de erros `%LOCALAPPDATA%\JEDI\JVCS\logs`; diálogos DSA reentrantes corrigidos; testado 150% + escuro e leitura pelo `jvcs-ai.ps1 config list`. Ver [Port-Standalone.md](../client/Port-Standalone.md) §4
-- [x] **Correções (13/10/2026, tarde)**: lentidão ao abrir projeto (cópia de todos os ícones da lista do sistema; laço local 209 → 49 ms no host com 306 ícones, 188 → 44 ms no EXE), crash por valor de aparência com outro tipo no registro e exceção no seguidor de tema (leitura tolerante, `try/except` + log), senha da identidade apagada pelo Connect (checkbox por identidade; só apaga por ação explícita), VCS Properties a 150% sem cortes (tamanho mínimo = DFM escalado em `TJVCSForm`), item **View → Appearance / Font Size...**. Ver [Port-Standalone.md](../client/Port-Standalone.md) §4.4
-- [x] **3ª etapa (13/10/2026)**: modo `-formsweep` (Debug) cria/mostra/fecha os 95 forms/frames por RTTI, confere assinaturas de handlers do DFM e cortes de layout a 100/175/200% (cortes 67 → 22 a 200%: tamanho mínimo também após `OnShow`/`OnActivate`); AV ao sair (`RefreshDispatcher`) corrigido; JVCL simples → VCL em 36 forms (53 objetos); tema escuro (cores do estilo no owner-draw da árvore de projetos e do `TJVCSListView`, ícones e glifos adaptados); testes com o servidor: Save WIP, Compare all (corrigido: `IsTextStream` Unicode), Backup com/sem senha (corrigido: Cancelar fazia backup sem senha), Blowfish de blobs, Line History (corrigido: AV no `DiffUnit`), Compressed Diff, Used Units (corrigido: nomes com ponto), SelectFolder, ordenação, gauge, Synchronize, Labels, rollback para pasta temporária, ExtBugtracker com `TRegEx`; DSA reentrante pelo nome corrigido; "não fecha no 1º WM_CLOSE" = app minimizado (análise). Ver [Port-Standalone.md](../client/Port-Standalone.md) §5
-- [ ] Lote 4.1 esqueleto e login (`Create`, `ProjAdmin`, `mdmailslot`, `TJVCSListView`) — compila e funciona; faltam `mdmailslot` (só compila), `TJvToolBar` → nativo (`TJvEdit` trocado em 13/10), `ThemeMgr`/`JclSecurity`
-- [x] Lote 4.2 operações com o servidor (`ChkInSingle`, `ChkOutSingle`, `Syncronice`, `Backup`, etc.): testadas em 13/10 (Port-Standalone §5.5); faltam `TJvArrowButton`/`TJvLED`/`TJvCheckTreeView` → nativos
-- [x] Lote 4.3 History, Line History, Compressed Diff (VT V8, SynEdit, `textdiff`, `mwPasLex`): testados e corrigidos em 13/10
-- [ ] Lote 4.4 forms de manutenção (JVCL visual → nativo): memos, combos, edits, splitters e listboxes trocados em 13/10; restam 66 objetos (`TJvSpinEdit` 22...), Port-Standalone §5.3
-- [ ] Lote 4.5 restante (`SelectFolder`, `CompareFolders`, `LoadModule`, `SMTPSend`)
-- [ ] 4.6 sem units `Jv*`/`dfs*` no fecho do EXE
-
-## F5: DLL da IDE, expert e setup
-
-Trilha 5A (expert), em paralelo desde a F0, carregando a `JvcsExternalDll.dll` **original** 2.5.0.1030:
-
-- [x] Fonte do expert em `src\jvcsideexpert` (`JvcsExpertBDS.dpr`, ABI, bridge, callbacks, notifiers, History, menu do Project Manager, wizard) e `LEIAME.md`
-- [x] `tools\compilar-expert.bat` e saída em `bin\ideclient\Win32` (`JvcsExpertBDS37.dll` 2.5.0.2026, runtime copiado: `JvcsExternalDll.dll`, `fvcscrypt.dll`, `zipdll.dll`, `unzdll.dll`, CHM, `*.jvcs`)
-- [x] Teste de fumaça fora da IDE com uma `JvcsExternalDll` falsa (`src\jvcsideexpert\tests`)
-- [x] Revisão (ABI e IDE) e correções do expert aplicadas: 89 verificações fora da IDE, 0 falhas; build 0 avisos (commit `b18ce6c`)
-- [x] Expert registrado em `HKCU\Software\Embarcadero\BDS\37.0\Experts` → `JVCSIDEClient` (12/10/2026 18:00; backup `Experts_antes_jvcs.reg`)
-- [x] **Expert carregado na IDE de 32 bits do Delphi 13.2** (12/10/2026): splash "JEDI Version Control System 2.5 Beta 2026" e menu **JEDI VCS** com todos os verbos da JvcsExternalDll original e atalhos Ctrl+Shift+P/I/O/G/B. Configuração aplicada pelo usuário via `setup\Delphi13-JVCS-v2026.reg`.
-- [ ] Teste funcional: Connect Server, Project Manager, check-in/out, History, menu do Project Manager
-- [ ] Teste manual na IDE de 32 bits (idealmente com `bds.exe -rJVCSTeste`): menu, ações, atalhos, check-in/check-out, aba History, menu do Project Manager, fechamento sem deadlock, DPI
-- [ ] `GetProjectName` igual ao do expert antigo (risco R13)
-- [ ] Builds do expert para BDS 22/23 (`JvcsExpertBDS22/23.dll`), depois que as IDEs estiverem instaladas
-
-DLL e setup:
-
-- [x] **DLL nova compilando (12/10/2026)**: `tools\compilar.bat dll Debug|Release Win32` com 0 erros → `bin\client\Win32\JvcsExternalDll.dll` (mesmas fontes e defines do EXE + `IDEDLL;EXT_IDE_INTF`; 2.5.0.2026, "2.5 Beta 2026"; LOGIN 250 pelo PRODUCTVERSION da própria DLL). Sem ShareMem e sem `winxp.res`; ABI `PAnsiChar` nas 24 callbacks, History e operações (`JVCSDLLAnsi`, sem "best fit"); relatórios desligados; "Select Branch" oculto (`JVCS_NOBRANCHUI`, 27 verbos; a original tem 29); `JVCSIDESettings` com `MSWINDOWS`. Detalhes: [Port-DLL-IDE.md](../client/Port-DLL-IDE.md)
-- [x] Exports iguais aos da 2.5.0.1030 por nome (`JEDIVCSDLLINIT/FINALIZE/HISTORYINIT/OPERATIONINIT`; ordinais diferentes e 3 exports extras da RTL/bzip2, inofensivos)
-- [x] Harness fora da IDE com a DLL real (`src\jvcsideexpert\tests\testar-dll.bat`, `TJVCSDllBridge` + callbacks do expert): nova e original inicializam, abrem Connect/Properties/Recent/About, finalizam; **0 access violations**, 0 falhas
-- [x] `tools\compilar-expert.bat [Debug|Release] [nova|original]` (padrão `nova`); `bin\ideclient\Win32` montado com o expert e a DLL nova; `setup\Delphi13-JVCS-DLL-nova.reg` (não aplicado)
-- [x] **Aparência e erros na DLL (13/10/2026)**: tema seguindo a IDE (registro `<chave base>\Theme`), sys style hooks da DLL desregistrados (não pinta a IDE), texto dos menus owner-draw para o hook de menus da IDE (menus em branco no tema escuro, bug também da original), forms com dono = `TAppBuilder` (Alt+Tab), status "Not connected" corrigido, `try/except` + log em todas as entradas exportadas; host interativo `tests\testar-dll-interativo.bat` (Fake IDE, VCL Style no host). Ver [Port-DLL-IDE.md](../client/Port-DLL-IDE.md) §4A
-- [x] ~~Investigar `Modules without revision assigned to: Exemplo01.dpr` com 24,5 s~~: era o laço local do `FillListView` (cópia de todos os ícones da lista do sistema do `bds.exe`), corrigido em 13/10/2026 (Port-Standalone.md §4.4); falta conferir na IDE
-- [ ] **Teste na IDE com a DLL nova** (roteiro em Port-DLL-IDE.md, seção 5): conectar, Project Manager, check-in de `uPrincipal.pas` do Exemplo01, History, fechar a IDE sem AV; LOGIN 250 no fio
-- [ ] `JediVCSDLL.dproj`; ramo `INTERNAL_OLDOTA`/VCSManager removido; `JVCSIDESettings` com BDS 22/23/37; units consumidoras (5.4)
-- [x] **Instalador Inno Setup (13/10/2026)**: `setup\JediVCS2026.iss` + `tools\gerar-instalador.bat [--sem-build]` → `setup\Output\JediVCS-2.5-Beta2026-Setup.exe` (pt-BR/inglês, AppId fixo = reinstalar/reparar, pasta `JEDI\JVCS 2026` sem tocar no original; componentes cliente, expert, `.map` e `tools\ai`; registra `Experts\JVCSIDEClient` só nas IDEs 22/23/37 detectadas cujo expert está no pacote, guardando e restaurando o valor anterior; tarefa opcional `jvcsExe` no `config.ini` da IA). Testes silenciosos de instalar/reinstalar/desinstalar OK; ver [setup\LEIAME.md](../../../setup/LEIAME.md) e [manual 09](../manual/09-Instalador-do-Cliente.md). Falta: teste em modo administrador e pelo assistente, e pacote com build Release completo
-
-## F6: Win64 / ARM64EC (opcional)
-
-- [ ] Substituir ou isolar a `fvcscrypt.dll` (pré-condição bloqueante)
-- [ ] Instalar a plataforma Win64 no Delphi (ausente hoje)
-- [ ] Revisão para 64 bits (`PIntArray`, `Integer(Pointer)`, `mdMailSlot`)
-- [ ] Floats (`Extended` = `Double` em Win64) na suíte golden
-- [ ] DLL Win64 e expert em `Experts x64`
+| # | Pendência |
+|---|---|
+| E1 | F6 Win64/ARM64EC: substituir ou isolar a `fvcscrypt.dll`; revisão 64 bits; floats na suíte golden |
+| E2 | Notificação entre estações (mailslot/SMTP), relatórios (`REPORTDLL`), tradução (`LANGUAGE`) e plugins: desligados por decisão ("só o básico") |
 
 ---
 
-## Pendências transversais
+## Decisões da seção 0.2 (resolvidas)
 
-- Servidor 2.5 Beta 3 (Firebird) **não portado**: o usuário vai montar um servidor de teste.
-- Licença do Midware (uso não comercial): decisão adiada; transporte isolado em `JVCSTransport.pas`.
-- Consultar [Componentes.md](Componentes.md) para o que cada unit ausente vira.
-- Reconciliar a skill `D:\skills\delphi`, que cita Delphi 11 e 12 como instalados: hoje só existe o 13.2.
+| Tema | Resolução |
+|---|---|
+| Code page do fio | cp1252 fixa (`MWCodePage`), validada pelo golden do console e pelos testes com comentários acentuados |
+| Blowfish de blobs | Suportado (`BFCrypt`), testado com o servidor (F4 3ª etapa) |
+| ShareMem na DLL | Não usado; ABI plana `PAnsiChar` |
+| Nome da DLL | `JvcsExternalDll.dll` (mesmo do original) |
+| JCL/JVCL no D11/D12 | Desnecessário: opção 1 (Decisoes.md, 13/10) — tudo compilado uma vez no Delphi 13; só o expert é compilado por versão, importando apenas `rtl`/`vcl`/`xmlrtl` |
 
-## Testes de integração com o servidor de teste (12/10/2026)
-- [x] Servidor 2.50 (branching, HEAD) + Firebird 2.5.9; banco atualizado para a versão 250 (ver `doc\pt\server\Servidor-Teste-Local.md`).
-- [x] **Check-in pela IDE do Delphi 13.2** com o expert BDS37 + JvcsExternalDll original: projeto `Exemplo01` (4 módulos, `.pas`+`.dfm` pela família).
-- [x] Standalone `jedivcs.exe` 2.5.0.1030 conectado ao mesmo tempo que a IDE.
-- [x] **Duas sessões do mesmo usuário (IDE + CLI) convivem** neste servidor (build com branching): a IDE continuou conectada.
-- [x] **CLI `jvcs.exe` original:** `listprojects`, `listproject`, `listlocks`, `checkout 4` (sem prompt: arquivo limpo → `CHECKOUT_ONLY_MODULE`), alteração, `checkin 4 "comentário"` → versão **0.1 → 0.2**, lock liberado, arquivos voltam a somente leitura.
-- [ ] Próximo: wrapper `tools\ai\jvcs-ai.ps1` (ADR-001 §3, camada de curto prazo) para a IA usar a CLI com segurança (identidade salva, JSON, mutex, checagem de alteração local antes de bloquear).
+---
+
+## Feito por fase
+
+### F0 — Ambiente e linha de base
+- [x] Estrutura `v2026`, fontes base, inventário de componentes e Plano de Port
+- [x] Delphi 13.2 (`37.0.60952.8797`), **Delphi 11.3 e 12 instalados** (13/10)
+- [x] JCL/JVCL 2026.08, ICS 9.7, Abbrevia 2026.10 (GetIt, só no D13); SynEdit pyscripter `84391a3` e VTV V8.5 fixados em `src\comp`; `EnvOptions.proj` sem a referência ao VTV 8.3
+- [x] `.dproj` de `Jedivcs`, `JediVCSDLL`, `JEDIVCSDiff`, `jvcs` e `JvcsExpertBDS` + `JediVCS2026.groupproj`
+- [x] `tools\compilar.bat` e `compilar-expert.bat` multi-versão (`/delphi:11|12|13`)
+- [x] Binários de referência 2.5.0.1030 e runtime em `3rdparty`; experts originais em `3rdparty\experts-originais-2.5.0.1030` (21 DLLs + SHA256SUMS)
+- [x] Servidor 2.5 Beta 3 de teste local (Firebird 2.5.9), ver `doc\pt\server\Servidor-Teste-Local.md`
+- [x] Capturas golden do console (`doc\pt\client\golden-console`)
+- [ ] Consultas somente leitura amplas no banco real (CRC, flags ZIP, blobs Blowfish, `lc_ctype`) → A3
+
+### F1 — Midware
+- [x] `MWDefs.inc`, `RFormat.pas` (cp1252), `ApsCli.pas` (ICS 9, IPv4), `CBroker.pas`
+- [x] Golden de fio do console idêntico ao original
+- [ ] B6, B7, B8
+
+### F2 — Núcleo e console
+- [x] `jvcs.exe` validado: `listprojects`, `listproject`, `listlocks`, `getmodule`, `checkout`/`checkin` acentuado; leitura cruzada com o original; `BRANCHING` ligado no console
+- [x] `Checksum.pas` recriada e validada; blob ZIP com a data do arquivo; versão no banner
+- [ ] B4 (opcional); testes de sync com arquivo binário e vazio
+
+### F3 — Diff e GUI comum
+- [x] `JEDIVCSDiff.exe` sem JVCL/JCL/DFS; MRU compatível; detecção de codificação; testes por linha de comando
+- [x] `JVCSUIScale`, `JVCSUITheme`, `TJVCSForm`, About próprio
+- [ ] B10
+
+### F4 — EXE standalone
+- [x] 1ª–3ª etapas (Port-Standalone.md §1–§5): compila, Appearance e AI/Automation em VCS Properties, log de erros, `-formsweep` (95 forms/frames), testes funcionais com o servidor (Save WIP, Compare all, Backup, Line History, Compressed Diff, Used Units, Sync, Labels, ExtBugtracker), tema escuro
+- [x] JVCL simples → VCL em 36 forms
+- [x] Lentidão ao abrir projeto corrigida (o Project Manager abre mais rápido); senha salva preservada
+- [x] Versão instalada visível (título, About, Painel de Controle)
+- [x] DFS fora do EXE (restam só nomes de objeto `dfsStatusBar`, agora `TJVCSStatusBar`)
+- [ ] B2
+
+### F5 — DLL, expert e setup
+- [x] DLL nova (`JvcsExternalDll.dll`) com exports iguais aos do original; harness com 0 AV
+- [x] Experts `JvcsExpertBDS22/23/37.dll` sem `designide` (`tools\verificar-expert.ps1` confere imports contra as `.bpl` de 13.1 e 12)
+- [x] Delphi 7 a 10.4: expert original 2.5.0.1030 + DLL nova
+- [x] Tema da IDE via `JVCS_IDE_THEME`; menus legíveis; janelas com dono = IDE
+- [x] **AV no XE3** (barra, Get do histórico, menus): DLL com `Application.Handle` próprio (commit `a0b0b51`)
+- [x] Testado na IDE: check-in/out, Get, History, Project Manager em 11.1, 11.3, 12, 13.1, 13.2 e XE3
+- [x] Instalador Inno Setup: instalar/reinstalar/reparar, escolha por Delphi, aviso de garantia com aceite, skills pt/en, versão de `tools\versao.ini`
+- [ ] A5, B9
+
+### F6 — Win64
+- [ ] E1
+
+---
+
+## Histórico
+
+Detalhes de cada etapa: `doc\pt\client\Port-*.md`, `doc\pt\processo\` (linha do tempo, testes, lições) e `CHANGELOG.md`.

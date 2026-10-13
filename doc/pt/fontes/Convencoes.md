@@ -56,7 +56,7 @@ o formato `n.n.n.n`. Ver [Versoes](../common/Versoes.md).
 ## 4. Estilo de código
 
 - Siga o estilo do arquivo que está editando (o código é de 2003–2012; não reformate arquivos inteiros).
-- Sem dependência nova de terceiros: prefira RTL/VCL nativas (a meta é tirar JVCL, JCL e Abbrevia).
+- Sem dependência nova de terceiros: prefira RTL/VCL nativas (JCL e JVCL são dependências aceitas: livres e mantidas pela comunidade JEDI).
 - Nada de genéricos da RTL e de unit de design-time no **expert**; funcionalidade nova vai para a DLL.
 - Exceções nas entradas exportadas da DLL e nos handlers de aparência: `try/except` + `JVCSErrorLog`.
 - A ABI expert↔DLL **não muda**; informação nova vai por variável de ambiente do processo.

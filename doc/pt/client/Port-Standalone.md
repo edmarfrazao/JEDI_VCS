@@ -7,8 +7,9 @@ comentário acentuado, histórico de revisões e undo checkout.
 
 Esta etapa usa a JVCL 2026.08 do GetIt como **ponte**: os forms ainda têm controles `TJv*`. As DFS,
 o FavOpenDialog, o RekScan, o ItemProp, o HtmlHlp, o BFCrypt e o mwPasLex foram trocados por código
-nativo ou novo. A troca da JVCL visual (lotes 4.4/4.5) e a auditoria completa de forms ficam para as
-próximas etapas. A 2ª etapa (13/10/2026) trouxe as opções de aparência e de IA e o log de erros
+nativo ou novo. A auditoria completa de forms ficou para as próximas etapas. **Decisão de 13/10/2026:**
+a JVCL e a JCL **ficam** (livres e mantidas pela comunidade JEDI); os controles `TJv*` restantes não
+serão trocados (ver `doc\pt\common\Decisoes.md`). A 2ª etapa (13/10/2026) trouxe as opções de aparência e de IA e o log de erros
 (seção 4).
 A 3ª etapa (13/10/2026) trouxe a varredura de todos os forms, os testes funcionais dos recursos que
 faltavam, correções Unicode, a troca da JVCL visual simples e o tema escuro legível (seção 5).

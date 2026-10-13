@@ -79,5 +79,19 @@ All clients talk to the same server and the same database. The 2026 edition repl
 - **Disabled on purpose:** reports, translations, plug-ins, notifications between workstations, branch UI.
   None of them affects the protocol.
 
+## 5. Status and roadmap
+
+Current release: **Beta 5** (`2.5.0.2050`). JCL and JVCL remain dependencies (free and maintained by the
+JEDI community); they are linked into the binaries, so nothing has to be installed in your Delphi.
+
+Still open:
+- validation against a real production database (accented names, old revisions, CRC sync);
+- 64-bit Delphi IDE (needs a 64-bit expert and an out-of-process core; the `fvcscrypt.dll` is 32-bit);
+- a modern console mode for AI tools (JSON output, credentials in the Windows Credential Manager, MCP
+  server) replacing today's PowerShell wrapper;
+- a few remaining forms (Compare Folders, Load Module, SMTP send) and translations.
+
+The full, prioritized list (Portuguese) is in [Status](../pt/common/Status.md#pendências-lista-consolidada).
+
 More (Portuguese): [history and motivation](../pt/processo/01-Historia-e-Motivacao.md),
 [architecture decisions](../pt/processo/03-Decisoes-de-Arquitetura.md).

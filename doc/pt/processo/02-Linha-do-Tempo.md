@@ -12,7 +12,7 @@ Fases do [Plano de Port](../common/Plano-de-Port.md) (F0–F6) com datas e commi
 | F1 | MidWare portado e teste golden de tráfego | 12/10 | MidWare portado; golden do console idêntico ao original. Falta `JVCSTransport.pas` |
 | F2 | Núcleo do cliente e console `jvcs.exe` | 12/10 | **Pronto e validado** (saída e fio idênticos ao 2.5.0.1030) |
 | F3 | Infraestrutura de GUI e `JEDIVCSDiff.exe` | 12/10 | **Pronto** (Diff + `JVCSUIScale`/`JVCSUITheme`) |
-| F4 | EXE standalone `Jedivcs.exe` | 12/10 – 13/10 | **Três etapas prontas**; resta trocar parte da JVCL visual |
+| F4 | EXE standalone `Jedivcs.exe` | 12/10 – 13/10 | **Três etapas prontas**; JVCL mantida (decisão de 13/10) |
 | F5 | DLL da IDE, expert ToolsAPI e instalador | 12/10 – 13/10 | **Beta publicado**; expert para BDS 22/23/37 |
 | F6 | Win64 / ARM64EC (opcional) | — | Não iniciada (bloqueada pela `fvcscrypt.dll`) |
 

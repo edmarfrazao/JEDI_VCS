@@ -20,7 +20,7 @@ Plano de execução, em fases ordenadas por dependência, para portar o **client
 | Alvo Delphi 13.2 Professional, **mantendo a compilação em Delphi 11 e 12** | Cada fase só termina compilando em BDS 37, 23 e 22. Escolhas forçadas: SynEdit da linha **pyscripter** (a TurboPack/GetIt exige D12+); JCL/JVCL do **GitHub master** (mesma versão nos três); VT V8.5 (`Packages\RAD Studio 10.4+`); ICS V9 com grupos 11/12/13; `EncryptedZipFile` (o D11 não tem `IZipCryptor`); verificação manual de `'PK'#3#4` no lugar de `TZipFile.IsValid`; não contar com Deflate64 (só D12+). |
 | Fase 1 só **Win32** (FVCSCrypt.dll 32 bits; a IDE de 32 bits continua no 13) | EXE, Diff, console e DLL da IDE são Win32. Win64/ARM64EC ficam na F6, **bloqueados** até reimplementar ou isolar a FVCSCrypt (crítico C6). |
 | Só o cliente é portado; servidor 2.5 Beta 3 (Firebird) intocado; protocolo idêntico | Teste "golden" de tráfego contra o cliente oficial é critério de pronto das fases F1, F2, F4 e F5. Nenhuma alteração em servidor ou banco de produção: os testes usam servidor de teste com cópia do banco. |
-| Preferência por componentes **nativos** | JVCL visual e não visual, DFS, FavOpenDialog, Abbrevia, JclPCRE, HtmlHlp, RegAcc, RekScan e ItemProp viram VCL/RTL. JCL/JVCL só como dependência de transição. |
+| Preferência por componentes **nativos** | JVCL visual e não visual, DFS, FavOpenDialog, Abbrevia, JclPCRE, HtmlHlp, RegAcc, RekScan e ItemProp viram VCL/RTL. JCL/JVCL só como dependência de transição. **Revisto em 13/10/2026: JCL e JVCL ficam** (livres e mantidas pela comunidade JEDI); a troca da JVCL visual (lotes 4.4/4.6) deixa de ser obrigatória. |
 | Midware (licença não comercial): portar agora, isolando o transporte | Midware portado em `src\comp\midware` e transporte atrás de `src\common\client\JVCSTransport.pas` (F1). As versões alteradas são marcadas como tais (`Licencas.md`). |
 | Estrutura `v2026` existente | `src\jedivcs` (EXE + DLL), `src\jedivcsdiff`, `src\jvcs` (console), `src\common`, `src\common\client`, `src\comp\{midware,textdiff,mdmailslot,crc,mwtools}`, `src\packages`, `tools`, `setup`, `3rdparty`. Novos: `src\jvcsideexpert`, `src\comp\encryptedzip` e `src\comp\dxgettext`. |
 
@@ -479,7 +479,7 @@ Falta só conferir, no registro da instalação ou no script do instalador, o va
   - terminador no ramo do EXE **[R19]**.
 - `JVCSProjectTreeUnit`: VT V8; `JclResources` → resourcestrings.
 
-**Lote 4.4 — Forms de manutenção (JVCL visual → nativo).**
+**Lote 4.4 — Forms de manutenção (JVCL visual → nativo).** *Deixou de ser obrigatório em 13/10/2026: a JVCL fica (Decisoes.md). Trocas pontuais só por bug ou ganho real.*
 - **Forms:** AssignLabels, AddNewBug, AddNewGroup, AddNewMilestone, CheckfBuild, Description, DirectSQL, ListView, MaintainBugs, MaintainFFamilies, MaintainLabels, MaintainMilestones, MaintainUsers, NtfySend, ToDoEdit, ToDoFilter, Touch, WCViewFilter, SearchModules, ProjectRights, ServerOptions, Purge, ChangeUserPW, SelectList, UnitFilter, ListEdit, SimpleReport e SelectDrive.
 - **Cuidados:**
   - ordem dos itens de `icbLevel`/`icbRight` **[R14]**;

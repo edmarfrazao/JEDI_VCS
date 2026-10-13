@@ -16,7 +16,7 @@ motivo e onde ler o detalhe. Anterior: [02 Linha do tempo](02-Linha-do-Tempo.md)
 | D-5 | [BRANCHING](#d-5-branching) | Ligado no console (saída idêntica); na GUI, ligado com o menu Branch oculto |
 | D-6 | [Opções desligadas](#d-6-opções-desligadas) | Relatórios, tradução, notificação, plugins e LZH fora |
 | D-7 | [Recursos de 2012 mantidos](#d-7-recursos-de-2012-mantidos) | External Bugtracker, Save WIP e Compare all |
-| D-8 | [Bibliotecas](#d-8-bibliotecas) | SynEdit e VTV fixados no repositório; JCL/JVCL/ICS/Abbrevia do GetIt (JVCL e Abbrevia são ponte) |
+| D-8 | [Bibliotecas](#d-8-bibliotecas) | SynEdit e VTV fixados no repositório; JCL/JVCL/ICS/Abbrevia do GetIt (JCL/JVCL ficam: livres e mantidas pela comunidade) |
 | D-9 | [Plataforma e versão](#d-9-plataforma-e-versão) | Win32; `2.5.0.2026` / "2.5 Beta 2026" |
 | D-10 | [IA](#d-10-ia) | Identidade salva, prefixo `[IA]`, codificação preservada, modos manual/confirmação/auto |
 | D-11 | [MidWare e licença](#d-11-midware-e-licença) | Mantido com o aviso obrigatório; transporte será isolado |
@@ -97,7 +97,7 @@ O trunk de 2012 tinha recursos que o binário 2.5.0.1030 não tem; foram **manti
 |---|---|
 | SynEdit | pyscripter `84391a3`, **fixado** em `src\comp\synedit` (mesmo fonte para 11/12/13) |
 | VirtualTreeView | JAM V8.5, **fixado** em `src\comp\virtualtreeview` |
-| JCL / JVCL | GetIt 2026.08 no 13; JVCL é **ponte** (sai do EXE aos poucos) |
+| JCL / JVCL | GetIt 2026.08 no 13; **ficam** (decisão de 13/10/2026: livres e mantidas pela comunidade JEDI), linkadas estaticamente |
 | ICS | 9.7 (GetIt) |
 | Abbrevia | 2026.10 (GetIt), ponte; meta: `System.Zip` |
 | DFS (EnhListView, SystemTreeView, StatusBar) | **não reaproveitar** (licença) → controles nativos (`TJVCSListView`, `TJVCSFolderTree`, `TJVCSStatusBar`) |
