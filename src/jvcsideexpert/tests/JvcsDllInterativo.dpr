@@ -17,13 +17,17 @@ program JvcsDllInterativo;
                              [-stop <arquivo>] [-timeout <s>] [-wait <ms entre verbos>]
                              [-hostmsg <texto>]  (caixa de mensagem do proprio host
                              depois dos verbos: deve seguir o tema do host, nao o da DLL)
+                             [-project <arquivo.dpr>]  (projeto "aberto" na Fake IDE:
+                             devolvido pela callback GetProjectName)
+                             [-primeicons <n>]  (pede <n> icones de System32\*.exe ao
+                             shell antes de carregar a DLL, como a IDE ja aberta)
   Rodar com tests\testar-dll-interativo.bat. }
 {$APPTYPE CONSOLE}
 {$R JvcsDllHarness.res}
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes, ToolsAPI,
   Vcl.Forms, Vcl.Themes, Vcl.Styles,
-  JVCSExpertABI, JVCSExpertUtils, JVCSExpertDllBridge;
+  JVCSExpertABI, JVCSExpertUtils, JVCSExpertDllBridge, JVCSExpertCallbacks, Winapi.ShellAPI;
 
 type
   TFakeServices = class(TInterfacedObject, IBorlandIDEServices70, IBorlandIDEServices)
@@ -83,6 +87,30 @@ begin
   Result := Trim(StringReplace(S, '&', '', [rfReplaceAll]));
 end;
 
+// Simula a IDE: o processo do Delphi ja pediu muitos icones ao shell (dialogos,
+// Project Manager, Welcome Page), entao a lista de imagens do sistema do processo
+// tem centenas/milhares de entradas e os indices novos ficam altos.
+procedure PrimeSystemIcons(ACount: Integer);
+var
+  SR: TSearchRec;
+  Sfi: TSHFileInfo;
+  N: Integer;
+  Dir: string;
+begin
+  N := 0;
+  Dir := IncludeTrailingPathDelimiter(GetEnvironmentVariable('SystemRoot')) + 'System32\';
+  if FindFirst(Dir + '*.exe', faAnyFile, SR) = 0 then
+  try
+    repeat
+      SHGetFileInfo(PChar(Dir + SR.Name), 0, Sfi, SizeOf(Sfi), SHGFI_SYSICONINDEX or SHGFI_SMALLICON);
+      Inc(N);
+    until (N >= ACount) or (FindNext(SR) <> 0);
+  finally
+    FindClose(SR);
+  end;
+  Writeln(Format('host: %d icones pedidos ao shell; indice do ultimo = %d', [N, Sfi.iIcon]));
+end;
+
 procedure Pump(AMs: Cardinal; const AStopFile: string);
 var
   T0: UInt64;
@@ -117,6 +145,17 @@ begin
   WaitMs := StrToIntDef(Arg('wait', '3000'), 3000);
   if (StopFile <> '') and FileExists(StopFile) then
     DeleteFile(StopFile);
+
+  if Arg('project', '') <> '' then
+  begin
+    // a Fake IDE nao tem IOTAModuleServices: o nome em cache do "projeto em
+    // fechamento" faz a callback GetProjectName devolver este arquivo
+    JvcsSetClosingProject(True, ExpandFileName(Arg('project', '')));
+    Writeln('host: projeto da Fake IDE = ', ExpandFileName(Arg('project', '')));
+  end;
+
+  if StrToIntDef(Arg('primeicons', '0'), 0) > 0 then
+    PrimeSystemIcons(StrToIntDef(Arg('primeicons', '0'), 0));
 
   Fake := TAppBuilder.CreateNew(nil);
   Fake.Caption := 'Fake IDE (TAppBuilder) - JvcsDllInterativo';

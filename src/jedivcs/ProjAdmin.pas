@@ -963,7 +963,8 @@ type
     CustSelMI: array [0..9] of TMenuItem;
     ArchTStamp: Double;
     FReadedDockForms: Boolean;
-    FSystemImagesOffset: Integer;
+    // v2026: indice da lista do sistema -> indice no ModuleImageList (0 = ainda nao copiado)
+    FSysIconMap: array of Integer;
     FMustSetMaximized: Boolean;
     FIsInFillListView: Boolean;
     FIsInacRefreshModuleList: Boolean;
@@ -1125,7 +1126,7 @@ uses
   Create, OpenProject, UsedUnits, ProjDependencies,
   {$ENDIF IDEDLL}
   {$IFDEF DEBUG}
-  JclDebug,
+  JclDebug, JVCSErrorLog,
   {$ENDIF DEBUG}
   {$IFDEF LANGUAGE}
   JvGnugettext, JVCSLanguage,
@@ -1548,7 +1549,7 @@ begin
     SysImageList.Handle := SHGetFileInfo('', 0, sfi, SizeOf(TSHFileInfo),
       SHGFI_SYSICONINDEX or SHGFI_SMALLICON);
     SysImageList.ShareImages := True;
-    FSystemImagesOffset := 1;
+    FSysIconMap := nil;
 
     // Set width of ListView.Columns
     with elvModules do
@@ -3115,23 +3116,39 @@ end;
 
 function TVCSProjAdmin.GetFileImageIndex(const AFileName: string; const AShowLocalInfo, AExists: Boolean): Integer;
 
+  // v2026: antes copiava TODOS os icones da lista do sistema de 0 ate AIndex
+  // (posicao = indice do sistema + 1). A lista do sistema e do processo e
+  // preenchida sob demanda: copiar cada indice obriga o shell a extrair icones
+  // de arquivos que o modulo nem usa. Dentro da IDE (bds.exe ja pediu centenas
+  // ou milhares de icones) isso levava ~20 s para 4 modulos. Agora so o icone
+  // pedido e copiado, uma vez, e o mapa guarda a posicao no ModuleImageList.
   function GetCorrectedImageIndex(const AIndex: Integer): Integer;
   var
-    I: Integer;
+    I, OldLen: Integer;
     Icon: TIcon;
   begin
-    Result := AIndex + FSystemImagesOffset;
-    if Pred(ModuleImageList.Count - FSystemImagesOffset) < AIndex then
-      for I := ModuleImageList.Count - FSystemImagesOffset to AIndex do
-      begin
-        Icon := TIcon.Create;
-        try
-          SysImageList.GetIcon(I, Icon);
-          ModuleImageList.AddIcon(Icon);
-        finally
-          Icon.Free;
-        end;
+    if AIndex < 0 then
+      Exit(NoFoundIcon);
+    if AIndex >= Length(FSysIconMap) then
+    begin
+      OldLen := Length(FSysIconMap);
+      SetLength(FSysIconMap, AIndex + 64);
+      for I := OldLen to High(FSysIconMap) do
+        FSysIconMap[I] := 0;
+    end;
+    if FSysIconMap[AIndex] = 0 then
+    begin
+      Icon := TIcon.Create;
+      try
+        SysImageList.GetIcon(AIndex, Icon);
+        FSysIconMap[AIndex] := ModuleImageList.AddIcon(Icon);
+      finally
+        Icon.Free;
       end;
+      if FSysIconMap[AIndex] < 1 then
+        FSysIconMap[AIndex] := NoFoundIcon;
+    end;
+    Result := FSysIconMap[AIndex];
   end;
 
 var
@@ -3560,8 +3577,29 @@ var
   {$IFNDEF IDEDLL}
   FillListViewAborted: Boolean;
   {$ENDIF ~IDEDLL}
+  {$IFDEF DEBUG}
+  // v2026: tempos do laco local por etapa (log de DEBUG em JVCSErrorLog)
+  TmAcc: array[0..14] of Int64;
+  TmT0, TmFreq, TmLoop0: Int64;
+  {$ENDIF DEBUG}
 label
   NextModule1, NextModule2;
+
+  {$IFDEF DEBUG}
+  procedure TmMark(AStep: Integer);
+  var
+    T: Int64;
+  begin
+    QueryPerformanceCounter(T);
+    Inc(TmAcc[AStep], T - TmT0);
+    TmT0 := T;
+  end;
+
+  function TmMs(AValue: Int64): string;
+  begin
+    Result := FormatFloat('0.0', AValue * 1000 / TmFreq);
+  end;
+  {$ENDIF DEBUG}
 
   function CanRunFutherFillListView: Boolean;
   begin
@@ -4001,6 +4039,12 @@ begin
                 ProjectModuleSize := 0;
 
                 AppSrvClient1.Answer.First;
+                {$IFDEF DEBUG}
+                FillChar(TmAcc, SizeOf(TmAcc), 0);
+                QueryPerformanceFrequency(TmFreq);
+                QueryPerformanceCounter(TmT0);
+                TmLoop0 := TmT0;
+                {$ENDIF DEBUG}
 
                 {$IFDEF CUSTOMDRIVE}
                 sDriveSubst := RegReadString(HKCU, sBaseRegistryKey + crbProjects +
@@ -4012,6 +4056,7 @@ begin
 
                 while (not AppSrvClient1.Answer.Eof) and CanRunFutherFillListView do
                 begin
+                  {$IFDEF DEBUG} TmMark(13); {$ENDIF DEBUG}
                   CurrentFile := AppSrvClient1.Answer.Fields[1];
                   {$IFDEF CUSTOMDRIVE}
                   CurrentPath := ChangeDriveName(AppSrvClient1.Answer.Fields[2], sDriveSubst);
@@ -4038,18 +4083,22 @@ begin
                   //--------------------------------------------------------------------
                   if not FilterOut then
                   begin
+                    {$IFDEF DEBUG} TmMark(0); {$ENDIF DEBUG}
                     if not HasAssociateFile(CurrentPath + CurrentFile, Associate) then
                       Associate := '';
+                    {$IFDEF DEBUG} TmMark(1); {$ENDIF DEBUG}
                     ModuleID := _StrToInt(AppSrvClient1.Answer.Fields[0]);
                     //--- get bug state / filter bugs ----------------------------------
                     BugStateIndex := GetBugStateIndex(ModuleID);
                     if (BugStateFilter > -1) and ((BugStateIndex - 4) < BugStateFilter) then
                       goto NextModule1;
 
+                    {$IFDEF DEBUG} TmMark(2); {$ENDIF DEBUG}
                     if ShowLocalInfo then
                       FExists := FileExists(CurrentPath + CurrentFile)
                     else
                       FExists := True;
+                    {$IFDEF DEBUG} TmMark(3); {$ENDIF DEBUG}
                     {TimeStamp := DateTimeToStr(_StrToFloat(AppSrvClient1.Answer.Fields[4]));}
                     CheckedOut := DecodeBoolStr(AppSrvClient1.Answer.Fields[3]);
                     if CheckedOut then
@@ -4059,13 +4108,17 @@ begin
                     RevisionID := _StrToInt(AppSrvClient1.Answer.Fields[6]);
                     Hidden := (AppSrvClient1.Answer.Fields[9] = '1');
                     //--- Module -------------------------------------------------------
+                    {$IFDEF DEBUG} TmMark(0); {$ENDIF DEBUG}
                     NewItem := elvModules.Items.Add;
+                    {$IFDEF DEBUG} TmMark(4); {$ENDIF DEBUG}
                     uilPluginManager1.SendMessage(pimsgFVCSProjectModulesAdd,
                       CurrentPath + CurrentFile);
+                    {$IFDEF DEBUG} TmMark(5); {$ENDIF DEBUG}
                     //--- Caption ------------------------------------------------------
                     NewItem.Caption := CurrentFile;
                     //--- File Icon ----------------------------------------------------
                     NewItem.ImageIndex := GetFileImageIndex(CurrentPath + CurrentFile, ShowLocalInfo, FExists);
+                    {$IFDEF DEBUG} TmMark(6); {$ENDIF DEBUG}
                     //--- StateIcons ---------------------------------------------------
                     if BugStateIndex > 0 then
                       NewItem.StateIndex := BugStateIndex
@@ -4083,6 +4136,7 @@ begin
                     end
                     else
                       NewItem.SubItems.Add(ExtractFileExt(CurrentFile));
+                    {$IFDEF DEBUG} TmMark(7); {$ENDIF DEBUG}
                     //--- Path ---------------------------------------------------------
                     NewItem.SubItems.Add(CurrentPath);
                     //--- Version ------------------------------------------------------
@@ -4100,6 +4154,7 @@ begin
                       NewItem.SubItems.Add('');
                     //--- Count --------------------------------------------------------
                     NewItem.SubItems.Add(AppSrvClient1.Answer.Fields[11]);
+                    {$IFDEF DEBUG} TmMark(0); {$ENDIF DEBUG}
                     //--- Keyword ------------------------------------------------------
                     LabelString := GetModuleRevisionLabels(ModuleID, RevisionID);
                     if LabelString = '' then
@@ -4111,6 +4166,7 @@ begin
                       NewItem.SubItems.Add(JVCSRES_Yes)
                     else
                       NewItem.SubItems.Add(JVCSRES_No);
+                    {$IFDEF DEBUG} TmMark(8); {$ENDIF DEBUG}
                     //--- Size ---------------------------------------------------------
                     if ShowLocalInfo then
                     begin
@@ -4131,6 +4187,7 @@ begin
                     {$IFDEF DEBUG} // MG
                     JclDebug.TraceMsg('PM: FillListView - Date');
                     {$ENDIF DEBUG}
+                    {$IFDEF DEBUG} TmMark(9); {$ENDIF DEBUG}
                     //--- Date ---------------------------------------------------------
                     if ShowLocalInfo then
                     begin
@@ -4158,6 +4215,7 @@ begin
                     begin
                       NewItem.SubItems.Add('-');
                     end;
+                    {$IFDEF DEBUG} TmMark(10); {$ENDIF DEBUG}
                     //--- Attr ---------------------------------------------------------
                     if ShowLocalInfo then
                     begin
@@ -4168,10 +4226,12 @@ begin
                     end
                     else
                       NewItem.SubItems.Add('-');
+                    {$IFDEF DEBUG} TmMark(11); {$ENDIF DEBUG}
                     //--- Module ID ----------------------------------------------------
                     NewItem.SubItems.Add(IntToStr(ModuleID));
                     //--- Revision ID --------------------------------------------------
                     NewItem.SubItems.Add(IntToStr(RevisionID));
+                    {$IFDEF DEBUG} TmMark(0); {$ENDIF DEBUG}
                     //--- Version Info Resource ----------------------------------------
                     {$IFDEF IDEDLL}
                     if IsIDEProject(CurrentFile, sProjectName) then
@@ -4179,6 +4239,7 @@ begin
                         _StrToInt(AppSrvClient1.Answer.Fields[7]),
                         _StrToInt(AppSrvClient1.Answer.Fields[8]), - 1, - 1, - 1);
                     {$ENDIF IDEDLL}
+                    {$IFDEF DEBUG} TmMark(12); {$ENDIF DEBUG}
                     //--- ready --------------------------------------------------------
                     NextModule1:
                     AppSrvClient1.Answer.Next;
@@ -4193,9 +4254,18 @@ begin
                   J := DelphiModules.IndexOf(CurrentPath + CurrentFile);
                   if J <> -1 then
                     DelphiModules.Delete(J);
+                  {$IFDEF DEBUG} TmMark(0); {$ENDIF DEBUG}
                   // Progress calcalution
                   StatusBarGaugePos(Round((I / StatusBarGaugeMax) * 30) + 60);
+                  {$IFDEF DEBUG} TmMark(14); {$ENDIF DEBUG}
                 end; // while not AppSrvClient1.Answer.EoF do begin
+                {$IFDEF DEBUG}
+                QueryPerformanceCounter(TmT0);
+                JVCSLogMessage(Format('FillListView laco local: %d modulos, %s ms | assoc %s, bug %s, exists %s, items.add %s, plugin %s, icone %s, tipo %s, labels %s, tamanho %s, data %s, attr %s, ideproj %s, gauge %s, condicao/ProcessMessages %s, resto %s | ModuleImageList.Count %d',
+                  [AllModules, TmMs(TmT0 - TmLoop0), TmMs(TmAcc[1]), TmMs(TmAcc[2]), TmMs(TmAcc[3]), TmMs(TmAcc[4]), TmMs(TmAcc[5]),
+                   TmMs(TmAcc[6]), TmMs(TmAcc[7]), TmMs(TmAcc[8]), TmMs(TmAcc[9]), TmMs(TmAcc[10]), TmMs(TmAcc[11]), TmMs(TmAcc[12]),
+                   TmMs(TmAcc[14]), TmMs(TmAcc[13]), TmMs(TmAcc[0]), ModuleImageList.Count]));
+                {$ENDIF DEBUG}
               end; // with DataModule1 do begin
             end // if CanRunFutherFillListView then \n begin
             else
