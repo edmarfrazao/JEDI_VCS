@@ -9,7 +9,7 @@ Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6), com o que
 | F0 | Ambiente, dependências, build e linha de base | **Em andamento** (cerca de metade: ambiente e dependências do D13 prontos; faltam `.dproj`, D11/D12, cópias locais e linha de base golden) |
 | F1 | Midware portado, `JVCSTransport.pas`, teste golden | **Em andamento**: Midware portado (Unicode, cp1252, ICS 9) e golden de fio do console idêntico ao original; faltam `JVCSTransport.pas`, pacote design-time e suíte golden automatizada (ACP 65001, en-US) |
 | F2 | Núcleo do cliente e console `jvcs.exe` | **Console pronto e validado** (Win32 Debug/Release, golden idêntico ao 2.5.0.1030, ver [Port-Console.md](../client/Port-Console.md)); faltam os helpers nativos (sem JCL/Abbrevia), `BFCrypt.pas` e testes de sync/arquivo vazio/binário |
-| F3 | Infraestrutura comum de GUI e `JEDIVCSDiff.exe` | Não iniciada |
+| F3 | Infraestrutura comum de GUI e `JEDIVCSDiff.exe` | **Diff pronto** (Win32 Debug/Release, sem JVCL/JCL/DFS, testes por linha de comando iguais ao original) e **infraestrutura de aparência** (`JVCSUIScale`, `JVCSUITheme`); ver [Port-Diff.md](../client/Port-Diff.md) |
 | F4 | EXE standalone `Jedivcs.exe` | **1ª etapa pronta**: compila (Win32 Debug/Release, 0 erros, JVCL como ponte) e passou no teste básico contra o servidor de teste (login 250, projeto, checkout/check-in acentuado, undo checkout); ver [Port-Standalone.md](../client/Port-Standalone.md) |
 | F5 | DLL da IDE, novo expert ToolsAPI e setup | **Trilha 5A (expert) em andamento**; DLL e setup não iniciados |
 | F6 | Win64 / ARM64EC (opcional) | Não iniciada; bloqueada pela `fvcscrypt.dll` |
@@ -23,7 +23,7 @@ Fonte: logs em `tools\logs\compilar_<chave>_Win32_Debug.log`, gerados em 12/10/2
 | Projeto | Erro | Causa e correção |
 |---|---|---|
 | `exe` (`Jedivcs.dpr`) | ~~`F2613 Unit 'FastMM4' not found`~~ **Resolvido** (F4, compila: ver Port-Standalone.md) | Os `.dpr` originais usam `FastMM4` e `src\comp\fastmm` não existe no layout novo. Remover a unit do `uses` e usar o gerenciador de memória embutido (`ReportMemoryLeaksOnShutdown` sob `DEBUG`). Previsto em F4 (4.1) |
-| `diff` (`JEDIVCSDiff.dpr`) | `F2613 Unit 'FastMM4' not found` | Idem. Previsto em F3 (3.7) |
+| `diff` (`JEDIVCSDiff.dpr`) | ~~`F2613 Unit 'FastMM4' not found`~~ | **Resolvido** (F3: compila, ver [Port-Diff.md](../client/Port-Diff.md)) |
 | `console` (`jvcs.dpr`) | ~~`F1026 File not found: '..\comp\fastmm\FastMM4.pas'`~~ | **Resolvido** (FastMM4 removido; compila e passa no golden, ver [Port-Console.md](../client/Port-Console.md)) |
 | `dll` (`JediVCSDLL.dpr`) | `E2029 Identifier expected but ',' found` em `src\common\JVCSIDESettings.pas(99)`, seguido de `E2003` (`DelphiHKEY`, `RegKeyExists`, `RegGetKeyNames`, `RegReadString`), `E2012` e `F2063 Could not compile used unit 'JVCSIDESettings.pas'` (chamada em `JVCSIDEInterface.pas(2378)`) | `JVCSIDESettings.pas` usa `{$ifdef WINDOWS}`, símbolo que o Delphi 13 não define (só `MSWINDOWS`). Correção definitiva no fonte: trocar por `MSWINDOWS` (F5 5.3, na linha 95 conforme o plano). Contorno só no script, sem editar o fonte: `set JVCS_EXTRA_DEFS=WINDOWS` |
 
@@ -87,13 +87,13 @@ Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win
 
 ## F3: GUI comum e JEDIVCSDiff (piloto)
 
-- [ ] Recursos: `jvcsver.rc` (2.5.0.2026 / "2.5 Beta 2026" / pré-lançamento), `STRINGS.RC`, `CURSORS.RC`; remover `winxp.res`
-- [ ] Units base (`JVCSForms`, `ConfigStorage`, `VCSBase`, `JclDebug` → `JVCSTrace`)
-- [ ] Substitutos nativos da JVCL não visual (`JVCSDialogs`, `JVCSMruList`, `JVCSThreads`, `JVCSLanguage` + `gnugettext`)
-- [ ] `VCSProcBase.pas` (`HtmlHelpW`, `TOpenDialog`/`TSaveDialog`, `FormatSettings`)
-- [ ] Helpers visuais (status bar, About, `ListView`)
-- [ ] `DBModule` sem LZH/CipherLz; `#$FF` vira erro
-- [ ] `JEDIVCSDiff.exe` sem `Jv*` nem `dfs*`
+- [x] **`JEDIVCSDiff.exe` compilando (12/10/2026)**: `tools\compilar.bat diff Debug|Release Win32` com 0 erros e 0 avisos; sem `Jv*`, `Jcl*`, `dfs*`, FastMM4 e sem as units do EXE (`..\jedivcs` fora do search path; `LANGUAGE` desligado até o `gnugettext`). Recurso 2.5.0.2026 / "2.5 Beta 2026" / pré-lançamento + manifesto. Detalhes: [Port-Diff.md](../client/Port-Diff.md)
+- [x] Diff (3.7): status bar nativa com gauge, MRU nativo no **mesmo formato** do `TJvMruList` (lido/gravado também pelo original), `TSpinEdit`/`TColorBox`, `TSynEditMark.Create(Editor)`, `Gutter.Bands` no DFM, `TSynHighlighterAttributes.Create(Name, FriendlyName)`, `RegAcc`/`FavSaveDialog`/`TVCSListView` → locais, `HtmlHelpW`, About próprio, leitura/gravação com detecção de codificação (ANSI/UTF-8/UTF-16)
+- [x] Teste por linha de comando (`/s: /t: /autostart` + novos `/log:` e `/close` com exit code): pares ANSI cp1252 e UTF-8 com acentos dão o mesmo resultado do original; ANSI × UTF-8 com BOM do mesmo texto = iguais (o original acusava diferença). Todos os forms abrem sem `EReadError` (harness), tema claro/escuro e 150% conferidos por captura de tela
+- [x] Infraestrutura de aparência: `src\common\client\JVCSUIScale.pas` (fonte/tamanho/escala da interface, menus owner-draw, fonte dos editores; chaves `UIFontScale`, `UIFontName`, `UIFontSize`, `MenuFontName`, `MenuFontSize`, `EditorFontName`, `EditorFontSize`) e `JVCSUITheme.pas` (`UITheme` 0 seguir host/1 claro/2 escuro; VCL Style "Windows Modern Dark" embutido; Windows via `AppsUseLightTheme` + `WM_SETTINGCHANGE`; IDE via `JVCSUISetHostTheme`). Aplicadas no Diff (grupo "User interface" em Editor Properties)
+- [ ] Teste interativo de gravação UTF-8, relatórios e ajuda; build D11/D12; chamada do Diff pelo EXE (comparar com revisão do servidor)
+- [ ] Desejado em units compartilhadas: `TJVCSForm` aplicar `JVCSUIApplyToForm`; `JVCSBaseAboutDialog` sem `TJvRichEdit`; `JVCSLanguage` com `gnugettext` (ver Port-Diff.md, seção 5)
+- [ ] Recursos do EXE (`STRINGS.RC`, `CURSORS.RC`), units base (`ConfigStorage`, `VCSBase`, `JclDebug` → `JVCSTrace`), substitutos da JVCL não visual (`JVCSDialogs`, `JVCSMruList`, `JVCSThreads`), `VCSProcBase`, `DBModule`: seguem com o port do EXE (F4)
 
 ## F4: EXE standalone
 
