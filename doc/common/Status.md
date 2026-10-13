@@ -1,6 +1,6 @@
 # Status do port
 
-Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6), com o que já foi feito e os próximos passos. Estado em **12/10/2026**. Decisões: [Decisoes.md](Decisoes.md). Ambiente: [Ambiente.md](Ambiente.md).
+Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6), com o que já foi feito e os próximos passos. Estado em **13/10/2026**. Decisões: [Decisoes.md](Decisoes.md). Ambiente: [Ambiente.md](Ambiente.md).
 
 ## Resumo
 
@@ -10,11 +10,11 @@ Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6), com o que
 | F1 | Midware portado, `JVCSTransport.pas`, teste golden | **Em andamento**: Midware portado (Unicode, cp1252, ICS 9) e golden de fio do console idêntico ao original; faltam `JVCSTransport.pas`, pacote design-time e suíte golden automatizada (ACP 65001, en-US) |
 | F2 | Núcleo do cliente e console `jvcs.exe` | **Console pronto e validado** (Win32 Debug/Release, golden idêntico ao 2.5.0.1030, ver [Port-Console.md](../client/Port-Console.md)); faltam os helpers nativos (sem JCL/Abbrevia), `BFCrypt.pas` e testes de sync/arquivo vazio/binário |
 | F3 | Infraestrutura comum de GUI e `JEDIVCSDiff.exe` | **Diff pronto** (Win32 Debug/Release, sem JVCL/JCL/DFS, testes por linha de comando iguais ao original) e **infraestrutura de aparência** (`JVCSUIScale`, `JVCSUITheme`); ver [Port-Diff.md](../client/Port-Diff.md) |
-| F4 | EXE standalone `Jedivcs.exe` | **1ª etapa pronta**: compila (Win32 Debug/Release, 0 erros, JVCL como ponte) e passou no teste básico contra o servidor de teste (login 250, projeto, checkout/check-in acentuado, undo checkout); ver [Port-Standalone.md](../client/Port-Standalone.md) |
-| F5 | DLL da IDE, novo expert ToolsAPI e setup | **Trilha 5A (expert) em andamento**; DLL e setup não iniciados |
+| F4 | EXE standalone `Jedivcs.exe` | **1ª e 2ª etapas prontas**: compila (Win32 Debug/Release, 0 erros, JVCL como ponte) e passou no teste básico contra o servidor de teste (login 250, projeto, checkout/check-in acentuado, undo checkout); ver [Port-Standalone.md](../client/Port-Standalone.md); 2ª etapa: páginas Appearance (fonte/escala/tema) e AI / Automation em VCS Properties, log de erros |
+| F5 | DLL da IDE, novo expert ToolsAPI e setup | **Expert carregado na IDE; DLL nova compila e passa no harness**; aparência (tema seguindo a IDE, contido), menus legíveis no tema da IDE, janelas com dono = IDE, log de erros; falta o teste completo na IDE e o setup |
 | F6 | Win64 / ARM64EC (opcional) | Não iniciada; bloqueada pela `fvcscrypt.dll` |
 
-**Console:** `tools\compilar.bat console Debug|Release Win32` gera `bin\client\Win32\jvcs.exe`, validado contra o servidor de teste (12/10/2026). **EXE standalone:** `tools\compilar.bat exe Debug|Release Win32` gera `bin\client\Win32\Jedivcs.exe` (1ª etapa da F4, ver [Port-Standalone.md](../client/Port-Standalone.md)). A `dll` ainda não compila. Só o expert (`JvcsExpertBDS37.dll`) e as bibliotecas fixadas (SynEdit, VTV) compilam.
+**Console:** `tools\compilar.bat console Debug|Release Win32` gera `bin\client\Win32\jvcs.exe`, validado contra o servidor de teste (12/10/2026). **EXE standalone:** `tools\compilar.bat exe Debug|Release Win32` gera `bin\client\Win32\Jedivcs.exe` (1ª etapa da F4, ver [Port-Standalone.md](../client/Port-Standalone.md)). **DLL da IDE:** `tools\compilar.bat dll Debug|Release Win32` gera `bin\client\Win32\JvcsExternalDll.dll` (ver [Port-DLL-IDE.md](../client/Port-DLL-IDE.md)). Os quatro alvos (`exe`, `dll`, `diff`, `console`) compilam com 0 erros em Debug e Release (13/10/2026).
 
 ## Erros atuais do `tools\compilar.bat all`
 
@@ -92,12 +92,14 @@ Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win
 - [x] Teste por linha de comando (`/s: /t: /autostart` + novos `/log:` e `/close` com exit code): pares ANSI cp1252 e UTF-8 com acentos dão o mesmo resultado do original; ANSI × UTF-8 com BOM do mesmo texto = iguais (o original acusava diferença). Todos os forms abrem sem `EReadError` (harness), tema claro/escuro e 150% conferidos por captura de tela
 - [x] Infraestrutura de aparência: `src\common\client\JVCSUIScale.pas` (fonte/tamanho/escala da interface, menus owner-draw, fonte dos editores; chaves `UIFontScale`, `UIFontName`, `UIFontSize`, `MenuFontName`, `MenuFontSize`, `EditorFontName`, `EditorFontSize`) e `JVCSUITheme.pas` (`UITheme` 0 seguir host/1 claro/2 escuro; VCL Style "Windows Modern Dark" embutido; Windows via `AppsUseLightTheme` + `WM_SETTINGCHANGE`; IDE via `JVCSUISetHostTheme`). Aplicadas no Diff (grupo "User interface" em Editor Properties)
 - [ ] Teste interativo de gravação UTF-8, relatórios e ajuda; build D11/D12; chamada do Diff pelo EXE (comparar com revisão do servidor)
-- [ ] Desejado em units compartilhadas: `TJVCSForm` aplicar `JVCSUIApplyToForm`; `JVCSBaseAboutDialog` sem `TJvRichEdit`; `JVCSLanguage` com `gnugettext` (ver Port-Diff.md, seção 5)
+- [x] Desejado em units compartilhadas: `TJVCSForm` aplica a aparência (13/10/2026); `JVCSBaseAboutDialog` sem `TJvRichEdit`/`JclFileUtils` (13/10/2026)
+- [ ] `JVCSLanguage` com `gnugettext` (ver Port-Diff.md, seção 5)
 - [ ] Recursos do EXE (`STRINGS.RC`, `CURSORS.RC`), units base (`ConfigStorage`, `VCSBase`, `JclDebug` → `JVCSTrace`), substitutos da JVCL não visual (`JVCSDialogs`, `JVCSMruList`, `JVCSThreads`), `VCSProcBase`, `DBModule`: seguem com o port do EXE (F4)
 
 ## F4: EXE standalone
 
 - [x] **1ª etapa (12/10/2026)**: `tools\compilar.bat exe Debug|Release Win32` com 0 erros → `bin\client\Win32\Jedivcs.exe` (2.5.0.2026, "2.5 Beta 2026", pré-lançamento; LOGIN 250). Sem FastMM4, `REPORTDLL`, `LANGUAGE`, plugins e notificação; `BRANCHING` + `JVCS_NOBRANCHUI` (menu Branch oculto, HEAD fixo). Substitutos novos: `TJVCSListView` (EnhListView), `TJVCSStatusBar` (dfsStatusBar), `FavOpenDialog`, `TJVCSFolderTree` (SystemTreeView), `JVCSFileSearch` (RekScan), `BFCrypt`, `mwPasLex` mínimo; VTV V8.5 e SynEdit pyscripter ajustados. Teste contra o servidor: login, abrir `exemplo01.dpr`, checkout/check-in de `uPrincipal.pas` com comentário acentuado (0.8 → **0.9**, arquivo baixado pelo console igual ao enviado), histórico, undo checkout, sem locks. Detalhes e pendências: [Port-Standalone.md](../client/Port-Standalone.md)
+- [x] **2ª etapa (13/10/2026)**: VCS Properties → **Appearance** (escala, fontes da interface/menus/editores, tema seguir Windows/claro/escuro) e **AI / Automation** (checkout/check-in manual/confirmação/auto no `config.ini` do `jvcs-ai.ps1`, formato preservado); aparência aplicada em todos os forms (`TJVCSForm`, 20 forms convertidos); log de erros `%LOCALAPPDATA%\JEDI\JVCS\logs`; diálogos DSA reentrantes corrigidos; testado 150% + escuro e leitura pelo `jvcs-ai.ps1 config list`. Ver [Port-Standalone.md](../client/Port-Standalone.md) §4
 - [ ] Lote 4.1 esqueleto e login (`Create`, `ProjAdmin`, `mdmailslot`, `TJVCSListView`) — compila e funciona; faltam `mdmailslot` (só compila), `TJvToolBar`/`TJvEdit` → nativos, `ThemeMgr`/`JclSecurity`
 - [ ] Lote 4.2 operações com o servidor (`ChkInSingle`, `ChkOutSingle`, `Syncronice`, `Backup`, etc.)
 - [ ] Lote 4.3 History, Line History, Compressed Diff (VT V8, SynEdit, `textdiff`, `mwPasLex`)
@@ -126,6 +128,8 @@ DLL e setup:
 - [x] Exports iguais aos da 2.5.0.1030 por nome (`JEDIVCSDLLINIT/FINALIZE/HISTORYINIT/OPERATIONINIT`; ordinais diferentes e 3 exports extras da RTL/bzip2, inofensivos)
 - [x] Harness fora da IDE com a DLL real (`src\jvcsideexpert\tests\testar-dll.bat`, `TJVCSDllBridge` + callbacks do expert): nova e original inicializam, abrem Connect/Properties/Recent/About, finalizam; **0 access violations**, 0 falhas
 - [x] `tools\compilar-expert.bat [Debug|Release] [nova|original]` (padrão `nova`); `bin\ideclient\Win32` montado com o expert e a DLL nova; `setup\Delphi13-JVCS-DLL-nova.reg` (não aplicado)
+- [x] **Aparência e erros na DLL (13/10/2026)**: tema seguindo a IDE (registro `<chave base>\Theme`), sys style hooks da DLL desregistrados (não pinta a IDE), texto dos menus owner-draw para o hook de menus da IDE (menus em branco no tema escuro, bug também da original), forms com dono = `TAppBuilder` (Alt+Tab), status "Not connected" corrigido, `try/except` + log em todas as entradas exportadas; host interativo `tests\testar-dll-interativo.bat` (Fake IDE, VCL Style no host). Ver [Port-DLL-IDE.md](../client/Port-DLL-IDE.md) §4A
+- [ ] Investigar `Modules without revision assigned to: Exemplo01.dpr` com 24,5 s no log do usuário
 - [ ] **Teste na IDE com a DLL nova** (roteiro em Port-DLL-IDE.md, seção 5): conectar, Project Manager, check-in de `uPrincipal.pas` do Exemplo01, History, fechar a IDE sem AV; LOGIN 250 no fio
 - [ ] `JediVCSDLL.dproj`; ramo `INTERNAL_OLDOTA`/VCSManager removido; `JVCSIDESettings` com BDS 22/23/37; units consumidoras (5.4)
 - [ ] Setup Inno em `setup\` (instala de `bin\client\Win32` e `3rdparty`, grava `Experts\JVCSIDEClient` por BDS)

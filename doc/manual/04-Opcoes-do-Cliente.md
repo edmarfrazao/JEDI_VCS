@@ -17,7 +17,7 @@ A janela tem uma lista de páginas à esquerda e os botões **OK**, **Apply** e 
 
 > **Atenção:** a opção "Use file storage (JVCS.INI)" (página Folders) troca o registro por um arquivo `jvcs.ini` na pasta do programa. Você perde as configurações atuais e o arquivo (com senha em Base64, se gravada) fica em `Program Files`. **Não use.**
 
-As 19 páginas do código-fonte (v2026) são: User Interface, Common Options, Comments, Folders, Time Stamps, Keyword Expansion, Project Backup, Internal Editors, Filter Values, Compare Tools, Notify, Shortcut Keys, DSA Dialogs, Internal Printer, MRU Lists, Data Encryption, Special/Debug, **External Bugtracker** e **Save WIP**. As duas últimas existem no código-fonte atual; o binário oficial 2.5.0.1030 mostra só as 17 primeiras (a validar quando o cliente portado compilar).
+As 19 páginas do código-fonte (v2026) são: User Interface, Common Options, Comments, Folders, Time Stamps, Keyword Expansion, Project Backup, Internal Editors, Filter Values, Compare Tools, Notify, Shortcut Keys, DSA Dialogs, Internal Printer, MRU Lists, Data Encryption, Special/Debug, **External Bugtracker** e **Save WIP**. As duas últimas existem no código-fonte atual; o binário oficial 2.5.0.1030 mostra só as 17 primeiras (a validar quando o cliente portado compilar). O cliente portado (v2026) acrescenta **Appearance** e **AI / Automation** (seções 20 e 21).
 
 ## 1. User Interface
 
@@ -218,6 +218,37 @@ Exemplo com o 7-Zip desta máquina:
 
 O exemplo do código-fonte usa `#m#` também para os minutos, mas `#m#` é o **mês**; use `#n#` para minutos. O comando roda minimizado. Versões antigas do 7-Zip não preservavam as pastas com lista de arquivos; confira o resultado do seu (a validar). Com "Execute on close" o comando roda ao fechar.
 
+## 20. Appearance (novo, v2026)
+
+Tamanho e família das fontes e tema claro/escuro. Vale para o standalone e para as janelas abertas pelo menu **JEDI VCS** no Delphi (a preferência é a mesma, em `HKCU\Software\JEDI\JEDIVCS\Options`). Aplica ao clicar **OK** ou **Apply**, em todas as janelas abertas, sem reiniciar.
+
+| Opção | O que faz | Recomendação |
+|---|---|---|
+| Interface font scale | Escala da fonte da interface: 100%, 125%, 150%, 175%, 200% (ou digite de 80 a 250). Diálogos e listas crescem junto | Monitor grande em 100% do Windows (ex.: 32" QHD): 125% ou 150% |
+| Interface font: **Font...** / **Default** | Família e tamanho em pontos. Com tamanho escolhido, ele vale no lugar da escala (a escala fica desabilitada). **Default** volta à fonte do sistema | Use a escala; escolha a fonte só se quiser outra família |
+| Menu font | Fonte dos menus; padrão = a da interface | Manter "Same as interface" |
+| Editor font (Diff, Line History) | Fonte dos editores de texto; padrão Consolas 10 | Uma fonte monoespaçada (Consolas, Cascadia Mono) |
+| Theme | **Follow Windows** (standalone) ou **Follow Delphi** (na IDE), **Light**, **Dark** | Seguir o Delphi/Windows |
+| Restore defaults | Volta tudo ao padrão (100%, fontes do sistema, seguir o host) | |
+
+- No Delphi, "Follow Delphi" lê o tema da IDE (Light, Dark, Mountain Mist) e é conferido a cada janela do JEDI VCS que abre. Os menus suspensos e as caixas de mensagem do JEDI VCS seguem o tema da IDE.
+- Limitações: ícones da barra de ferramentas antigos no tema escuro; cores do realce de sintaxe do Diff/Line History não mudam; a barra de menu principal do standalone sem tema não cresce (só os submenus).
+
+## 21. AI / Automation (novo, v2026)
+
+Como o **Claude Code** pode fazer checkout e check-in pelo wrapper `tools\ai\jvcs-ai.ps1` (ver `tools\ai\LEIAME.md`). Cada operação tem três modos:
+
+| Modo | O que acontece |
+|---|---|
+| **Manual** | A IA não faz a operação; você faz (IDE, JEDI VCS ou o wrapper no seu terminal) |
+| **Ask for confirmation** (padrão) | O Claude Code pede sua aprovação antes de cada operação |
+| **Automatic** | A IA faz sozinha; os comentários dos check-ins dela têm o prefixo `[IA]` |
+
+- **Check out by AI** e **Check in by AI** são independentes.
+- A escolha fica em `%APPDATA%\JEDI\JVCS\config.ini`, seção `[ai]`, chaves `checkout=` e `checkin=` (`manual`, `confirm` ou `auto`), o mesmo arquivo do `jvcs-ai.ps1 config set` (o resto do arquivo é preservado). Vale para todos os projetos do usuário do Windows.
+- Conferir: `powershell -File tools\ai\jvcs-ai.ps1 config list -Text`.
+- Desfazer checkout com descarte, checkout forçado e check-in que muda a codificação sempre pedem confirmação, em qualquer modo.
+
 ## Configuração recomendada, em resumo
 
 | Página | Ajuste |
@@ -232,3 +263,5 @@ O exemplo do código-fonte usa `#m#` também para os minutos, mas `#m#` é o **m
 | Filter Values | `.dpr`, `.res`, `.dproj` graváveis |
 | Data Encryption | Desligada na LAN |
 | Save WIP | Ligar com o 7-Zip se quiser cópia local do que está em check-out |
+| Appearance | Escala 125–150% em monitor grande a 100%; tema seguindo o Delphi/Windows |
+| AI / Automation | Confirmação (padrão) para checkout e check-in |

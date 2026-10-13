@@ -4,6 +4,7 @@
 /bin/client/**/*.map
 /bin/client/**/*.rsm
 /bin/client/**/*.drc
+/bin/client/**/*.chm
 /dcu/
 /lib/
 *.dcu

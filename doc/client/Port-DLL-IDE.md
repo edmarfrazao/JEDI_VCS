@@ -123,6 +123,103 @@ Resultado (12/10/2026, Debug e Release da nova; original 2.5.0.1030):
 O harness não conecta ao servidor: login, check-in/out, History e operações com projeto ficam para o
 teste na IDE.
 
+## 4A. Comportamento dentro da IDE: aparência, menus, janelas e erros (13/10/2026)
+
+### 4A.1 Tema e fonte
+
+- A DLL usa as mesmas opções do EXE (VCS Properties → **Appearance**, `HKCU\Software\JEDI\JEDIVCS\Options`),
+  aplicadas por `JVCSClientAppearanceInit(sIDERegistryKey)` em `JediVCSInternalInit`.
+- **"Follow Delphi"** (`UITheme = 0`): a DLL lê o tema da IDE no registro do processo hospedeiro, sem mudar
+  a ABI: `HKCU\<chave base da IDE>\Theme`, valor `Theme` (nesta máquina, `HKCU\Software\Embarcadero\BDS\37.0\Theme`
+  = `Dark`). `Dark` → escuro; `Light` e `Mountain Mist` → claro; `Custom` → escuro se o valor `VCLStyle`
+  contiver "Dark". A chave base vem do expert (`GetBaseRegistryKey`, que respeita `bds.exe -r`); se vier
+  vazia, `JVCSUIGuessDelphiBaseKey` monta `Software\Embarcadero\<-r ou BDS>\<versão do bds.exe>`. O tema é
+  relido a cada janela do JEDI VCS que abre (`TJVCSForm.DoCreate/DoShow`) e repassado a
+  `JVCSUISetHostTheme`; trocar o tema da IDE vale na próxima janela aberta (a IDE grava o registro ao
+  trocar o tema; não há notificação em tempo real sem mudar a ABI).
+- **Risco avaliado (VCL Style dentro da IDE):** a DLL tem a própria VCL (estática). O estilo global dela
+  (`TStyleManager`) só pinta os controles VCL da DLL, **mas** o motor de estilos instala um hook
+  `WH_CBT` no thread da IDE que estiliza janelas de sistema criadas no thread (`#32768` menus, `#32770`
+  diálogos, e `Edit`/`Button`/`ScrollBar`/`ComboLBox`... cujo pai não é da VCL da DLL), isto é, também
+  janelas da IDE. O estilo por form (`Form.StyleName`) não serve: no Delphi 13 ele só funciona com um
+  estilo global ativo. Solução: `JVCSUIContainStyleHooks` desregistra todos os *sys style hooks* da VCL da
+  DLL e zera `SystemHooks`; o hook fica sem efeito e o estilo da DLL só pinta os forms da DLL. Os menus
+  suspensos e as caixas de mensagem da DLL ficam com o estilo **da IDE** (hook da própria IDE).
+  Conferido no host interativo: com a DLL em tema escuro e o host sem estilo, a caixa de mensagem do
+  host continua clara.
+
+### 4A.2 Menus em branco no tema escuro (bug da DLL original também)
+
+Causa (reproduzida no host interativo com `-style WindowsModernDark.vsf`): a IDE usa VCL Style com
+`SystemHooks` de menus; o hook dela pinta **toda** janela de menu `#32768` do thread, inclusive os
+submenus e popups dos forms da DLL. Como a VCL da DLL é outra, o hook da IDE não acha o `TMenuItem` e lê
+o texto do item com `GetMenuItemInfo(MIIM_STRING)`; os itens com imagem são *owner-draw* (a VCL não
+grava o texto) e saem em branco, só com separadores e setas. Vale para o tema claro da IDE também (ele
+também é um VCL Style).
+
+Correção (`JVCSForms.JVCSInstallHostMenuFix`, ligada só na DLL): a cada `WM_INITMENUPOPUP` (no form, para o
+menu principal, e numa `TPopupList` própria, para os popups) os itens owner-draw recebem o `Caption`
+(+ `Tab` + atalho) como texto (`SetMenuItemInfo(MIIM_STRING)`; continuam owner-draw). O hook da IDE passa
+a desenhar o texto com as cores do tema da IDE. Os ícones dos itens não aparecem dentro da IDE
+(o hook da IDE não acha a ImageList da DLL); fora de host estilizado nada muda (ícones e owner-draw da
+VCL). Teste com uma DLL mínima (VCL estática, menu com Images) num host com VCL Style: sem a correção
+os itens com imagem ficam em branco; com ela, legíveis em host escuro, claro e sem estilo.
+
+### 4A.3 Janela do JEDI VCS sumindo atrás da IDE (Alt+Tab)
+
+Causa: a DLL faz `Application.Handle := GetParentHandle` (a janela **oculta** do `TApplication` da IDE) e
+os forms da DLL eram *owned* por ela. Desde que a IDE usa `MainFormOnTaskBar`, a janela visível é a
+`TAppBuilder`, e o Windows não traz as janelas da DLL junto com ela. Correção (`TJVCSForm.CreateParams`,
+`JVCSFormsOwnerClass = 'TAppBuilder'` só na DLL): quando a dona seria `Application.Handle`, passa a ser a
+janela `TAppBuilder` visível do thread. Os forms ficam acima da IDE, minimizam/restauram com ela e não
+aparecem na barra de tarefas. `Application.Handle` não muda (ele é usado em `MessageBox` e por
+`Application.Title/Icon`, que mexeriam na janela da IDE). Diálogos modais continuam com dono = form ativo.
+Conferido no host interativo: `GetWindow(GW_OWNER)` do login, do Project Manager e do VCS Properties =
+`TAppBuilder`.
+
+### 4A.4 Barra de status "Not connected"
+
+O painel 4 do Project Manager mostra o servidor quando `AppSrvClientConnected` (evento de sessão do
+socket). Na IDE ele mostrava "Not connected" com o projeto listado. Agora mostra o host também quando há
+login (`ServerUserID > 0`). Não é o painel da notificação (`JVCS_NOTIFY` desligado escreve só na janela
+de mensagens: "Internal Notify ... not active").
+
+### 4A.5 Controle de erros
+
+- Log: `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-dll-AAAAMMDD.log` (e `jvcs-exe-...` para o standalone). Uma linha
+  por evento: data/hora, pid, módulo e versão, onde, classe e mensagem, endereço (módulo+offset) e
+  unit/rotina/linha quando o `JvcsExternalDll.map` está ao lado da DLL (`compilar-expert.bat` copia).
+  Nunca grava senha. Para enviar: anexe o arquivo do dia (e o `JVCS_EXPERT_LOG`, se ligado).
+- `Application.OnException` da VCL da DLL: registra e mostra **uma** mensagem por vez (sem cascata).
+- Todas as entradas exportadas chamadas pelo expert (`GetIDString`, `ExecuteVerb`, `GetMenuName`,
+  `GetVerb*`, `ProjectChange`, `FileNotification`, `EventNotification`, `JEDIVCSDLLINIT`,
+  `JEDIVCSDLLFINALIZE`) têm `try/except`: nada atravessa a fronteira da DLL. O FINALIZE só registra
+  (sem mensagem) e escreve "JEDIVCSDLLFINALIZE concluido". O `HandleException` antigo (que repassa a
+  mensagem ao expert) também registra no log.
+- Causa real encontrada: diálogos DSA reentrantes (`EJvDSADialog: CheckMarkText ID 99 already
+  registered`), por exemplo um `TTimer` (login, `UpdateTimer`/`RefreshTimer` do Project Manager) abrindo
+  um segundo diálogo enquanto outro estava aberto; corrigido em `JVCSDialogs` (ID livre por uso). É o
+  candidato mais provável aos "erros ao fechar o Project Manager" relatados; o fechamento com projeto
+  aberto pela IDE não foi reproduzido fora dela (o host não tem projeto da IDE). O log vai mostrar o
+  resto.
+
+### 4A.6 Host interativo
+
+```
+src\jvcsideexpert\tests\testar-dll-interativo.bat -verbs "Connect Server,Project Manager" -stop %TEMP%\jvcs-stop.txt
+src\jvcsideexpert\tests\testar-dll-interativo.bat -style "C:\Program Files (x86)\Embarcadero\Studio\37.0\Redist\styles\vcl\WindowsModernDark.vsf" -verbs "Project Manager"
+```
+
+Mesmo bridge e callbacks do harness, com uma janela "Fake IDE" da classe `TAppBuilder`, VCL Style
+opcional no host (simula o tema da IDE), sem fechar janelas sozinho; o FINALIZE + `FreeLibrary` acontece
+quando o arquivo `-stop` existe ou a Fake IDE é fechada. Conta AVs e exceções Delphi de primeira
+chance. `-hostmsg <texto>` mostra uma caixa de mensagem do próprio host.
+
+Resultados (13/10/2026, DLL Debug): login com a identidade de teste `JVCS2026TEST` (127.0.0.1:2106,
+apagada no fim), Project Manager aberto e fechado, FINALIZE com e sem o Project Manager aberto: 0 AV,
+0 exceção Delphi; tema escuro na DLL com host escuro e com host claro; menus legíveis. Harness
+`testar-dll.bat ambas`: 0 falhas, 0 AV (nova e original).
+
 ## 5. Teste na IDE (usuário)
 
 A pasta `bin\ideclient\Win32` já está montada com o expert e a **DLL nova** (`compilar-expert.bat
@@ -147,6 +244,19 @@ Release nova`, 12/10/2026). O registro do expert é o mesmo de antes (`JVCSIDECl
    `JvcsExternalDll carregada: …bin\ideclient\Win32\JvcsExternalDll.dll` e, no fim,
    `JvcsExternalDll descarregada`.
 
+9. **Aparência e janelas (13/10/2026)**, com a IDE em tema **Dark** e depois **Light**:
+   - os submenus do Project Manager (Server, Project, Module...) e os popups mostram o texto (sem ícones);
+   - VCS Properties → **Appearance**: *Follow Delphi* deixa as janelas do JEDI VCS escuras com a IDE escura
+     (vale na próxima janela aberta depois de trocar o tema); *Light*/*Dark* fixam; a escala 125/150%
+     aumenta as janelas do JEDI VCS e **não** muda menus, diálogos ou o editor da IDE;
+   - com o Project Manager aberto, Alt+Tab para outro programa e volte: o Project Manager volta junto,
+     na frente da IDE; ele não aparece como botão separado na barra de tarefas;
+   - a barra de status mostra o servidor (não "Not connected") depois do login;
+   - feche o Project Manager (com e sem módulo selecionado) e depois a IDE; se aparecer erro, a mensagem
+     indica o log `%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-dll-AAAAMMDD.log`: envie o arquivo.
+10. VCS Properties → **AI / Automation** mostra os modos atuais do `config.ini` (nesta máquina, Automatic
+    nos dois); trocar e confirmar com `tools\ai\jvcs-ai.ps1 config list -Text` (e voltar ao modo desejado).
+
 Para voltar à DLL original: feche o Delphi e rode `tools\compilar-expert.bat Release original`.
 
 ## 6. Pendências
@@ -164,4 +274,9 @@ Para voltar à DLL original: feche o Delphi e rode `tools\compilar-expert.bat Re
 - Finalização: `DllEntry(DLL_PROCESS_DETACH)` ainda chama `JediVCSDLLFinalize` se o expert não chamou
   (sob o loader lock). O expert novo sempre chama o `FINALIZE` antes do `FreeLibrary`.
 - `.dproj` da DLL, builds D11/D12, Win64 (F6) e setup Inno (5.6).
-- As opções de fonte/tema/aba IA (`JVCSUIScale`/`JVCSUITheme`) ainda não foram aplicadas na DLL.
+- ~~Opções de fonte/tema/aba IA na DLL~~: feitas (seção 4A). Faltam: troca de tema da IDE em tempo real
+  (precisa de notificação nova do expert, `IOTAIDEThemingServicesNotifier`, e de verbo/ABI nova), item
+  "JEDI VCS → Tamanho da fonte..." no expert, ícones nos menus dentro da IDE (hbmpItem a partir da
+  ImageList), reproduzir o fechamento do Project Manager com projeto aberto pela IDE.
+- **Lentidão a investigar**: no log do usuário, `Server request: (Modules without revision assigned to:
+  Exemplo01.dpr)` levou **24,5 s** (consulta do servidor ou do cliente; medir no console e no proxy).
