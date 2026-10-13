@@ -54,7 +54,7 @@ interface
 
 uses
   Winapi.Windows, Winapi.Messages, System.SysUtils, System.Classes,
-  System.Generics.Collections, Vcl.Graphics, Vcl.Menus, Vcl.ActnList,
+  Vcl.Graphics, Vcl.Menus, Vcl.ActnList,
   ToolsAPI, JVCSExpertDllBridge, JVCSExpertNotifiers;
 
 const
@@ -104,8 +104,12 @@ type
     FKeyBindingIntf: IOTAKeyboardBinding;
     FKeyBindingIndex: Integer;
     FMenuItem: TMenuItem;
-    FSubItems: TList<TMenuItem>;
-    FActions: TList<TAction>;
+    // arrays dinamicos, nao TList<T>: os genericos importam metodos internos
+    // do rtl<nn>.bpl (TListHelper) que mudam entre atualizacoes do Delphi e
+    // impediriam o expert de carregar numa atualizacao diferente (ver
+    // tools\verificar-expert.ps1)
+    FSubItems: TArray<TMenuItem>;
+    FActions: TArray<TAction>;
     FImageMap: TArray<Integer>;  // indice de imagem da DLL -> indice na IDE
     FVerbs: TArray<TJVCSVerbInfo>;
     FLastRefresh: UInt64;
@@ -188,6 +192,24 @@ var
   GWizardIntf: IOTAWizard = nil;    // referencia forte do proprio expert
   GWizardIndex: Integer = -1;
   GAboutIndex: Integer = -1;
+
+procedure AppendMenuItem(var AList: TArray<TMenuItem>; AItem: TMenuItem);
+var
+  N: Integer;
+begin
+  N := Length(AList);
+  SetLength(AList, N + 1);
+  AList[N] := AItem;
+end;
+
+procedure AppendAction(var AList: TArray<TAction>; AAction: TAction);
+var
+  N: Integer;
+begin
+  N := Length(AList);
+  SetLength(AList, N + 1);
+  AList[N] := AAction;
+end;
 
 { ---- bitmap para splash/About (24x24, desenhado em tempo de execucao) -------- }
 
@@ -397,8 +419,8 @@ begin
   FProjMenuIndex := -1;
   FKeyBindingIndex := -1;
   FPendingExecute := -1;
-  FSubItems := TList<TMenuItem>.Create;
-  FActions := TList<TAction>.Create;
+  FSubItems := nil;
+  FActions := nil;
   FMsgWnd := AllocateHWnd(WndProc);
 
   JvcsInitDpiSupport;
@@ -505,8 +527,8 @@ end;
 destructor TJVCSWizard.Destroy;
 begin
   Shutdown;
-  FSubItems.Free;
-  FActions.Free;
+  FSubItems := nil;
+  FActions := nil;
   inherited Destroy;
 end;
 
@@ -625,7 +647,7 @@ end;
 // fora do bombeamento de mensagens da DLL.
 procedure TJVCSWizard.ExecutePending(AIndex: Integer);
 begin
-  if FShutdown or (AIndex < 0) or (AIndex >= FActions.Count) then
+  if FShutdown or (AIndex < 0) or (AIndex >= Length(FActions)) then
     Exit;
   JvcsLogFmt('Executando o verbo %d adiado (clicado durante a atualizacao dos verbos)', [AIndex]);
   // TCustomAction.Execute chama Update e so executa se Enabled
@@ -799,7 +821,7 @@ begin
   Item.Caption := 'JvcsExternalDll.dll not loaded - details...';
   Item.OnClick := ErrorItemClick;
   FMenuItem.Add(Item);
-  FSubItems.Add(Item);
+  AppendMenuItem(FSubItems, Item);
 end;
 
 procedure TJVCSWizard.ErrorItemClick(Sender: TObject);
@@ -843,13 +865,13 @@ begin
     Action.OnExecute := ActionExecute;
     Action.OnUpdate := ActionUpdate;
     Action.ActionList := NTA.ActionList;
-    FActions.Add(Action);
+    AppendAction(FActions, Action);
 
     Item := TMenuItem.Create(nil);
     Item.Name := 'mnuJEDIVCS_' + IntToStr(I);
     Item.Action := Action;
     FMenuItem.Add(Item);
-    FSubItems.Add(Item);
+    AppendMenuItem(FSubItems, Item);
   end;
   RefreshVerbs(True);
   JvcsLogFmt('Menu criado com %d verbos', [Count]);
@@ -859,15 +881,15 @@ procedure TJVCSWizard.FreeVerbItems;
 var
   I: Integer;
 begin
-  for I := FSubItems.Count - 1 downto 0 do
+  for I := Length(FSubItems) - 1 downto 0 do
     FSubItems[I].Free;
-  FSubItems.Clear;
-  for I := FActions.Count - 1 downto 0 do
+  FSubItems := nil;
+  for I := Length(FActions) - 1 downto 0 do
   begin
     FActions[I].ActionList := nil;
     FActions[I].Free;
   end;
-  FActions.Clear;
+  FActions := nil;
   SetLength(FVerbs, 0);
 end;
 
@@ -876,7 +898,7 @@ var
   Action: TAction;
   Info: TJVCSVerbInfo;
 begin
-  if (AIndex < 0) or (AIndex >= FActions.Count) or (AIndex >= Length(FVerbs)) then
+  if (AIndex < 0) or (AIndex >= Length(FActions)) or (AIndex >= Length(FVerbs)) then
     Exit;
   Action := FActions[AIndex];
   Info := FVerbs[AIndex];
@@ -1014,7 +1036,7 @@ end;
 
 procedure TJVCSWizard.ExecuteVerbFromKey(AIndex: Integer);
 begin
-  if FShutdown or (AIndex < 0) or (AIndex >= FActions.Count) then
+  if FShutdown or (AIndex < 0) or (AIndex >= Length(FActions)) then
     Exit;
   RefreshVerbs(True);
   // TCustomAction.Execute chama Update e so executa se Enabled
