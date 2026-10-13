@@ -54,12 +54,12 @@ unit DirectSQL;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   JvSpin, StdCtrls, ExtCtrls, JVCSMruList, Buttons, Mask, JvMaskEdit,
   JvEdit, JvMemo, JvExStdCtrls, JvExMask;
 
 type
-  TVCSDirectSQL = class(TForm)
+  TVCSDirectSQL = class(TJVCSForm)
     Panel1: TPanel;
     Panel2: TPanel;
     SQLMemo: TJvMemo;

@@ -55,7 +55,7 @@ uses
   {$IFDEF DEBUG}
   JclDebug,
   {$ENDIF DEBUG}
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   ComCtrls, Buttons, StdCtrls, ExtCtrls, Menus;
 
 const
@@ -73,7 +73,7 @@ type
   end;
 
 type
-  TVCSShowTimeLog = class(TForm)
+  TVCSShowTimeLog = class(TJVCSForm)
     Panel1: TPanel;
     btnClose: TButton;
     lvTimeLog: TListView;

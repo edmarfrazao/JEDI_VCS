@@ -58,11 +58,11 @@ uses
   {$IFDEF DEBUG}
   JclDebug,
   {$ENDIF DEBUG}
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   ImgList, ComCtrls, JVCSListView, Buttons, StdCtrls, ExtCtrls, Menus;
 
 type
-  TVCSProjectDependencies = class(TForm)
+  TVCSProjectDependencies = class(TJVCSForm)
     StateImageList: TImageList;
     Panel1: TPanel;
     btnClose: TButton;

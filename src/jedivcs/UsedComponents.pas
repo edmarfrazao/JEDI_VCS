@@ -54,11 +54,11 @@ unit UsedComponents;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ExtCtrls, ComCtrls, Buttons, Menus, JVCSListView;
 
 type
-  TVCSUsedComponents = class(TForm)
+  TVCSUsedComponents = class(TJVCSForm)
     Panel2: TPanel;
     btnParse: TButton;
     btnClose: TButton;

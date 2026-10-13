@@ -94,11 +94,11 @@ unit UsedUnits;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   ImgList, ComCtrls, JVCSListView, Buttons, StdCtrls, ExtCtrls, Menus;
 
 type
-  TVCSUsedUnits = class(TForm)
+  TVCSUsedUnits = class(TJVCSForm)
     SysImageList: TImageList;
     StateImageList: TImageList;
     Panel1: TPanel;

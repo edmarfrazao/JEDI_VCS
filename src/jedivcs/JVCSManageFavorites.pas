@@ -39,11 +39,11 @@ unit JVCSManageFavorites;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms,
   Dialogs, Buttons, StdCtrls, JVCSMruList, VCSBase, ConfigStorage;
 
 type
-  TVCSManageFavorites = class(TForm)
+  TVCSManageFavorites = class(TJVCSForm)
     sbUp: TSpeedButton;
     sbDown: TSpeedButton;
     lbFav: TListBox;

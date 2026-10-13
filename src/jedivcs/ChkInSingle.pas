@@ -102,13 +102,13 @@ uses
   {$IFDEF DEBUG}
   JclDebug,
   {$ENDIF DEBUG}
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, ExtCtrls, ImgList, Buttons, ComCtrls, RFormat, JvLED, JvComponent,
   JvCombobox, JvMemo, JvExStdCtrls, JvExControls, JvArrowButton, JVCSChkInOutCommon,
   Menus;
 
 type
-  TVCSChkInSingle = class(TForm)
+  TVCSChkInSingle = class(TJVCSForm)
     Panel1: TPanel;
     Panel2: TPanel;
     btnOK: TButton;
