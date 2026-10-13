@@ -31,3 +31,26 @@ __recovery/
 
 # Saida do instalador (binario gerado, nao versionar)
 setup/Output/
+
+# Credenciais e segredos (nunca versionar - repositorio publico)
+.git-credentials
+.netrc
+_netrc
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+*.ppk
+id_rsa*
+id_ed25519*
+id_ecdsa*
+hosts.yml
+credentials.json
+*.secret
+secrets/
+
+# Claude Code: configuracoes pessoais (o settings.json do projeto e versionado)
+.claude/settings.local.json
+CLAUDE.local.md

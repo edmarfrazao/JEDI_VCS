@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "deny": [
+      "Read(**/.git-credentials)",
+      "Read(**/.netrc)",
+      "Read(**/_netrc)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(**/*.pfx)",
+      "Read(**/*.p12)",
+      "Read(**/*.ppk)",
+      "Read(**/id_rsa*)",
+      "Read(**/id_ed25519*)",
+      "Read(**/id_ecdsa*)",
+      "Read(**/credentials.json)",
+      "Read(**/secrets/**)",
+      "Read(~/.git-credentials)",
+      "Read(~/.ssh/**)",
+      "Read(~/.config/gh/**)",
+      "Read(~/AppData/Roaming/GitHub CLI/**)",
+      "Bash(*gh auth token*)",
+      "PowerShell(*gh auth token*)",
+      "Bash(*gh.exe* auth token*)",
+      "PowerShell(*gh.exe* auth token*)",
+      "Bash(*git credential fill*)",
+      "PowerShell(*git credential fill*)",
+      "Bash(*git credential-manager get*)",
+      "PowerShell(*git credential-manager get*)",
+      "Bash(*cmdkey*/list*)",
+      "PowerShell(*cmdkey*/list*)"
+    ]
+  }
+}
