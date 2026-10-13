@@ -28,3 +28,6 @@ __recovery/
 # Logs
 /tools/logs/
 *.log
+
+# Saida do instalador (binario gerado, nao versionar)
+setup/Output/
