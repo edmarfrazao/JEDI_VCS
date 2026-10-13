@@ -122,8 +122,12 @@ Trilha 5A (expert), em paralelo desde a F0, carregando a `JvcsExternalDll.dll` *
 
 DLL e setup:
 
-- [ ] `JediVCSDLL.dproj` com `IDEDLL;EXT_IDE_INTF`; ramo VCSManager removido; ShareMem conforme decisão
-- [ ] ABI `PAnsiChar` mantida; `JVCSIDESettings.pas` com `MSWINDOWS`, BDS 22/23/37
+- [x] **DLL nova compilando (12/10/2026)**: `tools\compilar.bat dll Debug|Release Win32` com 0 erros → `bin\client\Win32\JvcsExternalDll.dll` (mesmas fontes e defines do EXE + `IDEDLL;EXT_IDE_INTF`; 2.5.0.2026, "2.5 Beta 2026"; LOGIN 250 pelo PRODUCTVERSION da própria DLL). Sem ShareMem e sem `winxp.res`; ABI `PAnsiChar` nas 24 callbacks, History e operações (`JVCSDLLAnsi`, sem "best fit"); relatórios desligados; "Select Branch" oculto (`JVCS_NOBRANCHUI`, 27 verbos; a original tem 29); `JVCSIDESettings` com `MSWINDOWS`. Detalhes: [Port-DLL-IDE.md](../client/Port-DLL-IDE.md)
+- [x] Exports iguais aos da 2.5.0.1030 por nome (`JEDIVCSDLLINIT/FINALIZE/HISTORYINIT/OPERATIONINIT`; ordinais diferentes e 3 exports extras da RTL/bzip2, inofensivos)
+- [x] Harness fora da IDE com a DLL real (`src\jvcsideexpert\tests\testar-dll.bat`, `TJVCSDllBridge` + callbacks do expert): nova e original inicializam, abrem Connect/Properties/Recent/About, finalizam; **0 access violations**, 0 falhas
+- [x] `tools\compilar-expert.bat [Debug|Release] [nova|original]` (padrão `nova`); `bin\ideclient\Win32` montado com o expert e a DLL nova; `setup\Delphi13-JVCS-DLL-nova.reg` (não aplicado)
+- [ ] **Teste na IDE com a DLL nova** (roteiro em Port-DLL-IDE.md, seção 5): conectar, Project Manager, check-in de `uPrincipal.pas` do Exemplo01, History, fechar a IDE sem AV; LOGIN 250 no fio
+- [ ] `JediVCSDLL.dproj`; ramo `INTERNAL_OLDOTA`/VCSManager removido; `JVCSIDESettings` com BDS 22/23/37; units consumidoras (5.4)
 - [ ] Setup Inno em `setup\` (instala de `bin\client\Win32` e `3rdparty`, grava `Experts\JVCSIDEClient` por BDS)
 
 ## F6: Win64 / ARM64EC (opcional)
