@@ -13,6 +13,9 @@ rem    /msbuild    compila os .dproj com MSBuild em vez do dcc32/dcc64 (saida em
 rem                bin\msbuild\<Dnn>\<plat>\<cfg>; nao toca em bin\client)
 rem  As versoes, os sufixos e as pastas do GetIt ficam em tools\versoes.ini
 rem  (lido por tools\versao-delphi.bat).
+rem  A versao do JEDI VCS (FILEVERSION 2.5.0.<Build>, beta, textos do VERSIONINFO)
+rem  vem de tools\versao.ini: tools\gerar-versao.ps1 gera os jvcsver.res a cada
+rem  compilacao (para subir a versao, edite so o versao.ini).
 rem
 rem  Modo normal (padrao): chama dcc32 (Win32) ou dcc64 (Win64) direto no .dpr,
 rem  com os defines e caminhos da tabela abaixo (portados dos .dof do Delphi 7).
@@ -364,6 +367,12 @@ if not exist "%BLD_LOGDIR%" mkdir "%BLD_LOGDIR%"
 call :norm_extra
 call :write_props
 
+rem ---- Versao (tools\versao.ini -> src\common\jvcsversao.rh -> jvcsver.res) ---
+rem  Os jvcsver.res do cliente/DLL, do Diff e do console sao gerados aqui (fora
+rem  do git), com o BuildTimestamp desta compilacao. Ver tools\gerar-versao.ps1.
+if defined BLD_TARGETS call :gen_version
+if defined BLD_TARGETS if not "%BLD_VERRC%"=="0" goto :ver_fail
+
 rem ---- Quais bibliotecas fixadas compilar -----------------------------------
 set "BLD_LIBLIST="
 if "%BLD_LIBMODE%"=="force" set "BLD_LIBLIST=%ALL_LIBS%"
@@ -705,6 +714,18 @@ if defined CAT_abbrevia_DIR >>"%BLD_PROPS%" echo     ^<JvcsAbbreviaDir Condition
 goto :eof
 
 rem ==========================================================================
+rem  :gen_version  - tools\versao.ini -> src\common\jvcsversao.rh e os
+rem    jvcsver.res de src\jedivcs (EXE e DLL), src\jedivcsdiff e src\jvcs
+rem    (tools\gerar-versao.ps1 + brcc32 desta versao do Delphi) -> BLD_VERRC
+rem ==========================================================================
+:gen_version
+set "BLD_VERLOG=%BLD_LOGDIR%\gerar-versao.log"
+powershell -NoProfile -ExecutionPolicy Bypass -File "%BLD_TOOLS%\gerar-versao.ps1" -Brcc "%BLD_BDSDIR%\bin\brcc32.exe" -Rc "src\jedivcs\jvcsver.rc,src\jedivcsdiff\jvcsver.rc,src\jvcs\jvcsver.rc" >"%BLD_VERLOG%" 2>&1
+set "BLD_VERRC=%ERRORLEVEL%"
+for /f "usebackq tokens=1,* delims=:" %%A in (`findstr /b /c:"Versao" "%BLD_VERLOG%"`) do echo Versao  :%%B
+goto :eof
+
+rem ==========================================================================
 rem  :show_info  - /info: versao, caminhos resolvidos e se existem
 rem ==========================================================================
 :show_info
@@ -840,6 +861,11 @@ echo      Defina BDSROOT para usar outra instalacao do RAD Studio.
 echo      Defina JVCS_CATALOG ^(GetIt^) e JVCS_EXTRA_PATH ^(outras libs^) se preciso.
 echo      Opcional: JVCS_EXTRA_DEFS ^(defines extras em todos os projetos^).
 endlocal & exit /b 0
+
+:ver_fail
+echo [ERRO] Falha ao gerar a versao ^(tools\versao.ini -^> jvcsver.res^). Log: %BLD_VERLOG%
+type "%BLD_VERLOG%"
+endlocal & exit /b 1
 
 :bad_opt
 echo [ERRO] Opcao invalida: "%BLD_A%". Use /delphi:NN, /bds:NN, /info ou /msbuild ^(%~nx0 /? para ajuda^).

@@ -1,7 +1,9 @@
 ; ============================================================================
 ;  JediVCS2026.iss - instalador do JEDI VCS 2.5 Beta 2026 (Inno Setup 6.3+)
 ;
-;  Gera setup\Output\JediVCS-2.5-Beta2026-Setup.exe. Use tools\gerar-instalador.bat
+;  Gera setup\Output\JediVCS-2.5.0-Beta<N>-build<Build>-Setup.exe (ex.: Beta5-build2050).
+;  Versao: tools\versao.ini (Build, Stage, StageNumber - fonte unica, lida aqui com
+;  ReadIni; ver doc\pt\common\Versoes.md). Use tools\gerar-instalador.bat
 ;  (compila Release Win32, confere versoes e chama o ISCC) ou, direto:
 ;    ISCC.exe setup\JediVCS2026.iss
 ;
@@ -27,8 +29,28 @@
 ; ============================================================================
 
 #define AppName      "JEDI VCS 2.5 Beta 2026"
-#define AppVersion   "2.5.0.2026"
-#define AppVerText   "2.5 Beta 2026"
+
+; ---- versao: tools\versao.ini (fonte unica) ----------------------------------
+#define VerIni       SourcePath + "..\tools\versao.ini"
+#define VerBuild     ReadIni(VerIni, "Versao", "Build", "")
+#define VerStage     ReadIni(VerIni, "Versao", "Stage", "")
+#define VerStageNum  ReadIni(VerIni, "Versao", "StageNumber", "")
+#if VerBuild == ""
+  #error tools\versao.ini sem Build (secao [Versao])
+#endif
+#define AppVersion   "2.5.0." + VerBuild
+#if VerStage == "Beta"
+  #define AppVerName   AppName + " (Beta " + VerStageNum + ", build " + VerBuild + ")"
+  #define AppVerText   "2.5.0 Beta " + VerStageNum + " (2026) build " + VerBuild
+  #define SetupBase    "JediVCS-2.5.0-Beta" + VerStageNum + "-build" + VerBuild + "-Setup"
+#elif VerStage == "Release"
+  #define AppVerName   "JEDI VCS 2.5 2026 (build " + VerBuild + ")"
+  #define AppVerText   "2.5.0 (2026) build " + VerBuild
+  #define SetupBase    "JediVCS-2.5.0-build" + VerBuild + "-Setup"
+#else
+  #error tools\versao.ini: Stage deve ser Beta ou Release
+#endif
+#pragma message "Versao: " + AppVersion + " - " + AppVerName + " -> " + SetupBase + ".exe"
 #define AppPublisher "Project JEDI - JEDI VCS (port 2026)"
 #define AppGuid      "{FA4F41D9-F23B-4C34-8186-DCBB5DD86E45}"
 
@@ -89,7 +111,7 @@
 AppId={{#AppGuid}
 AppName={#AppName}
 AppVersion={#AppVersion}
-AppVerName={#AppName}
+AppVerName={#AppVerName}
 AppPublisher={#AppPublisher}
 AppComments=Cliente JEDI VCS 2.5 portado para Delphi 13.2 (standalone, Diff, console, expert da IDE e ferramentas da IA)
 DefaultDirName={autopf32}\JEDI\JVCS 2026
@@ -100,7 +122,7 @@ PrivilegesRequired=admin
 PrivilegesRequiredOverridesAllowed=dialog commandline
 UsedUserAreasWarning=no
 OutputDir=Output
-OutputBaseFilename=JediVCS-2.5-Beta2026-Setup
+OutputBaseFilename={#SetupBase}
 Compression=lzma2/max
 SolidCompression=yes
 LZMANumBlockThreads=4
@@ -108,13 +130,13 @@ WizardStyle=modern
 SetupLogging=yes
 CloseApplications=yes
 RestartApplications=no
-UninstallDisplayName={#AppName}
+UninstallDisplayName={#AppVerName}
 UninstallDisplayIcon={app}\Jedivcs.exe
 VersionInfoVersion={#AppVersion}
 VersionInfoProductName={#AppName}
 VersionInfoProductVersion={#AppVersion}
 VersionInfoProductTextVersion={#AppVerText}
-VersionInfoTextVersion={#AppVerText}
+VersionInfoTextVersion={#AppVersion}
 VersionInfoDescription=Instalador do {#AppName}
 VersionInfoCompany={#AppPublisher}
 
@@ -128,7 +150,7 @@ brazilianportuguese.TypeCompact=Somente o cliente (standalone, Diff e console)
 brazilianportuguese.TypeCustom=Personalizada
 brazilianportuguese.CompClient=Cliente standalone (Jedivcs.exe), Diff (JEDIVCSDiff.exe), console (jvcs.exe) e ajuda
 brazilianportuguese.CompIde=Expert para o Delphi (menu JEDI VCS na IDE de 32 bits)
-brazilianportuguese.CompIdeOld=IDEs antigas detectadas (expert original 2.5.0.1030 + núcleo novo JvcsExternalDll 2.5.0.2026)
+brazilianportuguese.CompIdeOld=IDEs antigas detectadas (expert original 2.5.0.1030 + núcleo novo JvcsExternalDll {#AppVersion})
 brazilianportuguese.CompMaps=Arquivos .map (o log de erros mostra unit e linha)
 brazilianportuguese.CompAi=Ferramentas da IA (tools\ai: wrapper, hooks e skill do Claude Code)
 brazilianportuguese.TaskAiConsole=Usar o console novo (jvcs.exe desta instalação) na automação por IA (grava jvcsExe no config.ini)
@@ -152,7 +174,7 @@ english.TypeCompact=Client only (standalone, Diff and console)
 english.TypeCustom=Custom
 english.CompClient=Standalone client (Jedivcs.exe), Diff (JEDIVCSDiff.exe), console (jvcs.exe) and help
 english.CompIde=Delphi expert (JEDI VCS menu in the 32-bit IDE)
-english.CompIdeOld=Older IDEs detected (original 2.5.0.1030 expert + new JvcsExternalDll 2.5.0.2026 core)
+english.CompIdeOld=Older IDEs detected (original 2.5.0.1030 expert + new JvcsExternalDll {#AppVersion} core)
 english.CompMaps=.map files (the error log shows unit and line)
 english.CompAi=AI tools (tools\ai: wrapper, hooks and Claude Code skill)
 english.TaskAiConsole=Use the new console (jvcs.exe of this installation) for the AI automation (writes jvcsExe to config.ini)
@@ -1183,6 +1205,13 @@ end;
 
 { ---------------------------------------------------------------- pasta }
 
+{ versao deste port: 2.5.0.<build> com build >= 2000 (2.5.0.2026 das primeiras
+  betas, 2.5.0.2050 = beta 5, ...); o original e 2.5.0.1030 }
+function IsV2026Version(const V: String): Boolean;
+begin
+  Result := (Copy(V, 1, 6) = '2.5.0.') and (StrToIntDef(Copy(V, 7, 10), 0) >= 2000);
+end;
+
 function IsOriginalJvcsDir(const Dir: String): Boolean;
 var
   D, V: String;
@@ -1192,14 +1221,14 @@ begin
   if Result then
     Exit;
   { pasta desta versao (reinstalacao): tem os experts ORIGINAIS das IDEs antigas,
-    mas a JvcsExternalDll.dll ou o jedivcs.exe sao 2.5.0.2026 }
-  if (GetVersionNumbersString(D + '\JvcsExternalDll.dll', V) and (V = '{#AppVersion}')) or
-     (GetVersionNumbersString(D + '\jedivcs.exe', V) and (V = '{#AppVersion}')) then
+    mas a JvcsExternalDll.dll ou o jedivcs.exe sao 2.5.0.<build >= 2000> }
+  if (GetVersionNumbersString(D + '\JvcsExternalDll.dll', V) and IsV2026Version(V)) or
+     (GetVersionNumbersString(D + '\jedivcs.exe', V) and IsV2026Version(V)) then
     Exit;
   Result := FileExists(D + '\JvcsExpertBDS21.dll') or FileExists(D + '\JvcsExpertD7.dll') or
             FileExists(D + '\server\JVCSSrv.exe') or FileExists(D + '\JVCSSrv.exe');
   if not Result and FileExists(D + '\jedivcs.exe') then
-    Result := GetVersionNumbersString(D + '\jedivcs.exe', V) and (V <> '{#AppVersion}');
+    Result := GetVersionNumbersString(D + '\jedivcs.exe', V) and not IsV2026Version(V);
 end;
 
 { ---------------------------------------------------------------- eventos do assistente }

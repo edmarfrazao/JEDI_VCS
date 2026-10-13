@@ -20,8 +20,10 @@ rem  Experts ORIGINAIS 2.5.0.1030 das IDEs antigas (Delphi 7 a 10.4) vem de
 rem  3rdparty\experts-originais-2.5.0.1030 (conferidos pelo SHA256SUMS.txt).
 rem
 rem  Depois confere que os binarios esperados existem e tem FileVersion
-rem  2.5.0.2026 e roda o ISCC (Inno Setup 6) em setup\JediVCS2026.iss.
-rem  Saida: setup\Output\JediVCS-2.5-Beta2026-Setup.exe
+rem  2.5.0.<Build> (Build de tools\versao.ini, a fonte unica da versao) e roda o
+rem  ISCC (Inno Setup 6) em setup\JediVCS2026.iss.
+rem  Saida: setup\Output\JediVCS-2.5.0-Beta<N>-build<Build>-Setup.exe
+rem         (ex.: JediVCS-2.5.0-Beta5-build2050-Setup.exe; o .iss le o mesmo .ini)
 rem
 rem  Variaveis de ambiente opcionais:
 rem    JVCS_ISCC = caminho do ISCC.exe (padrao: ..\..\ferramentas\InnoSetup6\ISCC.exe,
@@ -32,14 +34,20 @@ rem  Codigo de saida: 0 = OK; 1 = falha de compilacao, de verificacao ou do ISCC
 rem ==========================================================================
 setlocal EnableExtensions DisableDelayedExpansion
 
-set "GI_VERSION=2.5.0.2026"
-
 for %%I in ("%~dp0..") do set "GI_ROOT=%%~fI"
 for %%I in ("%~dp0.") do set "GI_TOOLS=%%~fI"
+
+rem  versao e nome do setup: tools\versao.ini (via tools\gerar-versao.ps1 -Mostrar)
+set "GI_VERSION="
+set "GI_SETUPBASE="
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%GI_TOOLS%\gerar-versao.ps1" -Mostrar FileVersion`) do set "GI_VERSION=%%V"
+for /f "usebackq delims=" %%V in (`powershell -NoProfile -ExecutionPolicy Bypass -File "%GI_TOOLS%\gerar-versao.ps1" -Mostrar SetupBase`) do set "GI_SETUPBASE=%%V"
+if not defined GI_VERSION goto :bad_version
+if not defined GI_SETUPBASE goto :bad_version
 set "GI_LOGDIR=%GI_TOOLS%\logs"
 set "GI_LOG=%GI_LOGDIR%\gerar-instalador.log"
 set "GI_ISS=%GI_ROOT%\setup\JediVCS2026.iss"
-set "GI_OUT=%GI_ROOT%\setup\Output\JediVCS-2.5-Beta2026-Setup.exe"
+set "GI_OUT=%GI_ROOT%\setup\Output\%GI_SETUPBASE%.exe"
 set "GI_CLIENT=%GI_ROOT%\bin\client\Win32"
 set "GI_IDE=%GI_ROOT%\bin\ideclient\Win32"
 set "GI_RT=%GI_ROOT%\3rdparty"
@@ -79,8 +87,10 @@ if not exist "%GI_LOGDIR%" mkdir "%GI_LOGDIR%"
 >>"%GI_LOG%" echo # Raiz : %GI_ROOT%
 >>"%GI_LOG%" echo # ISCC : %GI_ISCC%
 >>"%GI_LOG%" echo # Build: %GI_BUILD% ^(0 = --sem-build^)
+>>"%GI_LOG%" echo # Versao: %GI_VERSION% - %GI_SETUPBASE%.exe
 
 echo Raiz  : %GI_ROOT%
+echo Versao: %GI_VERSION% ^(tools\versao.ini^) - %GI_SETUPBASE%.exe
 echo ISCC  : %GI_ISCC%
 echo Log   : %GI_LOG%
 
@@ -279,11 +289,17 @@ rem ---- Mensagens de uso/erro ------------------------------------------------
 :usage
 echo Uso: %~nx0 [--sem-build]
 echo      Padrao: compila Release Win32 ^(exe, dll, diff, console e expert^) e gera
-echo      setup\Output\JediVCS-2.5-Beta2026-Setup.exe. --sem-build so empacota bin\.
+echo      setup\Output\JediVCS-2.5.0-Beta^<N^>-build^<Build^>-Setup.exe ^(tools\versao.ini^).
+echo      --sem-build so empacota bin\.
 endlocal & exit /b 0
 
 :usage_err
 echo Uso: %~nx0 [--sem-build]
+endlocal & exit /b 1
+
+:bad_version
+echo [ERRO] Nao foi possivel ler a versao de tools\versao.ini ^(tools\gerar-versao.ps1 -Mostrar^).
+powershell -NoProfile -ExecutionPolicy Bypass -File "%GI_TOOLS%\gerar-versao.ps1" -Mostrar FileVersion
 endlocal & exit /b 1
 
 :no_iscc

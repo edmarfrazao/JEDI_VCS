@@ -17,7 +17,9 @@ rem                                                22 = Delphi 11, 23 = Delphi 1
 rem                                                37 = Delphi 13)
 rem  O nome sai do $LIBSUFFIX do .dpr (CompilerVersion); o script descobre o
 rem  nn pela DLL gerada e confere com a versao pedida. DCUs e o .res de versao
-rem  em dcu\Win32\expert (Delphi 13) ou dcu\<D11|D12>\Win32\expert.
+rem  em dcu\Win32\expert (Delphi 13) ou dcu\<D11|D12>\Win32\expert. A versao
+rem  (FILEVERSION 2.5.0.<Build> etc.) vem de tools\versao.ini, via
+rem  tools\gerar-versao.ps1 -> src\common\jvcsversao.rh (incluido pelo .rc).
 rem
 rem  A DLL e compilada em dcu[\<tag>]\Win32\expert\out e so e copiada para
 rem  bin\ideclient\Win32 se a compilacao e a verificacao do PE derem certo:
@@ -214,6 +216,11 @@ echo ==== %BLD_PROJ% : Win32 %BLD_CFG% ====
 >>"%BLD_LOG%" echo # Opcoes     : %BLD_SW%
 >>"%BLD_LOG%" echo # Saida DLL  : %BLD_STAGE% -^> %BLD_OUTDIR%   DCU: %BLD_DCUDIR%
 >>"%BLD_LOG%" echo.
+rem  versao: tools\versao.ini -> src\common\jvcsversao.rh (incluido pelo .rc)
+>>"%BLD_LOG%" echo ---- gerar-versao.ps1 ^(tools\versao.ini^)
+powershell -NoProfile -ExecutionPolicy Bypass -File "%BLD_TOOLS%\gerar-versao.ps1" >>"%BLD_LOG%" 2>&1
+if errorlevel 1 goto :rc_fail
+for /f "usebackq tokens=1,* delims=:" %%A in (`findstr /b /c:"Versao" "%BLD_LOG%"`) do echo Versao  :%%B
 >>"%BLD_LOG%" echo ---- brcc32 %BLD_RCNAME%.rc
 "%BLD_BRCC%" -fo"%BLD_DCUDIR%\%BLD_RCNAME%.res" "%BLD_SRCDIR%\%BLD_RCNAME%.rc" >>"%BLD_LOG%" 2>&1
 if errorlevel 1 goto :rc_fail
@@ -597,7 +604,7 @@ echo [FALHOU] gerar-toolsapi.ps1 ^(copia da ToolsAPI sem DockForm^) - veja o log
 endlocal & exit /b 1
 
 :rc_fail
-echo [FALHOU] brcc32 %BLD_RCNAME%.rc ^(veja o log: %BLD_LOG%^)
+echo [FALHOU] versao ^(tools\versao.ini^) ou brcc32 %BLD_RCNAME%.rc ^(veja o log: %BLD_LOG%^)
 endlocal & exit /b 1
 
 :dll_locked

@@ -1,14 +1,16 @@
-/* VERSIONINFO do console JEDI VCS (v2026). O jvcsver.res e gerado a partir
-   deste arquivo com brcc32 (ver doc\pt\client\Port-Console.md):
-     brcc32 -fojvcsver.res jvcsver.rc
+/* VERSIONINFO do console JEDI VCS (v2026). Numeros e textos de versao vem de
+   tools\versao.ini (fonte unica), pelo cabecalho gerado ..\common\jvcsversao.rh.
+   O jvcsver.res (fora do git) e gerado por tools\compilar.bat
+   (tools\gerar-versao.ps1 + brcc32).
    A versao enviada no LOGIN NAO vem daqui: o console manda 239 fixo
    (JVCSConnect.pas), valor aceito pelo servidor 2.5 (exige cliente >= 2.20). */
 
+#include "..\common\jvcsversao.rh"
 1 VERSIONINFO LOADONCALL MOVEABLE DISCARDABLE IMPURE
-FILEVERSION 2,5,0,2026
-PRODUCTVERSION 2,5,0,2026
+FILEVERSION JVCS_VER_FILEVERSION
+PRODUCTVERSION JVCS_VER_PRODUCTVERSION
 FILEFLAGSMASK 0x3F
-FILEFLAGS 0x2
+FILEFLAGS JVCS_VER_FILEFLAGS
 FILEOS VOS__WINDOWS32
 FILETYPE VFT_APP
 {
@@ -18,16 +20,17 @@ FILETYPE VFT_APP
   {
    VALUE "CompanyName", "Project JEDI (www.delphi-jedi.org)\000"
    VALUE "FileDescription", "JEDI VCS console client\000"
-   VALUE "FileVersion", "2.5.0.2026\000"
-   VALUE "ProductVersion", "2.5 Beta 2026\000"
+   VALUE "FileVersion", JVCS_VER_FILEVERSION_STR
+   VALUE "ProductVersion", JVCS_VER_PRODUCTVERSION_STR
    VALUE "InternalName", "jvcs.dpr\000"
    VALUE "OriginalFilename", "jvcs.exe\000"
-   VALUE "LegalCopyright", "Released under MPL 1.1\000"
-   VALUE "ProductName", "JEDI VCS 2.5 Beta 2026\000"
+   VALUE "LegalCopyright", JVCS_VER_COPYRIGHT_STR
+   VALUE "ProductName", JVCS_VER_PRODUCTNAME_STR
    VALUE "LegalTrademarks", "MPL 1.1\000"
-   VALUE "BuildType", "Beta Build\000"
-   VALUE "InternalVersion", "2.5 Beta 2026\000"
-   VALUE "VCS", "JVCS 2.5 Beta 2026 (port Delphi 13)\000"
+   VALUE "BuildType", JVCS_VER_BUILDTYPE_STR
+   VALUE "BuildTimestamp", JVCS_VER_BUILDTIMESTAMP_STR
+   VALUE "InternalVersion", JVCS_VER_INTERNAL_STR
+   VALUE "VCS", JVCS_VER_VCS_STR
   }
  }
  BLOCK "VarFileInfo"
