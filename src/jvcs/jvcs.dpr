@@ -259,6 +259,7 @@ const
 
 function CheckCommandLine: Boolean; forward;
 procedure CheckModule; forward;
+procedure CheckModuleOrLocalFile; forward;
 procedure CheckOpenProject; forward;
 procedure CheckRequiredLibs; forward;
 function CheckGetLabelID(const ALabel: string): Integer; forward;
@@ -267,6 +268,9 @@ function CmdProcOpenProject(const Line: string; var ExtExitCode: Integer): Boole
 function CmdProcCheckinModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcCheckoutModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcExit(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcAddProject(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcAddModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcSetModulePath(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcHelp(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcInput(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 {$IFDEF BRANCHING}
@@ -325,7 +329,7 @@ const
   sLineBreak = #13#10;
   {$ENDIF ~DELPHI6_UP}
 
-  Commands: array [0.. {$IFDEF BRANCHING} 15 {$ELSE} 14 {$ENDIF}] of TCommand = (
+  Commands: array [0.. {$IFDEF BRANCHING} 18 {$ELSE} 17 {$ENDIF}] of TCommand = (
 
     (
       Name: 'openproject';
@@ -438,6 +442,24 @@ const
         'by the application when no modules were synchronized. If label is given as parameter, ' + sLineBreak +
         'the project will be restored to the labeled state. If label contains spaces, enclose with double quotes.';
       Proc: @CmdProcSyncProjectGroup),
+
+    (
+      Name: 'addproject';
+      Syntax: 'addproject <project_name> [<description>]';
+      HelpText: 'Creates a new project on the server (same as the standalone Project Admin, New project). Does not open it.';
+      Proc: @CmdProcAddProject),
+
+    (
+      Name: 'addmodule';
+      Syntax: 'addmodule <file_name> [<description>]';
+      HelpText: 'Adds a file to the open project on the server (same as the standalone Add module). Open the project first.';
+      Proc: @CmdProcAddModule),
+
+    (
+      Name: 'setmodulepath';
+      Syntax: 'setmodulepath <module_name> | <module_id> <folder>';
+      HelpText: 'Sets the local folder of a module on the server (MOVE_MODULE, same request as the standalone Move module). Needed for modules created without the IDE.';
+      Proc: @CmdProcSetModulePath),
 
     (
       Name: 'labelproject';
@@ -677,6 +699,24 @@ begin
   end;
 end;
 
+// Modules with a stored folder are found by the full name. When only the short
+// name was given and that file exists in the current directory, retry with it.
+procedure CheckModuleOrLocalFile;
+begin
+  try
+    CheckModule;
+  except
+    if (ModuleName <> '') and (ExtractFilePath(ModuleName) = '') and
+      FileExists(ExpandFileName(ModuleName)) then
+    begin
+      ModuleName := ExpandFileName(ModuleName);
+      CheckModule;
+    end
+    else
+      raise;
+  end;
+end;
+
 procedure CheckOpenProject;
 var
   GetProjectInformation: TJVCSGetProjectInformation;
@@ -780,6 +820,78 @@ begin
   end;
 end;
 
+// First check-in of a module that has no revisions yet (version 0.1), the same
+// request the standalone sends after Add module. The local file is taken from
+// the current directory (ExpandFileName), so run the command from the project folder.
+function internCheckinFirstRevision(const CheckinComment: string): Boolean;
+var
+  GetFamilyExtensions: TJVCSGetFamilyExtensions;
+  FamilyID: Integer;
+  FamilyExtensions: string;
+  ZipFileName: string;
+  ModuleFileName: string;
+  CheckinModule: TJVCSCheckinModule;
+  ModuleOriginalTime: TDateTime;
+  ModuleOriginalSize, ModuleOriginalCRC, ModuleCompressedSize: Integer;
+  ModuleFileStream: TFileStream;
+  CrcErr: string;
+begin
+  Result := False;
+  ModuleFileName := ExpandFileName(ModuleName);
+  if not FileExists(ModuleFileName) then
+    raise Exception.CreateFmt('Local file not found: %s (run the command from the folder that holds the file)',
+      [ModuleFileName]);
+
+  GetFamilyExtensions := TJVCSGetFamilyExtensions.Create(nil);
+  try
+    GetFamilyExtensions.ParentExtension := ExtractFileExt(ModuleName);
+    Connection.SendRequest(GetFamilyExtensions);
+    ShowLog(GetFamilyExtensions);
+    FamilyID := GetFamilyExtensions.FamilyID;
+    FamilyExtensions := GetFamilyExtensions.FamilyExtensions;
+  finally
+    GetFamilyExtensions.Free;
+  end;
+
+  if not JVCSCompressFile(ModuleFileName, ZipFileName) then
+    raise Exception.CreateFmt('Could not compress %s', [ModuleFileName]);
+  try
+    ModuleOriginalTime := FileGetUTCDateTime(ModuleFileName);
+    ModuleOriginalSize := GetSizeOfFile(ModuleFileName);
+    ModuleOriginalCRC := CRCInt(ModuleFileName, CrcErr);
+    ModuleCompressedSize := GetSizeOfFile(ZipFileName);
+    ModuleFileStream := TFileStream.Create(ZipFileName, fmOpenRead);
+    try
+      CheckinModule := TJVCSCheckinModule.Create(nil);
+      try
+        CheckinModule.PutOnly := False;
+        CheckinModule.AddInputItem(ProjectID, Connection.UserID, ModuleID, 0
+                                  , 0, 0, 1
+                                  , ModuleOriginalTime, ModuleOriginalSize, ModuleOriginalCRC
+                                  , ModuleCompressedSize, ExtractFileExt(ModuleName)
+                                  , ModuleFileStream, CheckinComment, 0
+                                  , ModuleFileName, FamilyID);
+        Connection.SendRequest(CheckinModule);
+        ShowLog(CheckinModule);
+        Result := CheckinModule.ErrorMessage = '';
+        if Result then
+        begin
+          Writeln('First check-in: ', ModuleName, ' (version 0.1)');
+          SetVCSReadOnlyFile(ModuleName, FamilyExtensions);
+        end
+        else
+          Writeln('First check-in failed: ', ModuleName, ' - ', CheckinModule.ErrorMessage);
+      finally
+        CheckinModule.Free;
+      end;
+    finally
+      ModuleFileStream.Free;
+    end;
+  finally
+    DeleteFile(PChar(ZipFileName));
+  end;
+end;
+
 function CmdProcCheckinModule(const Line: string; var ExtExitCode: Integer): Boolean;
 var
   Count, I: Integer;
@@ -813,7 +925,7 @@ begin
       ModuleName := S;
     try
       CheckOpenProject;
-      CheckModule;
+      CheckModuleOrLocalFile;
       if Count = 3 then
         CheckinComment := LineParamStr(Line, 3)
       else
@@ -826,8 +938,16 @@ begin
         GetRevisionListById.ModuleID := ModuleID;
         Connection.SendRequest(GetRevisionListById);
         ShowLog(GetRevisionListById);
+        // a module just added (addmodule) has no revisions yet. Note: a module added
+        // with an empty description gets a placeholder revision 0.1 from the server,
+        // which refuses the first check-in ("Revision already checked in"); addmodule
+        // therefore always sends a description.
         if GetRevisionListById.OutputItemCount = 0 then
-          raise Exception.CreateFmt(SModuleNoRevisions, [ModuleID, ModuleName]);
+        begin
+          // module without revisions (just added): first check-in, version 0.1
+          Result := internCheckinFirstRevision(CheckinComment);
+          Exit;
+        end;
         for I := 0 to GetRevisionListById.OutputItemCount - 1 do
           with GetRevisionListById.OutputItems[I] do
           begin
@@ -1013,8 +1133,9 @@ begin
   nWantVer := 0;
   nWantRev := 0;
   Count := LineParamCount(Line);
-  // change max if params are added!
-  if (Count in [2..4]) then
+  // change max if params are added! (2026: 5 = module + rev= + dest= + noprompt,
+  // as documented; it was 4 and refused the three options together)
+  if (Count in [2..5]) then
   begin
     S := LineParamStr(Line, 2);
     ModuleID := StrToIntDef(S, -1);
@@ -1022,7 +1143,7 @@ begin
       ModuleName := S;
     try
       CheckOpenProject;
-      CheckModule;
+      CheckModuleOrLocalFile;
 
       bParamOk := True;
       for ii := 3 to Count do
@@ -1245,7 +1366,7 @@ begin
       ModuleName := S;
     try
       CheckOpenProject;
-      CheckModule;
+      CheckModuleOrLocalFile;
       GetLatestRevisions := TJVCSGetLatestRevisions.Create(nil);
       try
         GetLatestRevisions.ProjectID := ProjectID;
@@ -1421,6 +1542,148 @@ begin
       ModuleID := -1;
       ModuleName := '';
     end;
+  end;
+end;
+
+function CmdProcAddProject(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count: Integer;
+  AddNewProject: TJVCSAddNewProject;
+  ProjName, Descr: string;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [2, 3]) then
+    Exit;
+  ProjName := LineParamStr(Line, 2);
+  Descr := '';
+  if Count = 3 then
+    Descr := LineParamStr(Line, 3);
+
+  AddNewProject := TJVCSAddNewProject.Create(nil);
+  try
+    AddNewProject.UserID := Connection.UserID;
+    AddNewProject.ProjectName := ProjName;
+    AddNewProject.Description := Descr;
+    Connection.SendRequest(AddNewProject);
+    ShowLog(AddNewProject);
+    ProjectID := AddNewProject.ProjectID;
+    ProjectName := ProjName;
+    if AddNewProject.IsNewProject then
+    begin
+      Writeln('Project created: ', ProjName, ' (ID ', ProjectID, ')');
+      Result := True;
+    end
+    else
+      Writeln('Project already exists: ', ProjName, ' (ID ', ProjectID, ')');
+  finally
+    AddNewProject.Free;
+  end;
+end;
+
+// Stores the local folder of a module on the server (MOVE_MODULE). Without it the
+// module has no path and listproject/checkout do not see it.
+function internSetModulePath(AModuleID: Integer; const AModuleName, APath: string): Boolean;
+var
+  MoveModule: TJVCSMoveModule;
+begin
+  MoveModule := TJVCSMoveModule.Create(nil);
+  try
+    MoveModule.ProjectID := ProjectID;
+    MoveModule.UserID := Connection.UserID;
+    MoveModule.ModuleID := AModuleID;
+    MoveModule.NewModulePath := ExcludeTrailingPathDelimiter(APath);
+    MoveModule.ModuleName := AModuleName;
+    Connection.SendRequest(MoveModule);
+    ShowLog(MoveModule);
+    Result := MoveModule.ModuleMoved;
+  finally
+    MoveModule.Free;
+  end;
+end;
+
+// addmodule sends only the file name (a full path would become the module name on
+// the server), always with a description (an empty one leaves a placeholder revision
+// that later refuses the first check-in) and then stores the local folder.
+// The file is looked up relative to the current directory.
+function CmdProcAddModule(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count: Integer;
+  AddNewModule: TJVCSAddNewModule;
+  FullName, ShortName, Descr: string;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [2, 3]) then
+    Exit;
+  FullName := ExpandFileName(LineParamStr(Line, 2));
+  ShortName := ExtractFileName(FullName);
+  if not FileExists(FullName) then
+    raise Exception.CreateFmt('Local file not found: %s', [FullName]);
+  Descr := '';
+  if Count = 3 then
+    Descr := Trim(LineParamStr(Line, 3));
+  if Descr = '' then
+    Descr := ShortName;
+
+  CheckOpenProject;
+  AddNewModule := TJVCSAddNewModule.Create(nil);
+  try
+    AddNewModule.ProjectID := ProjectID;
+    AddNewModule.UserID := Connection.UserID;
+    AddNewModule.ModuleFullName := ShortName;
+    AddNewModule.Flags := 4096; // moVer200, as the standalone sends for new modules
+    AddNewModule.Description := Descr;
+    Connection.SendRequest(AddNewModule);
+    ShowLog(AddNewModule);
+    ModuleID := AddNewModule.ModuleID;
+    if AddNewModule.IsNewModule then
+      Writeln('Module added: ', ShortName, ' (ID ', ModuleID, ')')
+    else
+      Writeln('Module already exists: ', ShortName, ' (ID ', ModuleID, ')');
+    if ModuleID > 0 then
+    begin
+      Result := internSetModulePath(ModuleID, ShortName, ExtractFileDir(FullName));
+      if Result then
+        Writeln('Module path: ', ExtractFileDir(FullName))
+      else
+        Writeln('Module path not set: ', ShortName);
+    end;
+  finally
+    AddNewModule.Free;
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+function CmdProcSetModulePath(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count: Integer;
+  S, NewPath: string;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if Count <> 3 then
+    Exit;
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  NewPath := ExcludeTrailingPathDelimiter(LineParamStr(Line, 3));
+
+  try
+    CheckOpenProject;
+    CheckModuleOrLocalFile;
+    Result := internSetModulePath(ModuleID, ModuleName, NewPath);
+    if Result then
+      Writeln('Module path set: ', ModuleName, ' -> ', NewPath)
+    else
+      Writeln('Module path not set: ', ModuleName);
+  finally
+    ModuleID := -1;
+    ModuleName := '';
   end;
 end;
 
@@ -2844,7 +3107,7 @@ begin
       ModuleName := S;
     try
       CheckOpenProject;
-      CheckModule;
+      CheckModuleOrLocalFile;
       // undo checkout
       UndoCheckoutModule := TJVCSUndoCheckoutModule.Create(nil);
       try

@@ -5,6 +5,17 @@ English: see [news/en](news/en/README.md) and each release page (English summary
 Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Anúncios com mais detalhes em [`news/pt/`](news/pt/README.md).
 
+## [Não publicado]
+
+### Adicionado
+- Console `jvcs.exe`: criar projeto e módulos **sem IDE** — `addproject`, `addmodule` (grava também a
+  pasta local) e `setmodulepath`; `checkin` faz o 1º check-in (0.1) de módulo recém-criado. Ver
+  `doc/pt/client/Port-Console.md` §5.
+
+### Corrigido
+- Console: `getmodule` recusava `rev=` + `dest=` + `noprompt` juntos (bug do original).
+- Console: `checkin`/`checkout`/`undocheckout`/`getmodule` pelo nome curto de módulo com pasta gravada.
+
 ## [Beta 5] — 2026-10-13 (build 2050)
 
 ### Adicionado

@@ -8,6 +8,9 @@ veja também o [manual 08 — Solução de problemas](../manual/08-Solucao-de-Pr
 
 | Problema | Causa | Solução / lição |
 |---|---|---|
+| `sed -i` do Git Bash trocou CRLF por LF no `jvcs.dpr` inteiro (diff de 7 700 linhas) | o `sed` do MSYS regrava o arquivo em modo texto | não usar `sed -i` em fontes Delphi; editar com o `Edit` ou `tools\ai\edit-preserve.ps1` e conferir `git diff --stat` (diff do tamanho do arquivo = quebra de linha trocada) |
+| Script PowerShell recebia o parâmetro `-Input` vazio | `$Input` é variável automática do PowerShell | nunca usar `Input` como nome de parâmetro (`-InputFile`) |
+| `printf` do Bash removeu as barras de um caminho Windows e o servidor gravou um módulo com nome errado | `\U`, `\e` etc. são escapes do `printf` | escrever arquivos de comandos com heredoc `<<'EOF'` (sem expansão) |
 | Testes do instalador podiam alterar o registro real da IDE e o `config.ini` da IA | o setup grava em `HKCU\...\BDS\<v>\Experts` e em `%APPDATA%` | parâmetros **só para teste** `/BDSKEY=` e `/AICONFIG=` desviam as gravações; instalação silenciosa numa pasta temporária; o registro real foi exportado antes e depois (idêntico). Lição: testar instaladores em "sandbox" de chaves, nunca na configuração de quem desenvolve |
 | Alterações no registro da IDE feitas por automação seriam difíceis de revisar e reverter | o assistente roda com permissões restritas e regras de negação (`.claude/settings.json`) | mudanças de registro da IDE ficam em `.reg` para o **usuário** aplicar (`setup\*.reg`); `.claude/settings.json` bloqueia leitura de chaves e tokens |
 | `compilar.bat` deixou de achar JCL/JVCL/ICS (`jedi.inc` não encontrado) | a pasta **Documentos foi redirecionada para o OneDrive** (KFM) e o script procurava em `%USERPROFILE%\Documents` | o script passou a achar a pasta Documentos real (commit `b59378b`); contorno: `JVCS_CATALOG=<CatalogRepository>`. Lição: nunca montar caminhos de "Documentos" à mão |
@@ -23,6 +26,9 @@ veja também o [manual 08 — Solução de problemas](../manual/08-Solucao-de-Pr
 | "unsupported on-disk structure ... found **11.2**, support **11.1**" | campo *Server* = `LOCALHOST`/vazio faz o servidor abrir o banco **sem host**, caindo no Firebird **2.1 embutido**; o banco tinha sido restaurado com o `gbak` 2.5 | usar um **IP** (`127.0.0.1`) no *Server*: a conexão vai por TCP ao Firebird 2.5. Detalhe: [Servidor-Teste-Local](../server/Servidor-Teste-Local.md) |
 | Configuração do servidor "some" ou muda conforme quem executa | o servidor sem permissão em Program Files grava o `jvcssrv.ini` no **VirtualStore**; como administrador lê o de Program Files | manter os dois iguais; ver [manual 01 §5](../manual/01-Servidor-Instalacao-e-Configuracao.md) |
 | "Column unknown BRANCHID" | banco de 2003 atualizado pelo servidor só até 2.42; o `Upgrade250` pressupõe as tabelas de branch | aplicar `UpdateV25.sql` + branch `HEAD` e reiniciar o servidor |
+| Módulo criado sem IDE recusa o 1º check-in com "Revision already checked in" | `ADD_NEW_MODULE` com **descrição vazia** faz o servidor criar uma revisão *placeholder* 0.1 (sem caminho) | o `addmodule` do console sempre envia descrição (padrão = nome do arquivo). Módulos já criados assim (ex2: IDs 5 e 6) precisam ser removidos pelo standalone |
+| Módulo criado sem IDE não aparece no `listproject` nem no checkout do wrapper | o servidor só lista módulos com **pasta local** gravada; o `ADD_NEW_MODULE` com nome curto não grava pasta | gravar a pasta com `MOVE_MODULE` (o `addmodule` faz sozinho; comando `setmodulepath` para corrigir). Mandar o caminho completo no `ADD_NEW_MODULE` **não** serve: vira o nome do módulo |
+| Depois de gravar a pasta, `checkin uX.pas` dá "Module not found" | com pasta gravada, o `GET_MODULE_ID` acha o módulo pelo **nome completo** | o console tenta de novo com o arquivo da pasta atual (`CheckModuleOrLocalFile`) |
 
 ## Código e Unicode
 

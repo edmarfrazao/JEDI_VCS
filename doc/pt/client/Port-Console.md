@@ -163,5 +163,62 @@ Observações do teste:
 - **VCL no executável:** o `CBroker` usa `StdCtrls` quando `NOFORMS` não está definido, e isso puxa
   a VCL. O EXE fica com cerca de 3 MB de código. O original também fazia isso.
 - **Win64:** não testado (FVCSCrypt.dll é 32 bits).
-- **Não testados:** `syncproject`, `syncprojectgroup`, `labelproject`, `undocheckout`, `listbranches`
+- **Não testados:** `syncproject`, `syncprojectgroup`, `labelproject`, `listbranches`
   e arquivos vazios ou binários no check-in.
+
+## 5. Comandos novos: criar projeto e módulos sem IDE (13/10/2026)
+
+O console original não cria projeto nem módulo (só o standalone, pelo Project Admin). O console
+novo ganhou três comandos, que usam as mesmas requisições do standalone:
+
+| Comando | Requisição | O que faz |
+|---|---|---|
+| `addproject <projeto.dpr> [<descrição>]` | `ADD_NEW_PROJECT` | cria o projeto (não abre) |
+| `addmodule <arquivo> [<descrição>]` | `ADD_NEW_MODULE` + `MOVE_MODULE` | cadastra o arquivo no projeto aberto **e** grava a pasta local; o arquivo é procurado na pasta atual; descrição padrão = nome do arquivo |
+| `setmodulepath <módulo> <pasta>` | `MOVE_MODULE` | grava ou corrige a pasta local de um módulo |
+
+E mudanças nos comandos existentes:
+
+- `checkin` de um módulo **sem revisões** faz o 1º check-in (versão 0.1), como o `ChkInSingle` do
+  standalone faz depois de "Add module". O arquivo é lido da pasta atual.
+- `checkin`, `checkout`, `undocheckout`, `getmodule` e `setmodulepath` aceitam o **nome curto**
+  mesmo quando o módulo já tem pasta gravada (o servidor procura pelo nome completo; o console tenta
+  de novo com o arquivo da pasta atual).
+- `getmodule`: aceitava no máximo 2 opções e recusava `rev=` + `dest=` + `noprompt` juntos, ao
+  contrário da documentação (bug do original). Agora aceita as três.
+
+Fluxo completo, executado a partir da pasta do projeto (`/input` com a senha pelo stdin):
+
+```text
+addproject Ex3IA.dpr "projeto de teste"
+openproject Ex3IA.dpr
+addmodule Ex3IA.dpr
+addmodule uTesteIA2.pas
+checkin Ex3IA.dpr "versao inicial"
+checkin uTesteIA2.pas "versao inicial"
+listproject Ex3IA.dpr
+```
+
+Dê ao projeto o nome do `.dpr`: o wrapper `tools\ai\jvcs-ai.ps1` e o `edit-preserve.ps1` deduzem o
+projeto pelos `.dpr` da pasta. No teste, o projeto chamado `ex2.dpr` (pasta com `Ex2IA.dpr` e
+`Ex3IA.dpr`) exigiu `-Project ex2.dpr` no wrapper.
+
+**Teste (13/10/2026, servidor de teste):**
+- projeto `ex2.dpr` criado (ID 2);
+- módulos cadastrados e 1º check-in 0.1;
+- checkout pelo nome curto;
+- edição com `edit-preserve`;
+- check-in 0.1 → 0.2;
+- `getmodule rev=0.1 dest=… noprompt` devolveu a 0.1 **idêntica byte a byte** à cópia de antes do
+  checkout;
+- diff 0.1 × 0.2 só com a função nova;
+- regressão no `exemplo01.dpr` sem diferença (`listproject`, `checkout`, `undocheckout`,
+  `listlocks`).
+
+O wrapper da IA (`jvcs-ai.ps1`, sobre o console original) também fez checkout e check-in 0.1 → 0.2
+nos módulos novos.
+
+**Restos no servidor de teste** (remover pelo standalone):
+- IDs 5 e 6: sem descrição, ficaram com placeholder;
+- IDs 7 e 8: nome com caminho, um deles com as barras perdidas;
+- ID 9: sem pasta.
