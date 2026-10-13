@@ -838,7 +838,7 @@ begin
   begin
     if not DirectoryExists(IDEInterface.JVCSIDESettings.IDEAppFileDir) then
     begin
-      WarnMessageBox( JVCSRES_JEDI_VCS_cannot_detect_the_name_of_Delphi39s_base_installation_folder46 + AnsiCrLf +
+      WarnMessageBox( JVCSRES_JEDI_VCS_cannot_detect_the_name_of_Delphi39s_base_installation_folder46 + sLineBreak + // v2026: era AnsiCrLf
                       JVCSRES_This_function_is_only_supported_for_known_IDE_products46
                     );
     end;
@@ -848,7 +848,7 @@ begin
       edRCComp.SetFocus;
       edRCComp.SelectAll;
       BeepIfSet;
-      WarnMessageBox( Format(JVCSRES_JEDI_VCS_cannot_find_the_file58 + AnsiCrLf + '<%s>.', [edRCComp.Text]));
+      WarnMessageBox( Format(JVCSRES_JEDI_VCS_cannot_find_the_file58 + sLineBreak + '<%s>.', [edRCComp.Text]));
       Exit;
     end;
   end; // if rbHandlebyFVCS.Checked then begin

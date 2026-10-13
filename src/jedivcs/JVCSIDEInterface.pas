@@ -124,8 +124,9 @@ type
       AModuleList: TList): Boolean; virtual; abstract;
     function SourceWriteString(const AModuleName: string; const APos: Integer;
       const AContent: string): Boolean; virtual; abstract;
+    // v2026: AnsiString - bytes ANSI do editor (ABI PAnsiChar), lidos em blocos
     function SourceReadString(const AModuleName: string; const APos: Integer;
-      var AContent: string; const AReadSize: Integer): Integer; virtual; abstract;
+      var AContent: AnsiString; const AReadSize: Integer): Integer; virtual; abstract;
 
     property Options: TIDEInterfaceOptions read FIDEInterfaceOptions;
 
@@ -236,7 +237,7 @@ type
     function SourceWriteString(const AModuleName: string; const APos: Integer;
       const AContent: string): Boolean; override;
     function SourceReadString(const AModuleName: string; const APos: Integer;
-      var AContent: string; const AReadSize: Integer): Integer; override;
+      var AContent: AnsiString; const AReadSize: Integer): Integer; override;
 
     property FunctionRecPtr: PExternalIDEFunctionRec read FFuncRecPtr write FFuncRecPtr;
   end;
@@ -291,6 +292,9 @@ uses
   {$ENDIF}
   VCSBase,
   SysUtils,
+  {$IFDEF EXTERNAL_INTERFACE}
+  JVCSDLLAnsi,
+  {$ENDIF}
   ConfigStorage;
 
 function CreateIDEInterface(VCSInterface: TIToolServices): TIDEInterface;
@@ -401,7 +405,7 @@ const
 var
   FS: TFileStream;
   SPos: Integer;
-  Content: string;
+  Content: AnsiString; // v2026: bytes ANSI (era string = UTF-16 no Delphi 13)
   ReadCount: Integer;
   ZeroByte: Byte;
 begin
@@ -799,6 +803,34 @@ begin
 end;
 {$ENDIF}
 
+{ v2026: a ABI e ANSI (PAnsiChar, CP_ACP). Antes o codigo passava PChar (que
+  no Delphi 2009+ e PWideChar) e usava StrPas sobre array of Char. Agora:
+  - string -> AnsiString em CP_ACP SEM "best fit" (um caractere fora da pagina
+    de codigo vira '?', nunca um parecido que levaria a outro arquivo);
+  - buffers de saida de cExtBufSize bytes (o expert escreve no maximo 255 + #0,
+    o expert antigo podia passar disso), zerados antes e terminados depois. }
+const
+  cExtBufSize = 1024;
+
+type
+  TExtBuffer = array [0..cExtBufSize - 1] of AnsiChar;
+
+function ExtToAnsi(const S: string): AnsiString;
+begin
+  Result := JvcsToAnsi(S);
+end;
+
+procedure ExtClear(var ABuffer: TExtBuffer);
+begin
+  FillChar(ABuffer, SizeOf(ABuffer), 0);
+end;
+
+function ExtFromBuffer(var ABuffer: TExtBuffer): string;
+begin
+  ABuffer[High(ABuffer)] := #0;
+  Result := string(AnsiString(PAnsiChar(@ABuffer[0])));
+end;
+
 constructor TExternalIDEInterface.Create(AFuncRecPtr: PExternalIDEFunctionRec);
 begin
   inherited Create;
@@ -824,7 +856,7 @@ begin
     CheckFuncRecPtr('CloseFile');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.CloseFile),'CloseFile');
   {$ENDIF}
-  Result := FFuncRecPtr.CloseFile(PChar(AFileName));
+  Result := FFuncRecPtr.CloseFile(PAnsiChar(ExtToAnsi(AFileName)));
 end;
 
 function TExternalIDEInterface.SaveFile(const AFileName: string): Boolean;
@@ -833,7 +865,7 @@ begin
     CheckFuncRecPtr('SaveFile');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.SaveFile),'SaveFile');
   {$ENDIF}
-  Result := FFuncRecPtr.SaveFile(PChar(AFileName));
+  Result := FFuncRecPtr.SaveFile(PAnsiChar(ExtToAnsi(AFileName)));
 end;
 
 function TExternalIDEInterface.OpenFile(const AFileName: string): Boolean;
@@ -842,7 +874,7 @@ begin
     CheckFuncRecPtr('OpenFile');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.OpenFile),'OpenFile');
   {$ENDIF}
-  Result := FFuncRecPtr.OpenFile(PChar(AFileName));
+  Result := FFuncRecPtr.OpenFile(PAnsiChar(ExtToAnsi(AFileName)));
 end;
 
 function TExternalIDEInterface.GetParentHandle: HWND;
@@ -856,14 +888,15 @@ end;
 
 function TExternalIDEInterface.GetProjectName: string;
 var
-  LProjectName: array [0..255] of Char;
+  LProjectName: TExtBuffer;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('GetProjectName');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetProjectName),'GetProjectName');
   {$ENDIF}
-  FFuncRecPtr.GetProjectName(@LProjectName);
-  Result := StrPas(@LProjectName);
+  ExtClear(LProjectName);
+  FFuncRecPtr.GetProjectName(@LProjectName[0]);
+  Result := ExtFromBuffer(LProjectName);
 end;
 
 function TExternalIDEInterface.GetUnitCount: Integer;
@@ -877,14 +910,15 @@ end;
 
 function TExternalIDEInterface.GetUnitName(const AIndex: Integer): string;
 var
-  LUnitName: array [0..255] of Char;
+  LUnitName: TExtBuffer;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('GetUnitName');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetUnitName),'GetUnitName');
   {$ENDIF}
-  FFuncRecPtr.GetUnitName(AIndex, @LUnitName);
-  Result := StrPas(@LUnitName);
+  ExtClear(LUnitName);
+  FFuncRecPtr.GetUnitName(AIndex, @LUnitName[0]);
+  Result := ExtFromBuffer(LUnitName);
 end;
 
 function TExternalIDEInterface.GetFormCount: Integer;
@@ -898,26 +932,28 @@ end;
 
 function TExternalIDEInterface.GetFormName(const AIndex: Integer): string;
 var
-  LFormName: array [0..255] of Char;
+  LFormName: TExtBuffer;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('GetFormName');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetFormName),'GetFormName');
   {$ENDIF}
-  FFuncRecPtr.GetFormName(AIndex, @LFormName);
-  Result := StrPas(@LFormName);
+  ExtClear(LFormName);
+  FFuncRecPtr.GetFormName(AIndex, @LFormName[0]);
+  Result := ExtFromBuffer(LFormName);
 end;
 
 function TExternalIDEInterface.GetCurrentFile: string;
 var
-  LCurrentFile: array [0..255] of Char;
+  LCurrentFile: TExtBuffer;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('GetCurrentFile');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetCurrentFile),'GetCurrentFile');
   {$ENDIF}
-  FFuncRecPtr.GetCurrentFile(@LCurrentFile);
-  Result := StrPas(@LCurrentFile);
+  ExtClear(LCurrentFile);
+  FFuncRecPtr.GetCurrentFile(@LCurrentFile[0]);
+  Result := ExtFromBuffer(LCurrentFile);
 end;
 
 function TExternalIDEInterface.IsFileOpen(const AFileName: string): Boolean;
@@ -926,7 +962,7 @@ begin
     CheckFuncRecPtr('IsFileOpen');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.IsFileOpen),'IsFileOpen');
   {$ENDIF}
-  Result := FFuncRecPtr.IsFileOpen(PChar(AFileName));
+  Result := FFuncRecPtr.IsFileOpen(PAnsiChar(ExtToAnsi(AFileName)));
 end;
 
 function TExternalIDEInterface.IsFileOpenAndWriteable(const AFileName: string): Boolean;
@@ -935,7 +971,7 @@ begin
     CheckFuncRecPtr('IsFileOpenAndWriteable');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.IsFileOpenAndWriteable),'IsFileOpenAndWriteable');
   {$ENDIF}
-  Result := FFuncRecPtr.IsFileOpenAndWriteable(PChar(AFileName));
+  Result := FFuncRecPtr.IsFileOpenAndWriteable(PAnsiChar(ExtToAnsi(AFileName)));
 end;
 
 function TExternalIDEInterface.GetModuleCount: Integer;
@@ -949,14 +985,15 @@ end;
 
 function TExternalIDEInterface.GetModuleName(const AIndex: Integer): string;
 var
-  LModuleName: array [0..255] of Char;
+  LModuleName: TExtBuffer;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('GetModuleName');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetModuleName),'GetModuleName');
   {$ENDIF}
-  FFuncRecPtr.GetModuleName(AIndex, @LModuleName);
-  Result := StrPas(@LModuleName);
+  ExtClear(LModuleName);
+  FFuncRecPtr.GetModuleName(AIndex, @LModuleName[0]);
+  Result := ExtFromBuffer(LModuleName);
 end;
 
 function TExternalIDEInterface.GetComponentCount(const AModIndex: Integer): Integer;
@@ -971,14 +1008,15 @@ end;
 function TExternalIDEInterface.GetComponentName(const AModIndex,
   ACompIndex: Integer): string;
 var
-  LComponentName: array [0..255] of Char;
+  LComponentName: TExtBuffer;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('GetComponentName');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetComponentName),'GetComponentName');
   {$ENDIF}
-  FFuncRecPtr.GetComponentName(AModIndex, ACompIndex, @LComponentName);
-  Result := StrPas(@LComponentName);
+  ExtClear(LComponentName);
+  FFuncRecPtr.GetComponentName(AModIndex, ACompIndex, @LComponentName[0]);
+  Result := ExtFromBuffer(LComponentName);
 end;
 
 function TExternalIDEInterface.AddNotifierEx(AddInNotifier: TIDEAddInNotifier): Boolean;
@@ -1000,19 +1038,21 @@ begin
     CheckFuncRecPtr('RaiseException');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.RaiseException),'RaiseException');
   {$ENDIF}
-  FFuncRecPtr.RaiseException(PChar(AMessage));
+  // mensagem: texto (best fit aceitavel)
+  FFuncRecPtr.RaiseException(PAnsiChar(AnsiString(AMessage)));
 end;
 
 function TExternalIDEInterface.GetBaseRegistryKey: string;
 var
-  LBaseRegistryKey: array [0..255] of Char;
+  LBaseRegistryKey: TExtBuffer;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('GetBaseRegistryKey');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetBaseRegistryKey),'GetBaseRegistryKey');
   {$ENDIF}
-  FFuncRecPtr.GetBaseRegistryKey(@LBaseRegistryKey);
-  Result := StrPas(@LBaseRegistryKey);
+  ExtClear(LBaseRegistryKey);
+  FFuncRecPtr.GetBaseRegistryKey(@LBaseRegistryKey[0]);
+  Result := ExtFromBuffer(LBaseRegistryKey);
 end;
 
 function TExternalIDEInterface.GetModuleComponents(const AModuleName: string;
@@ -1020,31 +1060,37 @@ function TExternalIDEInterface.GetModuleComponents(const AModuleName: string;
 var
   Cnt: Integer;
   I: Integer;
-  LName, LType: array [0..255] of Char;
+  LName, LType: TExtBuffer;
+  LModuleName: AnsiString;
   CPtr: PComponentListEntry;
 begin
   Result := False;
   if Assigned(AModuleList) then
   begin
+    LModuleName := ExtToAnsi(AModuleName);
     {$IFDEF DEBUG}
       CheckFuncRecPtr('GetModuleComponentCount');
       CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetModuleComponentCount),'GetModuleComponentCount');
     {$ENDIF}
-    Cnt := FFuncRecPtr.GetModuleComponentCount(PChar(AModuleName));
+    Cnt := FFuncRecPtr.GetModuleComponentCount(PAnsiChar(LModuleName));
     {$IFDEF DEBUG}
       CheckFuncRecPtr('GetModuleComponent');
       CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.GetModuleComponent),'GetModuleComponent');
     {$ENDIF}
     for I := 0 to Pred(Cnt) do
-      if FFuncRecPtr.GetModuleComponent(PChar(AModuleName), I, @LName, @LType) then
+    begin
+      ExtClear(LName);
+      ExtClear(LType);
+      if FFuncRecPtr.GetModuleComponent(PAnsiChar(LModuleName), I, @LName[0], @LType[0]) then
       begin
         New(CPtr);
-        CPtr^.CompType := StrPas(LType);
-        CPtr^.CompName := StrPas(LName);
+        CPtr^.CompType := ExtFromBuffer(LType);
+        CPtr^.CompName := ExtFromBuffer(LName);
         AModuleList.Add(CPtr);
         if not Result then
           Result := True;
       end;
+    end;
   end;
 end;
 
@@ -1055,25 +1101,34 @@ begin
     CheckFuncRecPtr('SourceWriteString');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.SourceWriteString),'SourceWriteString');
   {$ENDIF}
-  Result := FFuncRecPtr.SourceWriteString(PChar(AModuleName), APos, PChar(AContent));
+  // conteudo: texto ANSI (o expert converte para UTF-8 no editor)
+  Result := FFuncRecPtr.SourceWriteString(PAnsiChar(ExtToAnsi(AModuleName)), APos,
+    PAnsiChar(AnsiString(AContent)));
 end;
 
 function TExternalIDEInterface.SourceReadString(const AModuleName: string;
-  const APos: Integer; var AContent: string; const AReadSize: Integer): Integer;
+  const APos: Integer; var AContent: AnsiString; const AReadSize: Integer): Integer;
 var
-  Buffer: PChar;
+  Buffer: PAnsiChar;
 begin
   {$IFDEF DEBUG}
     CheckFuncRecPtr('SourceReadString');
     CheckFuncRecPtrFkt(Assigned(FFuncRecPtr.SourceReadString),'SourceReadString');
   {$ENDIF}
+  AContent := '';
   Buffer := nil;
   try
     GetMem(Buffer, AReadSize + 1);
-    Result := FFuncRecPtr.SourceReadString(PChar(AModuleName), APos, Buffer,
-      AReadSize);
-    PByteArray(Buffer)^[Result] := 0;
-    AContent := StrPas(Buffer);
+    FillChar(Buffer^, AReadSize + 1, 0);
+    Result := FFuncRecPtr.SourceReadString(PAnsiChar(ExtToAnsi(AModuleName)), APos,
+      Buffer, AReadSize);
+    if Result < 0 then
+      Result := 0
+    else
+    if Result > AReadSize then
+      Result := AReadSize;
+    // bytes exatos (o bloco pode conter #0)
+    SetString(AContent, Buffer, Result);
   finally
     if Assigned(Buffer) then
       FreeMem(Buffer);
