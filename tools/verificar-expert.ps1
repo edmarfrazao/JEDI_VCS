@@ -33,6 +33,16 @@
 .PARAMETER Simbolos
   Mostra todos os simbolos importados de cada .bpl (longo).
 
+.PARAMETER Inits
+  Lista as units cuja initialization o expert importa (@<Unit>@initialization$qqrv),
+  por pacote. Com runtime packages, toda unit de pacote no grafo de uses gera um
+  desses imports; uma unit nova numa atualizacao (ex.: IdeEditorControlBridge no
+  13.2) impede a carga nas atualizacoes anteriores.
+
+.PARAMETER Permitidos
+  Lista de pacotes (sem sufixo, separados por virgula) que o expert pode importar,
+  ex.: rtl,vcl,xmlrtl. Importar outro pacote = falha (codigo 1).
+
 .EXAMPLE
   powershell -NoProfile -ExecutionPolicy Bypass -File tools\verificar-expert.ps1 -Listar
 .EXAMPLE
@@ -47,7 +57,9 @@ param(
     [string]$Expert,
     [string[]]$BplDir,
     [switch]$Listar,
-    [switch]$Simbolos
+    [switch]$Simbolos,
+    [switch]$Inits,
+    [string]$Permitidos
 )
 
 $ErrorActionPreference = 'Stop'
@@ -259,14 +271,33 @@ foreach ($dll in $imports) {
     }
 }
 
+if ($Inits) {
+    Write-Host 'Units com initialization importada (por pacote):'
+    foreach ($dll in ($imports | Where-Object { $_.Name -match '\.bpl$' })) {
+        $u = @($dll.Names | Where-Object { $_ -match '@initialization\$qqrv$' } | ForEach-Object { ($_ -replace '^@', '' -replace '@initialization\$qqrv$', '') -replace '@', '.' } | Sort-Object)
+        Write-Host ("  {0} ({1}): {2}" -f $dll.Name, $u.Count, ($u -join ', '))
+    }
+    Write-Host ''
+}
+$notAllowed = @()
+if ($Permitidos) {
+    $ok = @($Permitidos -split '[,; ]+' | Where-Object { $_ } | ForEach-Object { $_.ToLower() })
+    foreach ($dll in ($imports | Where-Object { $_.Name -match '\.bpl$' })) {
+        $base = ($dll.Name -replace '\d+\.bpl$', '').ToLower()
+        if ($ok -notcontains $base) { $notAllowed += $dll.Name }
+    }
+    if ($notAllowed.Count -gt 0) { Write-Host ("[NAO PERMITIDO] o expert importa {0} (permitidos: {1})" -f ($notAllowed -join ', '), ($ok -join ', ')) }
+}
+
 if ($Listar -or $missingTotal -gt 0) {
     $rows | Format-Table -AutoSize Dll, Tipo, Simbolos, Ausentes, Arquivo | Out-String -Width 220 | Write-Host
 }
 $pk = @($imports | Where-Object { $_.Name -match '\.bpl$' } | ForEach-Object { $_.Name })
 Write-Host ("Pacotes importados: {0} ({1}); simbolos de pacotes: {2}" -f $pk.Count, ($pk -join ', '), $symTotal)
-if ($missingTotal -eq 0) {
+if ($missingTotal -eq 0 -and $notAllowed.Count -eq 0) {
     Write-Host '[OK] todos os simbolos importados dos .bpl existem: o LoadLibrary do expert resolve nesta versao.'
     exit 0
 }
-Write-Host ("[FALHOU] {0} simbolo(s) sem correspondencia e {1} .bpl ausente(s): o expert NAO carrega com estes .bpl." -f $missingTotal, $bplMissing)
+if ($missingTotal -gt 0) { Write-Host ("[FALHOU] {0} simbolo(s) sem correspondencia e {1} .bpl ausente(s): o expert NAO carrega com estes .bpl." -f $missingTotal, $bplMissing) }
+if ($notAllowed.Count -gt 0) { Write-Host '[FALHOU] pacote(s) fora da lista -Permitidos' }
 exit 1
