@@ -1255,6 +1255,8 @@ begin
 
     VCSLoad := TVCSLoad.Create(Application);
     try
+      // v2026: aviso "sem projeto ativo" antes do login, nunca junto com ele
+      VCSLoad.CheckIDEProject(True);
       VCSLoad.ShowModal;
     finally
       VCSLoad.Free;
