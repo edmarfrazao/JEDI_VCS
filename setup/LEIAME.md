@@ -252,3 +252,10 @@ Resultado: **43 verificações, 0 falhas**.
 
 `tools\gerar-instalador.bat` com um hash alterado no `SHA256SUMS.txt`: `[FALHOU] experts originais
 2.5.0.1030 ...: ERRO JvcsExpertD7.dll`, código 1, instalador não gerado.
+
+## Escolha por Delphi
+
+Na página de componentes, **cada Delphi instalado aparece como uma opção**: o 11, o 12 e o 13 dentro de *Expert para o Delphi*
+e as versões antigas (Delphi 7 a 10.4) dentro de *IDEs antigas*. Só os marcados recebem o expert; uma IDE desmarcada numa
+reinstalação tem o registro desfeito. Em instalação silenciosa use `/COMPONENTS`, por exemplo
+`/COMPONENTS="client,ide\bds23,ideold\bds10"` (Delphi 12 e XE3).

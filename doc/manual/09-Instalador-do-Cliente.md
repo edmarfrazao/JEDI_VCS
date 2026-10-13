@@ -117,3 +117,10 @@ XE3 e `ideold\bds21` = 10.4). Sem `/COMPONENTS`, uma reinstalação repete as es
 | Menu JEDI VCS não aparece | Confira o `JVCSIDEClient` no registro e se a IDE é a de 32 bits (`bin\bds.exe`); veja o [capítulo 08](08-Solucao-de-Problemas.md) |
 | O UAC pediu senha de outra conta e o expert não apareceu | O registro foi gravado no perfil da outra conta. Rode o setup escolhendo "só para mim" |
 | Quer voltar ao expert de desenvolvimento | Desinstale (o valor anterior volta) ou importe `setup\Delphi13-JVCS-DLL-nova.reg` com o Delphi fechado |
+
+## Escolha por Delphi
+
+Na página de componentes, **cada Delphi instalado aparece como uma opção**: o 11, o 12 e o 13 dentro de *Expert para o Delphi*
+e as versões antigas (Delphi 7 a 10.4) dentro de *IDEs antigas*. Só os marcados recebem o expert; uma IDE desmarcada numa
+reinstalação tem o registro desfeito. Em instalação silenciosa use `/COMPONENTS`, por exemplo
+`/COMPONENTS="client,ide\bds23,ideold\bds10"` (Delphi 12 e XE3).
