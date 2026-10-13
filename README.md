@@ -1,3 +1,5 @@
+🇧🇷 Português · [🇺🇸 English](README.en.md)
+
 # JEDI VCS 2.5 Beta 2026
 
 Cliente do **JEDI VCS** (controle de versão cliente/servidor para equipes Delphi) portado para o
@@ -24,6 +26,7 @@ Setup installer, and a safe workflow for AI coding agents (Claude Code). Status:
 Win32 only. Download the installer from
 [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases). Documentation is in Brazilian Portuguese.
 License: MPL 1.1; the MidWare transport is free for **non-commercial use only** (see below).
+Full English version: [README.en.md](README.en.md) · English user guide: [doc/en](doc/en/README.md).
 
 ## Status
 
