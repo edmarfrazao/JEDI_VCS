@@ -193,6 +193,35 @@ var
   GWizardIndex: Integer = -1;
   GAboutIndex: Integer = -1;
 
+// SplashScreenServices e uma variavel global da ToolsAPI que a IDE preenche
+// na copia do designide<nn>.bpl. O expert compila uma copia propria da
+// ToolsAPI (JvcsToolsAPI, sem DockForm - ver tools\gerar-toolsapi.ps1), cuja
+// variavel fica nil: le a da IDE pelo export do pacote, em tempo de execucao
+// (GetProcAddress nao cria import estatico: o expert carrega mesmo se faltar).
+function IdeSplashScreenServices: IOTASplashScreenServices;
+type
+  PSplashIntf = ^IOTASplashScreenServices;
+const
+{$IF CompilerVersion >= 37.0}
+  cDesignIde = 'designide370.bpl';
+{$ELSEIF CompilerVersion >= 36.0}
+  cDesignIde = 'designide290.bpl';
+{$ELSE}
+  cDesignIde = 'designide280.bpl';
+{$IFEND}
+var
+  H: HMODULE;
+  P: PSplashIntf;
+begin
+  Result := nil;
+  H := GetModuleHandle(cDesignIde);
+  if H = 0 then
+    Exit;
+  P := GetProcAddress(H, '@Toolsapi@SplashScreenServices');
+  if P <> nil then
+    Result := P^;
+end;
+
 procedure AppendMenuItem(var AList: TArray<TMenuItem>; AItem: TMenuItem);
 var
   N: Integer;
@@ -251,9 +280,9 @@ var
   About120: IOTAAboutBoxServices120;
 begin
   try
-    if Assigned(SplashScreenServices) then
+    Splash := nil;
+    if Supports(IdeSplashScreenServices, IOTASplashScreenServices270, Splash) then
     begin
-      Splash := SplashScreenServices;
       Splash.AddPluginBitmap(cPluginTitle, CreatePluginBitmapHandle, False,
         cPluginLicense, '');
       Splash.StatusMessage('Initializing JEDI Version Control System');

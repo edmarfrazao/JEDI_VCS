@@ -37,7 +37,16 @@ rem  Demais arquivos, nesta ordem: 3rdparty\, 3rdparty\referencia-2.5.0.1030\,
 rem  JVCS_INSTALL.
 rem
 rem  A verificacao do PE usa o llvm-objdump do Delphi (bin64): a DLL deve
-rem  exportar INITWIZARD0001 e importar rtlNNN/vclNNN/designideNNN.bpl.
+rem  exportar INITWIZARD0001, importar rtlNNN/vclNNN.bpl e NAO importar
+rem  designideNNN.bpl. Depois tools\verificar-expert.ps1 confere cada simbolo
+rem  importado contra os .bpl desta instalacao e so aceita rtl, vcl e xmlrtl.
+rem
+rem  ToolsAPI: o expert compila copias locais do ToolsAPI.pas/FileHistoryAPI.pas
+rem  desta instalacao sem a unit DockForm (tools\gerar-toolsapi.ps1, em
+rem  dcu[\<tag>]\Win32\expert\toolsapi, fora do git), via unit alias. Assim nao
+rem  importa nada do designide<nn>.bpl, cujo grafo de units muda entre
+rem  atualizacoes (o expert do 13.2 nao carregava no 13.1: falta
+rem  @Ideeditorcontrolbridge@initialization$qqrv no designide370.bpl do 13.1).
 rem
 rem  O script NAO grava no registro. Para registrar na IDE de 32 bits, veja
 rem  src\jvcsideexpert\LEIAME.md (valor JVCSIDEClient em ...\BDS\<ver>\Experts).
@@ -66,6 +75,12 @@ set "BLD_PROJ=JvcsExpertBDS"
 set "BLD_RCNAME=JvcsExpertBDS_ver"
 set "BLD_CODEPAGE=65001"
 set "BLD_PACKAGES=rtl;vcl;designide"
+rem  ToolsAPI e FileHistoryAPI vem das copias geradas (tools\gerar-toolsapi.ps1);
+rem  o designide fica em -LU so para DesignIntf (sem import em tempo de execucao)
+set "BLD_ALIASES=ToolsAPI=JvcsToolsAPI;FileHistoryAPI=JvcsFileHistoryAPI"
+rem  Pacotes que o expert PODE importar (tools\verificar-expert.ps1 -Permitidos):
+rem  so os de RTL/VCL, estaveis entre atualizacoes; designide e outros = falha.
+set "BLD_PKGOK=rtl,vcl,xmlrtl"
 set "BLD_NS=Winapi;System.Win;System;Vcl;Vcl.Imaging;Xml"
 set "BLD_MAXERR=5"
 set "BLD_MAXWARN=20"
@@ -139,6 +154,7 @@ if defined VD_TAG set "BLD_TAGP=\%VD_TAG%"
 if defined VD_TAG set "BLD_TAGL=%VD_TAG%_"
 set "BLD_DCUDIR=%BLD_ROOT%\dcu%BLD_TAGP%\Win32\expert"
 set "BLD_STAGE=%BLD_DCUDIR%\out"
+set "BLD_TAPIDIR=%BLD_DCUDIR%\toolsapi"
 rem  (o numero BDS do nome da DLL vem da DLL gerada - :find_output - e tem de
 rem  ser o da versao pedida, VD_BDSNUM; o sufixo dos pacotes vem do versoes.ini)
 
@@ -205,10 +221,17 @@ if errorlevel 1 goto :rc_fail
 rem ---- 2) dcc32 ---------------------------------------------------------------
 >>"%BLD_LOG%" echo.
 >>"%BLD_LOG%" echo ---- dcc32 %BLD_PROJ%.dpr
+rem  ToolsAPI sem DockForm (copia local gerada do fonte desta instalacao): o grafo
+rem  do DockForm muda entre atualizacoes e o import da initialization das units
+rem  dele impedia o expert de carregar em outra atualizacao (13.2 -> 13.1).
+rem  Ver tools\gerar-toolsapi.ps1. Unit alias: ToolsAPI/FileHistoryAPI -> copias.
+>>"%BLD_LOG%" echo ---- gerar-toolsapi.ps1 -^> %BLD_TAPIDIR%
+powershell -NoProfile -ExecutionPolicy Bypass -File "%BLD_TOOLS%\gerar-toolsapi.ps1" -Bds "%BLD_BDSDIR%" -Out "%BLD_TAPIDIR%" >>"%BLD_LOG%" 2>&1
+if errorlevel 1 goto :tapi_fail
 rem  compila na pasta de preparacao (limpa): o expert em uso fica intacto
 del /f /q "%BLD_STAGE%\*.*" >nul 2>&1
 pushd "%BLD_SRCDIR%"
-"%BLD_DCC%" --no-config -B -Q %BLD_SW% --codepage:%BLD_CODEPAGE% "-D%BLD_DEFS%" "-NS%BLD_NS%" "-U%BLD_LIBDIR%;%BLD_RELDIR%" "-I%BLD_SRCDIR%" "-R%BLD_DCUDIR%;%BLD_RELDIR%" "-E%BLD_STAGE%" "-NU%BLD_DCUDIR%" "-LU%BLD_PACKAGES%" "%BLD_PROJ%.dpr" >>"%BLD_LOG%" 2>&1
+"%BLD_DCC%" --no-config -B -Q %BLD_SW% --codepage:%BLD_CODEPAGE% "-D%BLD_DEFS%" "-NS%BLD_NS%" "-A%BLD_ALIASES%" "-U%BLD_LIBDIR%;%BLD_RELDIR%;%BLD_TAPIDIR%" "-I%BLD_SRCDIR%" "-R%BLD_DCUDIR%;%BLD_RELDIR%" "-E%BLD_STAGE%" "-NU%BLD_DCUDIR%" "-LU%BLD_PACKAGES%" "%BLD_PROJ%.dpr" >>"%BLD_LOG%" 2>&1
 set "BLD_RC=%ERRORLEVEL%"
 popd
 call :elapsed BLD_T0 BLD_SECS
@@ -307,7 +330,15 @@ findstr /i /c:"DLL Name:" /c:"INITWIZARD0001" "%BLD_PE%" >>"%BLD_LOG%" 2>&1
 call :pe_check "INITWIZARD0001" "export INITWIZARD0001"
 call :pe_check "DLL Name: rtl%BLD_PKGVER%.bpl" "import rtl%BLD_PKGVER%.bpl"
 call :pe_check "DLL Name: vcl%BLD_PKGVER%.bpl" "import vcl%BLD_PKGVER%.bpl"
-call :pe_check "DLL Name: designide%BLD_PKGVER%.bpl" "import designide%BLD_PKGVER%.bpl"
+rem  designide NAO pode ser importado (grafo do DockForm muda entre atualizacoes)
+findstr /i /c:"DLL Name: designide" "%BLD_PE%" >nul 2>&1
+if errorlevel 1 (
+    echo [OK] sem import de designide%BLD_PKGVER%.bpl ^(ToolsAPI propria, sem DockForm^)
+) else (
+    echo [FALHOU] o expert importa designide%BLD_PKGVER%.bpl ^(nao carregaria em outra atualizacao^)
+    set "BLD_RESULT=2"
+    set "BLD_PEFAIL=1"
+)
 goto :eof
 
 rem ---- :find_objdump VER  - llvm-objdump de outra versao, se faltar o desta ----
@@ -323,9 +354,9 @@ rem ==========================================================================
 :verify_syms
 >>"%BLD_LOG%" echo.
 >>"%BLD_LOG%" echo ---- verificar-expert.ps1 %BLD_DLLNAME% contra %BLD_BPLREF%
-powershell -NoProfile -ExecutionPolicy Bypass -File "%BLD_TOOLS%\verificar-expert.ps1" -Expert "%BLD_DLLSTG%" -BplDir "%BLD_BPLREF%" >>"%BLD_LOG%" 2>&1
+powershell -NoProfile -ExecutionPolicy Bypass -File "%BLD_TOOLS%\verificar-expert.ps1" -Expert "%BLD_DLLSTG%" -BplDir "%BLD_BPLREF%" -Permitidos "%BLD_PKGOK%" -Inits >>"%BLD_LOG%" 2>&1
 if errorlevel 1 (
-    echo [FALHOU] simbolos importados ausentes nos .bpl de "%BLD_BPLREF%" ^(veja o log^)
+    echo [FALHOU] simbolos importados ausentes nos .bpl de "%BLD_BPLREF%" ou pacote nao permitido ^(so %BLD_PKGOK%^) - veja o log
     set "BLD_RESULT=2"
     set "BLD_PEFAIL=1"
     goto :eof
@@ -556,6 +587,10 @@ endlocal & exit /b 1
 
 :no_lib
 echo [ERRO] designide.dcp nao encontrado em "%BLD_RELDIR%"
+endlocal & exit /b 1
+
+:tapi_fail
+echo [FALHOU] gerar-toolsapi.ps1 ^(copia da ToolsAPI sem DockForm^) - veja o log: %BLD_LOG%
 endlocal & exit /b 1
 
 :rc_fail
