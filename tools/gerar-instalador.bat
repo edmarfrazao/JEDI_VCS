@@ -16,6 +16,8 @@ rem                               existir em bin\ideclient\Win32, se existir)
 rem  Cada JvcsExpertBDS<nn>.dll e conferido com tools\verificar-expert.ps1: so pode
 rem  importar rtl/vcl/xmlrtl e todos os simbolos tem de existir nos .bpl da versao.
 rem  --sem-build: so empacota o que ja esta em bin\ (nao compila nada).
+rem  Experts ORIGINAIS 2.5.0.1030 das IDEs antigas (Delphi 7 a 10.4) vem de
+rem  3rdparty\experts-originais-2.5.0.1030 (conferidos pelo SHA256SUMS.txt).
 rem
 rem  Depois confere que os binarios esperados existem e tem FileVersion
 rem  2.5.0.2026 e roda o ISCC (Inno Setup 6) em setup\JediVCS2026.iss.
@@ -115,7 +117,9 @@ if "%GI_NEXP%"=="0" (
     set "GI_FAIL=1"
 )
 for %%F in (fvcscrypt.dll jedivcs.chm jedivcsdiff.chm htm_rep.htm ffdef.jvcs ulist.jvcs vcllist.jvcs vcllistbcb.jvcs verinf.jvcs) do call :check_file "%GI_RT%\%%F"
+call :check_old
 call :check_file "%GI_ROOT%\tools\ai\jvcs-ai.ps1"
+call :check_file "%GI_ROOT%\skills\jedi-vcs\SKILL.md"
 call :check_file "%GI_ROOT%\doc\original\license.txt"
 if exist "%GI_CLIENT%\Jedivcs.map" (call :log "[OK] Jedivcs.map presente (componente .map)") else (call :log "[AVISO] Jedivcs.map ausente: o componente .map vai sem ele")
 if exist "%GI_IDE%\JvcsExternalDll.map" (call :log "[OK] JvcsExternalDll.map presente (componente .map)") else (call :log "[AVISO] JvcsExternalDll.map ausente: o componente .map vai sem ele")
@@ -191,6 +195,26 @@ if not "%GI_RC%"=="0" (
 )
 call :log "[OK] %~nx1 %2 %3 %4"
 exit /b 0
+
+rem ---- :check_old  - experts originais 2.5.0.1030 (IDEs antigas) intactos ------
+rem  Confere os 21 JvcsExpert*.dll de 3rdparty\experts-originais-2.5.0.1030 contra o
+rem  SHA256SUMS.txt da pasta (binarios de terceiros: nao podem mudar).
+:check_old
+set "GI_OLD=%GI_RT%\experts-originais-2.5.0.1030"
+if not exist "%GI_OLD%\SHA256SUMS.txt" (
+    call :log "[FALHOU] nao encontrado: %GI_OLD%\SHA256SUMS.txt"
+    set "GI_FAIL=1"
+    goto :eof
+)
+set "GI_OLDRES="
+for /f "usebackq delims=" %%R in (`powershell -NoProfile -ExecutionPolicy Bypass -Command "$d='%GI_OLD%'; $n=0; $bad=@(); foreach($l in Get-Content -LiteralPath (Join-Path $d 'SHA256SUMS.txt')){ if($l -match '^([0-9a-f]{64}) \*(.+)$'){ $n++; $f=Join-Path $d $Matches[2]; if(-not (Test-Path -LiteralPath $f) -or (Get-FileHash -LiteralPath $f -Algorithm SHA256).Hash -ne $Matches[1].ToUpper()){ $bad+=$Matches[2] } } }; if($n -ne 21){ 'ERRO ' + $n + ' entradas (esperadas 21)' } elseif($bad.Count){ 'ERRO ' + ($bad -join ',') } else { 'OK' }"`) do set "GI_OLDRES=%%R"
+if "%GI_OLDRES%"=="OK" (
+    call :log "[OK] experts originais 2.5.0.1030: 21 arquivos conferidos com SHA256SUMS.txt"
+) else (
+    call :log "[FALHOU] experts originais 2.5.0.1030 (%GI_OLD%): %GI_OLDRES%"
+    set "GI_FAIL=1"
+)
+goto :eof
 
 rem ---- :check_file ARQUIVO -----------------------------------------------------
 :check_file

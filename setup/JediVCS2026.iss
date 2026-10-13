@@ -11,9 +11,17 @@
 ;                                     (montada por tools\compilar-expert.bat Release nova)
 ;    RtSrc     = 3rdparty             fvcscrypt.dll, *.jvcs, htm_rep.htm, *.chm
 ;    AiSrc     = tools\ai             ferramentas da IA (copiadas byte a byte)
+;    SkillSrc  = skills\jedi-vcs      skill do Claude Code -> {app}\tools\ai\skills\jedi-vcs
+;
+;    OldSrc    = 3rdparty\experts-originais-2.5.0.1030
+;                                     JvcsExpertD7.dll, JvcsExpertBDS1..21.dll ORIGINAIS
+;                                     (2.5.0.1030), para as IDEs antigas
 ;
 ;  Expert: entra no pacote todo JvcsExpertBDS22/23/37.dll que existir em IdeSrc
 ;  (22 = Delphi 11, 23 = Delphi 12, 37 = Delphi 13), sem editar este arquivo.
+;  IDEs antigas (Delphi 7 a 10.4): componente "ideold", um subcomponente por IDE,
+;  visivel so se a IDE for detectada; usa o expert ORIGINAL (fino, mesma ABI) com
+;  a JvcsExternalDll.dll nova na mesma pasta.
 ;  Detalhes, decisoes e testes: setup\LEIAME.md.
 ; ============================================================================
 
@@ -36,6 +44,12 @@
 #ifndef AiSrc
   #define AiSrc Root + "\tools\ai"
 #endif
+#ifndef SkillSrc
+  #define SkillSrc Root + "\skills\jedi-vcs"
+#endif
+#ifndef OldSrc
+  #define OldSrc Root + "\3rdparty\experts-originais-2.5.0.1030"
+#endif
 
 ; ---- arquivos obrigatorios -------------------------------------------------
 #define Req(str F) FileExists(F) ? "" : Error("Arquivo obrigatorio nao encontrado: " + F)
@@ -49,6 +63,9 @@
 #expr Req(RtSrc + "\htm_rep.htm")
 #expr Req(RtSrc + "\ffdef.jvcs")
 #expr Req(AiSrc + "\jvcs-ai.ps1")
+#expr Req(SkillSrc + "\SKILL.md")
+#expr Req(OldSrc + "\JvcsExpertD7.dll")
+#expr Req(OldSrc + "\JvcsExpertBDS21.dll")
 
 ; ---- experts presentes no pacote (lista "22,23,37,") -----------------------
 #define ExpertList ""
@@ -109,6 +126,7 @@ brazilianportuguese.TypeCompact=Somente o cliente (standalone, Diff e console)
 brazilianportuguese.TypeCustom=Personalizada
 brazilianportuguese.CompClient=Cliente standalone (Jedivcs.exe), Diff (JEDIVCSDiff.exe), console (jvcs.exe) e ajuda
 brazilianportuguese.CompIde=Expert para o Delphi (menu JEDI VCS na IDE de 32 bits)
+brazilianportuguese.CompIdeOld=IDEs antigas detectadas (expert original 2.5.0.1030 + núcleo novo JvcsExternalDll 2.5.0.2026)
 brazilianportuguese.CompMaps=Arquivos .map (o log de erros mostra unit e linha)
 brazilianportuguese.CompAi=Ferramentas da IA (tools\ai: wrapper, hooks e skill do Claude Code)
 brazilianportuguese.TaskAiConsole=Usar o console novo (jvcs.exe desta instalação) na automação por IA (grava jvcsExe no config.ini)
@@ -121,8 +139,8 @@ brazilianportuguese.IconToolsAi=Ferramentas da IA (pasta)
 brazilianportuguese.RunClient=Abrir o JEDI VCS 2026
 brazilianportuguese.IdeDetected=detectado: %1
 brazilianportuguese.IdeNone=nenhum Delphi 11/12/13 detectado
-brazilianportuguese.CloseDelphi=O Delphi (bds.exe) está aberto.%n%nFeche o Delphi antes de continuar: a IDE regrava o registro dos experts ao fechar e mantém a DLL do expert em uso.%n%nFeche o Delphi e clique em Repetir, ou em Cancelar para sair.
-brazilianportuguese.CloseDelphiAbort=Operação cancelada: o Delphi (bds.exe) continua aberto.
+brazilianportuguese.CloseDelphi=O Delphi (bds.exe ou delphi32.exe) está aberto.%n%nFeche o Delphi antes de continuar: a IDE regrava o registro dos experts ao fechar e mantém a DLL do expert em uso.%n%nFeche o Delphi e clique em Repetir, ou em Cancelar para sair.
+brazilianportuguese.CloseDelphiAbort=Operação cancelada: o Delphi (bds.exe ou delphi32.exe) continua aberto.
 brazilianportuguese.ErrOriginalDir=A pasta "%1" parece ser a instalação do JEDI VCS original (2.5.0.1030 ou servidor).%n%nEscolha outra pasta (padrão: JEDI\JVCS 2026). O JEDI VCS original não é alterado por este instalador.
 brazilianportuguese.IdeNeverOpened=O %1 está instalado, mas ainda não foi aberto por este usuário do Windows (não existe HKCU\%2). O expert não foi registrado nele: abra e feche o Delphi uma vez e rode este instalador de novo (reparar).
 brazilianportuguese.AiConfigSkipped=O config.ini da IA (%1) não está em UTF-8 válido e não foi alterado. Grave jvcsExe com: jvcs-ai.ps1 config set jvcsExe "%2"
@@ -132,6 +150,7 @@ english.TypeCompact=Client only (standalone, Diff and console)
 english.TypeCustom=Custom
 english.CompClient=Standalone client (Jedivcs.exe), Diff (JEDIVCSDiff.exe), console (jvcs.exe) and help
 english.CompIde=Delphi expert (JEDI VCS menu in the 32-bit IDE)
+english.CompIdeOld=Older IDEs detected (original 2.5.0.1030 expert + new JvcsExternalDll 2.5.0.2026 core)
 english.CompMaps=.map files (the error log shows unit and line)
 english.CompAi=AI tools (tools\ai: wrapper, hooks and Claude Code skill)
 english.TaskAiConsole=Use the new console (jvcs.exe of this installation) for the AI automation (writes jvcsExe to config.ini)
@@ -144,8 +163,8 @@ english.IconToolsAi=AI tools (folder)
 english.RunClient=Open JEDI VCS 2026
 english.IdeDetected=detected: %1
 english.IdeNone=no Delphi 11/12/13 detected
-english.CloseDelphi=Delphi (bds.exe) is running.%n%nClose Delphi before continuing: the IDE rewrites the experts registry when it closes and keeps the expert DLL in use.%n%nClose Delphi and click Retry, or Cancel to quit.
-english.CloseDelphiAbort=Cancelled: Delphi (bds.exe) is still running.
+english.CloseDelphi=Delphi (bds.exe or delphi32.exe) is running.%n%nClose Delphi before continuing: the IDE rewrites the experts registry when it closes and keeps the expert DLL in use.%n%nClose Delphi and click Retry, or Cancel to quit.
+english.CloseDelphiAbort=Cancelled: Delphi (bds.exe or delphi32.exe) is still running.
 english.ErrOriginalDir=The folder "%1" looks like the original JEDI VCS installation (2.5.0.1030 or server).%n%nChoose another folder (default: JEDI\JVCS 2026). This setup does not change the original JEDI VCS.
 english.IdeNeverOpened=%1 is installed but has not been started by this Windows user yet (HKCU\%2 does not exist). The expert was not registered there: start and close Delphi once and run this setup again (repair).
 english.AiConfigSkipped=The AI config.ini (%1) is not valid UTF-8 and was not changed. Set jvcsExe with: jvcs-ai.ps1 config set jvcsExe "%2"
@@ -158,6 +177,30 @@ Name: "custom"; Description: "{cm:TypeCustom}"; Flags: iscustom
 [Components]
 Name: "client"; Description: "{cm:CompClient}"; Types: full compact custom
 Name: "ide"; Description: "{cm:CompIde}"; Types: full custom
+; IDEs antigas: so aparecem as detectadas (Check avaliado uma vez, no inicio).
+; Nome do subcomponente = id da IDE (d7 ou bds<n>); tabela em OldIdeKey/OldIdeName.
+Name: "ideold"; Description: "{cm:CompIdeOld}"; Types: full custom; Check: AnyOldIde
+Name: "ideold\d7"; Description: "Delphi 7"; Types: full custom; Check: OldIdeExists('d7')
+Name: "ideold\bds1"; Description: "C#Builder 1.0 (BDS 1.0)"; Types: full custom; Check: OldIdeExists('1')
+Name: "ideold\bds2"; Description: "Delphi 8 for .NET (BDS 2.0)"; Types: full custom; Check: OldIdeExists('2')
+Name: "ideold\bds3"; Description: "Delphi 2005 (BDS 3.0)"; Types: full custom; Check: OldIdeExists('3')
+Name: "ideold\bds4"; Description: "Borland Developer Studio 2006 (BDS 4.0)"; Types: full custom; Check: OldIdeExists('4')
+Name: "ideold\bds5"; Description: "Delphi 2007 / RAD Studio 2007 (BDS 5.0)"; Types: full custom; Check: OldIdeExists('5')
+Name: "ideold\bds6"; Description: "Delphi 2009 (BDS 6.0)"; Types: full custom; Check: OldIdeExists('6')
+Name: "ideold\bds7"; Description: "Delphi 2010 (BDS 7.0)"; Types: full custom; Check: OldIdeExists('7')
+Name: "ideold\bds8"; Description: "Delphi XE (BDS 8.0)"; Types: full custom; Check: OldIdeExists('8')
+Name: "ideold\bds9"; Description: "Delphi XE2 (BDS 9.0)"; Types: full custom; Check: OldIdeExists('9')
+Name: "ideold\bds10"; Description: "Delphi XE3 (BDS 10.0)"; Types: full custom; Check: OldIdeExists('10')
+Name: "ideold\bds11"; Description: "Delphi XE4 (BDS 11.0)"; Types: full custom; Check: OldIdeExists('11')
+Name: "ideold\bds12"; Description: "Delphi XE5 (BDS 12.0)"; Types: full custom; Check: OldIdeExists('12')
+Name: "ideold\bds14"; Description: "Delphi XE6 (BDS 14.0)"; Types: full custom; Check: OldIdeExists('14')
+Name: "ideold\bds15"; Description: "Delphi XE7 (BDS 15.0)"; Types: full custom; Check: OldIdeExists('15')
+Name: "ideold\bds16"; Description: "Delphi XE8 (BDS 16.0)"; Types: full custom; Check: OldIdeExists('16')
+Name: "ideold\bds17"; Description: "Delphi 10 Seattle (BDS 17.0)"; Types: full custom; Check: OldIdeExists('17')
+Name: "ideold\bds18"; Description: "Delphi 10.1 Berlin (BDS 18.0)"; Types: full custom; Check: OldIdeExists('18')
+Name: "ideold\bds19"; Description: "Delphi 10.2 Tokyo (BDS 19.0)"; Types: full custom; Check: OldIdeExists('19')
+Name: "ideold\bds20"; Description: "Delphi 10.3 Rio (BDS 20.0)"; Types: full custom; Check: OldIdeExists('20')
+Name: "ideold\bds21"; Description: "Delphi 10.4 Sydney (BDS 21.0)"; Types: full custom; Check: OldIdeExists('21')
 Name: "maps"; Description: "{cm:CompMaps}"; Types: full custom
 Name: "ai"; Description: "{cm:CompAi}"; Types: full custom
 
@@ -170,16 +213,38 @@ Name: "aiconsole"; Description: "{cm:TaskAiConsole}"; GroupDescription: "{cm:Tas
 Source: "{#ClientSrc}\Jedivcs.exe"; DestDir: "{app}"; Components: client; Flags: ignoreversion
 Source: "{#ClientSrc}\jvcs.exe"; DestDir: "{app}"; Components: client; Flags: ignoreversion
 ; o Diff tambem e usado pela DLL da IDE (Compare), que o procura na propria pasta
-Source: "{#ClientSrc}\JEDIVCSDiff.exe"; DestDir: "{app}"; Components: client ide; Flags: ignoreversion
+Source: "{#ClientSrc}\JEDIVCSDiff.exe"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
 ; ---- runtime comum (EXE e DLL procuram na propria pasta) ----
-Source: "{#RtSrc}\fvcscrypt.dll"; DestDir: "{app}"; Components: client ide; Flags: ignoreversion
-Source: "{#RtSrc}\jedivcs.chm"; DestDir: "{app}"; Components: client ide; Flags: ignoreversion
-Source: "{#RtSrc}\jedivcsdiff.chm"; DestDir: "{app}"; Components: client ide; Flags: ignoreversion
-Source: "{#RtSrc}\htm_rep.htm"; DestDir: "{app}"; Components: client ide; Flags: ignoreversion
-Source: "{#RtSrc}\*.jvcs"; DestDir: "{app}"; Components: client ide; Flags: ignoreversion
+Source: "{#RtSrc}\fvcscrypt.dll"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
+Source: "{#RtSrc}\jedivcs.chm"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
+Source: "{#RtSrc}\jedivcsdiff.chm"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
+Source: "{#RtSrc}\htm_rep.htm"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
+Source: "{#RtSrc}\*.jvcs"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
 Source: "{#Root}\doc\original\license.txt"; DestDir: "{app}"; Flags: ignoreversion
 ; ---- expert da IDE + DLL (mesma pasta: o expert so carrega a JvcsExternalDll.dll da propria pasta) ----
-Source: "{#IdeSrc}\JvcsExternalDll.dll"; DestDir: "{app}"; Components: ide; Flags: ignoreversion
+Source: "{#IdeSrc}\JvcsExternalDll.dll"; DestDir: "{app}"; Components: ide ideold; Flags: ignoreversion
+; ---- experts ORIGINAIS 2.5.0.1030 (IDEs antigas), byte a byte; carregam a JvcsExternalDll.dll nova acima ----
+Source: "{#OldSrc}\JvcsExpertD7.dll"; DestDir: "{app}"; Components: ideold\d7; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS1.dll"; DestDir: "{app}"; Components: ideold\bds1; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS2.dll"; DestDir: "{app}"; Components: ideold\bds2; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS3.dll"; DestDir: "{app}"; Components: ideold\bds3; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS4.dll"; DestDir: "{app}"; Components: ideold\bds4; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS5.dll"; DestDir: "{app}"; Components: ideold\bds5; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS6.dll"; DestDir: "{app}"; Components: ideold\bds6; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS7.dll"; DestDir: "{app}"; Components: ideold\bds7; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS8.dll"; DestDir: "{app}"; Components: ideold\bds8; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS9.dll"; DestDir: "{app}"; Components: ideold\bds9; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS10.dll"; DestDir: "{app}"; Components: ideold\bds10; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS11.dll"; DestDir: "{app}"; Components: ideold\bds11; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS12.dll"; DestDir: "{app}"; Components: ideold\bds12; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS14.dll"; DestDir: "{app}"; Components: ideold\bds14; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS15.dll"; DestDir: "{app}"; Components: ideold\bds15; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS16.dll"; DestDir: "{app}"; Components: ideold\bds16; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS17.dll"; DestDir: "{app}"; Components: ideold\bds17; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS18.dll"; DestDir: "{app}"; Components: ideold\bds18; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS19.dll"; DestDir: "{app}"; Components: ideold\bds19; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS20.dll"; DestDir: "{app}"; Components: ideold\bds20; Flags: ignoreversion
+Source: "{#OldSrc}\JvcsExpertBDS21.dll"; DestDir: "{app}"; Components: ideold\bds21; Flags: ignoreversion
 #if Pos("22,", ExpertList) > 0
 Source: "{#IdeSrc}\JvcsExpertBDS22.dll"; DestDir: "{app}"; Components: ide; Flags: ignoreversion
 #endif
@@ -194,10 +259,13 @@ Source: "{#IdeSrc}\JvcsExpertBDS37.dll"; DestDir: "{app}"; Components: ide; Flag
 Source: "{#ClientSrc}\Jedivcs.map"; DestDir: "{app}"; Components: client and maps; Flags: ignoreversion
 #endif
 #if FileExists(IdeSrc + "\JvcsExternalDll.map")
-Source: "{#IdeSrc}\JvcsExternalDll.map"; DestDir: "{app}"; Components: ide and maps; Flags: ignoreversion
+Source: "{#IdeSrc}\JvcsExternalDll.map"; DestDir: "{app}"; Components: (ide or ideold) and maps; Flags: ignoreversion
 #endif
 ; ---- ferramentas da IA (byte a byte: os .ps1 sao UTF-8 com BOM e CRLF) ----
 Source: "{#AiSrc}\*"; DestDir: "{app}\tools\ai"; Components: ai; Flags: ignoreversion recursesubdirs createallsubdirs
+; skill distribuivel do Claude Code (byte a byte); NAO e copiada para o perfil do
+; usuario: ver setup\LEIAME.md (copiar para %USERPROFILE%\.claude\skills\jedi-vcs)
+Source: "{#SkillSrc}\*"; DestDir: "{app}\tools\ai\skills\jedi-vcs"; Components: ai; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{cm:IconClient}"; Filename: "{app}\Jedivcs.exe"; Components: client
@@ -221,6 +289,9 @@ const
   AllBdsVersions = '22,23,37,';
   ExpertValueName = 'JVCSIDEClient';
   DefaultBdsBase = 'Software\Embarcadero\BDS';
+  { IDEs antigas com expert original 2.5.0.1030 (d7 = Delphi 7, n = BDS n.0; nao ha 13) }
+  OldIdeIds = 'd7,1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,';
+  DefaultOldRoot = 'Software';
   AiKeyJvcsExe = 'jvcsExe';
 
 var
@@ -272,6 +343,7 @@ end;
     expert.<nn>.key      chave HKCU ...\Experts onde gravamos JVCSIDEClient
     expert.<nn>.hadprev  1 = havia outro JVCSIDEClient antes (restaurar)
     expert.<nn>.prev     valor anterior
+    old.<id>.key/.hadprev/.prev  idem para as IDEs antigas (id = d7, 1..21)
     ai.path / ai.value / ai.hadprev / ai.prev   idem para jvcsExe do config.ini }
 
 function StatePath: String;
@@ -369,7 +441,8 @@ begin
   try
     Locator := CreateOleObject('WbemScripting.SWbemLocator');
     Service := Locator.ConnectServer('.', 'root\CIMV2');
-    Procs := Service.ExecQuery('SELECT ProcessId FROM Win32_Process WHERE Name = ''bds.exe''');
+    { bds.exe: BDS 1.0 (C#Builder) a 37.0; delphi32.exe: Delphi 7 }
+    Procs := Service.ExecQuery('SELECT ProcessId FROM Win32_Process WHERE Name = ''bds.exe'' OR Name = ''delphi32.exe''');
     Result := Procs.Count > 0;
   except
     Log('WMI indisponivel: ' + GetExceptionMessage);
@@ -396,7 +469,9 @@ var
 begin
   Result := FindFirst(AddBackslash(Dir) + 'JvcsExpertBDS*.dll', F);
   if Result then
-    FindClose(F);
+    FindClose(F)
+  else
+    Result := FileExists(AddBackslash(Dir) + 'JvcsExpertD7.dll');
 end;
 
 { ---------------------------------------------------------------- expert / IDE }
@@ -443,32 +518,82 @@ begin
   end;
 end;
 
-procedure UnregisterExpert(const Ver: String);
+{ Desfaz o JVCSIDEClient gravado por esta instalacao. Pfx = prefixo no estado
+  ('expert.22' para os experts novos, 'old.10' para as IDEs antigas); DefExpKey
+  = chave Experts usada se o estado nao tiver a chave (instalacao anterior). }
+procedure UnregisterValue(const Pfx, DefExpKey, Lbl: String);
 var
   ExpKey, Cur, Prev: String;
 begin
-  ExpKey := StateGet('expert.' + Ver + '.key');
+  ExpKey := StateGet(Pfx + '.key');
   if ExpKey = '' then
-    ExpKey := DefaultBdsBase + '\' + Ver + '.0\Experts';
+    ExpKey := DefExpKey;
   if RegQueryStringValue(HKCU, ExpKey, ExpertValueName, Cur) and IsOurExpert(Cur) then
   begin
-    Prev := StateGet('expert.' + Ver + '.prev');
-    if (StateGet('expert.' + Ver + '.hadprev') = '1') and (Prev <> '') then
+    Prev := StateGet(Pfx + '.prev');
+    if (StateGet(Pfx + '.hadprev') = '1') and (Prev <> '') then
     begin
       RegWriteStringValue(HKCU, ExpKey, ExpertValueName, Prev);
-      Log('Expert ' + Ver + ': JVCSIDEClient restaurado para ' + Prev + ' (' + ExpKey + ')');
+      Log(Lbl + ': JVCSIDEClient restaurado para ' + Prev + ' (' + ExpKey + ')');
     end
     else
     begin
       RegDeleteValue(HKCU, ExpKey, ExpertValueName);
-      Log('Expert ' + Ver + ': JVCSIDEClient removido (' + ExpKey + ')');
+      Log(Lbl + ': JVCSIDEClient removido (' + ExpKey + ')');
     end;
   end
   else
-    Log('Expert ' + Ver + ': JVCSIDEClient em ' + ExpKey + ' nao aponta para esta instalacao; mantido');
-  StateSet('expert.' + Ver + '.key', '');
-  StateSet('expert.' + Ver + '.prev', '');
-  StateSet('expert.' + Ver + '.hadprev', '');
+    Log(Lbl + ': JVCSIDEClient em ' + ExpKey + ' nao aponta para esta instalacao; mantido');
+  StateSet(Pfx + '.key', '');
+  StateSet(Pfx + '.prev', '');
+  StateSet(Pfx + '.hadprev', '');
+end;
+
+{ Grava HKCU\<IdeKey>\Experts JVCSIDEClient = NewVal, guardando o valor anterior
+  (de outra instalacao) no estado. Nao grava se HKCU\<IdeKey> nao existe (IDE
+  nunca aberta por este usuario: gravar Experts antes impediria a IDE de criar
+  a configuracao padrao). True = gravado. }
+function RegisterValue(const Pfx, IdeKey, NewVal, Lbl, Name: String): Boolean;
+var
+  ExpKey, Cur: String;
+begin
+  Result := False;
+  ExpKey := IdeKey + '\Experts';
+  if not RegKeyExists(HKCU, IdeKey) then
+  begin
+    Log(Lbl + ': HKCU\' + IdeKey + ' nao existe (IDE nunca aberta por este usuario); nao registrado');
+    IdeNotes := IdeNotes + FmtMessage(CustomMessage('IdeNeverOpened'), [Name, IdeKey]) + #13#10#13#10;
+    Exit;
+  end;
+  if RegQueryStringValue(HKCU, ExpKey, ExpertValueName, Cur) then
+  begin
+    if not IsOurExpert(Cur) then
+    begin
+      StateSet(Pfx + '.prev', Cur);
+      StateSet(Pfx + '.hadprev', '1');
+      Log(Lbl + ': valor anterior guardado para restaurar na desinstalacao: ' + Cur);
+    end
+    else if StateGet(Pfx + '.hadprev') = '' then
+      StateSet(Pfx + '.hadprev', '0');
+  end
+  else
+  begin
+    StateSet(Pfx + '.prev', '');
+    StateSet(Pfx + '.hadprev', '0');
+  end;
+  if RegWriteStringValue(HKCU, ExpKey, ExpertValueName, NewVal) then
+  begin
+    StateSet(Pfx + '.key', ExpKey);
+    Result := True;
+    Log(Lbl + ': HKCU\' + ExpKey + ' JVCSIDEClient = ' + NewVal);
+  end
+  else
+    Log(Lbl + ': falha ao gravar HKCU\' + ExpKey);
+end;
+
+procedure UnregisterExpert(const Ver: String);
+begin
+  UnregisterValue('expert.' + Ver, DefaultBdsBase + '\' + Ver + '.0\Experts', 'Expert ' + Ver);
 end;
 
 procedure UnregisterAllExperts;
@@ -486,7 +611,7 @@ end;
 
 procedure RegisterExperts;
 var
-  Base, L, Ver, K, ExpKey, Cur, NewVal: String;
+  Base, L, Ver, K: String;
   Done: String;
 begin
   Base := BdsBase;
@@ -499,43 +624,13 @@ begin
       Continue;
     RemoveFromExpertsX64(Base, Ver);
     K := Base + '\' + Ver + '.0';
-    ExpKey := K + '\Experts';
     if not IdeExists(Base, Ver) then
     begin
       Log('Expert ' + Ver + ': ' + IdeName(Ver) + ' nao instalado (' + K + ', valor App); nao registrado');
       Continue;
     end;
-    if not RegKeyExists(HKCU, K) then
-    begin
-      Log('Expert ' + Ver + ': HKCU\' + K + ' nao existe (IDE nunca aberta por este usuario); nao registrado');
-      IdeNotes := IdeNotes + FmtMessage(CustomMessage('IdeNeverOpened'), [IdeName(Ver), K]) + #13#10#13#10;
-      Continue;
-    end;
-    NewVal := ExpertFileName(Ver);
-    if RegQueryStringValue(HKCU, ExpKey, ExpertValueName, Cur) then
-    begin
-      if not IsOurExpert(Cur) then
-      begin
-        StateSet('expert.' + Ver + '.prev', Cur);
-        StateSet('expert.' + Ver + '.hadprev', '1');
-        Log('Expert ' + Ver + ': valor anterior guardado para restaurar na desinstalacao: ' + Cur);
-      end
-      else if StateGet('expert.' + Ver + '.hadprev') = '' then
-        StateSet('expert.' + Ver + '.hadprev', '0');
-    end
-    else
-    begin
-      StateSet('expert.' + Ver + '.prev', '');
-      StateSet('expert.' + Ver + '.hadprev', '0');
-    end;
-    if RegWriteStringValue(HKCU, ExpKey, ExpertValueName, NewVal) then
-    begin
-      StateSet('expert.' + Ver + '.key', ExpKey);
+    if RegisterValue('expert.' + Ver, K, ExpertFileName(Ver), 'Expert ' + Ver, IdeName(Ver)) then
       Done := Done + Ver + ',';
-      Log('Expert ' + Ver + ': HKCU\' + ExpKey + ' JVCSIDEClient = ' + NewVal);
-    end
-    else
-      Log('Expert ' + Ver + ': falha ao gravar HKCU\' + ExpKey);
   end;
   { versoes registradas por uma instalacao anterior e que nao valem mais }
   L := AllBdsVersions;
@@ -544,6 +639,161 @@ begin
     Ver := NextItem(L);
     if (Ver <> '') and not InList(Ver, Done) and (StateGet('expert.' + Ver + '.key') <> '') then
       UnregisterExpert(Ver);
+  end;
+end;
+
+{ ------------------------------------------- IDEs antigas (expert original 2.5.0.1030)
+  O expert original (JvcsExpertD7.dll / JvcsExpertBDS<n>.dll, fino, ABI de 4 exports
+  e 24 callbacks) carrega a JvcsExternalDll.dll da propria pasta; aqui ela e a nova
+  (2.5.0.2026). Chaves e nome do valor iguais aos do instalador original 2.5.0.1030
+  (unins000.dat): HKCU\Software\<fornecedor>\...\Experts, valor JVCSIDEClient.
+  Parametro de TESTE /OLDIDEROOT=Software\Outra troca o "Software" do inicio das
+  chaves (HKCU e HKLM); ver setup\LEIAME.md, secao Testes. }
+
+function OldRoot: String;
+begin
+  Result := ExpandConstant('{param:OLDIDEROOT|' + DefaultOldRoot + '}');
+end;
+
+{ chave da IDE (sem HKCU/HKLM): Delphi 7 = Borland\Delphi\7.0; BDS 1-5 = Borland;
+  6-7 = CodeGear; 8-21 = Embarcadero }
+function OldIdeKey(const Id: String): String;
+var
+  N: Integer;
+begin
+  if Id = 'd7' then
+    Result := OldRoot + '\Borland\Delphi\7.0'
+  else
+  begin
+    N := StrToIntDef(Id, 0);
+    if N <= 5 then
+      Result := OldRoot + '\Borland\BDS\' + Id + '.0'
+    else if N <= 7 then
+      Result := OldRoot + '\CodeGear\BDS\' + Id + '.0'
+    else
+      Result := OldRoot + '\Embarcadero\BDS\' + Id + '.0';
+  end;
+end;
+
+function OldIdeName(const Id: String): String;
+begin
+  case StrToIntDef(Id, 0) of
+    1: Result := 'C#Builder 1.0 (BDS 1.0)';
+    2: Result := 'Delphi 8 for .NET (BDS 2.0)';
+    3: Result := 'Delphi 2005 (BDS 3.0)';
+    4: Result := 'Borland Developer Studio 2006 (BDS 4.0)';
+    5: Result := 'Delphi 2007 (BDS 5.0)';
+    6: Result := 'Delphi 2009 (BDS 6.0)';
+    7: Result := 'Delphi 2010 (BDS 7.0)';
+    8: Result := 'Delphi XE (BDS 8.0)';
+    9: Result := 'Delphi XE2 (BDS 9.0)';
+    10: Result := 'Delphi XE3 (BDS 10.0)';
+    11: Result := 'Delphi XE4 (BDS 11.0)';
+    12: Result := 'Delphi XE5 (BDS 12.0)';
+    14: Result := 'Delphi XE6 (BDS 14.0)';
+    15: Result := 'Delphi XE7 (BDS 15.0)';
+    16: Result := 'Delphi XE8 (BDS 16.0)';
+    17: Result := 'Delphi 10 Seattle (BDS 17.0)';
+    18: Result := 'Delphi 10.1 Berlin (BDS 18.0)';
+    19: Result := 'Delphi 10.2 Tokyo (BDS 19.0)';
+    20: Result := 'Delphi 10.3 Rio (BDS 20.0)';
+    21: Result := 'Delphi 10.4 Sydney (BDS 21.0)';
+  else
+    Result := 'Delphi 7';
+  end;
+end;
+
+function OldComponent(const Id: String): String;
+begin
+  if Id = 'd7' then
+    Result := 'ideold\d7'
+  else
+    Result := 'ideold\bds' + Id;
+end;
+
+function OldExpertFileName(const Id: String): String;
+begin
+  if Id = 'd7' then
+    Result := ExpandConstant('{app}\JvcsExpertD7.dll')
+  else
+    Result := ExpandConstant('{app}\JvcsExpertBDS' + Id + '.dll');
+end;
+
+{ IDE instalada: valor App (exe existente) em HKCU ou HKLM (32 bits) ou, na falta
+  dele, RootDir com bin\bds.exe ou bin\delphi32.exe }
+function OldIdeInstalledIn(const Root: Integer; const K: String): Boolean;
+var
+  S: String;
+begin
+  Result := RegQueryStringValue(Root, K, 'App', S) and FileExists(S);
+  if not Result and RegQueryStringValue(Root, K, 'RootDir', S) and (S <> '') then
+    Result := FileExists(AddBackslash(S) + 'bin\bds.exe') or FileExists(AddBackslash(S) + 'bin\delphi32.exe');
+end;
+
+function OldIdeExists(const Id: String): Boolean;
+var
+  K: String;
+begin
+  K := OldIdeKey(Id);
+  Result := OldIdeInstalledIn(HKCU, K) or OldIdeInstalledIn(HKLM32, K);
+end;
+
+function AnyOldIde: Boolean;
+var
+  L, Id: String;
+begin
+  Result := False;
+  L := OldIdeIds;
+  while (L <> '') and not Result do
+  begin
+    Id := NextItem(L);
+    if Id <> '' then
+      Result := OldIdeExists(Id);
+  end;
+end;
+
+procedure UnregisterOld(const Id: String);
+begin
+  UnregisterValue('old.' + Id, DefaultOldRoot + Copy(OldIdeKey(Id), Length(OldRoot) + 1, 255) + '\Experts',
+    'Expert original ' + Id);
+end;
+
+procedure UnregisterAllOld;
+var
+  L, Id: String;
+begin
+  L := OldIdeIds;
+  while L <> '' do
+  begin
+    Id := NextItem(L);
+    if (Id <> '') and (StateGet('old.' + Id + '.key') <> '') then
+      UnregisterOld(Id);
+  end;
+end;
+
+{ registra as IDEs antigas marcadas; desfaz as desmarcadas/nao mais detectadas }
+procedure RegisterOldExperts;
+var
+  L, Id: String;
+  Done: Boolean;
+begin
+  L := OldIdeIds;
+  while L <> '' do
+  begin
+    Id := NextItem(L);
+    if Id = '' then
+      Continue;
+    Done := False;
+    if WizardIsComponentSelected(OldComponent(Id)) then
+    begin
+      if OldIdeExists(Id) then
+        Done := RegisterValue('old.' + Id, OldIdeKey(Id), OldExpertFileName(Id),
+          'Expert original ' + Id, OldIdeName(Id))
+      else
+        Log('Expert original ' + Id + ': ' + OldIdeName(Id) + ' nao instalado (' + OldIdeKey(Id) + '); nao registrado');
+    end;
+    if not Done and (StateGet('old.' + Id + '.key') <> '') then
+      UnregisterOld(Id);
   end;
 end;
 
@@ -896,8 +1146,15 @@ var
   D, V: String;
 begin
   D := RemoveBackslashUnlessRoot(Dir);
-  Result := SameDir(D, ExpandConstant('{commonpf32}\JEDI\JVCS')) or
-            FileExists(D + '\JvcsExpertBDS21.dll') or FileExists(D + '\JvcsExpertD7.dll') or
+  Result := SameDir(D, ExpandConstant('{commonpf32}\JEDI\JVCS'));
+  if Result then
+    Exit;
+  { pasta desta versao (reinstalacao): tem os experts ORIGINAIS das IDEs antigas,
+    mas a JvcsExternalDll.dll ou o jedivcs.exe sao 2.5.0.2026 }
+  if (GetVersionNumbersString(D + '\JvcsExternalDll.dll', V) and (V = '{#AppVersion}')) or
+     (GetVersionNumbersString(D + '\jedivcs.exe', V) and (V = '{#AppVersion}')) then
+    Exit;
+  Result := FileExists(D + '\JvcsExpertBDS21.dll') or FileExists(D + '\JvcsExpertD7.dll') or
             FileExists(D + '\server\JVCSSrv.exe') or FileExists(D + '\JVCSSrv.exe');
   if not Result and FileExists(D + '\jedivcs.exe') then
     Result := GetVersionNumbersString(D + '\jedivcs.exe', V) and (V <> '{#AppVersion}');
@@ -950,7 +1207,8 @@ begin
     Result := FmtMessage(CustomMessage('ErrOriginalDir'), [WizardDirValue]);
     Exit;
   end;
-  if WizardIsComponentSelected('ide') or ExpertFilesIn(WizardDirValue) then
+  if WizardIsComponentSelected('ide') or WizardIsComponentSelected('ideold') or
+     ExpertFilesIn(WizardDirValue) then
     if not WaitDelphiClosed then
       Result := CustomMessage('CloseDelphiAbort');
 end;
@@ -963,6 +1221,7 @@ begin
       RegisterExperts
     else
       UnregisterAllExperts;
+    RegisterOldExperts;
     if WizardIsTaskSelected('aiconsole') then
       ApplyAiConsole
     else
@@ -987,6 +1246,7 @@ begin
   if CurUninstallStep = usUninstall then
   begin
     UnregisterAllExperts;
+    UnregisterAllOld;
     RevertAiConsole;
     StateSave;
   end;
