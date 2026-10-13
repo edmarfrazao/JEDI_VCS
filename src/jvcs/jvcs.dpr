@@ -137,8 +137,7 @@ program jvcs;
 {$ENDIF DELPHI6_UP}
 
 uses
-    FastMM4 in '..\comp\fastmm\FastMM4.pas'
-  , SysUtils
+    SysUtils
   , Classes
   , Windows
   , TZHandling in '..\common\client\TZHandling.pas'
@@ -159,7 +158,8 @@ uses
   , JVCSClientConsts in '..\common\Client\JVCSClientConsts.pas'
   , JVCSNewClientObj in '..\common\client\JVCSNewClientObj.pas'
   , JclStrings
-  , VCSCommon in '..\common\VCSCommon.pas';
+  , VCSCommon in '..\common\VCSCommon.pas'
+  , RFormat;
 
 const
   JVCSPrompt = 'jvcs> ';
@@ -798,6 +798,7 @@ var
   ModuleOriginalTime: TDateTime;
   ModuleOriginalSize, ModuleOriginalCRC, ModuleCompressedSize: Integer;
   ModuleFileStream: TFileStream;
+  CrcErr: string;
 begin
   Result := False;
   ModuleID := -1;
@@ -925,7 +926,9 @@ begin
                 ModuleOriginalSize := GetSizeOfFile(ModuleFileName);
 //THu                ModuleOriginalCRC  := GetFileCrc32(ModuleFileName);
                 // no exception handling!
-                ModuleOriginalCRC  := StrToInt(CRCString(ModuleFileName));
+                // JVCS 2026: CRCInt direto (CRCString devolve 'OK' para arquivo
+                // vazio e o StrToInt quebrava); mesmo valor Integer com sinal
+                ModuleOriginalCRC  := CRCInt(ModuleFileName, CrcErr);
                 ModuleCompressedSize := GetSizeOfFile(ZipFiles[I]);
                 ModuleFileStream := TFileStream.Create(ZipFiles[I], fmOpenRead);
                 try
@@ -3638,6 +3641,10 @@ end;
 
 begin
   try
+    // JVCS 2026: os textos trafegam em bytes da code page do protocolo (1252,
+    // como o cliente Delphi 2007). Os registros do nucleo usam ShortString, cuja
+    // conversao implicita segue DefaultSystemCodePage: alinhar as duas.
+    DefaultSystemCodePage := MWCodePage;
     SetConsoleTitle('JEDI VCS console client');
     ShowBanner;
     CheckRequiredLibs;
