@@ -5,13 +5,13 @@
 > ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](../../DISCLAIMER.md).
 
 Release notes for each beta of **JEDI VCS 2.5 Beta 2026**, the JEDI VCS 2.5 client ported to modern
-Delphi. The 2.5 Beta 4 server is not changed and the protocol is identical.
+Delphi. The 2.5 Beta 3 server is not changed and the protocol is identical.
 
-Each release page is written in Portuguese and starts with an **English summary**.
+Each release has an English page in this folder.
 
 | Version | Date | Status | Highlights |
 |---|---|---|---|
-| [Beta 4](2026-10-13-beta4.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) (pre-release) | choose each Delphi; older IDEs (7 to 10.4); AI skill; pt/en docs — XE3: toolbar crash (next beta) |
+| [Beta 5](2026-10-13-beta5.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5) (pre-release) | **build 2050**: XE3 crash fixed; installed version visible (title, About, Control Panel); pt/en docs and skills | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) (pre-release) | choose each Delphi; older IDEs (7 to 10.4); AI skill; pt/en docs — XE3: toolbar crash (next beta) |
 | [Beta 2](2026-10-13-beta2.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2) (pre-release) | Delphi 11, 12 and 13 (any update), fixed dark theme, appearance and AI options, many fixes |
 | [Beta 1](2026-10-13-beta1.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1) — replaced by Beta 2 | First installer: client, Diff, console and expert for Delphi 13.2 |
 

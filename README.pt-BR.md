@@ -24,7 +24,7 @@ the unchanged **JEDI VCS 2.5 Beta 3 server** (Firebird): the new client sends by
 verified by golden traffic captures against the original 2.5.0.1030 client. Highlights: a thin
 ToolsAPI expert per Delphi version that loads in every update (it imports only `rtl`, `vcl` and `xmlrtl`),
 one shared client core, UI scaling (100–200%), light/dark theme following Windows or the IDE, an Inno
-Setup installer, and a safe workflow for AI coding agents (Claude Code). Status: **public beta (beta 4)**,
+Setup installer, and a safe workflow for AI coding agents (Claude Code). Status: **public beta (beta 5, build 2050)**,
 Win32 only. Download the installer from
 [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases). Documentation is in Brazilian Portuguese.
 License: MPL 1.1; the MidWare transport is free for **non-commercial use only** (see below).
@@ -34,7 +34,7 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 
 | Item | Situação |
 |---|---|
-| Versão | **2.5 Beta 2026** (`2.5.0.2026`), quarta beta pública (`v2.5.0.2026-beta4`), com IDEs antigas (Delphi 7 a 10.4) |
+| Versão | **2.5 Beta 2026** (`2.5.0.2026`), quinta beta pública, **build 2050** (`2.5.0.2050`, tag `v2.5.0.2026-beta5`), Delphi 7 a 13 |
 | Delphi | testado em **Delphi 11, 12 e 13** (IDE de 32 bits) |
 | Plataforma | Win32 (roda em Windows x64 e ARM64 por emulação) |
 | Servidor | JEDI VCS **2.5 Beta 3** (Firebird) — não portado, sem alteração |
