@@ -48,7 +48,7 @@ All components are selected by default.
 |---|---|
 | **Client** | `Jedivcs.exe` (standalone), `JEDIVCSDiff.exe`, `jvcs.exe` (console), help files |
 | **Delphi expert** | **JEDI VCS** menu in the 32-bit IDE of Delphi 11, 12 and 13; the line shows the versions detected |
-| **Older IDEs detected** (Beta 3) | Appears only if Delphi 7 to 10.4 Sydney is installed, with one line per IDE. Installs the **original** 2.5.0.1030 expert of that IDE connected to the new core |
+| **Older IDEs detected** (Beta 4) | Appears only if Delphi 7 to 10.4 Sydney is installed, with one line per IDE. Installs the **original** 2.5.0.1030 expert of that IDE connected to the new core |
 | **`.map` files** | The error log then shows unit and line numbers (useful when you report a bug) |
 | **AI tools** | `tools\ai` (wrapper, hooks) and the Claude Code skill `jedi-vcs` in `tools\ai\skills\jedi-vcs` |
 
@@ -68,7 +68,7 @@ Only one registry value per detected Delphi version:
 - The Library Path, packages and IDE environment variables are **not** changed.
 - Nothing is written to `Experts x64`: the 64-bit IDE cannot load a 32-bit DLL.
 
-## 6. Older IDEs (Delphi 7 to 10.4 Sydney) — Beta 3, being tested
+## 6. Older IDEs (Delphi 7 to 10.4 Sydney) — Beta 4 (XE3: toolbar crash being fixed)
 
 The original JEDI VCS 2.5.0.1030 had a thin expert for each Delphi from 7 to 10.4 Sydney. The 2026
 installer reuses these **original** experts. They only connect the IDE to `JvcsExternalDll.dll`, which is

@@ -5,19 +5,19 @@
 > ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](../DISCLAIMER.md).
 
 Release notes for each beta of **JEDI VCS 2.5 Beta 2026**, the JEDI VCS 2.5 client ported to modern
-Delphi. The 2.5 Beta 3 server is not changed and the protocol is identical.
+Delphi. The 2.5 Beta 4 server is not changed and the protocol is identical.
 
 Each release page is written in Portuguese and starts with an **English summary**.
 
 | Version | Date | Status | Highlights |
 |---|---|---|---|
-| [Beta 3](2026-10-xx-beta3.md) | being tested | **not released** | Older IDEs (Delphi 7 to 10.4 Sydney) with the original expert + new core; AI skill in the installer; faster Project Manager in the IDE |
+| [Beta 4](2026-10-13-beta4.md) | 13/10/2026 | [publicada / released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) | escolha por Delphi; IDEs antigas (7 a 10.4); skill de IA; docs pt/en — XE3: AV na barra (próxima beta) |
 | [Beta 2](2026-10-13-beta2.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2) (pre-release) | Delphi 11, 12 and 13 (any update), fixed dark theme, appearance and AI options, many fixes |
 | [Beta 1](2026-10-13-beta1.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1) — replaced by Beta 2 | First installer: client, Diff, console and expert for Delphi 13.2 |
 
 ## Summaries
 
-### Beta 3 (being tested)
+### Beta 4 (being tested)
 
 - **Older IDEs:** every Delphi supported by the original 2.5.0.1030 (Delphi 7 to 10.4 Sydney) gets the new
   core through its original thin expert. Each detected IDE can be selected in the installer; uninstall
