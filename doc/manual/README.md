@@ -27,6 +27,7 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 | [07 Senhas padrão e segurança](07-Senhas-Padrao-e-Seguranca.md) | Tabela de senhas padrão, o que trocar, boas práticas |
 | [08 Solução de problemas](08-Solucao-de-Problemas.md) | Sintoma → causa → solução |
 | [09 Instalador do cliente](09-Instalador-do-Cliente.md) | Setup do JEDI VCS 2.5 Beta 2026: instalar, reparar, desinstalar, componentes, o que muda no Delphi, convivência com o cliente original |
+| [10 Delphi 11 e 12](10-Delphi-11-e-12.md) | Checklist depois de instalar o Delphi 11/12: GetIt, SynEdit/VTV fixados, compilar com `/delphi:NN`, expert por versão e por atualização |
 
 ## Como ler este manual
 

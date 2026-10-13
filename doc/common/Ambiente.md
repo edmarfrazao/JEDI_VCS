@@ -15,7 +15,8 @@ Como o ambiente do port do JEDI VCS 2.5 Beta 2026 foi montado, o que foi alterad
 | IDEs | `bin\bds.exe` (32 bits, **a que carrega o expert**) e `bin64\bds.exe` (64 bits, não carrega DLL de 32 bits) |
 | Compiladores | `bin\DCC32.EXE` (usado pelo `compilar.bat`), `bin\dcc64.exe`, `bin64\*` |
 | Plataforma Win64 | não instalada (`lib\win64\release` ausente); irrelevante para a fase 1 |
-| Delphi 11 (BDS 22.0) / 12 (BDS 23.0) | **não instalados**; serão instalados depois, com as mesmas fontes de terceiros |
+| Delphi 11 (BDS 22.0) | **instalado em 13/10/2026**: 11.3 (`28.0.48361.3236`) em `C:\Program Files (x86)\Embarcadero\Studio\22.0`; GetIt ainda sem JCL/JVCL/ICS/Abbrevia; SynEdit/VTV fixados compilados em `lib\D11`; nada registrado na IDE |
+| Delphi 12 (BDS 23.0) | **não instalado** |
 | Projeto | `D:\Delphi\JediVCS\v2026` (git local) |
 | Clone de origem | `D:\Delphi\JediVCS\Fontes_JediVCS_2.5` |
 | Cliente oficial instalado | `C:\Program Files (x86)\JEDI\JVCS` (2.5.0.1030) |
@@ -140,7 +141,29 @@ reg delete "HKCU\Software\Embarcadero\BDS\37.0\Experts" /v JVCSIDEClient /f
 ## 7. Cuidados
 
 - Nunca versionar nem editar `lib\`, `dcu\`, logs e BPL: estão no `.gitignore`.
-- Para Delphi 11/12: `set BDSROOT=C:\Program Files (x86)\Embarcadero\Studio\23.0` (ou `22.0`) e, se necessário, `JVCS_CATALOG`; o `BDSVER` é deduzido do nome da pasta e as saídas vão para `lib\<BDSVER>\...`.
+- Para Delphi 11/12: `tools\compilar.bat /delphi:11 ...` (ou `/delphi:12`, `/bds:22|23`; `JVCS_DELPHI` como padrão); as saídas vão para `lib\D11|D12`, `dcu\D11|D12` e `bin\client\D11|D12`. Pastas do GetIt e sufixos em `tools\versoes.ini`; `tools\compilar.bat /delphi:11 /info` mostra o que foi encontrado. Checklist: [manual, capítulo 10](../manual/10-Delphi-11-e-12.md).
+
+## 8. Delphi 11 e 12: o que instalar
+
+Mesmo conjunto do 13, cada um na sua IDE (DCU/BPL não servem entre versões):
+
+| Item | Delphi 11 (22.0) | Delphi 12 (23.0) | Observação |
+|---|---|---|---|
+| Atualização | 11.3 | 12.3 | O expert carrega em todas as atualizações (só importa `rtl`/`vcl`/`xmlrtl`) |
+| Plataforma | Win32 (Win64 opcional) | idem | |
+| JCL / JVCL (GetIt) | DCUs em `lib\d28\win32` | `lib\d29\win32` | Se o GetIt oferecer versão antiga, usar o GitHub num commit equivalente ao 2026.08 ([Versões](Versoes.md)) |
+| ICS for VCL (GetIt) | DCUs em `Lib\<cfg>\Win32\22.0` | `...\23.0` | 9.7 ou SVN `icsv9` |
+| Abbrevia (GetIt) | `packages\11AndAbove\Delphi\Win32\<cfg>` | idem | |
+| SynEdit / VTV | **fixados**: `compilar.bat /delphi:11 libs Release Win32` → `lib\D11\bpl\Win32\*280.bpl` | `lib\D12\...\*290.bpl` | Não usar os do GetIt |
+| Expert | `JvcsExpertBDS22.dll` | `JvcsExpertBDS23.dll` | `compilar-expert.bat /delphi:NN`; registro só em `Experts` (não em `Experts x64`) |
+
+Pastas do GetIt nessas versões: os nomes em `tools\versoes.ini` (`JEDICodeLibraryJCL-11` etc.) são prováveis;
+o `compilar.bat` procura sozinho (`JEDICodeLibraryJCL*`, `JCL*`, `JEDIVisualComponentLibraryJVCL*`, `JVCL*`,
+`ICS_VCL*`, `ICS*`, `Abbrevia*`, pasta ou subpasta de versão) e o `/info` mostra o resultado.
+
+IDE de 64 bits (12.3 e 13): `bin64\bds.exe` usa chaves próprias `Experts x64`, `Known Packages x64`,
+`Known IDE Packages x64` e o valor `App x64` em `HKCU\Software\Embarcadero\BDS\<v>` (conferido no 37.0 desta
+máquina). DLL/BPL de 32 bits não carregam nela.
 - Downloads e extrações só com autorização explícita do usuário, cada um numa pasta isolada.
 - A instalação da JCL por `install.bat` em Windows 11 ARM64 (Delphi emulado) não foi validada; o GetIt foi o caminho usado.
 

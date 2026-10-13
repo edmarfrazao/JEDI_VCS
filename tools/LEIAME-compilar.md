@@ -1,14 +1,59 @@
 # compilar.bat - compilação do JEDI VCS v2026
 
 Script de linha de comando para compilar os 4 projetos do JEDI VCS com o Delphi 13
-(RAD Studio 37.0) no layout `v2026`. Estilo e convenções iguais ao modelo
+(RAD Studio 37.0, padrão), 12 (23.0) ou 11 (22.0) no layout `v2026`. Estilo e convenções iguais ao modelo
 `Documents\Embarcadero\Studio\Projects\Ex1\build.bat` (variáveis `BLD_*`, mensagens
 `[OK]` / `[FALHOU]`, um log por alvo, `exit /b` com código, ASCII puro, CRLF).
 
 ## Uso
 
 ```
-compilar.bat [exe|dll|diff|console|libs|all] [Debug|Release] [Win32|Win64]
+compilar.bat [/delphi:11|12|13 | /bds:22|23|37] [/info] [/msbuild] [exe|dll|diff|console|libs|all] [Debug|Release] [Win32|Win64]
+```
+
+### Versão do Delphi (Delphi 11, 12 e 13)
+
+| Opção | Efeito |
+|---|---|
+| `/delphi:NN` ou `/bds:NN` | Delphi 11 (`/bds:22`), 12 (`/bds:23`) ou 13 (`/bds:37`, padrão). Também aceita `22.0` etc. Padrão alternativo: variável `JVCS_DELPHI=11\|12\|13`. Se `BDSROOT` terminar em `NN.N`, ela também escolhe a versão (e precisa bater com `/delphi`) |
+| `/info` | Não compila: mostra a versão, se está instalada, as pastas de JCL/JVCL/ICS/Abbrevia encontradas (e como: `versoes.ini` ou procura automática), as pastas de DCUs (`[ok]`/`[falta]`) e as saídas |
+| `/msbuild` | Compila os `.dproj` (ver "Projetos .dproj") em vez do `dcc32`/`dcc64` direto; saída em `bin\msbuild\<Dnn>\<plat>\<cfg>` |
+
+Tudo o que muda por versão fica em **`tools\versoes.ini`** (lido por `tools\versao-delphi.bat`, usado também
+pelo `compilar-expert.bat` e pelo `gerar-instalador.bat`): número do Delphi, subpasta de saída (`tag`), sufixo
+de pacotes (`280`/`290`/`370`), pasta de DCUs da JCL/JVCL (`d28`/`d29`/`d37`), `CatalogRepository` e as pastas
+de JCL, JVCL, ICS e Abbrevia (relativas ao `CatalogRepository` do GetIt ou absolutas). Se a pasta do `.ini` não
+existir, o script procura sozinho no `CatalogRepository` do usuário e no comum
+(`Public\Documents\Embarcadero\Studio\<BDS>\CatalogRepository`) por `JEDICodeLibraryJCL*`/`JCL*`,
+`JEDIVisualComponentLibraryJVCL*`/`JVCL*`, `ICS_VCL*`/`ICS*` e `Abbrevia*`, aceitando a pasta ou a subpasta
+de versão (layout do 13: `ICS_VCL-13\9.7`) que tiver o arquivo-marcador da biblioteca; vale a última em ordem
+alfabética. Os valores do 11 e do 12 no `.ini` são prováveis; confira com `/info` depois de instalar o GetIt.
+
+Saídas por versão (DCU/DCP de versões diferentes não se misturam):
+
+| | Delphi 13 (referência) | Delphi 11 / 12 |
+|---|---|---|
+| EXE/DLL/Diff/console | `bin\client\<plat>` | `bin\client\D11\<plat>` / `bin\client\D12\<plat>` (só verificação) |
+| DCUs | `dcu\<plat>\<cfg>\<alvo>` | `dcu\D11\<plat>\<cfg>\<alvo>` |
+| SynEdit/VTV fixados (`libs`) | `lib\...` | `lib\D11\...` (BPL `...280.bpl`) / `lib\D12\...` (`...290.bpl`) |
+| Logs | `tools\logs\compilar_<alvo>_<plat>_<cfg>.log` | `tools\logs\compilar_D11_<alvo>_...log` |
+| Caminhos para os `.dproj` | `lib\paths\JediVCS2026-37.0.props` | `lib\paths\JediVCS2026-22.0.props` / `-23.0.props` |
+
+O EXE, a DLL, o Diff e o console distribuídos são **um só binário para todas as IDEs** (ADR-001), compilado no
+Delphi 13; compilar no 11/12 serve para verificar que o código continua compilando lá. O que muda por IDE é só
+o expert (`JvcsExpertBDS22/23/37.dll`, ver `compilar-expert.bat` abaixo).
+
+Versão pedida e não instalada (faltam `bin\rsvars.bat` ou `bin\dcc32.exe`): mensagem `[ERRO] Delphi 12 Athens
+(BDS 23.0) nao esta instalado nesta maquina`, código 1, nada é compilado nem apagado.
+
+Exemplos multi-versão:
+
+```
+compilar.bat /delphi:11 /info                 (o que o script achou no Delphi 11)
+compilar.bat /delphi:11 libs Release Win32    (SynEdit/VTV para o Delphi 11: lib\D11\...)
+compilar.bat /bds:23 all Release Win32        (os 4 alvos no Delphi 12: bin\client\D12\Win32)
+compilar.bat /msbuild all Release Win32       (os .dproj no Delphi 13: bin\msbuild\D13\Win32\Release)
+compilar-expert.bat /delphi:12 Release nova   (bin\ideclient\Win32\JvcsExpertBDS23.dll)
 ```
 
 | Parâmetro | Valores | Padrão | Observação |
@@ -69,11 +114,11 @@ console as primeiras `BLD_MAXERR` (3) mensagens `Fatal:`/`Error:` do log.
 
 ## Como compila
 
-- **Se existir `<projeto>.dproj` ao lado do `.dpr`**: usa `msbuild` (como o `build.bat`
-  modelo), `/p:Config` e `/p:Platform`, log em `tools\logs\...`. Neste modo os defines e
-  caminhos vêm do `.dproj`/IDE; `JVCS_EXTRA_PATH`, `*_PATH` e `JVCS_EXTRA_DEFS` são
-  ignorados. (Ramo ainda não exercitado: hoje não há `.dproj`.)
-- **Senão** (situação atual): chama `DCC32.EXE`/`dcc64.exe` direto no `.dpr`, a partir da
+- **Com `/msbuild`**: usa `msbuild` no `<projeto>.dproj`, `/p:Config` e `/p:Platform`, log em
+  `tools\logs\compilar_msbuild_<Dnn>_<alvo>_<plat>_<cfg>.log`. Defines, caminhos e saídas vêm do `.dproj` +
+  `tools\msbuild\JediVCS2026.props` (ver "Projetos .dproj"); `JVCS_EXTRA_PATH` e `JVCS_EXTRA_DEFS` também valem
+  lá, `*_PATH` não. Antes de 13/10/2026 a simples existência do `.dproj` trocava o modo; agora só com a opção.
+- **Padrão**: chama `DCC32.EXE`/`dcc64.exe` direto no `.dpr`, a partir da
   pasta do `.dpr`, com `--no-config -B -Q`, `--codepage:1252`, os aliases de unit do
   `.dof` (`WinTypes=Windows;...`), os namespaces `-NS` (Winapi;System.Win;...;Vcl.Shell),
   `-D`, `-U`, `-I`, `-R`, `-E..\..\bin\client\<plat>` e `-NU..\..\dcu\<plat>\<cfg>`.
@@ -91,6 +136,78 @@ console as primeiras `BLD_MAXERR` (3) mensagens `Fatal:`/`Error:` do log.
 Search path base (relativo à pasta do `.dpr`, usado em `-U`, `-I` e `-R`):
 `..\common;..\common\client;..\comp\midware;..\comp\textdiff;..\comp\mdmailslot;..\comp\crc;..\comp\mwtools`
 (+ `..\jedivcs` em `console`). `src\comp\_legacy` NÃO entra (só referência).
+
+## Projetos .dproj (abrir na IDE do Delphi 11, 12 ou 13)
+
+| Arquivo | Alvo |
+|---|---|
+| `JediVCS2026.groupproj` (raiz) | grupo com os 5 projetos abaixo |
+| `src\jedivcs\Jedivcs.dproj` | `exe` |
+| `src\jedivcs\JediVCSDLL.dproj` | `dll` (o PostBuild copia para `JvcsExternalDll.dll`/`.map`) |
+| `src\jedivcsdiff\JEDIVCSDiff.dproj` | `diff` |
+| `src\jvcs\jvcs.dproj` | `console` |
+| `src\jvcsideexpert\JvcsExpertBDS.dproj` | expert (`JvcsExpertBDS22/23/37.dll`) |
+
+- Formato do Delphi 11 (`ProjectVersion` 19.5, só Win32/Win64): abre no 11 e as IDEs novas atualizam ao salvar
+  (aceite; não precisa versionar a atualização). Sem `DCCReference`: a IDE monta a árvore a partir do `uses` do
+  `.dpr`. **Não aceite** alterações no `.dpr` propostas pela IDE (ex.: acrescentar `{$R *.res}` no `jvcs.dpr`).
+- Tudo o que é comum fica em `tools\msbuild\JediVCS2026.props`: versão pela `dcc32<pkg>.dll` de `$(BDS)\bin`;
+  pastas de JCL/JVCL/ICS/Abbrevia (1. `lib\paths\JediVCS2026-<BDS>.props`, gravado pelo `compilar.bat` com o que
+  ele encontrou; 2. variáveis `JVCS_JCL_DIR`, `JVCS_JVCL_DIR`, `JVCS_ICS_DIR`, `JVCS_ABBREVIA_DIR`; 3. padrão do
+  GetIt), SynEdit/VTV de `lib[\D11|D12]`, search path, defines (`OVERBYTEV6_UP` + os do projeto), namespaces,
+  codepage 1252. **Mantenha os defines dos `.dproj` iguais aos do `compilar.bat`.**
+- Saídas sempre fora de `bin\client`: `bin\msbuild\<Dnn>\<plat>\<cfg>` (+ `fvcscrypt.dll` e ajudas pelo
+  PostBuild) e DCUs em `dcu\msbuild\...`. O binário que vai para o instalador continua sendo o do `compilar.bat`.
+- `SkipResGeneration=true`: o MSBuild não regrava os `.res` versionados em `src\` (`jedivcs.RES` etc.).
+- `ImportEnvOptions=false` na linha de comando: o `EnvOptions.proj` (Library Path da IDE) traz as **fontes** do
+  ICS e do Abbrevia que o GetIt pôs lá; com ele o MSBuild recompilava ~70 units dessas bibliotecas. Dentro da
+  IDE vale o Library Path da IDE de qualquer forma. Para imitar a IDE na linha de comando: `/p:ImportEnvOptions=true`.
+- Expert: `rtl;vcl;designide`, unit alias `ToolsAPI=JvcsToolsAPI;FileHistoryAPI=JvcsFileHistoryAPI` e PreBuild
+  `tools\gerar-toolsapi.ps1` (ver `compilar-expert.bat`).
+- Linha de comando: `rsvars.bat` da versão e `msbuild JediVCS2026.groupproj /p:Config=Release /p:Platform=Win32`
+  (ou `compilar.bat [/delphi:NN] /msbuild all Release Win32`). Antes, uma vez por versão:
+  `compilar.bat [/delphi:NN] libs Release Win32` (SynEdit/VTV) e um `compilar.bat [/delphi:NN] /info` (grava o
+  `lib\paths\...props`; qualquer compilação dcc também grava).
+
+Validação de 13/10/2026 (Delphi 13.2, Release Win32), MSBuild x `compilar.bat`:
+
+| Alvo | dcc (`compilar.bat`) | MSBuild (`.dproj`) |
+|---|---|---|
+| exe | 461.852 linhas, 9.912.792 bytes de código, 1.089.240 de dados; EXE 18.647.040 bytes | idem (461.851 linhas); EXE 18.647.040 bytes |
+| dll | 481.493 linhas, 10.029.244 / 1.089.828 | idem; `JvcsExternalDll.dll` 18.783.744 bytes nos dois |
+| diff | 33.367 linhas, 4.753.368 / 322.572 | idem |
+| console | 75.244 linhas, 3.021.232 / 616.624 | idem |
+| expert 13.2 / 11.3 | `JvcsExpertBDS37.dll` 128.000 / `...22.dll` 127.488 bytes | idem, mesmos imports |
+
+DCUs gerados: 159/165/14/17 nos dois modos (nenhuma unit de biblioteca recompilada). Funcional: `jvcs.exe` dos
+dois modos lista os projetos com a identidade `DEFAULT` (`tools\ai\jvcs-ai.ps1 projects -Identity DEFAULT -Text`,
+apontando o `jvcsExe` por um `config.ini` temporário), `testar-dll.bat ambas` e `testar-expert.bat` sem falhas.
+
+## compilar-expert.bat (expert por versão do Delphi)
+
+```
+compilar-expert.bat [/delphi:11|12|13 | /bds:22|23|37] [Debug|Release] [nova|original]
+```
+
+- Gera `bin\ideclient\Win32\JvcsExpertBDS<nn>.dll` (22 = Delphi 11, 23 = 12, 37 = 13; todos na mesma pasta, o
+  instalador pega os que existirem). DCUs em `dcu\Win32\expert` (13) ou `dcu\D11|D12\Win32\expert`.
+- Versão não instalada: `[ERRO] ... nao esta instalado`, código 1, nada muda.
+- O expert **não importa nada de design-time**: compila uma cópia local da ToolsAPI sem `DockForm`
+  (`tools\gerar-toolsapi.ps1`, gerada do `source\ToolsAPI` da instalação, em `dcu\...\expert\toolsapi`, fora do git)
+  via unit alias. Motivo: com runtime packages cada unit de pacote no grafo de `uses` vira import da sua
+  `initialization`, e o grafo do `DockForm` muda entre atualizações (o expert do 13.2 não carregava no 13.1).
+  Detalhes e política: `doc\client\Port-DLL-IDE.md`, seção 5A.
+- Verificação a cada build: export `INITWIZARD0001`, imports `rtl<pkg>`/`vcl<pkg>`, **nenhum** `designide<pkg>`
+  e `tools\verificar-expert.ps1 -Permitidos rtl,vcl,xmlrtl -Inits` contra os `.bpl` da própria instalação.
+  O Delphi 11 não traz `llvm-objdump`: o script usa o do 13/12 se existir.
+
+### Política de build do expert (todas as atualizações)
+
+1. Só `rtl`, `vcl` e `xmlrtl` importados; nada de genéricos da RTL no expert; funcionalidade nova vai para a
+   `JvcsExternalDll.dll`.
+2. Ideal: compilar na atualização **mais antiga** suportada (13.0, 12.0, 11.0).
+3. Obrigatório antes de publicar: `tools\verificar-expert.ps1 -Expert <dll> -BplDir <.bpl de cada atualização>`
+   com 0 ausentes (guarde os `rtl`/`vcl`/`xmlrtl<pkg>.bpl` de cada update em `D:\Delphi\JediVCS\ref-bpl\<versão>`).
 
 ## Alvo libs (SynEdit e VirtualTreeView fixados no repositório)
 
@@ -132,11 +249,11 @@ Saídas (dentro da v2026, pasta `lib\` ignorada pelo git):
 - Fontes/includes (`.inc`, `.dfm`, `.res`) para `-I`/`-R`: `src\comp\synedit\Source`,
   `src\comp\synedit\Source\Highlighters` e `src\comp\virtualtreeview\Source` (os `.pas` não
   entram em `-U`, só os DCUs de `lib\`).
-- Versão do Delphi: o `BDSVER` (padrão `37.0`) é deduzido do nome da pasta final do
-  `BDSROOT` quando ela é numérica (ex.: `set BDSROOT=D:\Embarcadero\Studio\22.0` -> `22.0`).
-  Para `BDSVER` diferente do padrão, as saídas vão para `lib\<BDSVER>\...` (DCU/DCP de
-  versões diferentes do Delphi são incompatíveis e o `.dcp` não leva sufixo de versão);
-  os BPL já têm o sufixo da versão (`...370.bpl`).
+- Versão do Delphi: `/delphi:NN` / `/bds:NN` (ou `JVCS_DELPHI`, ou a pasta final do `BDSROOT`).
+  No 11/12 as saídas vão para `lib\D11\...` / `lib\D12\...` (DCU/DCP de versões diferentes
+  do Delphi são incompatíveis e o `.dcp` não leva sufixo de versão); os BPL já têm o sufixo
+  da versão (`...280.bpl`, `...290.bpl`, `...370.bpl`). Validado em 13/10/2026 no Delphi 11.3:
+  `libs Release Win32` e `libs Debug Win32` compilam os 4 pacotes (`lib\D11\bpl\Win32\SynEditDD280.bpl` etc.).
 - Pasta de BPL/DCP diferente: `set JVCS_BPLDIR=<pasta>` e `set JVCS_DCPDIR=<pasta>`
   (ver abaixo).
 
@@ -178,8 +295,10 @@ O script **não** instala nada na IDE nem mexe no registro; a instalação é ma
 
 | Variável | Efeito |
 |---|---|
-| `BDSROOT` | Pasta raiz do RAD Studio (padrão `%ProgramFiles(x86)%\Embarcadero\Studio\37.0`). O script chama `bin\rsvars.bat` dali. Se a última pasta for `NN.N` (ex.: `22.0`), vira o `BDSVER` (CatalogRepository e `lib\<BDSVER>`). |
-| `JVCS_CATALOG` | Pasta `CatalogRepository` do GetIt (padrão `%USERPROFILE%\Documents\Embarcadero\Studio\37.0\CatalogRepository`). Só JCL, JVCL, ICS e Abbrevia. |
+| `JVCS_DELPHI` | Versão padrão (`11`, `12`, `13`) quando não há `/delphi` nem `/bds`. |
+| `BDSROOT` | Pasta raiz do RAD Studio (padrão `%ProgramFiles(x86)%\Embarcadero\Studio\<BDS>`). O script chama `bin\rsvars.bat` dali. Se a última pasta for `NN.N` (ex.: `22.0`), ela escolhe a versão (e tem de bater com `/delphi`/`/bds`). |
+| `JVCS_CATALOG` | Pasta `CatalogRepository` do GetIt (padrão: chave `catalog` do `versoes.ini` ou `%USERPROFILE%\Documents\Embarcadero\Studio\<BDS>\CatalogRepository`). Só JCL, JVCL, ICS e Abbrevia. |
+| `JVCS_JCL_DIR`, `JVCS_JVCL_DIR`, `JVCS_ICS_DIR`, `JVCS_ABBREVIA_DIR` | Só para os `.dproj`/MSBuild: pasta raiz da biblioteca (o `compilar.bat` usa o `versoes.ini`). |
 | `JVCS_BPLDIR`, `JVCS_DCPDIR` | Pastas de saída dos BPL e dos DCP/BPI/LIB no alvo `libs` (padrão `lib\bpl\<plat>` e `lib\dcp\<plat>`). |
 | `JVCS_CBUILDER` | `DCC_CBuilderOutput` dos pacotes (padrão `None`; `All` gera `.hpp/.obj/.bpi/.lib`). |
 | `JVCS_EXTRA_PATH` | Caminhos **absolutos**, separados por `;`, acrescentados a `-U`, `-I` e `-R` (modo dcc). Ex.: `set JVCS_EXTRA_PATH=D:\libs\outra\Source;D:\libs\mais`. Aspas e `;`/`\` finais são removidos. |
