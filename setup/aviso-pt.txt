@@ -11,4 +11,6 @@ Esta é uma versão BETA. Antes de usar em produção:
 
 Os autores e colaboradores não se responsabilizam por perda de dados, interrupção de trabalho ou quaisquer danos decorrentes do uso deste produto. O uso é por sua conta e risco.
 
+Ao marcar "Eu aceito o acordo" você declara estar ciente de que deve testar e validar o produto antes de decidir se pode usá-lo em produção.
+
 Feche o Delphi antes de continuar.
