@@ -34,7 +34,7 @@ The AI does **not** create projects, add modules, synchronize, set labels or man
    │  mutex, timeout, path proof,                    encoding and line endings
    │  auto/confirm/manual modes, JSON, audit log
    ▼
- jvcs.exe (JEDI VCS console, original 2.5.0.1030 or new 2.5.0.2026)
+ jvcs.exe (JEDI VCS console, original 2.5.0.1030 or new 2.5.0.20xx (2.5.0.2050 = beta 5))
    ▼
  JEDI VCS server 2.5 (Firebird)
 ```

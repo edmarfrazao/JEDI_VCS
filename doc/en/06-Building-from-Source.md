@@ -26,10 +26,17 @@ Run them from the repository root in `cmd.exe`. Exit code 0 = OK. `compilar.bat 
 |---|---|---|
 | `tools\compilar.bat` | `[/delphi:11\|12\|13] [/info] [/msbuild] [exe\|dll\|diff\|console\|libs\|all] [Debug\|Release] [Win32\|Win64]` | EXE, DLL, Diff, console; `libs` = SynEdit/VirtualTreeView |
 | `tools\compilar-expert.bat` | `[/delphi:11\|12\|13] [Debug\|Release] [nova\|original]` | `bin\ideclient\Win32\JvcsExpertBDS<nn>.dll` + runtime + the core DLL (`nova` = new, `original` = 2.5.0.1030) |
-| `tools\gerar-instalador.bat` | `[--sem-build]` | `setup\Output\JediVCS-2.5-Beta2026-Setup.exe` (`--sem-build` packs what is already in `bin\`) |
+| `tools\gerar-instalador.bat` | `[--sem-build]` | `setup\Output\JediVCS-2.5.0-Beta<N>-build<Build>-Setup.exe`, e.g. `...-Beta5-build2050-Setup.exe` (`--sem-build` packs what is already in `bin\`) |
+| `tools\gerar-versao.ps1` + `tools\versao.ini` | called by both build scripts | version of every binary (`FILEVERSION 2.5.0.<Build>`): `src\common\jvcsversao.rh` and the `jvcsver.res` files (not in git) |
 | `tools\verificar-expert.ps1` | `-Expert <dll> [-BplDir <folder>] [-Inits] [-Permitidos rtl,vcl,xmlrtl]` | exit code 0 = the expert loads in that Delphi update |
 
 Defaults: Delphi 13, `all`, `Debug`, `Win32`.
+
+**Raising the version:** edit only `tools\versao.ini` (`Build=2050`, `Stage=Beta`, `StageNumber=5`; beta 6 =
+2060, a fix rebuild of the same beta = +1, final = 2100 with `Stage=Release`) and rebuild. Same scheme as the
+original JEDI VCS (`FILEVERSION 2,5,0,<build>`, `PRODUCTVERSION 2,5,0,0` fixed, so LOGIN still sends 250);
+details in [doc/pt/common/Versoes.md](../pt/common/Versoes.md#numeração-de-versões). Building from the IDE
+without the scripts: first run `powershell -File tools\gerar-versao.ps1 -Brcc <brcc32.exe> -Rc src\jedivcs\jvcsver.rc,src\jedivcsdiff\jvcsver.rc,src\jvcs\jvcsver.rc`.
 
 ## 3. Recipes
 

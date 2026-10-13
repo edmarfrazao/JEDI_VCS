@@ -27,8 +27,8 @@ tools\compilar-expert.bat Release original    (volta para a 2.5.0.1030)
 - Resultado: 0 erros; 328 avisos (Debug) e 327 (Release), os mesmos tipos do EXE (`W1057`/`W1058` dos
   registros `ShortString`, `W1050`, `W1000`).
 - Tamanho: 18,2 MB (Release; a 2.5.0.1030 tinha 5,9 MB). Sem runtime packages.
-- Versão: o `jvcsver.res` do EXE (FileVersion 2.5.0.2026, ProductVersion "2.5 Beta 2026",
-  pré-lançamento), como a original usava o mesmo recurso do EXE.
+- Versão: o `jvcsver.res` do EXE (FileVersion 2.5.0.&lt;Build&gt; de `tools\versao.ini`, ProductVersion
+  "2.5.0.0", pré-lançamento nas betas), como a original usava o mesmo recurso do EXE.
 
 ### Defines do alvo `dll`
 

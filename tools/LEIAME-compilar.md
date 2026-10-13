@@ -112,6 +112,19 @@ Observação: o `compopt.inc` do próprio código também faz `{$DEFINE DEBUG}` 
 As pastas de saída são criadas se não existirem. Em caso de falha o script mostra no
 console as primeiras `BLD_MAXERR` (3) mensagens `Fatal:`/`Error:` do log.
 
+## Versão do JEDI VCS (tools\versao.ini)
+
+A versão de todos os binários vem de **`tools\versao.ini`** (fonte única: `Build`, `Stage`,
+`StageNumber`). Antes de compilar, o `compilar.bat` roda `tools\gerar-versao.ps1`, que grava
+`src\common\jvcsversao.rh` (`#define` incluídos pelos `.rc`) e gera com o `brcc32` os
+`jvcsver.res` de `src\jedivcs` (EXE e DLL), `src\jedivcsdiff` e `src\jvcs`, com o `BuildTimestamp`
+daquela compilação (log: `tools\logs\gerar-versao.log`). O `compilar-expert.bat` faz o mesmo para o
+`JvcsExpertBDS_ver.rc`. Esses arquivos são gerados e ficam fora do git: não edite, edite o `.ini`.
+Padrão igual ao do JEDI VCS original: `FILEVERSION 2,5,0,<Build>` (beta 5 = 2050, beta 6 = 2060,
+correção +1, final 2100) e `PRODUCTVERSION 2,5,0,0` fixo (LOGIN 250). Regra completa:
+[doc/pt/common/Versoes.md](../doc/pt/common/Versoes.md#numeração-de-versões). Pela IDE, sem o script:
+`powershell -File tools\gerar-versao.ps1 -Brcc <brcc32.exe> -Rc src\jedivcs\jvcsver.rc,src\jedivcsdiff\jvcsver.rc,src\jvcs\jvcsver.rc`.
+
 ## Como compila
 
 - **Com `/msbuild`**: usa `msbuild` no `<projeto>.dproj`, `/p:Config` e `/p:Platform`, log em

@@ -23,12 +23,18 @@ Documentos redirecionada para o OneDrive). Checklist do 11/12: [manual 10](../ma
 |---|---|---|
 | `tools\compilar.bat` | `[/delphi:11\|12\|13] [/info] [/msbuild] [exe\|dll\|diff\|console\|libs\|all] [Debug\|Release] [Win32\|Win64]` | EXE, DLL, Diff, console; `libs` = SynEdit/VTV |
 | `tools\compilar-expert.bat` | `[/delphi:11\|12\|13] [Debug\|Release] [nova\|original]` | `bin\ideclient\Win32\JvcsExpertBDS<nn>.dll` + runtime e a DLL (nova ou a 2.5.0.1030) |
-| `tools\gerar-instalador.bat` | `[--sem-build]` | `setup\Output\JediVCS-2.5-Beta2026-Setup.exe` |
+| `tools\gerar-instalador.bat` | `[--sem-build]` | `setup\Output\JediVCS-2.5.0-Beta<N>-build<Build>-Setup.exe` (ex.: `...-Beta5-build2050-Setup.exe`) |
+| `tools\gerar-versao.ps1` + `tools\versao.ini` | chamado pelos dois scripts de build | versão (`FILEVERSION 2.5.0.<Build>`, beta) de todos os binários: `src\common\jvcsversao.rh` e os `jvcsver.res` (fora do git) |
 | `tools\verificar-expert.ps1` | `-Expert <dll> [-BplDir <pasta>] [-Inits] [-Permitidos rtl,vcl,xmlrtl]` | código 0 = o expert carrega naquela atualização |
 | `tools\gerar-toolsapi.ps1` | chamado pelo build do expert | cópia local da ToolsAPI sem `DockForm` (fora do git) |
 | `tools\versao-delphi.bat` + `tools\versoes.ini` | usados pelos scripts | tudo o que muda por versão do Delphi |
 
 Padrões: Delphi 13, `all`, `Debug`, `Win32`. Código de saída 0 = tudo OK. `compilar.bat /?` mostra a ajuda.
+
+**Subir a versão:** edite só `tools\versao.ini` (`Build=2050`, `Stage=Beta`, `StageNumber=5`; beta 6 = 2060,
+correção da mesma beta = +1, final = 2100 com `Stage=Release`) e recompile; EXE, DLL, Diff, console,
+experts e instalador saem com a nova versão. Regra e motivo: [Versoes.md, "Numeração de versões"](../common/Versoes.md#numeração-de-versões).
+Pela IDE, sem os scripts, gere antes os `.res`: `powershell -File tools\gerar-versao.ps1 -Brcc <brcc32.exe> -Rc src\jedivcs\jvcsver.rc,src\jedivcsdiff\jvcsver.rc,src\jvcs\jvcsver.rc`.
 
 ## 3. Receitas
 

@@ -132,5 +132,5 @@ Install the **`.map` files** component to get unit and line numbers in the logs.
 ### How do I report a problem?
 
 Open an issue on [GitHub](https://github.com/edmarfrazao/JEDI_VCS/issues) with: client version
-(2.5.0.2026 and which beta), Delphi version and update, server version, the full message, the log of the
+(2.5.0.<build>, e.g. 2.5.0.2050 = beta 5; shown in the window title, the About box and the first line of `jvcs.exe`), Delphi version and update, server version, the full message, the log of the
 day and what you did before. **Do not** send passwords, `jvcssrv.ini` or registry exports with identities.

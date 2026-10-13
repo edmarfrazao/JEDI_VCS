@@ -32,11 +32,12 @@ O script, em ordem:
 1. `tools\compilar.bat exe|dll|diff|console Release Win32` e `tools\compilar-expert.bat Release nova`
    (e o expert do Delphi 11/12, se instalados);
 2. confere que `Jedivcs.exe`, `JEDIVCSDiff.exe`, `jvcs.exe`, `JvcsExternalDll.dll` e cada
-   `JvcsExpertBDS<nn>.dll` existem e têm **FileVersion 2.5.0.2026**;
+   `JvcsExpertBDS<nn>.dll` existem e têm **FileVersion 2.5.0.&lt;Build&gt;** (Build de `tools\versao.ini`:
+   suba-o antes de gerar a beta — regra em [Versoes.md](../common/Versoes.md#numeração-de-versões));
 3. confere cada expert com `tools\verificar-expert.ps1` (só `rtl`/`vcl`/`xmlrtl`, 0 símbolos ausentes);
 4. confere o runtime em `3rdparty` e roda o **ISCC** (Inno Setup 6).
 
-Saída: `setup\Output\JediVCS-2.5-Beta2026-Setup.exe` (fora do git). Log: `tools\logs\gerar-instalador.log`.
+Saída: `setup\Output\JediVCS-2.5.0-Beta5-build2050-Setup.exe` (fora do git). Log: `tools\logs\gerar-instalador.log`.
 Avisos que não bloqueiam mas devem ser lidos: build Debug mais novo que o Release, `.map` ausente, DLL de
 `bin\ideclient` diferente da de `bin\client`. Detalhes: [setup/LEIAME](../../../setup/LEIAME.md).
 
@@ -45,7 +46,7 @@ Avisos que não bloqueiam mas devem ser lidos: build Debug mais novo que o Relea
 | Passo | Esperado |
 |---|---|
 | Instalar (assistente) com o Delphi fechado | pasta `JEDI\JVCS 2026`; expert registrado nas IDEs detectadas |
-| Abrir o Delphi 13 | splash "JEDI Version Control System 2.5 Beta 2026", menu **JEDI VCS** |
+| Abrir o Delphi 13 | splash "JEDI Version Control System 2.5.0 Beta N - build &lt;Build&gt;", menu **JEDI VCS** |
 | Connect Server, Project Manager, check-in/checkout de um módulo de teste, History | sem erro; LOGIN aceito |
 | `Jedivcs.exe` standalone e `jvcs.exe listprojects` | mesmos projetos |
 | Tema claro/escuro e escala 150% | legível, sem cortes |
@@ -69,12 +70,14 @@ Só depois dos passos 2 e 3 verdes, e **com autorização explícita do mantened
 ```
 git tag -a v2.5.0.2026-betaN -m "JEDI VCS 2.5 Beta 2026 - beta N"
 git push origin main --tags
-gh release create v2.5.0.2026-betaN setup\Output\JediVCS-2.5-Beta2026-Setup.exe ^
+gh release create v2.5.0.2026-betaN setup\Output\JediVCS-2.5.0-Beta5-build2050-Setup.exe ^
   --prerelease --title "JEDI VCS 2.5 Beta 2026 - beta N" --notes-file notas.md
 ```
 
-Convenção de tags: `v2.5.0.2026-beta1`, `v2.5.0.2026-beta2`, ... (o FileVersion continua `2.5.0.2026`; a
-release é marcada como **pre-release**).
+Convenção de tags: `v2.5.0.2026-beta1` a `v2.5.0.2026-beta4` (as betas 1 a 4 tinham todas o FileVersion
+`2.5.0.2026`). A partir da beta 5 cada beta tem o seu build (`2.5.0.2050`, `2.5.0.2060`, ...; ver
+[Versoes.md](../common/Versoes.md#numeração-de-versões)) — a tag a usar (manter `v2.5.0.2026-betaN` ou passar a
+`v2.5.0.<Build>-betaN`) é decisão do mantenedor. A release é marcada como **pre-release**.
 
 ## Checklist
 

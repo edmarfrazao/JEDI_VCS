@@ -2,7 +2,7 @@
 
 > ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](../../DISCLAIMER.md).
 
-How to install, repair and remove the client with `JediVCS-2.5-Beta2026-Setup.exe`.
+How to install, repair and remove the client with `JediVCS-2.5.0-Beta5-build2050-Setup.exe`.
 Previous: [01 Overview](01-Overview.md). Next: [03 Delphi IDE integration](03-Delphi-IDE-Integration.md).
 Full details (Portuguese): [manual 09](../pt/manual/09-Instalador-do-Cliente.md) and
 [setup/LEIAME.md](../../setup/LEIAME.md).
@@ -101,7 +101,7 @@ installation** (restoring the previous value). It does **not** delete identities
 ## 8. Silent installation (administrators)
 
 ```
-JediVCS-2.5-Beta2026-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /COMPONENTS=client,ide,maps,ai /TASKS=desktopicon /LOG=%TEMP%\jvcs-setup.log
+JediVCS-2.5.0-Beta5-build2050-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /COMPONENTS=client,ide,maps,ai /TASKS=desktopicon /LOG=%TEMP%\jvcs-setup.log
 "<install folder>\unins000.exe" /VERYSILENT /SUPPRESSMSGBOXES
 ```
 

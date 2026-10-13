@@ -32,8 +32,9 @@ tools\compilar.bat exe Release Win32
   compartilhadas (`src\jedivcs`, `src\common`) mudam com os defines de cada alvo, e dois builds em
   paralelo (exe e diff, por exemplo) não se atropelam mais.
 - Recursos (gerar com `brcc32` na pasta `src\jedivcs`):
-  - `brcc32 -fojvcsver.res jvcsver.rc`: FileVersion 2.5.0.2026, PRODUCTVERSION 2,5,0,2026,
-    ProductVersion "2.5 Beta 2026", `FILEFLAGS VS_FF_PRERELEASE`;
+  - `jvcsver.res`: gerado a cada build pelo `tools\compilar.bat` (`tools\gerar-versao.ps1` + `brcc32`,
+    fora do git) a partir de `tools\versao.ini`: FILEVERSION 2,5,0,&lt;Build&gt; (beta 5 = 2050),
+    PRODUCTVERSION 2,5,0,0 fixo (LOGIN 250), `FILEFLAGS VS_FF_PRERELEASE` nas betas;
   - `brcc32 -fojedivcsmanifest.res jedivcsmanifest.rc`: manifest `jedivcs.manifest` (comctl32 v6,
     asInvoker, Windows 7–11, **DPI unaware + gdiScaling**), no lugar do `winxp.res` com caminho
     absoluto do ambiente antigo.
@@ -111,7 +112,7 @@ Automação: PowerShell + UI Automation (`BM_CLICK`/`WM_SETTEXT` nos controles c
 | Histórico (`Ctrl+Shift+G`) | a revisão 0.9 mostra o comentário com os acentos corretos |
 | Checkout + **Undo checkout** (build com a correção da JVCL) | mensagens DSA corretas; arquivo restaurado (somente leitura, igual à 0.9); sem locks |
 | VCS Properties | abre |
-| Menus | Branch, Plug-ins e Notify ocultos; título `JEDI VCS (2.5.0.2026) >> DEFAULT >> [Branch: HEAD] >> exemplo01.dpr` |
+| Menus | Branch, Plug-ins e Notify ocultos; título `JEDI VCS (2.5.0 Beta 5 – build 2050) >> DEFAULT >> [Branch: HEAD] >> exemplo01.dpr` |
 | Release | compila, conecta (LOGIN 250) |
 | Console | `tools\compilar.bat console Debug|Release Win32` continua 0 erros (248 avisos); `listprojects`/`listproject`/`listlocks`/`getmodule` funcionam |
 

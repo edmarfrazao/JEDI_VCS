@@ -44,7 +44,7 @@ original.
 | Campo | Valor |
 |---|---|
 | Nome | JEDI VCS 2.5 Beta 2026 |
-| FileVersion | `2.5.0.2026` |
+| FileVersion | `2.5.0.<Build>` de `tools\versao.ini` (beta 5 = `2.5.0.2050`; regra em [Versoes.md](../common/Versoes.md#numeração-de-versões)); ProductVersion `2.5.0.0` fixo |
 | ProductVersion | `2.5 Beta 2026` |
 | Flag | pré-lançamento (`VS_FF_PRERELEASE`) |
 | Fonte única | `jvcsver.rc` de cada projeto e `JvcsExpertBDS_ver.rc`; "Include version information" desligado nos `.dproj` |
