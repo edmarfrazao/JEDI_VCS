@@ -1,175 +1,217 @@
-🇧🇷 Português · [🇺🇸 English](README.en.md)
+🇺🇸 English · [🇧🇷 Português](README.pt-BR.md)
 
 # JEDI VCS 2.5 Beta 2026
 
-> ⚠️ **Aviso:** este produto é fornecido sem garantia de funcionamento. Teste e valide em ambiente próprio, com backup e cópia do seu banco do JEDI VCS, e faça as correções locais necessárias antes de instalar em produção. Leia o [aviso completo](DISCLAIMER.md).
+> ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](DISCLAIMER.md).
 
-Cliente do **JEDI VCS** (controle de versão cliente/servidor para equipes Delphi) portado para o
-**Delphi 11, 12 e 13**, com integração à IDE, tema claro/escuro, escala de fonte e suporte a assistentes de
-IA. Fala **exatamente o mesmo protocolo** do servidor JEDI VCS **2.5 Beta 3** (Firebird), que continua o
-mesmo.
+The **JEDI VCS** client (client/server version control for Delphi teams) ported to **Delphi 11, 12 and
+13**, with IDE integration, light/dark theme, font scaling and support for AI coding assistants. It speaks
+**exactly the same protocol** as the existing JEDI VCS **2.5 Beta 3** server (Firebird), which is not
+changed.
 
 [Download](https://github.com/edmarfrazao/JEDI_VCS/releases) ·
-[Novidades](news/pt/README.md) ·
-[Manual](doc/manual/README.md) ·
-[Documentação](doc/README.md) ·
-[IA](doc/ia/README.md) ·
-[Licença](LICENSE)
+[What's new](news/en/README.md) ·
+[User guide (English)](doc/en/README.md) ·
+[Full documentation (Portuguese)](doc/README.md) ·
+[AI](doc/en/05-Using-with-AI.md) ·
+[License](LICENSE)
 
-## English summary
+## What is JEDI VCS?
 
-**JEDI VCS 2.5 Beta 2026** is a port of the JEDI VCS 2.5 *client* (standalone GUI, IDE integration DLL,
-diff tool and console) to **Delphi 11 Alexandria, 12 Athens and 13 Florence**. It is wire-compatible with
-the unchanged **JEDI VCS 2.5 Beta 3 server** (Firebird): the new client sends byte-identical requests,
-verified by golden traffic captures against the original 2.5.0.1030 client. Highlights: a thin
-ToolsAPI expert per Delphi version that loads in every update (it imports only `rtl`, `vcl` and `xmlrtl`),
-one shared client core, UI scaling (100–200%), light/dark theme following Windows or the IDE, an Inno
-Setup installer, and a safe workflow for AI coding agents (Claude Code). Status: **public beta (beta 4)**,
-Win32 only. Download the installer from
-[Releases](https://github.com/edmarfrazao/JEDI_VCS/releases). Documentation is in Brazilian Portuguese.
-License: MPL 1.1; the MidWare transport is free for **non-commercial use only** (see below).
-Full English version: [README.en.md](README.en.md) · English user guide: [doc/en](doc/en/README.md).
+JEDI VCS (the successor of FreeVCS) is a client/server version control system written in Delphi, for Delphi
+teams. The 2.x line was developed by Project JEDI; the main authors were **Thomas Huber** and **Uwe
+Schuster**. It has these parts:
+
+| Part | What it does |
+|---|---|
+| Server (`JVCSSrv.exe`) | Windows application or service, TCP port **2106**, **Firebird** database |
+| Standalone client (`Jedivcs.exe`) | Full GUI: projects, check-in/check-out, history, labels, backup, users |
+| IDE integration | A ToolsAPI expert (`JvcsExpertBDS<nn>.dll`) plus `JvcsExternalDll.dll` (the same client built as a DLL) |
+| Diff tool (`JEDIVCSDiff.exe`) | Compares files and revisions |
+| Console (`jvcs.exe`) | Command-line client for scripts and automation |
+
+Work is based on **locks**: you *check out* a module (file) to edit it, and you *check in* the new revision
+with a comment. Files that are not checked out stay read-only on disk.
+
+## Why this edition exists
+
+- The last official installer is **2.50 Beta 3** (client 2.5.0.1030). It has no IDE expert for Delphi 11,
+  12 or 13, no dark theme and no font scaling.
+- The official 2.5 source code was lost with the old project infrastructure. Only forks of older code
+  remained.
+- Many teams still run 2.5 Beta 3 servers in production.
+
+**JEDI VCS 2.5 Beta 2026** rebuilds the 2.5 **client** (standalone GUI, IDE DLL, Diff and console) from the
+remaining sources, ports it to modern Delphi and keeps it **wire-compatible** with the 2.5 Beta 3 server.
+The server itself is not ported and does not need any change.
 
 ## Status
 
-| Item | Situação |
+| Item | Status |
 |---|---|
-| Versão | **2.5 Beta 2026** (`2.5.0.2026`), quarta beta pública (`v2.5.0.2026-beta4`), com IDEs antigas (Delphi 7 a 10.4) |
-| Delphi | testado em **Delphi 11, 12 e 13** (IDE de 32 bits) |
-| Plataforma | Win32 (roda em Windows x64 e ARM64 por emulação) |
-| Servidor | JEDI VCS **2.5 Beta 3** (Firebird) — não portado, sem alteração |
-| Fases | console, Diff, EXE, DLL da IDE, expert e instalador prontos; ver [Status](doc/common/Status.md) |
+| Version | **2.5 Beta 2026** (`2.5.0.2026`), fourth public beta (`v2.5.0.2026-beta4`); older IDEs (Delphi 7–10.4) included, XE3 toolbar crash being fixed |
+| Delphi | tested on **Delphi 11, 12 and 13** (32-bit IDE) |
+| Platform | Win32 (runs on Windows x64 and ARM64 through emulation) |
+| Server | JEDI VCS **2.5 Beta 3** (Firebird), not ported, unchanged |
 
-É uma **beta**: use com um servidor de teste ou com backup do banco antes de adotar em produção.
+This is a **beta**. Use it with a test server, or back up your database before you use it in production.
 
-## Recursos principais
+## Download
 
-- **Integração com o Delphi 11/12/13:** menu **JEDI VCS**, atalhos (Ctrl+Shift+P/I/O/G/B), check-in e
-  checkout pela IDE, aba **History** do editor e menu de contexto do Project Manager.
-- **Cliente standalone** (`Jedivcs.exe`) com todos os recursos do 2.5: projetos, check-in/checkout,
-  histórico, Line History, Compressed Diff, labels, backup com senha, sincronização, usuários.
-- **Compatível com o original:** convive com o cliente 2.5.0.1030 e usa as mesmas identidades.
-- **Aparência:** escala 100–200%, escolha de fonte (interface, menus, editores), tema claro/escuro
-  seguindo o Windows (standalone) ou o Delphi (integrado).
-- **Recursos de 2012 mantidos:** External Bugtracker, Save WIP, Compare all local/archive.
-- **Famílias de arquivos:** `.pas` + `.dfm` + `.fmx` no mesmo check-in.
-- **Console** `jvcs.exe` para scripts e para a IA.
-- **IA:** wrapper e skill para o Claude Code fazer checkout/check-in com aprovação humana e preservando a
-  codificação ANSI dos fontes ([doc/ia](doc/ia/README.md)).
-- **Instalador** Inno Setup (pt-BR/inglês) que registra o expert só nas IDEs instaladas e desfaz tudo na
-  desinstalação.
+Download `JediVCS-2.5-Beta2026-Setup.exe` from the
+[Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) page. Each release page and each
+[news page](news/en/README.md) shows the SHA-256 of the installer; check it before you install.
 
-## Requisitos
+## Features
 
-| Para | Precisa de |
+- **Delphi IDE integration:** **JEDI VCS** menu, shortcuts (Ctrl+Shift+P/I/O/G/B), check-in and
+  check-out from the IDE, **History** tab in the editor and a context menu in the IDE Project Manager.
+- **Standalone client** (`Jedivcs.exe`) with all 2.5 features: projects, check-in/check-out, history,
+  Line History, Compressed Diff, labels, password-protected backup, synchronization, users.
+- **Compatible with the original:** works side by side with client 2.5.0.1030 and uses the same
+  identities (saved logins).
+- **Appearance:** UI scaling from 100% to 200%, font choice (interface, menus, editors), light/dark theme
+  that follows Windows (standalone) or the Delphi IDE (integrated).
+- **2012 features kept:** External Bugtracker, Save WIP, Compare all local/archive.
+- **File families:** `.pas` + `.dfm` + `.fmx` in the same check-in.
+- **Console** `jvcs.exe` for scripts and for AI agents.
+- **AI:** a wrapper and a skill that let Claude Code (or another agent) check out and check in with human
+  approval, while keeping the ANSI encoding of the source files.
+- **Inno Setup installer** (English and Brazilian Portuguese) that registers the expert only in the
+  installed IDEs and undoes everything on uninstall.
+
+## Supported Delphi versions
+
+| Delphi | How | Since | Status |
+|---|---|---|---|
+| Delphi 7, 2005, 2006, 2007, 2009, 2010, XE–XE8, 10 Seattle, 10.1 Berlin, 10.2 Tokyo, 10.3 Rio, 10.4 Sydney (also C#Builder 1 and Delphi 8 for .NET) | **original** thin expert from 2.5.0.1030 + **new** core `JvcsExternalDll.dll` | Beta 3 | **being tested** (installer tested; not yet tested in a real old IDE) |
+| Delphi 11 Alexandria, 12 Athens, 13 Florence — **any update** | new expert `JvcsExpertBDS22/23/37.dll` + new core | Beta 2 | tested on 11.3, 12, 13.1 and 13.2 |
+| Delphi 5 and 6 (and C++Builder 5/6) | not supported (the original used a different full client) | — | keep the original installer |
+| 64-bit IDE (`bin64\bds.exe`, Delphi 12.3+/13) | not supported (the core and `fvcscrypt.dll` are 32-bit) | — | use the 32-bit IDE |
+| No IDE | standalone client, Diff and console | Beta 1 | Windows 10/11 |
+
+No third-party components need to be installed in the target IDE: JCL, JVCL, ICS, Abbrevia, SynEdit and
+VirtualTreeView are compiled into the core DLL.
+
+## Server compatibility (2.5 Beta 3)
+
+- Same bytes on the wire: text in **Windows-1252**, CRC-32, Blowfish, Base64 and ZIP blobs identical to
+  client 2.5.0.1030 (verified with golden traffic captures and cross-reading of revisions).
+- The original client reads what the new client writes, and the other way round. Both can be connected at
+  the same time (with different user names: the server accepts one session per user).
+- Server features that depend on branching work with the `HEAD` branch; the branch UI is hidden.
+- Not supported: LZH traffic encryption (if the server requires it, the connection fails with a clear
+  message), external reports, notifications between workstations.
+
+## Requirements
+
+| For | You need |
 |---|---|
-| Usar o cliente | Windows 10/11; um servidor JEDI VCS 2.5 Beta 3 acessível (porta 2106) |
-| Integração com a IDE | Delphi 11, 12 ou 13 (qualquer atualização), **IDE de 32 bits**; nenhum componente de terceiros |
-| Compilar | Delphi 13 (referência) ou 11/12; JCL, JVCL, ICS 9.7 e Abbrevia (GetIt); SynEdit e VirtualTreeView vêm no repositório |
-| Servidor (se ainda não tem) | JEDI VCS Firebird Server 2.50 Beta 3 + Firebird 2.5 — ver [manual 01](doc/manual/01-Servidor-Instalacao-e-Configuracao.md) |
+| Using the client | Windows 10/11; a reachable JEDI VCS 2.5 Beta 3 server (port 2106) |
+| IDE integration | A supported Delphi (see the table above), **32-bit IDE**; no third-party components |
+| Building | Delphi 13 (reference) or 11/12; JCL, JVCL, ICS 9.7 and Abbrevia (GetIt); SynEdit and VirtualTreeView are in this repository |
+| Server (if you do not have one) | JEDI VCS Firebird Server 2.50 Beta 3 + Firebird 2.5 — see [manual 01 (Portuguese)](doc/manual/01-Servidor-Instalacao-e-Configuracao.md) |
 
-## Instalação rápida
+## Quick install
 
-1. Feche o Delphi.
-2. Baixe `JediVCS-2.5-Beta2026-Setup.exe` em
-   [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) e execute (português ou inglês; dá para
-   instalar só para o usuário atual).
-3. Abra o Delphi: o splash mostra "JEDI Version Control System 2.5 Beta 2026" e aparece o menu
-   **JEDI VCS**.
-4. **JEDI VCS → Connect Server**: informe servidor, porta `2106`, usuário e senha. Num banco novo o usuário
-   inicial é `sysdba` / `admin` (padrão do banco novo, **troque após o 1º login**).
-5. Abra seu projeto e use **Project Manager**, **Check In** e **Check Out**.
+1. Close Delphi.
+2. Download `JediVCS-2.5-Beta2026-Setup.exe` from
+   [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) and run it **from Explorer, as your own
+   Windows user** (English or Portuguese; you can install for the current user only).
+3. Start Delphi: the splash screen shows "JEDI Version Control System 2.5 Beta 2026" and the
+   **JEDI VCS** menu appears.
+4. **JEDI VCS → Connect Server**: enter the server address (prefer the numeric IP address), port `2106`,
+   user and password. On a new database the initial user is `sysdba` / `admin` (the default of a new
+   database — **change it after the first login**).
+5. Open your project (with its own name, not `Project1`) and use **Project Manager**, **Check In** and
+   **Check Out**.
 
-Passo a passo completo: [manual 09 — Instalador](doc/manual/09-Instalador-do-Cliente.md),
-[02 — Primeiro acesso](doc/manual/02-Cliente-Primeiro-Acesso.md) e
-[03 — Integração com o Delphi](doc/manual/03-Integracao-com-o-Delphi.md).
+Step by step: [Installation](doc/en/02-Installation.md) and
+[Delphi IDE integration](doc/en/03-Delphi-IDE-Integration.md).
 
-## Compatibilidade com o servidor 2.5 Beta 3
+## AI integration
 
-- Mesmos bytes no fio: texto em **Windows-1252**, CRC-32, Blowfish, Base64 e blobs ZIP idênticos ao
-  cliente 2.5.0.1030 (validado por captura de tráfego e leitura cruzada de revisões).
-- O cliente original lê o que o novo grava e vice-versa; os dois podem ficar conectados ao mesmo tempo.
-- Recursos do servidor que dependem de branching funcionam com o branch `HEAD`; a UI de branches está
-  oculta.
-- Não suportado: cifragem LZH do tráfego (se o servidor exigir, a conexão falha com mensagem explícita), relatórios externos,
-  notificação entre estações.
+The project includes a workflow that lets AI assistants (Claude Code and other agents) use JEDI VCS
+safely: automatic check-out only when the local file is equal to the server revision, check-in with
+approval and an `[IA]` comment prefix, and editing that keeps the Windows-1252 encoding. Start with
+[Using JEDI VCS with AI](doc/en/05-Using-with-AI.md). The skill is in
+[skills/jedi-vcs](skills/jedi-vcs/README.md).
 
-## Como compilar
+## Building from source
 
 ```
-tools\compilar.bat libs Release Win32        (uma vez: SynEdit e VirtualTreeView)
+tools\compilar.bat libs Release Win32        (once: SynEdit and VirtualTreeView)
 tools\compilar.bat all Release Win32         (Jedivcs.exe, JvcsExternalDll.dll, JEDIVCSDiff.exe, jvcs.exe)
-tools\compilar-expert.bat Release nova       (JvcsExpertBDS37.dll; use /delphi:11 ou /delphi:12 para os outros)
-tools\gerar-instalador.bat                   (instalador)
+tools\compilar-expert.bat Release nova       (JvcsExpertBDS37.dll; use /delphi:11 or /delphi:12 for the others)
+tools\gerar-instalador.bat                   (installer)
 ```
 
-Também é possível abrir `JediVCS2026.groupproj` na IDE. Detalhes: [Compilação](doc/fontes/Compilacao.md) e
-[tools/LEIAME-compilar.md](tools/LEIAME-compilar.md).
+You can also open `JediVCS2026.groupproj` in the IDE. Summary in English:
+[Building from source](doc/en/06-Building-from-Source.md). Full reference (Portuguese):
+[Compilação](doc/fontes/Compilacao.md) and [tools/LEIAME-compilar.md](tools/LEIAME-compilar.md).
 
-## Estrutura do repositório
+## Repository layout
 
-| Pasta | Conteúdo |
+| Folder | Contents |
 |---|---|
-| `src\jedivcs` | cliente GUI: `Jedivcs.dpr` (EXE) e `JediVCSDLL.dpr` (DLL da IDE) |
+| `src\jedivcs` | GUI client: `Jedivcs.dpr` (EXE) and `JediVCSDLL.dpr` (IDE DLL) |
 | `src\jedivcsdiff` | `JEDIVCSDiff.dpr` |
 | `src\jvcs` | `jvcs.dpr` (console) |
-| `src\jvcsideexpert` | expert ToolsAPI e testes |
-| `src\common`, `src\common\client` | units compartilhadas e núcleo do cliente |
-| `src\comp` | MidWare portado, CRC, textdiff, SynEdit e VirtualTreeView fixados |
-| `tools` | scripts de build, verificação do expert, golden de protocolo, canal de testes, ferramentas de IA |
-| `setup` | instalador Inno Setup e `.reg` de desenvolvimento |
-| `3rdparty` | runtime do 2.5.0.1030 (`fvcscrypt.dll`, ajudas, listas) e binários de referência |
-| `skills\jedi-vcs` | skill para assistentes de IA |
-| `doc` | documentação (abaixo) |
+| `src\jvcsideexpert` | ToolsAPI expert and tests |
+| `src\common`, `src\common\client` | shared units and client core |
+| `src\comp` | ported MidWare, CRC, textdiff, pinned SynEdit and VirtualTreeView |
+| `tools` | build scripts, expert checker, protocol golden tests, test channel, AI tools |
+| `setup` | Inno Setup installer and development `.reg` files |
+| `3rdparty` | 2.5.0.1030 runtime (`fvcscrypt.dll`, help files, lists) and reference binaries |
+| `skills\jedi-vcs` | skill for AI assistants |
+| `novidades` | release notes for each beta |
+| `doc` | documentation (below) |
 
-Mapa detalhado: [doc/fontes](doc/fontes/README.md).
+## Documentation
 
-## Documentação
+The English guide covers what you need to install and use the client. The detailed technical
+documentation is in Brazilian Portuguese.
 
-| Para | Leia |
+| For | Read |
 |---|---|
-| Instalar e usar (servidor, cliente, IDE) | [Manual](doc/manual/README.md) |
-| Usar com IA | [doc/ia](doc/ia/README.md) e a skill [skills/jedi-vcs](skills/jedi-vcs/) |
-| Entender o código | [doc/fontes](doc/fontes/README.md) — arquitetura, units, compilação, convenções |
-| História, decisões, testes e release | [doc/processo](doc/processo/README.md) |
-| Situação atual e decisões datadas | [Status](doc/common/Status.md), [Decisões](doc/common/Decisoes.md) |
-| O que mudou em cada versão | [Novidades](news/pt/README.md) e [CHANGELOG](CHANGELOG.md) |
-| Índice completo | [doc/README.md](doc/README.md) |
+| Install and use (English) | [doc/en](doc/en/README.md) |
+| What changed in each version (English) | [What's new](news/en/README.md) |
+| Full user manual (Portuguese) | [doc/manual](doc/manual/README.md) |
+| AI usage (Portuguese) | [doc/ia](doc/ia/README.md) |
+| Source code: architecture, units, build, conventions (Portuguese) | [doc/fontes](doc/fontes/README.md) |
+| History, decisions, tests and release process (Portuguese) | [doc/processo](doc/processo/README.md) |
+| Technical changelog (Portuguese) | [CHANGELOG](CHANGELOG.md) |
+| Full index (Portuguese) | [doc/README.md](doc/README.md) |
 
-## IA
+## Licenses
 
-O projeto inclui um fluxo para assistentes de IA (Claude Code e outros agentes) usarem o JEDI VCS com
-segurança: checkout automático só quando o arquivo local é igual ao servidor, check-in com aprovação e
-prefixo `[IA]`, e edição que preserva a codificação Windows-1252. Comece por
-[doc/ia/README.md](doc/ia/README.md); a skill está em [skills/jedi-vcs](skills/jedi-vcs/).
-
-## Licenças
-
-- O código do JEDI VCS é distribuído sob a **Mozilla Public License 1.1** — ver [LICENSE](LICENSE) e
-  [doc/original/license.txt](doc/original/license.txt). Algumas partes são doações ou derivações com
-  licença própria, indicada no cabeçalho de cada arquivo; leia o aviso completo antes de reutilizar.
-- **MidWare (François Piette) — somente uso não comercial.** O transporte do cliente
-  (`src/comp/midware`: `ApsCli`, `CBroker`, `RFormat`) é uma versão **alterada** (port Unicode para
-  Delphi 13 / ICS 9) do MidWare, freeware **somente para uso não comercial**; o aviso original foi mantido
-  em cada arquivo. Uso em aplicação comercial exige acordo com o autor. A substituição por um transporte
-  próprio está planejada.
+- JEDI VCS code is distributed under the **Mozilla Public License 1.1** — see [LICENSE](LICENSE) and
+  [doc/original/license.txt](doc/original/license.txt). Some parts are donations or derived works with
+  their own license, stated in the header of each file. Read the full notice before you reuse any code.
+- **MidWare (François Piette) — non-commercial use only.** The client transport
+  (`src/comp/midware`: `ApsCli`, `CBroker`, `RFormat`) is a **modified** version (Unicode port for
+  Delphi 13 / ICS 9) of MidWare, which is freeware **for non-commercial use only**. The original notice is
+  kept in each file. Use in a commercial application requires an agreement with the author. A replacement
+  transport is planned.
 
   This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.
-- Componentes: JCL/JVCL (MPL 1.1), SynEdit (MPL 1.1/GPL 2), VirtualTreeView (MPL 1.1/LGPL 2.1), ICS
-  (freeware), Abbrevia (MPL 1.1); `fvcscrypt.dll` é o binário original redistribuído do instalador 2.50
-  Beta 3. Resumo: [Licenças](doc/common/Licencas.md) e [Componentes](doc/common/Componentes.md).
+- Components: JCL/JVCL (MPL 1.1), SynEdit (MPL 1.1/GPL 2), VirtualTreeView (MPL 1.1/LGPL 2.1), ICS
+  (freeware), Abbrevia (MPL 1.1). `fvcscrypt.dll` is the original binary redistributed from the 2.50 Beta 3
+  installer. Summary (Portuguese): [Licenças](doc/common/Licencas.md) and
+  [Componentes](doc/common/Componentes.md).
 
-## Créditos
+## Credits
 
-- **JEDI VCS original** (FreeVCS / JEDI VCS 2.x): **Thomas Huber**, **Uwe Schuster** e a equipe do
-  Project JEDI — ver [doc/original/credits.txt](doc/original/credits.txt) e
+- **Original JEDI VCS** (FreeVCS / JEDI VCS 2.x): **Thomas Huber**, **Uwe Schuster** and the Project JEDI
+  team — see [doc/original/credits.txt](doc/original/credits.txt) and
   [credits_jedivcsdiff.txt](doc/original/credits_jedivcsdiff.txt).
-- **MidWare e ICS:** François Piette (OverByte).
-- **Port 2026:** **Edmar Frazão**, com o **Claude Code** (Anthropic) como par de programação.
+- **MidWare and ICS:** François Piette (OverByte).
+- **2026 port:** **Edmar Frazão**, with **Claude Code** (Anthropic) as pair programmer.
 
-## Contribuição
+## Contributing
 
-Issues e pull requests são bem-vindos. Antes de enviar: compile os quatro alvos em Debug e Release, rode os
-testes da área que mudou (golden do console para protocolo; harness para DLL/expert; `-formsweep` para
-forms) e descreva o que testou. Regras de codificação (fontes em Windows-1252, CRLF), defines e commits:
-[Convenções](doc/fontes/Convencoes.md).
+Issues and pull requests are welcome, in English or Portuguese. Before you submit: build the four targets
+in Debug and Release, run the tests for the area you changed (console golden tests for protocol changes;
+the harness for the DLL/expert; `-formsweep` for forms) and describe what you tested. Coding rules (sources
+in Windows-1252 with CRLF line endings), defines and commit style:
+[Convenções (Portuguese)](doc/fontes/Convencoes.md).

@@ -4,7 +4,7 @@
 
 This guide explains what you need to install and use **JEDI VCS 2.5 Beta 2026**: the JEDI VCS 2.5 client
 ported to Delphi 11, 12 and 13, fully compatible with the existing **JEDI VCS 2.5 Beta 3 server**
-(Firebird). Project overview, download and licenses: [README.en.md](../../README.en.md).
+(Firebird). Project overview, download and licenses: [README.md](../../README.md).
 
 > **Note:** this English guide is a summary for users. The detailed technical documentation (full manual,
 > server setup, source code, port history and decisions) is written in **Brazilian Portuguese**. The
