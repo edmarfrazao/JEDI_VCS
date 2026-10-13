@@ -632,6 +632,16 @@ var
   I, J: Integer;
   ParameterStr, CompareToolPath, CompareToolParam: string;
   ExecResult: Integer;
+
+  // v2026: legendas %3/%4 (antes iam literais "/sc:%3 /tc:%4" para a ferramenta)
+  function RevCaption(AInfo: TCompareModuleRevisionInfo; const AFile: string): string;
+  begin
+    if AInfo.Kind = cmrkLocal then
+      Result := ExtractFileName(AFile) + ' (local)'
+    else
+      Result := ExtractFileName(AFile) + ' (archive)';
+  end;
+
 begin
   PrepareModules;
   for I := 0 to Count - 1 do
@@ -643,10 +653,10 @@ begin
 
       ParameterStr := SearchAndChange(CompareToolParam, '%1', '"' + Items[I][J].CompareFileName1 + '"');
       ParameterStr := SearchAndChange(ParameterStr, '%2', '"' + Items[I][J].CompareFileName2 + '"');
-      {
-      ParameterStr := SearchAndChange(ParameterStr, '%3', '"' + CommentStr1 + '"');
-      ParameterStr := SearchAndChange(ParameterStr, '%4', '"' + CommentStr2 + '"');
-      }
+      ParameterStr := SearchAndChange(ParameterStr, '%3', '"' +
+        RevCaption(Items[I].Revision1, Items[I][J].CompareFileName1) + '"');
+      ParameterStr := SearchAndChange(ParameterStr, '%4', '"' +
+        RevCaption(Items[I].Revision2, Items[I][J].CompareFileName2) + '"');
 
       ExecResult := ShellExecute(Application.Handle, 'open',
         PChar(CompareToolPath),

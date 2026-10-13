@@ -105,7 +105,13 @@ begin
         SI.cb := SizeOf(SI);
         SI.dwFlags := STARTF_USESHOWWINDOW;
         SI.wShowWindow := SW_SHOWMINNOACTIVE;
-        CreateProcess(nil, PChar(Command), nil, nil, False, 0, nil, nil, SI, PI);
+        UniqueString(Command); // v2026: CreateProcessW pode escrever na linha de comando
+        if CreateProcess(nil, PChar(Command), nil, nil, False, 0, nil, nil, SI, PI) then
+        begin
+          // v2026: os handles vazavam a cada Save WIP
+          CloseHandle(PI.hThread);
+          CloseHandle(PI.hProcess);
+        end;
       end;
     finally
       Files.Free;

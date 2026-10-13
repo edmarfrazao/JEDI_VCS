@@ -557,6 +557,17 @@ var
   FilterOut: Boolean;
 begin
   lvUnits.Items.Clear;
+  {$IFNDEF IDEDLL}
+  // v2026: no standalone o caminho de busca comecava vazio (todas as units
+  // "Not found"): entram as pastas dos arquivos do projeto
+  for I := 0 to ProjectUnits.Count - 1 do
+    if (ExtractFilePath(ProjectUnits[I]) <> '') and
+       (SearchPaths.IndexOf(AnsiLowerCase(ExtractFilePath(ProjectUnits[I]))) = -1) then
+    begin
+      SearchPaths.Add(AnsiLowerCase(ExtractFilePath(ProjectUnits[I])));
+      edSearchPath.Text := edSearchPath.Text + AnsiLowerCase(ExtractFilePath(ProjectUnits[I])) + ';';
+    end;
+  {$ENDIF ~IDEDLL}
 
   Filters := TStringList.Create;
   try
@@ -634,8 +645,13 @@ begin
             FilterOut := False;
             for K := 0 to Filters.Count - 1 do 
             begin
-              if AnsiLowerCase(Filters.Strings[K]) =
-                AnsiLowerCase(ChangeFileExt(CurrItem, '')) then
+              // v2026: tambem pelo ultimo segmento (winapi.windows -> windows)
+              if (AnsiLowerCase(Filters.Strings[K]) =
+                AnsiLowerCase(ChangeFileExt(CurrItem, ''))) or
+                ((ExtractFilePath(CurrItem) = '') and (Pos('.', ChangeFileExt(CurrItem, '')) > 0) and
+                 (AnsiLowerCase(Filters.Strings[K]) =
+                  AnsiLowerCase(Copy(ChangeFileExt(CurrItem, ''),
+                    LastDelimiter('.', ChangeFileExt(CurrItem, '')) + 1, MaxInt)))) then
               begin
                 FilterOut := True;
                 Break;
@@ -744,6 +760,26 @@ end;
 
 //------------------------------------------------------------------------------
 
+// v2026: identificador com ponto (Winapi.Windows, System.SysUtils): junta os
+// segmentos e deixa o lexer no token seguinte ao nome
+function ReadDottedName(APasParser: TmwPasLex): string;
+begin
+  Result := APasParser.Token;
+  APasParser.NextNoJunk;
+  while APasParser.TokenID = ptPoint do
+  begin
+    APasParser.NextNoJunk;
+    if APasParser.TokenID <> ptIdentifier then
+      Break;
+    Result := Result + '.' + APasParser.Token;
+    APasParser.NextNoJunk;
+  end;
+  // com ponto, ExtractFileExt veria ".windows" como extensao: grava ja com a
+  // extensao de unit (o ExecuteParse procura o arquivo pelo nome completo)
+  if Pos('.', Result) > 0 then
+    Result := Result + '.' + sIDEUnit;
+end;
+
 procedure TVCSUsedUnits.ParseUnit(const FileName: string);
 var
   MS: TMemoryStream;
@@ -817,7 +853,7 @@ begin
             {$IFDEF DEBUG}
             TraceAlwaysFmt('UU Parse 1: %s',[PasParser.Token]);
             {$ENDIF DEBUG}
-            UsedUnits.Add(AnsiLowerCase(PasParser.Token));
+            UsedUnits.Add(AnsiLowerCase(ReadDottedName(PasParser)));
           end;
         end;
         //hu01.12.2002         while PasParser.TokenID <> tkNull do
@@ -902,9 +938,12 @@ begin
                 {$IFDEF DEBUG}
                 TraceAlwaysFmt('UU Parse 2: %s',[PasParser.Token]);
                 {$ENDIF DEBUG}
-                UsedUnits.Add(AnsiLowerCase(PasParser.Token));
-              end;
-              PasParser.NextNoJunk;
+                // v2026: nomes com ponto (Winapi.Windows) inteiros; ReadDottedName
+                // ja avanca para o token seguinte
+                UsedUnits.Add(AnsiLowerCase(ReadDottedName(PasParser)));
+              end
+              else
+                PasParser.NextNoJunk;
               //hu01.12.2002               if PasParser.TokenID = tkIn then
               if PasParser.TokenID = ptIn then
                 //hu01.12.2002                 while not (PasParser.TokenID in [tkSemiColon, tkComma, tkNull]) do
