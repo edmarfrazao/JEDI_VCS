@@ -1,0 +1,13 @@
+JEDI VCS console client 2.5.0.1030 (Project JEDI (www.delphi-jedi.org))
+
+	JEDI VCS on the web   : http://jedivcs.sourceforge.net/
+	JEDI VCS @SourceForge : http://sourceforge.net/projects/jedivcs/
+	JEDI VCS newsgroup    : news://forums.talkto.net/jedi.vcs
+	JEDI VCS Online FAQ   : http://jedivcs.sourceforge.net/jvcsfaq/
+	JEDI VCS Issue Tracker: http://issuetracker.delphi-jedi.org
+
+JEDI VCS Server: Firebird v.250
+User accepted. Access level: 4 [Archive Admin]
+Branch: HEAD
+
+
