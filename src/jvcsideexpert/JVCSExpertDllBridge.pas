@@ -223,8 +223,9 @@ begin
   begin
     FLoadError := 'A JvcsExternalDll.dll nao foi carregada. Procurada somente na pasta do expert:' +
       Tried + sLineBreak + sLineBreak +
-      'Copie JvcsExternalDll.dll, fvcscrypt.dll, zipdll.dll, unzdll.dll, *.jvcs e *.chm ' +
-      'para a pasta do expert (tools\compilar-expert.bat faz isso) e reinicie a IDE (32 bits).';
+      'Reinstale o JEDI VCS 2.5 Beta 2026 (o setup copia tudo para a pasta do expert) ou copie ' +
+      'JvcsExternalDll.dll, fvcscrypt.dll, *.jvcs e *.chm para a pasta do expert ' +
+      '(tools\compilar-expert.bat faz isso) e reinicie a IDE (32 bits).';
     JvcsLog(FLoadError);
     Exit;
   end;
