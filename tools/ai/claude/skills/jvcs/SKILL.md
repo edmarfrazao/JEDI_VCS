@@ -64,3 +64,7 @@ Leia `message` e `modules[].state`; não tente interpretar a saída do `jvcs.exe
 10 confirmação necessária ou modo manual · 11 parcial (lote) · 12 ambiente (jvcs.exe, mutex).
 
 Detalhes: `{{TOOLS_AI}}\LEIAME.md`.
+
+Esta é a skill **por projeto**, instalada por `instalar-no-projeto.ps1` com os caminhos que as regras
+`allow` do projeto reconhecem. Se a skill global `jedi-vcs` (repositório: `skills\jedi-vcs`) também
+estiver carregada, esta prevalece; as duas têm o mesmo fluxo e as mesmas regras.
