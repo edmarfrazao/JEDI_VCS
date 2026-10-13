@@ -1,9 +1,9 @@
 # Changelog
 
-English: see [novidades/README.en.md](novidades/README.en.md) and each release page (English summary).
+English: see [news/en](news/en/README.md) and each release page (English summary).
 
 Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
-[Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Anúncios com mais detalhes em [`novidades/`](novidades/README.md).
+[Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Anúncios com mais detalhes em [`news/pt/`](news/pt/README.md).
 
 ## [Não publicado]
 

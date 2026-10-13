@@ -72,7 +72,7 @@ All clients talk to the same server and the same database. The 2026 edition repl
 - **Appearance:** UI scaling (100–200%), font choice, light/dark theme following Windows or the Delphi
   IDE.
 - **Fixes:** dark theme, faster project opening in the IDE, Compare all, password-protected backup, Line
-  History, saved passwords, windows cut at 150–200%, and more ([What's new](../../novidades/README.en.md)).
+  History, saved passwords, windows cut at 150–200%, and more ([What's new](../../news/en/README.md)).
 - **Error logs** in `%LOCALAPPDATA%\JEDI\JVCS\logs`.
 - **AI workflow:** safe check-out/check-in by AI agents with human approval.
 - **Installer:** Inno Setup, English or Portuguese, with clean uninstall.

@@ -1,8 +1,8 @@
-[🇧🇷 Português](README.md) · 🇺🇸 English
+[🇧🇷 Português](../pt/README.md) · 🇺🇸 English
 
 # What's new — JEDI VCS 2.5 Beta 2026
 
-> ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](../DISCLAIMER.md).
+> ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](../../DISCLAIMER.md).
 
 Release notes for each beta of **JEDI VCS 2.5 Beta 2026**, the JEDI VCS 2.5 client ported to modern
 Delphi. The 2.5 Beta 4 server is not changed and the protocol is identical.
@@ -11,7 +11,7 @@ Each release page is written in Portuguese and starts with an **English summary*
 
 | Version | Date | Status | Highlights |
 |---|---|---|---|
-| [Beta 4](2026-10-13-beta4.md) | 13/10/2026 | [publicada / released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) | escolha por Delphi; IDEs antigas (7 a 10.4); skill de IA; docs pt/en — XE3: AV na barra (próxima beta) |
+| [Beta 4](2026-10-13-beta4.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) (pre-release) | choose each Delphi; older IDEs (7 to 10.4); AI skill; pt/en docs — XE3: toolbar crash (next beta) |
 | [Beta 2](2026-10-13-beta2.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2) (pre-release) | Delphi 11, 12 and 13 (any update), fixed dark theme, appearance and AI options, many fixes |
 | [Beta 1](2026-10-13-beta1.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1) — replaced by Beta 2 | First installer: client, Diff, console and expert for Delphi 13.2 |
 
@@ -45,8 +45,8 @@ Each release page is written in Portuguese and starts with an **English summary*
 - Replaced by Beta 2: the Beta 1 expert does not load on Delphi 13.1, the dark theme hides project names,
   and Delphi 11/12 were not supported.
 
-The technical changelog is in Portuguese: [CHANGELOG.md](../CHANGELOG.md). English user guide:
-[doc/en](../doc/en/README.md).
+The technical changelog is in Portuguese: [CHANGELOG.md](../../CHANGELOG.md). English user guide:
+[doc/en](../../doc/en/README.md).
 
 ## Download
 

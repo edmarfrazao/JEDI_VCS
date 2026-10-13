@@ -1,8 +1,8 @@
-🇧🇷 Português · [🇺🇸 English](README.en.md)
+🇧🇷 Português · [🇺🇸 English](../en/README.md)
 
 # Novidades — JEDI VCS 2.5 Beta 2026
 
-> ⚠️ **Aviso:** este produto é fornecido sem garantia de funcionamento. Teste e valide em ambiente próprio, com backup e cópia do seu banco do JEDI VCS, e faça as correções locais necessárias antes de instalar em produção. Leia o [aviso completo](../DISCLAIMER.md).
+> ⚠️ **Aviso:** este produto é fornecido sem garantia de funcionamento. Teste e valide em ambiente próprio, com backup e cópia do seu banco do JEDI VCS, e faça as correções locais necessárias antes de instalar em produção. Leia o [aviso completo](../../DISCLAIMER.md).
 
 Notas de versão e anúncios de cada beta do **JEDI VCS 2.5 Beta 2026**, o cliente do JEDI VCS 2.5
 portado para o Delphi moderno (servidor 2.5 Beta 4 sem alterações, protocolo idêntico).
@@ -16,8 +16,8 @@ portado para o Delphi moderno (servidor 2.5 Beta 4 sem alterações, protocolo i
 | [Beta 2](2026-10-13-beta2.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2) | Delphi 11, 12 e 13 (qualquer atualização), tema escuro, correções, opções de aparência e IA |
 | [Beta 1](2026-10-13-beta1.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1) — substituída pela beta 2 | Primeiro instalador: cliente, Diff, console e expert do Delphi 13.2 |
 
-Histórico técnico completo em [`CHANGELOG.md`](../CHANGELOG.md). Como cada versão é testada e publicada:
-[`doc/processo/05-Processo-de-Release.md`](../doc/processo/05-Processo-de-Release.md).
+Histórico técnico completo em [`CHANGELOG.md`](../../CHANGELOG.md). Como cada versão é testada e publicada:
+[`doc/processo/05-Processo-de-Release.md`](../../doc/processo/05-Processo-de-Release.md).
 
 ## Política de publicação
 
