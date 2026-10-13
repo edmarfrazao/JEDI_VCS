@@ -1010,3 +1010,9 @@ A revisão foi somente leitura. Nenhum binário do JVCS foi executado, e nada fo
 - **F-A não se aplica ao servidor em uso:** o servidor de teste (2.50 Beta 3 **com branching**) aceitou o mesmo usuário `sysdba` na IDE e na CLI ao mesmo tempo; a IDE continuou conectada. O `DELETE FROM transact` de `SrvOBJMain.pas:514-520` é do build sem branching; o build com `BRANCHOBJECTS` usa lista de sessões. R-1 fechado para este servidor; R-20 (chamadas paralelas da IA) continua mitigado pelo mutex por precaução.
 - **Decisões:** D1 = identidade salva do usuário (com prefixo `[IA]`); D10 = (a) preservar codificação; D4 = checkout automático por hook + check-in com aprovação; D3 = camada 0 (wrapper) primeiro. Ver `doc\common\Decisoes.md`.
 - Ciclo testado com o `jvcs.exe` original: `checkout 4` → edição → `checkin 4 "..."` → versão 0.2, lock liberado, arquivos somente leitura.
+
+## Adendo 2 (12/10/2026) — achados da implementação do wrapper (`tools\ai`)
+
+- **F-J/R-11 corrigidos:** o `Edit` do Claude Code **não recusa** arquivo Windows-1252: grava e troca os acentos por U+FFFD, **inclusive em linhas não editadas**. Em ASCII, inserir acento gera UTF-8 sem BOM; com UTF-8 com BOM preserva BOM e CRLF. O `Write` regrava em UTF-8 sem BOM e LF. Por isso o hook nega `Edit`/`Write` em fonte ANSI e a IA usa `tools\ai\edit-preserve.ps1`.
+- **Console `jvcs.exe`:** (1) o .NET grava BOM UTF-8 no stdin do processo filho antes da senha → login falha; o wrapper usa codificação 1252 ao iniciar o processo. (2) `StrAlign` grava `#0` após cada coluna das tabelas; o wrapper troca por espaço antes de interpretar. (3) Caminho truncado em 47 caracteres no `listproject`: o wrapper confere CRC/data para garantir que é o mesmo arquivo (`pathMismatch` = 5).
+- **Modo confirmação:** implementado como negar + repetir com `-Confirmed` (regra `ask`), porque `permissionDecision: ask` levaria a edição a falhar com EPERM no arquivo somente leitura.
