@@ -42,6 +42,8 @@ Unit history:
 2006/11/05  USchuster - changes for SynEdit 2.0.3                      
 2008/12/22  THuber    - Baseclass changed to TJVCSForm
 2011/01/15  USchuster - changed font to Tahoma
+2026/10/12  v2026     - port Delphi 13: TColorBox nativo; TSynHighlighterAttributes.Create
+                        (Name, FriendlyName) e liberado; fonte/escala (JVCSUIScale)
 
 -----------------------------------------------------------------------------*)
 
@@ -54,8 +56,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, Buttons, ExtCtrls, ComCtrls, JvCombobox, JvColorCombo,
-  SynHighlighterGeneral, SynEditHighlighter, JvExStdCtrls, JVCSForms;
+  StdCtrls, Buttons, ExtCtrls, ComCtrls,
+  SynHighlighterGeneral, SynEditHighlighter, JVCSForms;
 
 type
   Tfm_HighLightProp = class(TJVCSForm)
@@ -67,9 +69,9 @@ type
     Label22: TLabel;
     cbxAttrSelect: TComboBox;
     Label23: TLabel;
-    cocbxAttrForeground: TJvColorComboBox;
+    cocbxAttrForeground: TColorBox;
     Label24: TLabel;
-    cocbxAttrBackground: TJvColorComboBox;
+    cocbxAttrBackground: TColorBox;
     btnKeywords: TButton;
     Label5: TLabel;
     edDefaultFilter: TEdit;
@@ -113,14 +115,15 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  Registry, DiffMain, DiffCustomKW, DiffHelp, JVCSDiffResources;
+  Registry, DiffMain, DiffCustomKW, DiffHelp, JVCSDiffResources, JVCSUIScale;
 
 {$R *.dfm}
 
 procedure Tfm_HighLightProp.FormCreate(Sender: TObject);
 begin
   try
-    cocbxAttrBackground.Items.Assign(cocbxAttrForeground.Items);
+    // v2026: TColorBox preenche a lista sozinho
+    JVCSUIApplyToForm(Self);
   finally
     {$IFDEF LANGUAGE}
     //Translate form
@@ -305,15 +308,20 @@ var
   Attr: TSynHighlighterAttributes;
 begin
 //hu30.12.2002   Attr := TmwHighLightAttributes.Create('');
-  Attr := TSynHighlighterAttributes.Create('');
-  if Assigned(fm_Main.mwceSource.Highlighter) then
+  // v2026: construtor com (Name, FriendlyName) e Attr liberado
+  Attr := TSynHighlighterAttributes.Create('', '');
+  try
+  if Assigned(fm_Main.mwceSource.Highlighter) and (cbxAttrSelect.ItemIndex >= 0) then
     Attr.Assign(fm_Main.mwceSource.Highlighter.Attribute[cbxAttrSelect.ItemIndex]);
-  cocbxAttrBackground.ColorValue := Attr.Background;
-  cocbxAttrForeground.ColorValue := Attr.Foreground;
+  cocbxAttrBackground.Selected := Attr.Background;
+  cocbxAttrForeground.Selected := Attr.Foreground;
   cbStyleBold.Checked := (fsBold in Attr.Style);
   cbStyleItalic.Checked := (fsItalic in Attr.Style);
   cbStyleUnderline.Checked := (fsUnderline in Attr.Style);
   cbStyleStrikeOut.Checked := (fsStrikeOut in Attr.Style);
+  finally
+    Attr.Free;
+  end;
 end;
 
 procedure Tfm_HighLightProp.cocbxAttrForegroundChange(Sender: TObject);
@@ -323,10 +331,14 @@ var
   AttrStyle: TFontStyles;
 begin
 //hu30.12.2002   Attr := TmwHighLightAttributes.Create(cbxAttrSelect.Items[cbxAttrSelect.ItemIndex]);
-  Attr := TSynHighlighterAttributes.Create(cbxAttrSelect.Items[cbxAttrSelect.ItemIndex]);
+  if cbxAttrSelect.ItemIndex < 0 then
+    Exit;
+  Attr := TSynHighlighterAttributes.Create(cbxAttrSelect.Items[cbxAttrSelect.ItemIndex],
+    cbxAttrSelect.Items[cbxAttrSelect.ItemIndex]);
+  try
   AttrStyle := [];
-  Attr.Foreground := cocbxAttrForeground.ColorValue;
-  Attr.Background := cocbxAttrBackground.ColorValue;
+  Attr.Foreground := cocbxAttrForeground.Selected;
+  Attr.Background := cocbxAttrBackground.Selected;
   if cbStyleBold.Checked then
     Include(AttrStyle, fsBold);
   if cbStyleItalic.Checked then
@@ -342,6 +354,9 @@ begin
     begin
       fm_Main.mwceSource.Highlighter.Attribute[cbxAttrSelect.ItemIndex].Assign(Attr);
     end;
+  end;
+  finally
+    Attr.Free;
   end;
   fm_Main.mwceSource.Invalidate;
 end;

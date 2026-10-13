@@ -3,7 +3,7 @@ object fm_EditorProp: Tfm_EditorProp
   Top = 235
   BorderStyle = bsDialog
   Caption = 'Editor'
-  ClientHeight = 281
+  ClientHeight = 414
   ClientWidth = 305
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -116,29 +116,35 @@ object fm_EditorProp: Tfm_EditorProp
     Caption = '&Tab Width'
     FocusControl = speRightEdge
   end
-  object speMaxUndo: TJvSpinEdit
+  object speMaxUndo: TSpinEdit
     Left = 75
     Top = 12
     Width = 57
-    Height = 21
-    ButtonKind = bkStandard
+    Height = 22
     TabOrder = 0
+    MaxValue = 0
+    MinValue = 0
+    Value = 0
   end
-  object speLineSpacing: TJvSpinEdit
+  object speLineSpacing: TSpinEdit
     Left = 75
     Top = 39
     Width = 57
-    Height = 21
-    ButtonKind = bkStandard
+    Height = 22
     TabOrder = 1
+    MaxValue = 0
+    MinValue = 0
+    Value = 0
   end
-  object speRightEdge: TJvSpinEdit
+  object speRightEdge: TSpinEdit
     Left = 75
     Top = 67
     Width = 57
-    Height = 21
-    ButtonKind = bkStandard
+    Height = 22
     TabOrder = 2
+    MaxValue = 0
+    MinValue = 0
+    Value = 0
   end
   object pnEditorFont: TPanel
     Left = 75
@@ -151,7 +157,7 @@ object fm_EditorProp: Tfm_EditorProp
   end
   object btnOK: TButton
     Left = 136
-    Top = 249
+    Top = 382
     Width = 75
     Height = 25
     Caption = 'OK'
@@ -161,7 +167,7 @@ object fm_EditorProp: Tfm_EditorProp
   end
   object btnCancel: TButton
     Left = 224
-    Top = 249
+    Top = 382
     Width = 75
     Height = 25
     Cancel = True
@@ -186,284 +192,137 @@ object fm_EditorProp: Tfm_EditorProp
     Caption = '&Right editor always enabled'
     TabOrder = 4
   end
-  object cocbxWinBack: TJvColorComboBox
+  object cocbxWinBack: TColorBox
     Left = 8
     Top = 177
     Width = 133
     Height = 20
-    ColorNameMap.Strings = (
-      'clBlack=Black'
-      'clMaroon=Maroon'
-      'clGreen=Green'
-      'clOlive=Olive'
-      'clNavy=Navy'
-      'clPurple=Purple'
-      'clTeal=Teal'
-      'clGray=Gray'
-      'clSilver=Silver'
-      'clRed=Red'
-      'clLime=Lime'
-      'clYellow=Yellow'
-      'clBlue=Blue'
-      'clFuchsia=Fuchsia'
-      'clAqua=Aqua'
-      'clLtGray=Light Gray'
-      'clDkGray=Dark Gray'
-      'clWhite=White'
-      'clMoneyGreen=Money Green'
-      'clSkyBlue=Sky Blue'
-      'clCream=Cream'
-      'clMedGray=Medium Gray'
-      'clScrollBar=ScrollBar'
-      'clBackground=Background'
-      'clActiveCaption=Active Caption'
-      'clInactiveCaption=Inactive Caption'
-      'clMenu=Menu'
-      'clWindow=Window'
-      'clWindowFrame=Window Frame'
-      'clMenuText=Menu Text'
-      'clWindowText=Window Text'
-      'clCaptionText=Caption Text'
-      'clActiveBorder=Active Border'
-      'clInactiveBorder=Inactive Border'
-      'clAppWorkSpace=Application Workspace'
-      'clHighlight=Highlight'
-      'clHighlightText=Highlight Text'
-      'clBtnFace=Button Face'
-      'clBtnShadow=Button Shadow'
-      'clGrayText=Gray Text'
-      'clBtnText=Button Text'
-      'clInactiveCaptionText=Inactive Caption Text'
-      'clBtnHighlight=Button Highlight'
-      'cl3DDkShadow=3D Dark Shadow'
-      'cl3DLight=3D Light'
-      'clInfoText=Info Text'
-      'clInfoBk=Info Background'
-      'clHotLight=Hot Light'
-      'clGradientActiveCaption=Gradient Active Caption'
-      'clGradientInactiveCaption=Gradient Inactive Caption'
-      'clMenuHighlight=Menu Highlight'
-      'clMenuBar=MenuBar'
-      'clNone=None'
-      'clDefault=Default')
-    ColorValue = clWhite
-    ColorDialogText = '(Other...)'
-    DroppedDownWidth = 133
-    NewColorText = 'Custom'
-    Options = [coText, coSysColors]
+    Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+    Selected = clWhite
     TabOrder = 6
     OnChange = cocbxWinBackChange
   end
-  object cocbxSelFore: TJvColorComboBox
+  object cocbxSelFore: TColorBox
     Left = 156
     Top = 217
     Width = 133
     Height = 20
-    ColorNameMap.Strings = (
-      'clBlack=Black'
-      'clMaroon=Maroon'
-      'clGreen=Green'
-      'clOlive=Olive'
-      'clNavy=Navy'
-      'clPurple=Purple'
-      'clTeal=Teal'
-      'clGray=Gray'
-      'clSilver=Silver'
-      'clRed=Red'
-      'clLime=Lime'
-      'clYellow=Yellow'
-      'clBlue=Blue'
-      'clFuchsia=Fuchsia'
-      'clAqua=Aqua'
-      'clLtGray=Light Gray'
-      'clDkGray=Dark Gray'
-      'clWhite=White'
-      'clMoneyGreen=Money Green'
-      'clSkyBlue=Sky Blue'
-      'clCream=Cream'
-      'clMedGray=Medium Gray'
-      'clScrollBar=ScrollBar'
-      'clBackground=Background'
-      'clActiveCaption=Active Caption'
-      'clInactiveCaption=Inactive Caption'
-      'clMenu=Menu'
-      'clWindow=Window'
-      'clWindowFrame=Window Frame'
-      'clMenuText=Menu Text'
-      'clWindowText=Window Text'
-      'clCaptionText=Caption Text'
-      'clActiveBorder=Active Border'
-      'clInactiveBorder=Inactive Border'
-      'clAppWorkSpace=Application Workspace'
-      'clHighlight=Highlight'
-      'clHighlightText=Highlight Text'
-      'clBtnFace=Button Face'
-      'clBtnShadow=Button Shadow'
-      'clGrayText=Gray Text'
-      'clBtnText=Button Text'
-      'clInactiveCaptionText=Inactive Caption Text'
-      'clBtnHighlight=Button Highlight'
-      'cl3DDkShadow=3D Dark Shadow'
-      'cl3DLight=3D Light'
-      'clInfoText=Info Text'
-      'clInfoBk=Info Background'
-      'clHotLight=Hot Light'
-      'clGradientActiveCaption=Gradient Active Caption'
-      'clGradientInactiveCaption=Gradient Inactive Caption'
-      'clMenuHighlight=Menu Highlight'
-      'clMenuBar=MenuBar'
-      'clNone=None'
-      'clDefault=Default')
-    ColorValue = clYellow
-    ColorDialogText = '(Other...)'
-    DroppedDownWidth = 133
-    NewColorText = 'Custom'
-    Options = [coText, coSysColors]
+    Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+    Selected = clYellow
     TabOrder = 9
     OnChange = cocbxSelForeChange
   end
-  object cocbxSelBack: TJvColorComboBox
+  object cocbxSelBack: TColorBox
     Left = 8
     Top = 217
     Width = 133
     Height = 20
-    ColorNameMap.Strings = (
-      'clBlack=Black'
-      'clMaroon=Maroon'
-      'clGreen=Green'
-      'clOlive=Olive'
-      'clNavy=Navy'
-      'clPurple=Purple'
-      'clTeal=Teal'
-      'clGray=Gray'
-      'clSilver=Silver'
-      'clRed=Red'
-      'clLime=Lime'
-      'clYellow=Yellow'
-      'clBlue=Blue'
-      'clFuchsia=Fuchsia'
-      'clAqua=Aqua'
-      'clLtGray=Light Gray'
-      'clDkGray=Dark Gray'
-      'clWhite=White'
-      'clMoneyGreen=Money Green'
-      'clSkyBlue=Sky Blue'
-      'clCream=Cream'
-      'clMedGray=Medium Gray'
-      'clScrollBar=ScrollBar'
-      'clBackground=Background'
-      'clActiveCaption=Active Caption'
-      'clInactiveCaption=Inactive Caption'
-      'clMenu=Menu'
-      'clWindow=Window'
-      'clWindowFrame=Window Frame'
-      'clMenuText=Menu Text'
-      'clWindowText=Window Text'
-      'clCaptionText=Caption Text'
-      'clActiveBorder=Active Border'
-      'clInactiveBorder=Inactive Border'
-      'clAppWorkSpace=Application Workspace'
-      'clHighlight=Highlight'
-      'clHighlightText=Highlight Text'
-      'clBtnFace=Button Face'
-      'clBtnShadow=Button Shadow'
-      'clGrayText=Gray Text'
-      'clBtnText=Button Text'
-      'clInactiveCaptionText=Inactive Caption Text'
-      'clBtnHighlight=Button Highlight'
-      'cl3DDkShadow=3D Dark Shadow'
-      'cl3DLight=3D Light'
-      'clInfoText=Info Text'
-      'clInfoBk=Info Background'
-      'clHotLight=Hot Light'
-      'clGradientActiveCaption=Gradient Active Caption'
-      'clGradientInactiveCaption=Gradient Inactive Caption'
-      'clMenuHighlight=Menu Highlight'
-      'clMenuBar=MenuBar'
-      'clNone=None'
-      'clDefault=Default')
-    ColorValue = clNavy
-    ColorDialogText = '(Other...)'
-    DroppedDownWidth = 133
-    NewColorText = 'Custom'
-    Options = [coText, coSysColors]
+    Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+    Selected = clNavy
     TabOrder = 8
     OnChange = cocbxSelBackChange
   end
-  object cocbxText: TJvColorComboBox
+  object cocbxText: TColorBox
     Left = 156
     Top = 177
     Width = 133
     Height = 20
-    ColorNameMap.Strings = (
-      'clBlack=Black'
-      'clMaroon=Maroon'
-      'clGreen=Green'
-      'clOlive=Olive'
-      'clNavy=Navy'
-      'clPurple=Purple'
-      'clTeal=Teal'
-      'clGray=Gray'
-      'clSilver=Silver'
-      'clRed=Red'
-      'clLime=Lime'
-      'clYellow=Yellow'
-      'clBlue=Blue'
-      'clFuchsia=Fuchsia'
-      'clAqua=Aqua'
-      'clLtGray=Light Gray'
-      'clDkGray=Dark Gray'
-      'clWhite=White'
-      'clMoneyGreen=Money Green'
-      'clSkyBlue=Sky Blue'
-      'clCream=Cream'
-      'clMedGray=Medium Gray'
-      'clScrollBar=ScrollBar'
-      'clBackground=Background'
-      'clActiveCaption=Active Caption'
-      'clInactiveCaption=Inactive Caption'
-      'clMenu=Menu'
-      'clWindow=Window'
-      'clWindowFrame=Window Frame'
-      'clMenuText=Menu Text'
-      'clWindowText=Window Text'
-      'clCaptionText=Caption Text'
-      'clActiveBorder=Active Border'
-      'clInactiveBorder=Inactive Border'
-      'clAppWorkSpace=Application Workspace'
-      'clHighlight=Highlight'
-      'clHighlightText=Highlight Text'
-      'clBtnFace=Button Face'
-      'clBtnShadow=Button Shadow'
-      'clGrayText=Gray Text'
-      'clBtnText=Button Text'
-      'clInactiveCaptionText=Inactive Caption Text'
-      'clBtnHighlight=Button Highlight'
-      'cl3DDkShadow=3D Dark Shadow'
-      'cl3DLight=3D Light'
-      'clInfoText=Info Text'
-      'clInfoBk=Info Background'
-      'clHotLight=Hot Light'
-      'clGradientActiveCaption=Gradient Active Caption'
-      'clGradientInactiveCaption=Gradient Inactive Caption'
-      'clMenuHighlight=Menu Highlight'
-      'clMenuBar=MenuBar'
-      'clNone=None'
-      'clDefault=Default')
-    ColorDialogText = '(Other...)'
-    DroppedDownWidth = 133
-    NewColorText = 'Custom'
-    Options = [coText, coSysColors]
+    Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
     TabOrder = 7
     OnChange = cocbxTextChange
   end
-  object speTabWidth: TJvSpinEdit
+  object speTabWidth: TSpinEdit
     Left = 203
     Top = 67
     Width = 57
-    Height = 21
-    ButtonKind = bkStandard
+    Height = 22
     TabOrder = 12
+    MaxValue = 0
+    MinValue = 0
+    Value = 0
+  end
+  object grbUI: TGroupBox
+    Left = 8
+    Top = 246
+    Width = 289
+    Height = 128
+    Caption = ' User interface (all JEDI VCS windows) '
+    TabOrder = 13
+    object lblUIScale: TLabel
+      Left = 8
+      Top = 22
+      Width = 95
+      Height = 13
+      Caption = 'Interface font si&ze'
+      FocusControl = cbUIScale
+    end
+    object lblUIFont: TLabel
+      Left = 8
+      Top = 50
+      Width = 69
+      Height = 13
+      Caption = 'Interface f&ont'
+    end
+    object lblTheme: TLabel
+      Left = 8
+      Top = 102
+      Width = 33
+      Height = 13
+      Caption = 'T&heme'
+      FocusControl = cbTheme
+    end
+    object cbUIScale: TComboBox
+      Left = 120
+      Top = 18
+      Width = 81
+      Height = 21
+      TabOrder = 0
+      Items.Strings = (
+        '100%'
+        '125%'
+        '150%'
+        '175%'
+        '200%')
+    end
+    object pnUIFont: TPanel
+      Left = 120
+      Top = 45
+      Width = 137
+      Height = 24
+      BevelOuter = bvLowered
+      Caption = 'pnUIFont'
+      TabOrder = 1
+    end
+    object btnUIFont: TButton
+      Left = 260
+      Top = 45
+      Width = 24
+      Height = 24
+      Caption = '...'
+      TabOrder = 2
+      OnClick = btnUIFontClick
+    end
+    object btnUIFontDefault: TButton
+      Left = 120
+      Top = 72
+      Width = 137
+      Height = 22
+      Caption = '&System default font'
+      TabOrder = 3
+      OnClick = btnUIFontDefaultClick
+    end
+    object cbTheme: TComboBox
+      Left = 120
+      Top = 98
+      Width = 137
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 4
+      Items.Strings = (
+        'Follow Windows'
+        'Light'
+        'Dark')
+    end
   end
   object FontDialog1: TFontDialog
     Font.Charset = DEFAULT_CHARSET
@@ -476,5 +335,15 @@ object fm_EditorProp: Tfm_EditorProp
     Options = [fdEffects, fdFixedPitchOnly]
     Left = 8
     Top = 245
+  end
+  object FontDialog2: TFontDialog
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Style = []
+    Options = [fdForceFontExist]
+    Left = 40
+    Top = 380
   end
 end

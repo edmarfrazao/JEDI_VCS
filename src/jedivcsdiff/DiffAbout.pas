@@ -26,6 +26,9 @@ Unit history:
 2004/01/18  USchuster - new unit (replace old about message box with standard dialog)
 2004/11/12  USchuster - added dxGetText support for localization with over IFDEF LANGUAGE
                       - res strings and displayed strings changed to resourcestrings
+2026/10/12  v2026     - port Delphi 13: dialogo proprio montado em codigo (sem DFM
+                        e sem herdar de JVCSBaseAboutDialog, que usa TJvRichEdit e
+                        as units do EXE); mostra versao, credito e parametros
 
 -----------------------------------------------------------------------------*)
 {$I jedi.inc}
@@ -38,20 +41,19 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  JVCSBaseAboutDialog, StdCtrls, ExtCtrls, ComCtrls;
+  StdCtrls, ExtCtrls, ComCtrls, JVCSForms;
 
 type
-  TJVCSDiffAbout = class(TJVCSBaseAboutDlg)
-    procedure FormCreate(Sender: TObject);
-    procedure PageControl1Change(Sender: TObject);
+  TJVCSDiffAbout = class(TJVCSForm)
   private
-    { Private declarations }
-    FCreatedCredits: Boolean;
+    FPages: TPageControl;
+    FBtnClose: TButton;
+    function AddPage(const ACaption, AText: string): TMemo;
   protected
     function GetCredits: string;
-    function GetVersionInformation(AwithFileDate: Boolean): string; override;
+    function GetVersionInformation(AwithFileDate: Boolean): string;
   public
-    { Public declarations }
+    constructor Create(AOwner: TComponent); override;
   end;
 
 var
@@ -65,9 +67,7 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  JVCSDiffResources;
-
-{$R *.dfm}
+  DiffUtils, JVCSUIScale, JVCSDiffResources;
 
 procedure ShowDiffAboutForm;
 begin
@@ -75,71 +75,109 @@ begin
   try
     JVCSDiffAbout.ShowModal;
   finally
-    JVCSDiffAbout.Free;
+    FreeAndNil(JVCSDiffAbout);
   end;
 end;
 
-procedure TJVCSDiffAbout.FormCreate(Sender: TObject);
+constructor TJVCSDiffAbout.Create(AOwner: TComponent);
+var
+  Bottom: TPanel;
 begin
-  try
-    inherited;
-    {$IFDEF BETAVER}
-    pnWarning.Visible := True;
-    pnWarning.Caption := JVCSRES_Beta_Version;
-    {$ENDIF BETAVER}
-    FCreatedCredits := False;
-  finally
-    {$IFDEF LANGUAGE}
-    //Translate form
-    TranslateComponent(Self);
-    {$ENDIF LANGUAGE}
-  end;
+  CreateNew(AOwner);
+  Caption := JVCSRES_About_JEDI_VCS_Diff;
+  BorderStyle := bsDialog;
+  Position := poMainFormCenter;
+  ClientWidth := 520;
+  ClientHeight := 360;
+  Font.Name := 'Tahoma';
+  Font.Height := -11;
+
+  Bottom := TPanel.Create(Self);
+  Bottom.Parent := Self;
+  Bottom.Align := alBottom;
+  Bottom.Height := 41;
+  Bottom.BevelOuter := bvNone;
+
+  FBtnClose := TButton.Create(Self);
+  FBtnClose.Parent := Bottom;
+  FBtnClose.Caption := 'OK';
+  FBtnClose.Default := True;
+  FBtnClose.Cancel := True;
+  FBtnClose.ModalResult := mrOk;
+  FBtnClose.SetBounds(Bottom.Width - 88, 8, 80, 25);
+  FBtnClose.Anchors := [akTop, akRight];
+
+  FPages := TPageControl.Create(Self);
+  FPages.Parent := Self;
+  FPages.Align := alClient;
+  FPages.AlignWithMargins := True;
+
+  AddPage('&About', GetVersionInformation(False) + #13#10 +
+    'Web: http://jedivcs.sourceforge.net/' + #13#10 +
+    'Source codes based on Thomas Hensle''s FreeVCS Diff/Merge.' + #13#10 +
+    'Released under MPL 1.1.');
+  AddPage('&' + JVCSRES_Version_information, GetVersionInformation(True));
+  AddPage('&' + JVCSRES_Credits, GetCredits);
+
+  JVCSUIApplyToForm(Self);
+  {$IFDEF LANGUAGE}
+  TranslateComponent(Self);
+  {$ENDIF LANGUAGE}
+end;
+
+function TJVCSDiffAbout.AddPage(const ACaption, AText: string): TMemo;
+var
+  Sheet: TTabSheet;
+begin
+  Sheet := TTabSheet.Create(Self);
+  Sheet.PageControl := FPages;
+  Sheet.Caption := ACaption;
+  Result := TMemo.Create(Self);
+  Result.Parent := Sheet;
+  Result.Align := alClient;
+  Result.ReadOnly := True;
+  Result.ScrollBars := ssVertical;
+  Result.WordWrap := True;
+  Result.Lines.Text := AText;
 end;
 
 function TJVCSDiffAbout.GetCredits: string;
 begin
   Result :=
-    JVCSRES_Based_on_FreeVCS_Diff47Merge_Utility_source_by_Thomas_Hensle + #13 +
-    '(freevcs@thensle.de) - http://www.freevcs.de' + #13 +
-    #13 +
-    JVCSRES_Compare_engine_based_on_code_by_Armin_L46_Biernaczyk46 + #13 +
+    JVCSRES_Based_on_FreeVCS_Diff47Merge_Utility_source_by_Thomas_Hensle + #13#10 +
+    '(freevcs@thensle.de) - http://www.freevcs.de' + #13#10 +
+    #13#10 +
+    JVCSRES_Compare_engine_based_on_code_by_Armin_L46_Biernaczyk46 + #13#10 +
     JVCSRES_Edit_controls47_Syntax_Highlighter58_Opensource_TSynEdit_146146;
 end;
 
 function TJVCSDiffAbout.GetVersionInformation(AwithFileDate: Boolean): string;
 var
-  Msg: string;
-
-  LFileName: string;
+  Msg, LFileName, Ver, Stamp: string;
+  DT: TDateTime;
 begin
+  LFileName := Application.ExeName;
+  Ver := DiffFileVersionValue(LFileName, 'ProductVersion');
+  Stamp := DiffFileVersionValue(LFileName, 'BuildTimestamp');
   Msg := JVCSRES_JEDI_VCS_Diff47Merge_Utility_ {$IFDEF BETAVER} + JVCSRES_Beta {$ENDIF};
+  Msg := Msg + 'V ' + Ver;
+  if Stamp <> '' then
+    Msg := Msg + ' - Buildtime ' + Stamp;
+  Msg := Msg + #13#10 + 'File version ' + DiffFileVersionValue(LFileName, 'FileVersion') + #13#10;
 
-  Msg := Msg + lblProductVersion.Caption + #13;
+  if AwithFileDate and FileAge(LFileName, DT) then
+    Msg := Msg + Format(JVCSRES_Filedate58_37s, [DateTimeToStr(DT)]) + #13#10;
 
-  if AwithFileDate then
-  begin
-    LFileName := Application.ExeName;
-    Msg := Msg + Format(JVCSRES_Filedate58_37s, [DateTimeToStr(FileDateToDateTime(FileAge(LFileName)))])
-           + #13;
-  end;
-
-  Msg := Msg + #13 + 
-    'call: JEDIVCSDiff.exe /s: /t: /autostart'  + #13 +
-    '  /s: = source file'  + #13 +
-    '  /t: = target file'  + #13 +
-    '  /autostart = start compare immediately';
+  Msg := Msg + #13#10 + JVCSRES_Command_line + ':' + #13#10 +
+    'JEDIVCSDiff.exe /s:<file> /t:<file> [/sc:<text>] [/tc:<text>] [/autostart]' + #13#10 +
+    '  /s: = source (base) file' + #13#10 +
+    '  /t: = target (compare to) file' + #13#10 +
+    '  /sc:, /tc: = header text for source/target' + #13#10 +
+    '  /autostart = start compare immediately' + #13#10 +
+    '  /log:<file> = append the result to <file> (no result dialog)' + #13#10 +
+    '  /close = close after /autostart (exit code 0 equal, 1 different, 2 error)';
 
   Result := Msg;
-end;
-
-procedure TJVCSDiffAbout.PageControl1Change(Sender: TObject);
-begin
-  inherited;
-  if (PageControl1.ActivePage = tsCredits) and (not FCreatedCredits) then
-  begin
-    Memo3.Lines.Text := GetCredits;
-    FCreatedCredits := True;
-  end;
 end;
 
 end.

@@ -30,6 +30,7 @@ Unit history:
                       - res strings and displayed strings changed to resourcestrings
 2008/12/22  THuber    - Baseclass changed to TJVCSForm
 2011/01/15  USchuster - changed font to Tahoma
+2026/10/12  v2026     - fonte/escala da interface (JVCSUIScale)
 
 -----------------------------------------------------------------------------*)
 
@@ -75,7 +76,7 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  DiffHelp, JVCSDiffResources;
+  DiffHelp, JVCSDiffResources, JVCSUIScale;
 
 {$R *.dfm}
 
@@ -123,6 +124,7 @@ end;
 procedure TCustomKW.FormCreate(Sender: TObject);
 begin
   try
+    JVCSUIApplyToForm(Self); // v2026: fonte/escala da interface
   finally
     {$IFDEF LANGUAGE}
     //Translate form

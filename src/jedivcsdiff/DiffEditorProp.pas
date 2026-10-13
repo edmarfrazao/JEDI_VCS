@@ -37,6 +37,10 @@ Unit history:
 2004/11/12  USchuster - added dxGetText support for localization with over IFDEF LANGUAGE
 2008/12/22  THuber    - Baseclass changed to TJVCSForm
 2011/01/15  USchuster - changed font to Tahoma
+2026/10/12  v2026     - port Delphi 13: TSpinEdit/TColorBox nativos; grupo
+                        "User interface" (escala/fonte da interface e tema,
+                        JVCSUIScale/JVCSUITheme); a fonte do editor tambem vai
+                        para EditorFontName/EditorFontSize (preferencia comum)
 
 -----------------------------------------------------------------------------*)
 
@@ -49,17 +53,16 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Buttons, ExtCtrls, StdCtrls, JvCombobox, JvColorCombo, Mask, JvMaskEdit,
-  JvSpin, JvExStdCtrls, JvExMask, JVCSForms;
+  Buttons, ExtCtrls, StdCtrls, Spin, JVCSForms, JVCSUIScale, JVCSUITheme;
 
 type
   Tfm_EditorProp = class(TJVCSForm)
     Label1: TLabel;
-    speMaxUndo: TJvSpinEdit;
+    speMaxUndo: TSpinEdit;
     Label4: TLabel;
-    speLineSpacing: TJvSpinEdit;
+    speLineSpacing: TSpinEdit;
     Label3: TLabel;
-    speRightEdge: TJvSpinEdit;
+    speRightEdge: TSpinEdit;
     Label2: TLabel;
     pnEditorFont: TPanel;
     speFont: TSpeedButton;
@@ -68,17 +71,27 @@ type
     btnCancel: TButton;
     cbEnableLeftEditor: TCheckBox;
     cbEnableRightEditor: TCheckBox;
-    cocbxWinBack: TJvColorComboBox;
-    cocbxSelFore: TJvColorComboBox;
-    cocbxSelBack: TJvColorComboBox;
+    cocbxWinBack: TColorBox;
+    cocbxSelFore: TColorBox;
+    cocbxSelBack: TColorBox;
     Label5: TLabel;
     Label6: TLabel;
     Label7: TLabel;
-    cocbxText: TJvColorComboBox;
+    cocbxText: TColorBox;
     Label8: TLabel;
     Label9: TLabel;
-    speTabWidth: TJvSpinEdit;
+    speTabWidth: TSpinEdit;
     Label10: TLabel;
+    grbUI: TGroupBox;
+    lblUIScale: TLabel;
+    lblUIFont: TLabel;
+    lblTheme: TLabel;
+    cbUIScale: TComboBox;
+    pnUIFont: TPanel;
+    btnUIFont: TButton;
+    btnUIFontDefault: TButton;
+    cbTheme: TComboBox;
+    FontDialog2: TFontDialog;
     procedure speFontClick(Sender: TObject);
     procedure FormShow(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);
@@ -89,6 +102,8 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure btnUIFontClick(Sender: TObject);
+    procedure btnUIFontDefaultClick(Sender: TObject);
   private
     { Private declarations }
     FShowShowCalled: Boolean;
@@ -96,8 +111,14 @@ type
     cSelFore: TColor;
     cSelBack: TColor;
     cText: TColor;
+    FUIFontName: string;
+    FUIFontSize: Integer;
+    procedure UpdateUIFontPanel;
   public
     { Public declarations }
+    { aparencia escolhida (lida por Tfm_Main.EditorProperties1Click) }
+    function GetUISettings(const ACurrent: TJVCSUIFontSettings): TJVCSUIFontSettings;
+    function GetThemeMode: TJVCSUIThemeMode;
   end;
 
 var
@@ -109,34 +130,101 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  DiffMain, DiffHelp;
+  DiffMain, DiffHelp, JVCSDiffResources;
 
 {$R *.dfm}
 
 procedure Tfm_EditorProp.FormShow(Sender: TObject);
+var
+  S: TJVCSUIFontSettings;
 begin
   if not FShowShowCalled then
   begin
     FShowShowCalled := True;
+    // cores "logicas" (podem ser cores de sistema; o tema as traduz)
+    cWinBack := fm_Main.EditorColor;
+    cText := fm_Main.EditorTextColor;
+    cSelFore := fm_Main.EditorSelForeground;
+    cSelBack := fm_Main.EditorSelBackground;
     pnEditorFont.Font.Color := fm_Main.mwceSource.Font.Color;
     pnEditorFont.Color := fm_Main.mwceSource.Color;
-    cWinBack := fm_Main.mwceSource.Color;
-    cText := fm_Main.mwceSource.Font.Color;
-    cSelFore := fm_Main.mwceSource.SelectedColor.Foreground;
-    cSelBack := fm_Main.mwceSource.SelectedColor.Background;
-    cocbxWinBack.ColorValue := cWinBack;
-    cocbxText.ColorValue := cText;
-    cocbxSelFore.ColorValue := cSelFore;
-    cocbxSelBack.ColorValue := cSelBack;
+    cocbxWinBack.Selected := cWinBack;
+    cocbxText.Selected := cText;
+    cocbxSelFore.Selected := cSelFore;
+    cocbxSelBack.Selected := cSelBack;
+
+    // interface (JVCSUIScale / JVCSUITheme)
+    S := JVCSUIFontSettings;
+    cbUIScale.Text := JVCSUIScaleToText(S.Scale);
+    FUIFontName := S.UIFontName;
+    FUIFontSize := S.UIFontSize;
+    UpdateUIFontPanel;
+    cbTheme.ItemIndex := Ord(JVCSUIThemeMode);
   end;
+end;
+
+procedure Tfm_EditorProp.UpdateUIFontPanel;
+begin
+  if (FUIFontName = '') and (FUIFontSize = 0) then
+    pnUIFont.Caption := JVCSRES_System_default
+  else
+    pnUIFont.Caption := Format('%s, %d pt', [FUIFontName, FUIFontSize]);
+end;
+
+procedure Tfm_EditorProp.btnUIFontClick(Sender: TObject);
+var
+  S: TJVCSUIFontSettings;
+begin
+  S := JVCSUIFontSettings;
+  if FUIFontName <> '' then
+    FontDialog2.Font.Name := FUIFontName
+  else
+    FontDialog2.Font.Name := S.EffectiveUIFontName;
+  if FUIFontSize > 0 then
+    FontDialog2.Font.Size := FUIFontSize
+  else
+    FontDialog2.Font.Size := S.EffectiveUIFontSize;
+  if FontDialog2.Execute then
+  begin
+    FUIFontName := FontDialog2.Font.Name;
+    FUIFontSize := FontDialog2.Font.Size;
+    UpdateUIFontPanel;
+  end;
+end;
+
+procedure Tfm_EditorProp.btnUIFontDefaultClick(Sender: TObject);
+begin
+  FUIFontName := '';
+  FUIFontSize := 0;
+  cbUIScale.Text := JVCSUIScaleToText(cJVCSUIScaleDefault);
+  UpdateUIFontPanel;
+end;
+
+function Tfm_EditorProp.GetUISettings(const ACurrent: TJVCSUIFontSettings): TJVCSUIFontSettings;
+begin
+  Result := ACurrent;
+  Result.Scale := JVCSUITextToScale(cbUIScale.Text, ACurrent.Scale);
+  Result.UIFontName := FUIFontName;
+  Result.UIFontSize := FUIFontSize;
+  Result.EditorFontName := pnEditorFont.Font.Name;
+  Result.EditorFontSize := pnEditorFont.Font.Size;
+end;
+
+function Tfm_EditorProp.GetThemeMode: TJVCSUIThemeMode;
+begin
+  if (cbTheme.ItemIndex >= Ord(Low(TJVCSUIThemeMode))) and
+     (cbTheme.ItemIndex <= Ord(High(TJVCSUIThemeMode))) then
+    Result := TJVCSUIThemeMode(cbTheme.ItemIndex)
+  else
+    Result := tmFollowHost;
 end;
 
 procedure Tfm_EditorProp.cocbxWinBackChange(Sender: TObject);
 begin
   if FShowShowCalled then
   begin
-    fm_Main.mwceSource.Color := cocbxWinBack.ColorValue;
-    fm_Main.mwceTarget.Color := fm_Main.mwceSource.Color;
+    fm_Main.EditorColor := cocbxWinBack.Selected;
+    fm_Main.ApplyAppearance;
     pnEditorFont.Color := fm_Main.mwceSource.Color;
   end;
 end;
@@ -145,9 +233,9 @@ procedure Tfm_EditorProp.cocbxTextChange(Sender: TObject);
 begin
   if FShowShowCalled then
   begin
-    fm_Main.mwceSource.Font.Color := cocbxText.ColorValue;
-    fm_Main.mwceTarget.Font.Color := fm_Main.mwceSource.Font.Color;
-    pnEditorFont.Font.Color := cocbxText.ColorValue;
+    fm_Main.EditorTextColor := cocbxText.Selected;
+    fm_Main.ApplyAppearance;
+    pnEditorFont.Font.Color := fm_Main.mwceSource.Font.Color;
   end;
 end;
 
@@ -155,9 +243,8 @@ procedure Tfm_EditorProp.cocbxSelForeChange(Sender: TObject);
 begin
   if FShowShowCalled then
   begin
-    fm_Main.mwceSource.SelectedColor.Foreground := cocbxSelFore.ColorValue;
-    fm_Main.mwceTarget.SelectedColor.Foreground :=
-      fm_Main.mwceSource.SelectedColor.Foreground;
+    fm_Main.EditorSelForeground := cocbxSelFore.Selected;
+    fm_Main.ApplyAppearance;
   end;
 end;
 
@@ -165,9 +252,8 @@ procedure Tfm_EditorProp.cocbxSelBackChange(Sender: TObject);
 begin
   if FShowShowCalled then
   begin
-    fm_Main.mwceSource.SelectedColor.Background := cocbxSelBack.ColorValue;
-    fm_Main.mwceTarget.SelectedColor.Background :=
-      fm_Main.mwceSource.SelectedColor.Background;
+    fm_Main.EditorSelBackground := cocbxSelBack.Selected;
+    fm_Main.ApplyAppearance;
   end;
 end;
 
@@ -184,16 +270,11 @@ end;
 
 procedure Tfm_EditorProp.btnCancelClick(Sender: TObject);
 begin
-  fm_Main.mwceSource.Color := cWinBack;
-  fm_Main.mwceTarget.Color := fm_Main.mwceSource.Color;
-  fm_Main.mwceSource.Font.Color := cText;
-  fm_Main.mwceTarget.Font.Color := fm_Main.mwceSource.Font.Color;
-  fm_Main.mwceSource.SelectedColor.Foreground := cSelFore;
-  fm_Main.mwceTarget.SelectedColor.Foreground :=
-    fm_Main.mwceSource.SelectedColor.Foreground;
-  fm_Main.mwceSource.SelectedColor.Background := cSelBack;
-  fm_Main.mwceTarget.SelectedColor.Background :=
-    fm_Main.mwceSource.SelectedColor.Background;
+  fm_Main.EditorColor := cWinBack;
+  fm_Main.EditorTextColor := cText;
+  fm_Main.EditorSelForeground := cSelFore;
+  fm_Main.EditorSelBackground := cSelBack;
+  fm_Main.ApplyAppearance;
   ModalResult := mrCancel;
 end;
 
@@ -201,6 +282,7 @@ procedure Tfm_EditorProp.FormCreate(Sender: TObject);
 begin
   try
     FShowShowCalled := False;
+    JVCSUIApplyToForm(Self);
   finally
     {$IFDEF LANGUAGE}
     //Translate form

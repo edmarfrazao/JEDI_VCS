@@ -6,6 +6,7 @@ Unit history:
 // 2004/01/05  USchuster  - new include
 // 2004/01/12  THuber     - added USE_JEDI_JCL together with memcheck 2.67
 // 2010/01/24  THuber  Shortened JVCS_DEFINE_IN_MAKEFILE to JVCS_INMAKE to avoid compiler error.
+// 2026/10/12  v2026      - port Delphi 13: sem IMAGEBASE e sem MEMCHECK
 -----------------------------------------------------------------------------*)
 
 {$IFDEF JVCS_INMAKE}
@@ -22,7 +23,6 @@ Unit history:
   {$A+,B-,E-,F-,G+,H+,I+,J+,K-,M-,N+,P+,S-,T-,U-,V+,W-,X+,Y+,Z1}
   {$MINSTACKSIZE $00004000}
   {$MAXSTACKSIZE $00100000}
-  {$IMAGEBASE $00400000}
   {$APPTYPE GUI}
 
   {.$DEFINE DEBUG}          // basic debug informations
@@ -36,11 +36,5 @@ Unit history:
     {$UNDEF DETAIL_DEBUG}
   {$ENDIF}
 
-  {$IFOPT d+}
-   {$DEFINE MEMCHECK}      // changable: let memcheck search for memory leaks
-  {$ENDIF}
-  {$IFDEF MEMCHECK}
-    {$W+}
-    {$DEFINE USE_JEDI_JCL}  (* needs memcheck v2.67 *)
-  {$ENDIF}
+  // v2026: sem IMAGEBASE fixo e sem MemCheck/USE_JEDI_JCL (FastMM4 removido).
 {$ENDIF JVCS_INMAKE}
