@@ -1,3 +1,5 @@
+🇧🇷 Português · [🇺🇸 English](README.en.md)
+
 # Novidades — JEDI VCS 2.5 Beta 2026
 
 Notas de versão e anúncios de cada beta do **JEDI VCS 2.5 Beta 2026**, o cliente do JEDI VCS 2.5

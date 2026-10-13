@@ -1,5 +1,8 @@
 # Documentação do JEDI VCS 2.5 Beta 2026
 
+> **English documentation:** [doc/en/README.md](en/README.md) — user guide in English (overview,
+> installation, IDE integration, standalone client, AI, build, FAQ).
+
 Índice geral da documentação do port do **cliente** JEDI VCS 2.5 para o Delphi 11, 12 e 13 (referência:
 Delphi 13 Florence). O servidor **2.5 Beta 3 (Firebird)** não é portado; o cliente novo fala o mesmo
 protocolo. Visão geral do projeto, download e licenças: [../README.md](../README.md).

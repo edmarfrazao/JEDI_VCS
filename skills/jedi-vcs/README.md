@@ -118,3 +118,49 @@ dele, pela instalação (`C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai`, regis
 | Outros agentes | não usam skills do Claude Code; ver [`doc/ia/07-Outros-Agentes.md`](../../doc/ia/07-Outros-Agentes.md) |
 
 Documentação completa: [`doc/ia/`](../../doc/ia/README.md).
+
+## English
+
+The **`jedi-vcs`** skill teaches Claude Code to work with **JEDI VCS** in Delphi projects: show status
+and locks, check out before editing, edit without breaking the encoding (ANSI 1252, UTF-8, BOM, CRLF)
+and check in with an `[IA]` comment. It does not talk to the server by itself: it uses the
+`jvcs-ai.ps1` wrapper from the **AI tools** component of JEDI VCS 2.5 Beta 2026.
+
+**Requirements:** Windows with PowerShell 5.1; JEDI VCS 2.5 Beta 2026 installed with **AI tools**
+(or a copy of `tools\ai` with the `JVCS_AI_TOOLS` variable pointing to it); a saved identity with
+password in the JEDI VCS client (Server Login → *Store Password with identity*); a Delphi project
+already in JEDI VCS, opened in the folder registered on the server.
+
+**Install** (choose one; copy the files byte by byte — `scripts\localizar-wrapper.ps1` must keep its
+UTF-8 BOM):
+
+```powershell
+# global, for all projects of this user
+$dst = "$env:USERPROFILE\.claude\skills\jedi-vcs"
+# or only one project:  $dst = 'C:\path\to\project\.claude\skills\jedi-vcs'
+New-Item -ItemType Directory -Force $dst | Out-Null
+Copy-Item -Recurse -Force 'C:\path\to\JEDI_VCS\skills\jedi-vcs\*' $dst
+```
+
+The installer also ships the skill in `<install folder>\tools\ai\skills\jedi-vcs`. For full protection
+(hooks and allow/ask/deny rules), run `tools\ai\instalar-no-projeto.ps1 -ProjectDir <project> -Mode confirm`
+in your own terminal; it installs the per-project variant `jvcs`, which takes precedence.
+
+**Test:**
+
+1. Open Claude Code in a versioned project folder and accept the folder trust.
+2. Ask: **"show the JEDI VCS status of this project"**.
+3. Expected: the AI loads the skill, finds the wrapper and lists the modules, for example
+   `#4 umain.pas v0.14 local=clean -> ok`.
+
+Read-only test without the UI:
+
+```powershell
+cd C:\path\to\project
+claude -p "use the jedi-vcs skill and show the JEDI VCS status of this project" --allowedTools PowerShell Read Grep Glob --max-turns 10
+```
+
+Wrapper locator only:
+`powershell -NoProfile -ExecutionPolicy Bypass -File "$env:USERPROFILE\.claude\skills\jedi-vcs\scripts\localizar-wrapper.ps1" -Text`
+
+More: [English guide — Using with AI](../../doc/en/05-Using-with-AI.md).

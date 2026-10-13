@@ -1,6 +1,6 @@
 ---
 name: jedi-vcs
-description: Controle de versão JEDI VCS para projetos Delphi (.pas .dfm .fmx .dpr .dpk .dproj .inc) pelo wrapper jvcs-ai.ps1 - mostrar status e locks, fazer checkout antes de editar, editar preservando a codificação (ANSI 1252, UTF-8, BOM, CRLF) e fazer check-in com comentário [IA]. Use quando o usuário pedir status, checkout, check-in, undo checkout ou locks do JEDI VCS/JVCS, ou antes de editar um fonte Delphi somente leitura num projeto versionado no JEDI VCS.
+description: Controle de versão JEDI VCS para projetos Delphi (.pas .dfm .fmx .dpr .dpk .dproj .inc) pelo wrapper jvcs-ai.ps1 - mostrar status e locks, fazer checkout antes de editar, editar preservando a codificação (ANSI 1252, UTF-8, BOM, CRLF) e fazer check-in com comentário [IA]. Use quando o usuário pedir status, checkout, check-in, undo checkout ou locks do JEDI VCS/JVCS, ou antes de editar um fonte Delphi somente leitura num projeto versionado no JEDI VCS. Also use it for requests in English about JEDI VCS status, check-out, check-in, undo check-out or locks.
 ---
 
 # JEDI VCS pela IA
