@@ -8,7 +8,7 @@ Description:  Application Server Client Component (Client side)
               client side to connect to the application server. Both components
               are talking to each other.
 Creation:     March 3, 1998
-Version:      3.06
+Version:      3.06 - JVCS edition (port Unicode para Delphi 13 / ICS 9, JEDI VCS 2.5 Beta 2026)
 EMail:        http://www.overbyte.be        francois.piette@overbyte.be
 Support:      Use the mailing list midware@elists.org
               Follow "support" link at http://www.overbyte.be for subscription.
@@ -104,7 +104,7 @@ uses
 {$IFDEF USE_SSL}
     IcsSSLEAY, IcsLIBEAY,
 {$ENDIF}
-    WinSock, WSocket, RFormat;
+    Winapi.WinSock, OverbyteIcsTypes, OverbyteIcsWSocket, RFormat;
 
 const
     AppSrvClientVersion  = 306;
@@ -124,17 +124,17 @@ type
     TRequestDone        = procedure (Sender       : TObject;
                                      Error        : Integer) of object;
     TProcessReplyEvent  = procedure (Sender       : TObject;
-                                     var CmdBuf   : PChar;
+                                     var CmdBuf   : PAnsiChar;
                                      var CmdLen   : Integer) of object;
     TProcessBannerEvent = procedure (Sender       : TObject;
-                                     CmdBuf       : PChar;
+                                     CmdBuf       : PAnsiChar;
                                      CmdLen       : Integer;
                                      var BannerOk : Boolean) of object;
     TConnectionRetryEvent = procedure (Sender     : TObject;
                                        Error      : Integer) of object;
     TDatagramAvailableEvent = procedure (Sender          : TObject;
                                          const DGramType : String;
-                                         Data            : PChar;
+                                         Data            : PAnsiChar;
                                          DataLen         : Integer) of object;
     TClientState = (cstReady, cstDnsLookup, cstConnecting, cstWaitingResponse);
     TApsCliSendType = (acstNone, acstRequest, acstDatagram);
@@ -156,26 +156,26 @@ type
         FAnswer                : TMWBuffer;
         FAnswerStatus          : String;
         FState                 : TClientState;
-        FRcvBuf                : PChar;
+        FRcvBuf                : PAnsiChar;
         FRcvCnt                : LongInt;
         FRcvSize               : LongInt;
         FRcvSizeInc            : Integer;  
         FBannerRcvd            : Boolean;
         FHandle                : HWND;
-        FRequestHeader         : PChar;
+        FRequestHeader         : PAnsiChar;
         FRequestHeaderLen      : Integer;
-        FRequestBody           : PChar;
+        FRequestBody           : PAnsiChar;
         FRequestBodyLen        : Integer;
         FRetrying              : Boolean;
         FRetryCount            : Integer;
         FMaxRetries            : Integer;
-        FDatagramInBuffer      : PChar;
+        FDatagramInBuffer      : PAnsiChar;
         FDatagramInBufferSize  : Integer;
-        FDatagramOutBuffer     : PChar;
+        FDatagramOutBuffer     : PAnsiChar;
         FDatagramOutBufferSize : Integer;
         FSendType              : TApsCliSendType;
         FRequestDoneFlag       : Boolean;
-        FPSessionID            : PChar;
+        FPSessionID            : PAnsiChar;
         FLastReplyRXTime       : TDateTime;
         FLastReplyTime         : TDateTime;
         FOnError               : TErrorEvent;
@@ -210,36 +210,36 @@ type
         procedure TriggerRequestSent; virtual;
         procedure TriggerDatagramSent; virtual;
         procedure TriggerDatagramAvailable(const DGramType : String;
-                                           Data            : PChar;
+                                           Data            : PAnsiChar;
                                            DataLen         : Integer); virtual;
         procedure TriggerRequestDone(Error : Word); virtual;
         procedure TriggerBeforeSendRequest; virtual;
         procedure TriggerAfterSendRequest; virtual;
-        procedure TriggerBannerRcvd(CmdBuf : PChar;
+        procedure TriggerBannerRcvd(CmdBuf : PAnsiChar;
                                     CmdLen : Integer;
                                     var BannerOk : Boolean); virtual;
-        procedure TriggerBeforeProcessReply(var CmdBuf : PChar;
+        procedure TriggerBeforeProcessReply(var CmdBuf : PAnsiChar;
                                             var CmdLen : Integer); virtual;
-        procedure TriggerAfterProcessReply(CmdBuf : PChar;
+        procedure TriggerAfterProcessReply(CmdBuf : PAnsiChar;
                                            CmdLen : Integer); virtual;
         procedure TriggerConnectionRetry(Error : Word); virtual;
-        procedure ProcessLine(CmdBuf : PChar; CmdLen : Integer); virtual;
+        procedure ProcessLine(CmdBuf : PAnsiChar; CmdLen : Integer); virtual;
         procedure SendRequest; virtual;
-        procedure CrackHeader(AnsBuffer        : PChar;
+        procedure CrackHeader(AnsBuffer        : PAnsiChar;
                               AnsLength        : Integer;
                               var AnswerStatus : String;
-                              var ParamPtr     : PChar;
+                              var ParamPtr     : PAnsiChar;
                               var ParamLen     : LongInt); virtual;
         function  GetConnected : Boolean; virtual;
         procedure SetSocksPort(newValue : String); virtual;
         procedure SetRequest(NewValue : TMWBuffer); virtual;
         procedure SetRcvSize(const Value: LongInt);
         procedure DatagramIn(const DGramType : String;
-                             Data            : PChar;
+                             Data            : PAnsiChar;
                              DataLen         : Integer;
-                             EscChar         : Char); virtual;
+                             EscChar         : AnsiChar); virtual;
         function  AppSrvClientAllocateHWnd(Method: TWndMethod): HWND;
-        procedure AppSrvClientDeallocateHWnd(WHandle: Cardinal);
+        procedure AppSrvClientDeallocateHWnd(WHandle: HWND);
         procedure DoBannerReceived; virtual;
         procedure DoConnect; virtual;
         procedure DoDnsLookup; virtual;
@@ -257,7 +257,7 @@ type
         {:SendDatagram transparently send a given data buffer. Only allowed
           after having sent a request and before having received an answer. }
         procedure   SendDatagram(const DGramType : String;
-                                 Data            : PChar;
+                                 Data            : PAnsiChar;
                                  Size            : Integer); virtual;
         procedure   SendDatagramString(const DGramType : String;
                                        const S         : String); virtual;
@@ -289,15 +289,15 @@ type
         {:The connected property tell if conection with the server is alive }
         property Connected            : Boolean      read  GetConnected;
         property State                : TClientState read  FState;
-        property RequestHeader        : PChar        read  FRequestHeader
+        property RequestHeader        : PAnsiChar        read  FRequestHeader
                                                      write FRequestHeader;
         property RequestHeaderLen     : Integer      read  FRequestHeaderLen
                                                      write FRequestHeaderLen;
-        property RequestBody          : PChar        read  FRequestBody
+        property RequestBody          : PAnsiChar        read  FRequestBody
                                                      write FRequestBody;
         property RequestBodyLen       : Integer      read  FRequestBodyLen
                                                      write FRequestBodyLen;
-        property PSessionID           : PChar        read  FPSessionID
+        property PSessionID           : PAnsiChar        read  FPSessionID
                                                      write FPSessionID;
         {:Gives the time of the last command reply data received. Use for timeout. }
         property LastReplyRXTime      : TDateTime    read FLastReplyRXTime;
@@ -501,18 +501,18 @@ begin
      { compiled with NOFORMS defined. Just recompile everything for   }
      { the new project. This will recompile wsocket.pas according to  }
      { this project settings.                                         }
-     Result := WSocket.AllocateHWnd(Method);
+     Result := System.Classes.AllocateHWnd(Method);
 {$ENDIF}
 end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
-procedure TAppSrvClient.AppSrvClientDeallocateHWnd(WHandle : Cardinal);
+procedure TAppSrvClient.AppSrvClientDeallocateHWnd(WHandle : HWND);
 begin
 {$IFDEF NOFORMS}
     XSocketDeallocateHWnd(WHandle);
 {$ELSE}
-    WSocket.DeallocateHWnd(WHandle);
+    System.Classes.DeallocateHWnd(WHandle);
 {$ENDIF}
 end;
 
@@ -569,6 +569,7 @@ procedure TAppSrvClient.CreateSocket;
 begin
     FWSocket                := TWSocket.Create(Self);
     FWSocket.Name           := 'WSocket_AppSrvClient';
+    FWSocket.SocketFamily   := sfIPv4;   { JVCS: servidor 2.5 so escuta IPv4 }
     FPort                   := '2106';
 end;
 
@@ -725,7 +726,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TAppSrvClient.TriggerDatagramAvailable(
     const DGramType : String;
-    Data            : PChar;
+    Data            : PAnsiChar;
     DataLen         : Integer);
 begin
     if Assigned(FOnDatagramAvailable) then
@@ -735,7 +736,7 @@ end;
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TAppSrvClient.TriggerBannerRcvd(
-    CmdBuf       : PChar;
+    CmdBuf       : PAnsiChar;
     CmdLen       : Integer;
     var BannerOk : Boolean);
 begin
@@ -746,7 +747,7 @@ end;
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TAppSrvClient.TriggerBeforeProcessReply(
-    var CmdBuf : PChar; var CmdLen : Integer);
+    var CmdBuf : PAnsiChar; var CmdLen : Integer);
 begin
     if Assigned(FOnBeforeProcessReply) then
         FOnBeforeProcessReply(Self, CmdBuf, CmdLen);
@@ -755,7 +756,7 @@ end;
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TAppSrvClient.TriggerAfterProcessReply(
-    CmdBuf : PChar; CmdLen : Integer);
+    CmdBuf : PAnsiChar; CmdLen : Integer);
 begin
     if Assigned(FOnAfterProcessReply) then
         FOnAfterProcessReply(Self, CmdBuf, CmdLen);
@@ -884,10 +885,10 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 { Extract the answer status and separate parameters from header             }
 procedure TAppSrvClient.CrackHeader(
-    AnsBuffer        : PChar;       { Given answer buffer        }
+    AnsBuffer        : PAnsiChar;       { Given answer buffer        }
     AnsLength        : Integer;     { Given answer length        }
     var AnswerStatus : String;      { Returned answer status     }
-    var ParamPtr     : PChar;       { Returned parameters start  }
+    var ParamPtr     : PAnsiChar;       { Returned parameters start  }
     var ParamLen     : LongInt);    { Returned parameters length }
 var
     I : LongInt;
@@ -896,8 +897,7 @@ begin
     I := 0;
     while (I < AnsLength) and (AnsBuffer[I] <> ' ') do
         Inc(I);
-    SetLength(AnswerStatus, I);
-    Move(AnsBuffer^, AnswerStatus[1], I);
+    AnswerStatus := MWBufToStr(AnsBuffer, I);   { JVCS: bytes -> texto }
 
     { Skip spaces }
     while (I < AnsLength) and (AnsBuffer[I] = ' ') do
@@ -917,9 +917,9 @@ end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
-procedure TAppSrvClient.ProcessLine(CmdBuf : PChar; CmdLen : Integer);
+procedure TAppSrvClient.ProcessLine(CmdBuf : PAnsiChar; CmdLen : Integer);
 var
-    ParamStr  : PChar;
+    ParamStr  : PAnsiChar;
     ParamLen  : LongInt;
     BannerOk  : Boolean;
     DGramType : String;
@@ -951,7 +951,7 @@ begin
        I         := 1;
        while (CmdBuf[I] <> ' ') and (I < CmdLen) do
            Inc(I);
-       DGramType := Copy(CmdBuf, 2, I - 1);
+       DGramType := MWBufToStr(CmdBuf + 1, I - 1);
        DatagramIn(DGramType, CmdBuf + I + 2, CmdLen - I - 2, CmdBuf[I + 1]);
     end
     else begin
@@ -992,9 +992,9 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TAppSrvClient.DatagramIn(
     const DGramType : String;
-    Data            : PChar;
+    Data            : PAnsiChar;
     DataLen         : Integer;
-    EscChar         : Char);
+    EscChar         : AnsiChar);
 var
     I, J : Integer;
 begin
@@ -1057,7 +1057,7 @@ var
     NewLen : Integer;
     I      : Integer;
 {$IFDEF OLD_ALLOCATION_SCHEME}
-    p      : PChar;
+    p      : PAnsiChar;
 {$ENDIF}
     CurrentRcvSizeInc : Integer;
 begin
@@ -1159,19 +1159,19 @@ procedure TAppSrvClient.SendDatagramString(
     const DGramType : String;
     const S         : String);
 begin
-    SendDatagram(DGramType, PChar(S), Length(S));
+    SendDatagram(DGramType, PAnsiChar(MWStrToBytes(S)), Length(MWStrToBytes(S)));
 end;
 
 
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TAppSrvClient.SendDatagram(
     const DGramType : String;
-    Data            : PChar;
+    Data            : PAnsiChar;
     Size            : Integer);
 var
-    Header  : String;
+    Header  : AnsiString;
     I, J    : Integer;
-    EscChar : Char;
+    EscChar : AnsiChar;
 begin
 //WriteLn('TAppSrvClient.SendDatagram');
     // Allocate memory for the buffer if not already done
@@ -1186,7 +1186,7 @@ begin
     I := 0;
     J := 0;
     while I < Size do begin
-        // Check if we have enough place for an EscChar, a Char and a nul
+        // Check if we have enough place for an EscChar, a AnsiChar and a nul
         if (J + 3) > FDatagramOutBufferSize then begin
             // Need to enlarge buffer (2KB increment)
             FDatagramOutBufferSize := FDatagramOutBufferSize + 2048;
@@ -1220,7 +1220,7 @@ begin
     FDatagramOutBuffer[J] := #0;
 
     FSendType                := acstDatagram;
-    Header                   := '^' + DGramType + ' ' + EscChar;
+    Header                   := AnsiString('^' + DGramType + ' ') + EscChar;
     FRequestHeader           := @Header[1];
     FRequestHeaderLen        := Length(Header);
     FRequestBody             := FDatagramOutBuffer;
@@ -1228,7 +1228,7 @@ begin
     TriggerBeforeSendRequest;
     FWSocket.PutDataInSendBuffer(FRequestHeader, FRequestHeaderLen);
     FWSocket.PutDataInSendBuffer(FRequestBody, FRequestBodyLen);
-    FWSocket.SendStr(#13#10);
+    FWSocket.SendStr(RawByteString(#13#10));
     TriggerAfterSendRequest;
 end;
 
@@ -1236,7 +1236,7 @@ end;
 {* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}
 procedure TAppSrvClient.SendRequest;
 var
-    Header : String;
+    Header : AnsiString;
 begin
 //WriteLn('TAppSrvClient.SendRequest');
     if not Assigned(FRequest) then
@@ -1247,7 +1247,7 @@ begin
     FSendType                := acstRequest;
     FWSocket.OnDataAvailable := DataAvailable;
     FWSocket.OnSessionClosed := SessionClosed;
-    Header                   := FFunctionCode + ' ';
+    Header                   := AnsiString(FFunctionCode + ' ');
     FRequestHeader           := @Header[1];
     FRequestHeaderLen        := Length(Header);
     FRequestBody             := FRequest.DataBuffer + FRequest.HeaderSize;
@@ -1255,7 +1255,7 @@ begin
     TriggerBeforeSendRequest;
     FWSocket.PutDataInSendBuffer(FRequestHeader, FRequestHeaderLen);
     FWSocket.PutDataInSendBuffer(FRequestBody, FRequestBodyLen);
-    FWSocket.SendStr(#13#10);
+    FWSocket.SendStr(RawByteString(#13#10));
     TriggerAfterSendRequest;
 end;
 
