@@ -2,6 +2,8 @@
 
 # JEDI VCS 2.5 Beta 2026
 
+> ⚠️ **Disclaimer:** this product is provided without any warranty of operation. Test and validate it in your own environment, with a backup and a copy of your JEDI VCS database, and apply any local fixes you need before deploying to production. Read the [full disclaimer](DISCLAIMER.md).
+
 The **JEDI VCS** client (client/server version control for Delphi teams) ported to **Delphi 11, 12 and
 13**, with IDE integration, light/dark theme, font scaling and support for AI coding assistants. It speaks
 **exactly the same protocol** as the existing JEDI VCS **2.5 Beta 3** server (Firebird), which is not

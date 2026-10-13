@@ -2,6 +2,8 @@
 
 # JEDI VCS 2.5 Beta 2026
 
+> ⚠️ **Aviso:** este produto é fornecido sem garantia de funcionamento. Teste e valide em ambiente próprio, com backup e cópia do seu banco do JEDI VCS, e faça as correções locais necessárias antes de instalar em produção. Leia o [aviso completo](DISCLAIMER.md).
+
 Cliente do **JEDI VCS** (controle de versão cliente/servidor para equipes Delphi) portado para o
 **Delphi 11, 12 e 13**, com integração à IDE, tema claro/escuro, escala de fonte e suporte a assistentes de
 IA. Fala **exatamente o mesmo protocolo** do servidor JEDI VCS **2.5 Beta 3** (Firebird), que continua o

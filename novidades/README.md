@@ -2,6 +2,8 @@
 
 # Novidades — JEDI VCS 2.5 Beta 2026
 
+> ⚠️ **Aviso:** este produto é fornecido sem garantia de funcionamento. Teste e valide em ambiente próprio, com backup e cópia do seu banco do JEDI VCS, e faça as correções locais necessárias antes de instalar em produção. Leia o [aviso completo](../DISCLAIMER.md).
+
 Notas de versão e anúncios de cada beta do **JEDI VCS 2.5 Beta 2026**, o cliente do JEDI VCS 2.5
 portado para o Delphi moderno (servidor 2.5 Beta 3 sem alterações, protocolo idêntico).
 
