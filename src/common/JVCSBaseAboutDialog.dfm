@@ -2402,13 +2402,12 @@ object JVCSBaseAboutDlg: TJVCSBaseAboutDlg
     object tsCredits: TTabSheet
       Caption = '&Credits'
       ImageIndex = 2
-      object Memo3: TJvRichEdit
+      object Memo3: TRichEdit
         Left = 0
         Top = 0
         Width = 428
         Height = 374
         Align = alClient
-        AutoSize = False
         Font.Charset = DEFAULT_CHARSET
         Font.Color = clBlack
         Font.Height = -11
@@ -2502,7 +2501,8 @@ object JVCSBaseAboutDlg: TJVCSBaseAboutDlg
         ReadOnly = True
         ScrollBars = ssVertical
         TabOrder = 0
-        OnURLClick = Memo3URLClick
+        EnableURLs = True
+        OnLinkClick = Memo3LinkClick
       end
     end
     object tsSupport: TTabSheet

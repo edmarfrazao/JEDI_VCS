@@ -34,13 +34,21 @@ pelo menos um projeto falhou (ou parâmetro/instalação inválidos).
 
 | Chave | Projeto | Pasta | Defines do projeto (além de DEBUG/RELEASE e comuns) | Caminhos extras |
 |---|---|---|---|---|
-| `exe` | `Jedivcs.dpr` (EXE standalone) | `src\jedivcs` | `USECLIENTDISPATCHER;LANGUAGE` | - |
-| `dll` | `JediVCSDLL.dpr` (DLL da IDE) | `src\jedivcs` | `IDEDLL;EXT_IDE_INTF;LANGUAGE;DelphiPersonalEdition` | - |
-| `diff` | `JEDIVCSDiff.dpr` | `src\jedivcsdiff` | `LANGUAGE;DelphiPersonalEdition` | `..\jedivcs` |
+| `exe` | `Jedivcs.dpr` (EXE standalone) | `src\jedivcs` | `USECLIENTDISPATCHER;BRANCHING;JVCS_NOBRANCHUI;UNISYNEDIT` | - |
+| `dll` | `JediVCSDLL.dpr` (DLL da IDE) | `src\jedivcs` | `IDEDLL;EXT_IDE_INTF;USECLIENTDISPATCHER;BRANCHING;JVCS_NOBRANCHUI;UNISYNEDIT` | - |
+| `diff` | `JEDIVCSDiff.dpr` | `src\jedivcsdiff` | `DelphiPersonalEdition` (sem `LANGUAGE`) | - (não usa mais `..\jedivcs`) |
 | `console` | `jvcs.dpr` | `src\jvcs` | `DelphiPersonalEdition;JVCSCONSOLECLIENT;BRANCHING` | `..\jedivcs` |
 
 Para incluir/alterar projeto ou define, edite só as variáveis `PRJ_<chave>_*` e
 `ALL_PROJECTS` no topo do `.bat`.
+
+- `PRJ_<chave>_OUT` (opcional): nome final da saída. O dcc32 não tem opção de nome de saída, então
+  o script renomeia `NAME.dll/.map/.drc` para `OUT.*` depois do build. Hoje só
+  `PRJ_dll_OUT=JvcsExternalDll`: o `JediVCSDLL.dpr` vira `bin\client\<plat>\JvcsExternalDll.dll`
+  (nome que o expert procura).
+- Depois de cada build OK o script copia para `bin\client\<plat>` (se ainda não estiverem lá):
+  `3rdparty\fvcscrypt.dll` (só Win32, necessária ao LOGIN) e a ajuda `3rdparty\jedivcs.chm`
+  (cliente/DLL) e `3rdparty\jedivcsdiff.chm` (Diff).
 
 Defines passados ao compilador (`-D`): `DEBUG` (config Debug) ou `RELEASE` (config
 Release) + defines do projeto + `OVERBYTEV6_UP` (comum, ver abaixo) + `JVCS_EXTRA_DEFS`.
@@ -82,7 +90,7 @@ console as primeiras `BLD_MAXERR` (3) mensagens `Fatal:`/`Error:` do log.
 
 Search path base (relativo à pasta do `.dpr`, usado em `-U`, `-I` e `-R`):
 `..\common;..\common\client;..\comp\midware;..\comp\textdiff;..\comp\mdmailslot;..\comp\crc;..\comp\mwtools`
-(+ `..\jedivcs` em `diff` e `console`). `src\comp\_legacy` NÃO entra (só referência).
+(+ `..\jedivcs` em `console`). `src\comp\_legacy` NÃO entra (só referência).
 
 ## Alvo libs (SynEdit e VirtualTreeView fixados no repositório)
 
