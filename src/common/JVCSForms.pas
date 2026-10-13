@@ -46,11 +46,14 @@ type
   TJVCSForm = class(TForm)
   private
     { Private declarations }
+    FScaledMinW, FScaledMinH: Integer;
+    procedure EnsureScaledMinSize;
   protected
     { Protected declarations }
     procedure CreateParams(var Params: TCreateParams); override;
     procedure DoCreate; override;
     procedure DoShow; override;
+    procedure Activate; override;
     procedure WndProc(var Message: TMessage); override;
   public
     { Public declarations }
@@ -391,7 +394,6 @@ end;
 procedure TJVCSForm.DoCreate;
 var
   DesignW, DesignH: Integer;
-  WA: TRect;
 begin
   DesignW := 0;
   DesignH := 0;
@@ -414,18 +416,41 @@ begin
   // 125-200% o conteudo escalado ficava cortado (ex.: VCS Properties). Forms
   // redimensionaveis (menos a janela principal) ficam no minimo com o tamanho
   // do DFM ja escalado, limitado a area de trabalho do monitor.
-  if (DesignW > 0) and (BorderStyle in [bsSizeable, bsSizeToolWin]) and
-     (Self <> Application.MainForm) and
-     ((Width < DesignW) or (Height < DesignH)) then
+  // O mesmo vale para os que restauram no OnShow (jvcsLoadFormPosSize): ver
+  // DoShow.
+  FScaledMinW := DesignW;
+  FScaledMinH := DesignH;
+  EnsureScaledMinSize;
+end;
+
+procedure TJVCSForm.EnsureScaledMinSize;
+var
+  W, H: Integer;
+  WA: TRect;
+begin
+  if (FScaledMinW > 0) and (BorderStyle in [bsSizeable, bsSizeToolWin]) and
+     (Self <> Application.MainForm) and (WindowState = wsNormal) then
   try
     WA := Screen.MonitorFromRect(BoundsRect).WorkareaRect;
-    DesignW := Min(Max(Width, DesignW), WA.Width);
-    DesignH := Min(Max(Height, DesignH), WA.Height);
-    SetBounds(Max(WA.Left, Min(Left, WA.Right - DesignW)),
-      Max(WA.Top, Min(Top, WA.Bottom - DesignH)), DesignW, DesignH);
+    // menor que o DFM escalado: cresce; maior que a area de trabalho (200% numa
+    // tela pequena): encolhe para caber
+    if (Width >= FScaledMinW) and (Height >= FScaledMinH) and
+       (Width <= WA.Width) and (Height <= WA.Height) then
+      Exit;
+    W := Min(Max(Width, FScaledMinW), WA.Width);
+    H := Min(Max(Height, FScaledMinH), WA.Height);
+    SetBounds(Max(WA.Left, Min(Left, WA.Right - W)),
+      Max(WA.Top, Min(Top, WA.Bottom - H)), W, H);
   except
-    // idem
+    // a aparencia nunca impede a janela
   end;
+end;
+
+procedure TJVCSForm.Activate;
+begin
+  inherited Activate;
+  // v2026: alguns forms restauram o tamanho salvo no OnActivate
+  EnsureScaledMinSize;
 end;
 
 procedure TJVCSForm.DoShow;
@@ -439,6 +464,9 @@ begin
     // idem
   end;
   inherited DoShow;
+  // v2026: muitos forms restauram o tamanho salvo no OnShow
+  // (jvcsLoadFormPosSize), em pixels de outra escala: mesmo minimo do DoCreate
+  EnsureScaledMinSize;
 end;
 
 initialization
