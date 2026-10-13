@@ -31,7 +31,7 @@ HKCU\Software\JEDI\JEDIVCS
 ```
 - Gravação (`Create.pas:1300-1301`) só com "Store Password with identity" marcado: `Base64Encode(pwUserPasswordEdit.Text)`.
 - Leitura (`Create.pas:1236-1239`): `Base64Decode` direto para o campo. Os autores já avisavam do risco (`Create.pas:1314-1331`).
-- `Base64Encode` vem da `BFCrypt` (ausente no fonte; recuperada em `doc\client\Algoritmos-Recuperados.md`: Base64 sobre bytes ANSI).
+- `Base64Encode` vem da `BFCrypt` (ausente no fonte; recuperada em `doc\pt\client\Algoritmos-Recuperados.md`: Base64 sobre bytes ANSI).
 - Não existe "Auto submit passwords"; os reais são `cbSavePW` (`Options\SavePassword`) e `cbAutologin` (`Options\Autologin`,
   `Create.pas:386-402`, timer que clica em Abrir).
 - Modo INI (`UseRegistry=False`, `Options.pas:1912-1916`): tudo em `JVCS.ini` **na pasta do programa** (`ConfigStorage.pas:131-138`)

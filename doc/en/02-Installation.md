@@ -4,7 +4,7 @@
 
 How to install, repair and remove the client with `JediVCS-2.5-Beta2026-Setup.exe`.
 Previous: [01 Overview](01-Overview.md). Next: [03 Delphi IDE integration](03-Delphi-IDE-Integration.md).
-Full details (Portuguese): [manual 09](../manual/09-Instalador-do-Cliente.md) and
+Full details (Portuguese): [manual 09](../pt/manual/09-Instalador-do-Cliente.md) and
 [setup/LEIAME.md](../../setup/LEIAME.md).
 
 ## 1. Before you install
@@ -50,7 +50,7 @@ All components are selected by default.
 | **Delphi expert** | **JEDI VCS** menu in the 32-bit IDE of Delphi 11, 12 and 13; the line shows the versions detected |
 | **Older IDEs detected** (Beta 4) | Appears only if Delphi 7 to 10.4 Sydney is installed, with one line per IDE. Installs the **original** 2.5.0.1030 expert of that IDE connected to the new core |
 | **`.map` files** | The error log then shows unit and line numbers (useful when you report a bug) |
-| **AI tools** | `tools\ai` (wrapper, hooks) and the Claude Code skill `jedi-vcs` in `tools\ai\skills\jedi-vcs` |
+| **AI tools** | `tools\ai` (wrapper, hooks) and the Claude Code skill `jedi-vcs` in `tools\ai\skills\en\jedi-vcs` (English) and `tools\ai\skills\pt\jedi-vcs` (Portuguese) |
 
 Tasks: a desktop shortcut (selected) and **"Use the new console for AI"** (not selected: select it only if
 AI automation should use the new `jvcs.exe` instead of the original one).

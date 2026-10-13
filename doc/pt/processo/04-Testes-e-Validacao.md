@@ -15,7 +15,7 @@ Como o port foi validado: compatibilidade de protocolo, ABI da IDE, interface e 
 | Diff | linha de comando com exit code | `JEDIVCSDiff /s: /t: /autostart /log: /close` | [Port-Diff §3](../client/Port-Diff.md) |
 | Expert por atualização | leitura dos imports do PE contra os `.bpl` | `tools\verificar-expert.ps1` | [Port-DLL-IDE §5A](../client/Port-DLL-IDE.md) |
 | IDEs reais | teste manual no Delphi 11, 12 e 13 | instalador + canal entre PCs | abaixo |
-| Instalador | instalar/reinstalar/desinstalar silencioso com chaves desviadas | `/BDSKEY=`, `/AICONFIG=` | [setup/LEIAME §6](../../setup/LEIAME.md) |
+| Instalador | instalar/reinstalar/desinstalar silencioso com chaves desviadas | `/BDSKEY=`, `/AICONFIG=` | [setup/LEIAME §6](../../../setup/LEIAME.md) |
 
 ## 1. Servidor de teste
 
@@ -37,7 +37,7 @@ Os consoles **novo e original** rodam os mesmos comandos e três coisas são com
 Resultado (12/10): `listprojects`, `listproject`, `listlocks`, `getmodule` (inclusive `rev=`),
 `checkout`/`checkin` com comentário acentuado — **iguais**. Leitura cruzada: o original lê as revisões
 gravadas pelo novo e vice-versa. Evidências normalizadas em
-[`doc/client/golden-console`](../client/golden-console) (as capturas brutas, com a senha cifrada, não
+[`doc/pt/client/golden-console`](../client/golden-console) (as capturas brutas, com a senha cifrada, não
 foram versionadas).
 
 ## 3. Harness da DLL (ABI)
@@ -95,7 +95,7 @@ manda **pedidos assinados** ao Claude Code do PC remoto por uma pasta sincroniza
 - o Claude remoto roda em `/loop`, executa só o que o pedido descreve e pergunta ao usuário local antes de
   qualquer ação fora do combinado.
 
-Uso e regras: [tools/canal/LEIA-PRIMEIRO.md](../../tools/canal/LEIA-PRIMEIRO.md).
+Uso e regras: [tools/canal/LEIA-PRIMEIRO.md](../../../tools/canal/LEIA-PRIMEIRO.md).
 
 ## 7. verificar-expert
 

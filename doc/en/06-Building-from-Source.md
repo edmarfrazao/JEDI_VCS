@@ -1,6 +1,6 @@
 # 06. Building from source
 
-Summary of the build scripts. Full reference (Portuguese): [doc/fontes/Compilacao.md](../fontes/Compilacao.md)
+Summary of the build scripts. Full reference (Portuguese): [doc/pt/fontes/Compilacao.md](../pt/fontes/Compilacao.md)
 and [tools/LEIAME-compilar.md](../../tools/LEIAME-compilar.md).
 Previous: [05 Using with AI](05-Using-with-AI.md). Next: [07 FAQ and troubleshooting](07-FAQ-and-Troubleshooting.md).
 
@@ -79,11 +79,11 @@ So that one expert loads in **every update** of a Delphi version:
 
 Background: an expert built on 13.2 did not load on 13.1 ("Could not find Wizard"), because importing
 design-time units pulls in a unit that exists only in 13.2. Details (Portuguese):
-[Port-DLL-IDE §5A](../client/Port-DLL-IDE.md).
+[Port-DLL-IDE §5A](../pt/client/Port-DLL-IDE.md).
 
 ## 6. Conventions
 
 Delphi sources are **Windows-1252 with CRLF** line endings (`.gitattributes` keeps the exact bytes). Keep
 the defines of the `.dproj` files equal to those in `compilar.bat`. Before a pull request: build the four
 targets in Debug and Release and run the tests of the area you changed. Details (Portuguese):
-[Convenções](../fontes/Convencoes.md).
+[Convenções](../pt/fontes/Convencoes.md).

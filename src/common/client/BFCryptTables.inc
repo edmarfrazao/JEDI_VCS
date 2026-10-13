@@ -1,5 +1,5 @@
 // Tabelas iniciais do Blowfish (digitos de pi), extraidas do jedivcs.exe 2.5.0.1030.
-// Fonte: doc\client\Algoritmos-Recuperados.md, Apendice A.
+// Fonte: doc\pt\client\Algoritmos-Recuperados.md, Apendice A.
 const
   // jedivcs.exe, VA $00805824 (offset de arquivo $404A24): P-array (18 x Cardinal)
   BF_P_INIT: array[0..17] of Cardinal = (

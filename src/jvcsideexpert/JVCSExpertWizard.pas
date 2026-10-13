@@ -15,7 +15,7 @@ The Original Code is: JVCSExpertWizard.pas (JEDI VCS v2026)
 Unit JVCSExpertWizard - o wizard (IOTAWizard), menu, acoes e atalhos
 
   Reproduz TJVCSWizard do expert JvcsExpertBDS21.dll
-  (doc\client\Expert-IDE-Analise.md, 1.2, 3.1, 4):
+  (doc\pt\client\Expert-IDE-Analise.md, 1.2, 3.1, 4):
   - menu principal "JEDI VCS" (mnuJEDIVCS) logo depois de ToolsMenu, legenda
     de GetMenuName; subitens mnuJEDIVCS_<n> ligados a uma TAction por verbo
     (JEDIVCS_A<n>, categoria "JEDI VCS", Tag = 100 + n) na ActionList da IDE;

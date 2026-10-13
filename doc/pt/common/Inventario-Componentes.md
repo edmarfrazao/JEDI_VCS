@@ -4,8 +4,8 @@ Consolidação do levantamento por famílias de componentes para o port do **cli
 
 - **Fonte dos dados:** workflow `wf_41a5e977-854`. Foram usadas só as 9 versões **revisadas** das famílias (correções marcadas com `[REVISÃO]`) e o resultado do crítico de completude (`critic:completude`). Onde a revisão discorda do inventário inicial, vale a revisão.
 - **Data da consolidação:** 2026-10-12.
-- **Plano de execução:** `doc\common\Plano-de-Port.md`.
-- **Documentos relacionados:** `README.md`, `doc\common\LEIAME-Origem.md`, `doc\common\Licencas.md`, `doc\common\manifesto-origem.csv`.
+- **Plano de execução:** `doc\pt\common\Plano-de-Port.md`.
+- **Documentos relacionados:** `README.md`, `doc\pt\common\LEIAME-Origem.md`, `doc\pt\common\Licencas.md`, `doc\pt\common\manifesto-origem.csv`.
 
 ## Convenções
 
@@ -1573,7 +1573,7 @@ Retirar a JVCL residual, PerMonitorV2, tradução pt_BR e branching. Win64 só c
 
 ### Situação dos apontamentos do crítico na árvore v2026
 
-Conferido em 2026-10-12 contra `doc\common\manifesto-origem.csv`, `README.md`, `tools\LEIAME-compilar.md`, `3rdparty\` e `src\` (fora de `_legacy`), sem compilar:
+Conferido em 2026-10-12 contra `doc\pt\common\manifesto-origem.csv`, `README.md`, `tools\LEIAME-compilar.md`, `3rdparty\` e `src\` (fora de `_legacy`), sem compilar:
 
 | Apontamento | Situação na v2026 | Onde é tratado no plano |
 |---|---|---|

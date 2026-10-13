@@ -10,7 +10,7 @@ violation). **Ainda falta o teste dentro da IDE** (roteiro na seção 5).
 
 Referências: [Plano-de-Port.md](../common/Plano-de-Port.md) (F5),
 [Port-Standalone.md](Port-Standalone.md) (port do EXE), [Expert-IDE-Analise.md](Expert-IDE-Analise.md)
-(ABI e callbacks), [`src\jvcsideexpert\LEIAME.md`](../../src/jvcsideexpert/LEIAME.md).
+(ABI e callbacks), [`src\jvcsideexpert\LEIAME.md`](../../../src/jvcsideexpert/LEIAME.md).
 
 ## 1. Como compilar
 

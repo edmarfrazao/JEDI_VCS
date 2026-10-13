@@ -27,7 +27,7 @@ Fonte: logs em `tools\logs\compilar_<chave>_Win32_Debug.log`, gerados em 12/10/2
 | `console` (`jvcs.dpr`) | ~~`F1026 File not found: '..\comp\fastmm\FastMM4.pas'`~~ | **Resolvido** (FastMM4 removido; compila e passa no golden, ver [Port-Console.md](../client/Port-Console.md)) |
 | `dll` (`JediVCSDLL.dpr`) | `E2029 Identifier expected but ',' found` em `src\common\JVCSIDESettings.pas(99)`, seguido de `E2003` (`DelphiHKEY`, `RegKeyExists`, `RegGetKeyNames`, `RegReadString`), `E2012` e `F2063 Could not compile used unit 'JVCSIDESettings.pas'` (chamada em `JVCSIDEInterface.pas(2378)`) | `JVCSIDESettings.pas` usa `{$ifdef WINDOWS}`, símbolo que o Delphi 13 não define (só `MSWINDOWS`). Correção definitiva no fonte: trocar por `MSWINDOWS` (F5 5.3, na linha 95 conforme o plano). Contorno só no script, sem editar o fonte: `set JVCS_EXTRA_DEFS=WINDOWS` |
 
-Pendências que aparecerão a seguir (units ainda sem fonte nem DCU, com os defines atuais), conforme [tools\LEIAME-compilar.md](../../tools/LEIAME-compilar.md): `EnhListView`, `dfsStatusBar`, `FavOpenDialog`, `Checksum`, `BFCrypt`, `CipherLz`, `SortGrid`, `SystemTreeView`, `SystemControlPack`, `RekScan`, `HtmlHlp`, `mwPasLex`, `mwPasLexTypes`, `ItemProp`, `RegAcc`, `SynHighlighterMPerl` e `WSocket` (em `ApsCli.pas`); mais o `{$R ...winxp.res}` com caminho absoluto do ambiente antigo nos `.dpr`. Destino de cada uma: [Componentes.md](Componentes.md), seção 3.
+Pendências que aparecerão a seguir (units ainda sem fonte nem DCU, com os defines atuais), conforme [tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md): `EnhListView`, `dfsStatusBar`, `FavOpenDialog`, `Checksum`, `BFCrypt`, `CipherLz`, `SortGrid`, `SystemTreeView`, `SystemControlPack`, `RekScan`, `HtmlHlp`, `mwPasLex`, `mwPasLexTypes`, `ItemProp`, `RegAcc`, `SynHighlighterMPerl` e `WSocket` (em `ApsCli.pas`); mais o `{$R ...winxp.res}` com caminho absoluto do ambiente antigo nos `.dpr`. Destino de cada uma: [Componentes.md](Componentes.md), seção 3.
 
 Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win32` e a compilação automática dos pacotes runtime Win64 (`exe Debug Win64`) compilam SynEdit e VTV sem erro. `tools\compilar-expert.bat` gera `JvcsExpertBDS37.dll` e confere exports/imports do PE.
 
@@ -42,7 +42,7 @@ Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win
 - [x] SynEdit (pyscripter `84391a3`) e Virtual-TreeView V8.5 fixados em `src\comp` e instalados na IDE a partir de `lib\bpl\Win32`; SynEdit TurboPack e VTV 8.3 do GetIt removidos da IDE; backup em `C:\Users\Public\Documents\Embarcadero\Studio\37.0\_backup_getit_20261012`
 - [x] `tools\compilar.bat` (modo `dcc32`, alvo `libs`, ramo `msbuild` previsto) e `tools\LEIAME-compilar.md`
 - [x] Binários de referência 2.5.0.1030 e runtime em `3rdparty` (`fvcscrypt.dll`, CHM, `*.jvcs`, `htm_rep.htm`, `referencia-2.5.0.1030`)
-- [x] Análise estática do expert original (`doc\client\Expert-IDE-Analise.md`), incluindo o valor de registro `JVCSIDEClient`
+- [x] Análise estática do expert original (`doc\pt\client\Expert-IDE-Analise.md`), incluindo o valor de registro `JVCSIDEClient`
 - [x] Decisões registradas: escopo, IDE alvo, SynEdit/VTV, dependências, recursos desligados (relatórios, tradução, notificação, plugins, branching), LZH, Midware, teste de protocolo, plataforma, nome da versão, Git
 - [ ] Decisões da seção 0.2 ainda abertas: code page do fio (provável 1252), Blowfish de blobs, ShareMem na DLL, nome da DLL (sugestão `JvcsExternalDll.dll`), origem de JCL/JVCL no D11/D12
 - [ ] Delphi 11 (BDS 22) e Delphi 12 (BDS 23) instalados, com as mesmas dependências (JCL/JVCL do GitHub num commit equivalente ao 2026.08, ICS 9.7, SynEdit e VTV fixados, Abbrevia)
@@ -52,7 +52,7 @@ Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win
 - [ ] Capturas golden (`GET_SERVER_TIME`, `LOGIN`, `GET_PROJECT_LIST`, `CHECKIN_MODULE`, `GET_CHECKOUT_MODULE`, textos acentuados, erro) arquivadas em `tools\golden\captures\` (proposta)
 - [ ] Consultas somente leitura no banco (CRC, método/flags ZIP, blobs Blowfish, Line History, `lc_ctype`, tamanho do header)
 - [ ] Limpar o `EnvOptions.proj`, que ainda cita `VirtualTreeview_by_JamSoftware-13\8.3\source` no Library Path (risco de duas versões do VTV)
-- [ ] Commitar o estado atual: `doc/common/Decisoes.md` (modificado), `src/jvcsideexpert/`, `tools/compilar-expert.bat`, `bin/ideclient/` (tem `.gitignore` próprio) e a documentação consolidada em `doc\`
+- [ ] Commitar o estado atual: `doc/pt/common/Decisoes.md` (modificado), `src/jvcsideexpert/`, `tools/compilar-expert.bat`, `bin/ideclient/` (tem `.gitignore` próprio) e a documentação consolidada em `doc\`
 
 **Próximos passos:** (1) criar os `.dproj`; (2) remover `FastMM4` dos `.dpr` e trocar `WINDOWS` por `MSWINDOWS` para o build chegar a erros de código do cliente; (3) obter as cópias locais; (4) com o servidor de teste, capturar a linha de base golden e rodar as consultas 0.7; (5) instalar Delphi 11/12.
 
@@ -64,7 +64,7 @@ Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win
 - [x] `RFormat.pas` (`PAnsiChar`, code page fixa configurável `MWCodePage` = 1252, `AppendFields` com `vtUnicodeString`/`vtWideString`/`vtWideChar`/`vtPWideChar`/`vtInt64`, `vtExtended` com `FloatToStrF(ffGeneral,18)`; bookmarks restaurados)
 - [x] `ApsCli.pas` (`OverbyteIcsWSocket`, `SocketFamily := sfIPv4`, cabeçalho `AnsiString`, `AllocateHWnd` do `System.Classes`; sem migrar para `TIcsWndControl`)
 - [x] `CBroker.pas` (`FUserData: NativeInt`)
-- [x] Golden de fio do console (proxy de captura + normalizador em `tools\golden\console`): `GET_SERVER_TIME`, `LOGIN` (versão 239), `GET_PROJECT_INFORMATION`, `GET_LOCKED_MODULES`, `GET_CHECKOUT_MODULE` (blobs), `CHECKOUT_ONLY_MODULE`, `CHECKIN_MODULE` (blobs, comentário acentuado em cp1252) idênticos ao original — evidências em `doc\client\golden-console`
+- [x] Golden de fio do console (proxy de captura + normalizador em `tools\golden\console`): `GET_SERVER_TIME`, `LOGIN` (versão 239), `GET_PROJECT_INFORMATION`, `GET_LOCKED_MODULES`, `GET_CHECKOUT_MODULE` (blobs), `CHECKOUT_ONLY_MODULE`, `CHECKIN_MODULE` (blobs, comentário acentuado em cp1252) idênticos ao original — evidências em `doc\pt\client\golden-console`
 - [ ] `src\common\client\JVCSTransport.pas` (interface `IJVCSTransport` + `TJVCSMidwareTransport` + fábrica)
 - [ ] Pacote design-time `src\packages\JVCSMidwareD.dpk` (`TAppSrvClient`, `TMWBuffer`)
 - [ ] Suíte golden: ida e volta do `RFormat`, roteiro contra o servidor de teste, comparador que ignora hora, TransactionID e senha cifrada; rodar em ACP 1252 e 65001, pt-BR e en-US
@@ -134,7 +134,7 @@ DLL e setup:
 - [x] ~~Investigar `Modules without revision assigned to: Exemplo01.dpr` com 24,5 s~~: era o laço local do `FillListView` (cópia de todos os ícones da lista do sistema do `bds.exe`), corrigido em 13/10/2026 (Port-Standalone.md §4.4); falta conferir na IDE
 - [ ] **Teste na IDE com a DLL nova** (roteiro em Port-DLL-IDE.md, seção 5): conectar, Project Manager, check-in de `uPrincipal.pas` do Exemplo01, History, fechar a IDE sem AV; LOGIN 250 no fio
 - [ ] `JediVCSDLL.dproj`; ramo `INTERNAL_OLDOTA`/VCSManager removido; `JVCSIDESettings` com BDS 22/23/37; units consumidoras (5.4)
-- [x] **Instalador Inno Setup (13/10/2026)**: `setup\JediVCS2026.iss` + `tools\gerar-instalador.bat [--sem-build]` → `setup\Output\JediVCS-2.5-Beta2026-Setup.exe` (pt-BR/inglês, AppId fixo = reinstalar/reparar, pasta `JEDI\JVCS 2026` sem tocar no original; componentes cliente, expert, `.map` e `tools\ai`; registra `Experts\JVCSIDEClient` só nas IDEs 22/23/37 detectadas cujo expert está no pacote, guardando e restaurando o valor anterior; tarefa opcional `jvcsExe` no `config.ini` da IA). Testes silenciosos de instalar/reinstalar/desinstalar OK; ver [setup\LEIAME.md](../../setup/LEIAME.md) e [manual 09](../manual/09-Instalador-do-Cliente.md). Falta: teste em modo administrador e pelo assistente, e pacote com build Release completo
+- [x] **Instalador Inno Setup (13/10/2026)**: `setup\JediVCS2026.iss` + `tools\gerar-instalador.bat [--sem-build]` → `setup\Output\JediVCS-2.5-Beta2026-Setup.exe` (pt-BR/inglês, AppId fixo = reinstalar/reparar, pasta `JEDI\JVCS 2026` sem tocar no original; componentes cliente, expert, `.map` e `tools\ai`; registra `Experts\JVCSIDEClient` só nas IDEs 22/23/37 detectadas cujo expert está no pacote, guardando e restaurando o valor anterior; tarefa opcional `jvcsExe` no `config.ini` da IA). Testes silenciosos de instalar/reinstalar/desinstalar OK; ver [setup\LEIAME.md](../../../setup/LEIAME.md) e [manual 09](../manual/09-Instalador-do-Cliente.md). Falta: teste em modo administrador e pelo assistente, e pacote com build Release completo
 
 ## F6: Win64 / ARM64EC (opcional)
 
@@ -154,7 +154,7 @@ DLL e setup:
 - Reconciliar a skill `D:\skills\delphi`, que cita Delphi 11 e 12 como instalados: hoje só existe o 13.2.
 
 ## Testes de integração com o servidor de teste (12/10/2026)
-- [x] Servidor 2.50 (branching, HEAD) + Firebird 2.5.9; banco atualizado para a versão 250 (ver `doc\server\Servidor-Teste-Local.md`).
+- [x] Servidor 2.50 (branching, HEAD) + Firebird 2.5.9; banco atualizado para a versão 250 (ver `doc\pt\server\Servidor-Teste-Local.md`).
 - [x] **Check-in pela IDE do Delphi 13.2** com o expert BDS37 + JvcsExternalDll original: projeto `Exemplo01` (4 módulos, `.pas`+`.dfm` pela família).
 - [x] Standalone `jedivcs.exe` 2.5.0.1030 conectado ao mesmo tempo que a IDE.
 - [x] **Duas sessões do mesmo usuário (IDE + CLI) convivem** neste servidor (build com branching): a IDE continuou conectada.

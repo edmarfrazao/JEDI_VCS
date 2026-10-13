@@ -15,7 +15,7 @@ The Original Code is: JVCSExpertNotifiers.pas (JEDI VCS v2026)
 Unit JVCSExpertNotifiers - notificacoes da IDE -> ifn*/ien* da DLL
 
   Reproduz TIdeNotifier/TProjectCloseNotifier do expert BDS21
-  (doc\client\Expert-IDE-Analise.md, 3.5):
+  (doc\pt\client\Expert-IDE-Analise.md, 3.5):
 
   Evento OTA                 Projeto                         Arquivo comum
   ofnFileOpening (0)         ifnProjectOpening (nome bruto)  ifnFileOpening

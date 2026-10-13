@@ -11,7 +11,8 @@
 ;                                     (montada por tools\compilar-expert.bat Release nova)
 ;    RtSrc     = 3rdparty             fvcscrypt.dll, *.jvcs, htm_rep.htm, *.chm
 ;    AiSrc     = tools\ai             ferramentas da IA (copiadas byte a byte)
-;    SkillSrc  = skills\jedi-vcs      skill do Claude Code -> {app}\tools\ai\skills\jedi-vcs
+;    SkillSrc  = skills               skill do Claude Code: skills\pt\jedi-vcs e skills\en\jedi-vcs
+;                                     -> {app}\tools\ai\skills\pt\jedi-vcs e {app}\tools\ai\skills\en\jedi-vcs
 ;
 ;    OldSrc    = 3rdparty\experts-originais-2.5.0.1030
 ;                                     JvcsExpertD7.dll, JvcsExpertBDS1..21.dll ORIGINAIS
@@ -45,7 +46,7 @@
   #define AiSrc Root + "\tools\ai"
 #endif
 #ifndef SkillSrc
-  #define SkillSrc Root + "\skills\jedi-vcs"
+  #define SkillSrc Root + "\skills"
 #endif
 #ifndef OldSrc
   #define OldSrc Root + "\3rdparty\experts-originais-2.5.0.1030"
@@ -63,7 +64,8 @@
 #expr Req(RtSrc + "\htm_rep.htm")
 #expr Req(RtSrc + "\ffdef.jvcs")
 #expr Req(AiSrc + "\jvcs-ai.ps1")
-#expr Req(SkillSrc + "\SKILL.md")
+#expr Req(SkillSrc + "\pt\jedi-vcs\SKILL.md")
+#expr Req(SkillSrc + "\en\jedi-vcs\SKILL.md")
 #expr Req(OldSrc + "\JvcsExpertD7.dll")
 #expr Req(OldSrc + "\JvcsExpertBDS21.dll")
 
@@ -273,9 +275,11 @@ Source: "{#IdeSrc}\JvcsExternalDll.map"; DestDir: "{app}"; Components: (ide or i
 #endif
 ; ---- ferramentas da IA (byte a byte: os .ps1 sao UTF-8 com BOM e CRLF) ----
 Source: "{#AiSrc}\*"; DestDir: "{app}\tools\ai"; Components: ai; Flags: ignoreversion recursesubdirs createallsubdirs
-; skill distribuivel do Claude Code (byte a byte); NAO e copiada para o perfil do
-; usuario: ver setup\LEIAME.md (copiar para %USERPROFILE%\.claude\skills\jedi-vcs)
-Source: "{#SkillSrc}\*"; DestDir: "{app}\tools\ai\skills\jedi-vcs"; Components: ai; Flags: ignoreversion recursesubdirs createallsubdirs
+; skill distribuivel do Claude Code em portugues e em ingles (byte a byte; mesmo nome
+; "jedi-vcs"); NAO e copiada para o perfil do usuario: ver setup\LEIAME.md (copiar UMA
+; delas para %USERPROFILE%\.claude\skills\jedi-vcs)
+Source: "{#SkillSrc}\pt\jedi-vcs\*"; DestDir: "{app}\tools\ai\skills\pt\jedi-vcs"; Components: ai; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "{#SkillSrc}\en\jedi-vcs\*"; DestDir: "{app}\tools\ai\skills\en\jedi-vcs"; Components: ai; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
 Name: "{group}\{cm:IconClient}"; Filename: "{app}\Jedivcs.exe"; Components: client
@@ -288,6 +292,10 @@ Name: "{autodesktop}\{cm:IconClient}"; Filename: "{app}\Jedivcs.exe"; Tasks: des
 
 [Run]
 Filename: "{app}\Jedivcs.exe"; Description: "{cm:RunClient}"; Components: client; Flags: postinstall nowait skipifsilent unchecked runasoriginaluser
+
+[InstallDelete]
+; skill da beta 4 (antes da separacao por idioma): agora em tools\ai\skills\pt e \en
+Type: filesandordirs; Name: "{app}\tools\ai\skills\jedi-vcs"
 
 [UninstallDelete]
 Type: files; Name: "{app}\jvcs2026-setup.ini"

@@ -4,7 +4,7 @@ Guia para usar o **JEDI VCS 2.5 Beta 2026** com assistentes de IA que executam c
 outros). A IA consulta o estado dos fontes, faz checkout antes de editar, edita sem estragar a
 codificação e faz check-in com comentário marcado `[IA]`. Os modos e as aprovações ficam com você.
 
-> Referência técnica completa (implementação, testes, decisões): [`tools/ai/LEIAME.md`](../../tools/ai/LEIAME.md).
+> Referência técnica completa (implementação, testes, decisões): [`tools/ai/LEIAME.md`](../../../tools/ai/LEIAME.md).
 > Este guia é a versão para quem vai **usar**.
 
 ## O que a IA pode fazer
@@ -45,7 +45,7 @@ nem administra usuários.
   perguntar com a entrada redirecionada). O wrapper resolve isso e devolve JSON.
 - **Camadas futuras** (ADR-001): console portado com saída JSON nativa e senha no Gerenciador de
   Credenciais; servidor MCP com ferramentas tipadas. Ver
-  [`doc/common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`](../common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md).
+  [`doc/pt/common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`](../common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md).
 
 ## Requisitos
 
@@ -70,12 +70,12 @@ nem administra usuários.
 
 ## Skill distribuível
 
-A skill **`jedi-vcs`** ([`skills/jedi-vcs/`](../../skills/jedi-vcs/README.md)) ensina o fluxo a qualquer
+A skill **`jedi-vcs`** ([`skills/pt/jedi-vcs/`](../../../skills/pt/jedi-vcs/README.md); em inglês: [`skills/en/jedi-vcs/`](../../../skills/en/jedi-vcs/README.md)) ensina o fluxo a qualquer
 sessão do Claude Code, em qualquer projeto Delphi, desde que o wrapper esteja instalado.
 
 | | Skill global `jedi-vcs` | Skill por projeto `jvcs` |
 |---|---|---|
-| Origem | `skills\jedi-vcs` (este repositório) | `tools\ai\claude\skills\jvcs`, copiada por `instalar-no-projeto.ps1` |
+| Origem | `skills\pt\jedi-vcs` ou `skills\en\jedi-vcs` (este repositório; instale só uma) | `tools\ai\claude\skills\jvcs`, copiada por `instalar-no-projeto.ps1` |
 | Onde fica | `%USERPROFILE%\.claude\skills\jedi-vcs` ou `<projeto>\.claude\skills\jedi-vcs` | `<projeto>\.claude\skills\jvcs` |
 | Caminho do wrapper | descoberto por `scripts\localizar-wrapper.ps1` | gravado na instalação (caminho absoluto) |
 | Hooks e regras allow/ask/deny | não instala (a skill só orienta) | instalados junto no `.claude\settings.json` |

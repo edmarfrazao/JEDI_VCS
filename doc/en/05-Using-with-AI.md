@@ -4,7 +4,7 @@ How AI assistants that run commands (Claude Code and other agents) can use JEDI 
 the state of the files, checks out before editing, edits without breaking the encoding and checks in with
 a comment marked `[IA]`. **You** choose the modes and approve the operations.
 Previous: [04 Standalone client](04-Standalone-Client.md). Next: [06 Building from source](06-Building-from-Source.md).
-Full guide (Portuguese): [doc/ia](../ia/README.md); technical reference:
+Full guide (Portuguese): [doc/pt/ia](../pt/ia/README.md); technical reference:
 [tools/ai/LEIAME.md](../../tools/ai/LEIAME.md).
 
 ## 1. What the AI can do
@@ -86,17 +86,18 @@ with redirected input). The wrapper fixes this and returns JSON.
 
 ### The `jedi-vcs` skill (optional, global)
 
-The distributable skill [`skills/jedi-vcs`](../../skills/jedi-vcs/README.md) teaches the workflow to any
+The distributable skill [`skills/en/jedi-vcs`](../../skills/en/jedi-vcs/README.md) teaches the workflow to any
 Claude Code session, in any Delphi project, as long as the wrapper is installed. The installer puts it in
-`<install folder>\tools\ai\skills\jedi-vcs`; copy it to your profile (close Claude Code first):
+`<install folder>\tools\ai\skills\en\jedi-vcs` (a Portuguese version is in `skills\pt\jedi-vcs`; install
+only one of them, both are named `jedi-vcs`); copy it to your profile (close Claude Code first):
 
 ```
-robocopy "C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai\skills\jedi-vcs" "%USERPROFILE%\.claude\skills\jedi-vcs" /E
+robocopy "C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai\skills\en\jedi-vcs" "%USERPROFILE%\.claude\skills\jedi-vcs" /E
 ```
 
 | | Global skill `jedi-vcs` | Per-project skill `jvcs` |
 |---|---|---|
-| Source | `skills\jedi-vcs` | copied by `instalar-no-projeto.ps1` |
+| Source | `skills\en\jedi-vcs` (or `skills\pt\jedi-vcs`) | copied by `instalar-no-projeto.ps1` |
 | Wrapper path | found by `scripts\localizar-wrapper.ps1` | written at install time |
 | Hooks and allow/ask/deny rules | no (the skill only guides) | yes |
 | When to use | to try it, projects without installation, other PCs | daily use with full protection |
@@ -163,4 +164,4 @@ Where to set them: **VCS Properties → AI / Automation**, or in your terminal
 - **Audit:** `%LOCALAPPDATA%\JEDI\JVCS\ai-audit.log`, one JSON line per command.
 
 Other agents (not Claude Code) can use the same wrapper and its JSON contract — see
-[doc/ia/07 (Portuguese)](../ia/07-Outros-Agentes.md).
+[doc/pt/ia/07 (Portuguese)](../pt/ia/07-Outros-Agentes.md).

@@ -1,18 +1,18 @@
 # Documentação do JEDI VCS 2.5 Beta 2026
 
-> **English documentation:** [doc/en/README.md](en/README.md) — user guide in English (overview,
+> **English documentation:** [doc/en/README.md](../en/README.md) — user guide in English (overview,
 > installation, IDE integration, standalone client, AI, build, FAQ).
 
 Índice geral da documentação do port do **cliente** JEDI VCS 2.5 para o Delphi 11, 12 e 13 (referência:
 Delphi 13 Florence). O servidor **2.5 Beta 3 (Firebird)** não é portado; o cliente novo fala o mesmo
-protocolo. Visão geral do projeto, download e licenças: [../README.md](../README.md).
+protocolo. Visão geral do projeto, download e licenças: [README.pt-BR.md](../../README.pt-BR.md).
 
 ## Comece por aqui
 
 | Você quer... | Leia |
 |---|---|
 | Instalar e usar | [Manual](manual/README.md) — comece pelo [09 Instalador](manual/09-Instalador-do-Cliente.md) |
-| Usar com um assistente de IA | [IA](ia/README.md) e a skill [../skills/jedi-vcs](../skills/jedi-vcs/) |
+| Usar com um assistente de IA | [IA](ia/README.md) e a skill [skills/pt/jedi-vcs](../../skills/pt/jedi-vcs/) |
 | Entender o código ou compilar | [Fontes](fontes/README.md) |
 | Saber por que e como o port foi feito | [Processo](processo/README.md) |
 | Saber onde o projeto está | [Status](common/Status.md) e [Decisões](common/Decisoes.md) |
@@ -40,8 +40,8 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 | Documento | O que contém |
 |---|---|
 | [ia/README.md](ia/README.md) | Como assistentes de IA usam o JEDI VCS: instalação, modos de automação, comandos do wrapper, fluxo, segurança |
-| [../skills/jedi-vcs](../skills/jedi-vcs/) | Skill para o Claude Code e outros agentes |
-| [../tools/ai/LEIAME.md](../tools/ai/LEIAME.md) | Referência técnica do wrapper `jvcs-ai.ps1` e dos hooks |
+| [skills/pt/jedi-vcs](../../skills/pt/jedi-vcs/) | Skill para o Claude Code e outros agentes (versão em inglês: [skills/en/jedi-vcs](../../skills/en/jedi-vcs/); ver [skills](../../skills/README.md)) |
+| [../tools/ai/LEIAME.md](../../tools/ai/LEIAME.md) | Referência técnica do wrapper `jvcs-ai.ps1` e dos hooks |
 | [common/ADR-001](common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md) | Decisão de arquitetura: CLI para a IA e núcleo único para todos os Delphi |
 
 ## Processo do port (`processo`)
@@ -94,7 +94,7 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 | [Algoritmos-Recuperados](client/Algoritmos-Recuperados.md) | CRC-32, BFCrypt (Base64/Blowfish), protocolo MidWare, `mwPasLex` |
 | [Checkin-Familias-FMX](client/Checkin-Familias-FMX.md) | Check-in de famílias `.pas` + `.dfm`/`.fmx` |
 | [Requisito-Tamanho-Fonte](client/Requisito-Tamanho-Fonte.md) | Requisito de fonte, escala e tema claro/escuro |
-| [../src/jvcsideexpert/LEIAME.md](../src/jvcsideexpert/LEIAME.md) | Expert: arquitetura, ABI, compilação, registro manual |
+| [../src/jvcsideexpert/LEIAME.md](../../src/jvcsideexpert/LEIAME.md) | Expert: arquitetura, ABI, compilação, registro manual |
 
 ## Servidor (`server`)
 
@@ -107,20 +107,21 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 
 | Documento | O que contém |
 |---|---|
-| [../tools/LEIAME-compilar.md](../tools/LEIAME-compilar.md) | Referência completa do `compilar.bat`, `compilar-expert.bat`, `.dproj` e variáveis de ambiente |
-| [../setup/LEIAME.md](../setup/LEIAME.md) | Instalador Inno Setup: geração, componentes, o que muda na IDE, testes |
-| [../tools/canal/LEIA-PRIMEIRO.md](../tools/canal/LEIA-PRIMEIRO.md) | Canal assinado entre o PC de desenvolvimento e o PC remoto de testes |
-| [../3rdparty/LEIAME.md](../3rdparty/LEIAME.md) | Runtime e binários de referência do 2.5.0.1030 |
-| [../src/comp/synedit/LEIAME-v2026.md](../src/comp/synedit/LEIAME-v2026.md), [../src/comp/virtualtreeview/LEIAME-v2026.md](../src/comp/virtualtreeview/LEIAME-v2026.md) | SynEdit e VirtualTreeView fixados |
-| [../src/comp/midware/LEIAME.md](../src/comp/midware/LEIAME.md), [../src/comp/crc/LEIAME.md](../src/comp/crc/LEIAME.md), [../src/comp/mwtools/LEIAME.md](../src/comp/mwtools/LEIAME.md) | Notas de port do MidWare, do CRC e do lexer Pascal |
-| [../src/packages/LEIAME.md](../src/packages/LEIAME.md) | Pacote design-time do MidWare (a criar) |
+| [../tools/LEIAME-compilar.md](../../tools/LEIAME-compilar.md) | Referência completa do `compilar.bat`, `compilar-expert.bat`, `.dproj` e variáveis de ambiente |
+| [../setup/LEIAME.md](../../setup/LEIAME.md) | Instalador Inno Setup: geração, componentes, o que muda na IDE, testes |
+| [../tools/canal/LEIA-PRIMEIRO.md](../../tools/canal/LEIA-PRIMEIRO.md) | Canal assinado entre o PC de desenvolvimento e o PC remoto de testes |
+| [../3rdparty/LEIAME.md](../../3rdparty/LEIAME.md) | Runtime e binários de referência do 2.5.0.1030 |
+| [../src/comp/synedit/LEIAME-v2026.md](../../src/comp/synedit/LEIAME-v2026.md), [../src/comp/virtualtreeview/LEIAME-v2026.md](../../src/comp/virtualtreeview/LEIAME-v2026.md) | SynEdit e VirtualTreeView fixados |
+| [../src/comp/midware/LEIAME.md](../../src/comp/midware/LEIAME.md), [../src/comp/crc/LEIAME.md](../../src/comp/crc/LEIAME.md), [../src/comp/mwtools/LEIAME.md](../../src/comp/mwtools/LEIAME.md) | Notas de port do MidWare, do CRC e do lexer Pascal |
+| [../src/packages/LEIAME.md](../../src/packages/LEIAME.md) | Pacote design-time do MidWare (a criar) |
 
-## Documentos originais (`original`)
+## Documentos originais (`doc/original`)
 
-Arquivos do JEDI VCS original, sem alteração: [license.txt](original/license.txt),
-[credits.txt](original/credits.txt), [credits_jedivcsdiff.txt](original/credits_jedivcsdiff.txt),
-[HowToBuild.txt](original/HowToBuild.txt), [jvcs_directories.txt](original/jvcs_directories.txt) e as
-[release notes](original/Jvcs.Releasenotes.pdf).
+Arquivos do JEDI VCS original (em inglês, sem alteração; ficam em `doc/original`, fora das pastas de
+idioma, porque o instalador, o `LICENSE` e os fontes apontam para eles): [license.txt](../original/license.txt),
+[credits.txt](../original/credits.txt), [credits_jedivcsdiff.txt](../original/credits_jedivcsdiff.txt),
+[HowToBuild.txt](../original/HowToBuild.txt), [jvcs_directories.txt](../original/jvcs_directories.txt) e as
+[release notes](../original/Jvcs.Releasenotes.pdf).
 
 ## Ordem de leitura sugerida (desenvolvimento)
 

@@ -66,4 +66,4 @@ Cuidados conhecidos:
 - `syncproject ... noprompt crc` sobrescreve qualquer arquivo local que não esteja em checkout seu.
 - Comentário e caminhos em ANSI (CP1252); comentário sem aspas duplas.
 
-Referência completa: `doc/client/jvcs_params.txt` e `doc/manual/06-Linha-de-Comando.md` do repositório.
+Referência completa: `doc/pt/client/jvcs_params.txt` e `doc/pt/manual/06-Linha-de-Comando.md` do repositório.

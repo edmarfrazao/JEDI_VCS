@@ -259,7 +259,7 @@ type
 
   TJediVCSDLLOperationInit = function(AExternalVCSOperationFunctionRec: PExternalVCSOperationFunctionRec): Boolean; stdcall;
 
-// Verificacoes de layout (ver doc\client\Expert-IDE-Analise.md, 3.2/6.3):
+// Verificacoes de layout (ver doc\pt\client\Expert-IDE-Analise.md, 3.2/6.3):
 // 24 / 10 / 2 / 9 / 10 ponteiros e tipos escalares de 1 byte.
 {$IF SizeOf(TExternalIDEFunctionRec) <> 24 * SizeOf(Pointer)}
   {$MESSAGE FATAL 'JVCSExpertABI: TExternalIDEFunctionRec deve ter 24 ponteiros'}

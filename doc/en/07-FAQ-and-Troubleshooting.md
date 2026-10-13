@@ -1,9 +1,9 @@
 # 07. FAQ and troubleshooting
 
 Symptom → cause → solution. Previous: [06 Building from source](06-Building-from-Source.md).
-Index: [README](README.md). Full tables (Portuguese): [manual 08](../manual/08-Solucao-de-Problemas.md),
-[installer problems](../manual/09-Instalador-do-Cliente.md#8-problemas-comuns) and
-[AI problems](../ia/06-Solucao-de-Problemas.md).
+Index: [README](README.md). Full tables (Portuguese): [manual 08](../pt/manual/08-Solucao-de-Problemas.md),
+[installer problems](../pt/manual/09-Instalador-do-Cliente.md#8-problemas-comuns) and
+[AI problems](../pt/ia/06-Solucao-de-Problemas.md).
 
 Three checks solve many cases:
 

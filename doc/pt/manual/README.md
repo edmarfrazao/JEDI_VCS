@@ -64,7 +64,7 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 - [Ambiente](../common/Ambiente.md): como o Delphi 13 e as bibliotecas foram instalados e como reverter.
 - [Status](../common/Status.md): situação do port.
 - [Requisito de tamanho de fonte](../client/Requisito-Tamanho-Fonte.md) e [Check-in de famílias FMX](../client/Checkin-Familias-FMX.md).
-- [LEIAME do expert](../../src/jvcsideexpert/LEIAME.md).
+- [LEIAME do expert](../../../src/jvcsideexpert/LEIAME.md).
 
 ## Versões cobertas
 

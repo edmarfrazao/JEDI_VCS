@@ -8,7 +8,7 @@ arquivos ANSI e UTF-8 testados. A fase também cria a infraestrutura comum de ap
 
 Referências: [Plano-de-Port.md](../common/Plano-de-Port.md) (F3, item 3.7),
 [Requisito-Tamanho-Fonte.md](Requisito-Tamanho-Fonte.md), [Port-Console.md](Port-Console.md),
-[tools\LEIAME-compilar.md](../../tools/LEIAME-compilar.md).
+[tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md).
 
 ## 1. Como compilar
 

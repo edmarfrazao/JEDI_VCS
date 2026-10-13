@@ -31,10 +31,10 @@ Projetos de teste em `src\jvcsideexpert\tests`: `JvcsDllHarness`, `JvcsDllIntera
 | `src\jedivcs` | Forms e lógica do cliente GUI (EXE e DLL): `ProjAdmin` (janela principal), `Create` (login), `ChkInSingle`/`ChkOutSingle`, `Options`, `Backup`, `Syncronice`, `DBModule`, `VCSBase`/`VCSProcBase`, `JVCSIDEInterface` e `JVCSDLL*` (só DLL), `JVCSFormSweep` (só Debug) — ~126 units |
 | `src\jedivcsdiff` | `JEDIVCSDiff`: `DiffMain`, propriedades do editor/realce, relatório, MRU |
 | `src\jvcs` | `jvcs.dpr` (console; usa units de `src\jedivcs` e `src\common`) |
-| `src\jvcsideexpert` | Expert ToolsAPI: wizard, ponte com a DLL, 24 callbacks, notifiers, History, menu do Project Manager ([LEIAME](../../src/jvcsideexpert/LEIAME.md)) |
+| `src\jvcsideexpert` | Expert ToolsAPI: wizard, ponte com a DLL, 24 callbacks, notifiers, History, menu do Project Manager ([LEIAME](../../../src/jvcsideexpert/LEIAME.md)) |
 | `src\common` | Units compartilhadas por EXE/DLL/Diff: `JVCSForms`, `JVCSListView`, `JVCSBaseAboutDialog`, `JVCSIDEInterfaceCommon` (ABI), `JVCSIDESettings`, `VCSCommon` |
 | `src\common\client` | Núcleo do cliente sem VCL de forms: objetos de requisição (`JVCSClientObj*`), conexão, dispatcher, cripto (`JVCSCrypt`, `BFCrypt`), aparência (`JVCSUIScale`, `JVCSUITheme`), `JVCSAIConfig`, `JVCSErrorLog`, Line History e Compressed Diff |
-| `src\comp\midware` | Transporte MidWare portado (`ApsCli`, `RFormat`, `CBroker`) — licença não comercial ([LEIAME](../../src/comp/midware/LEIAME.md)) |
+| `src\comp\midware` | Transporte MidWare portado (`ApsCli`, `RFormat`, `CBroker`) — licença não comercial ([LEIAME](../../../src/comp/midware/LEIAME.md)) |
 | `src\comp\crc` | `Checksum.pas` (CRC-32 idêntico ao 2.5.0.1030) |
 | `src\comp\textdiff` | `diffunit`, `hashunit` (algoritmo de diff) |
 | `src\comp\mwtools` | `mwPasLex` mínimo (lexer Pascal para Used Units) |

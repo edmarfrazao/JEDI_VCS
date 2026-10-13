@@ -12,7 +12,7 @@ changed.
 [Download](https://github.com/edmarfrazao/JEDI_VCS/releases) ·
 [What's new](news/en/README.md) ·
 [User guide (English)](doc/en/README.md) ·
-[Full documentation (Portuguese)](doc/README.md) ·
+[Full documentation (Portuguese)](doc/pt/README.md) ·
 [AI](doc/en/05-Using-with-AI.md) ·
 [License](LICENSE)
 
@@ -110,7 +110,7 @@ VirtualTreeView are compiled into the core DLL.
 | Using the client | Windows 10/11; a reachable JEDI VCS 2.5 Beta 3 server (port 2106) |
 | IDE integration | A supported Delphi (see the table above), **32-bit IDE**; no third-party components |
 | Building | Delphi 13 (reference) or 11/12; JCL, JVCL, ICS 9.7 and Abbrevia (GetIt); SynEdit and VirtualTreeView are in this repository |
-| Server (if you do not have one) | JEDI VCS Firebird Server 2.50 Beta 3 + Firebird 2.5 — see [manual 01 (Portuguese)](doc/manual/01-Servidor-Instalacao-e-Configuracao.md) |
+| Server (if you do not have one) | JEDI VCS Firebird Server 2.50 Beta 3 + Firebird 2.5 — see [manual 01 (Portuguese)](doc/pt/manual/01-Servidor-Instalacao-e-Configuracao.md) |
 
 ## Quick install
 
@@ -135,7 +135,7 @@ The project includes a workflow that lets AI assistants (Claude Code and other a
 safely: automatic check-out only when the local file is equal to the server revision, check-in with
 approval and an `[IA]` comment prefix, and editing that keeps the Windows-1252 encoding. Start with
 [Using JEDI VCS with AI](doc/en/05-Using-with-AI.md). The skill is in
-[skills/jedi-vcs](skills/jedi-vcs/README.md).
+[skills](skills/README.md) (English: [skills/en/jedi-vcs](skills/en/jedi-vcs/README.md)).
 
 ## Building from source
 
@@ -148,7 +148,7 @@ tools\gerar-instalador.bat                   (installer)
 
 You can also open `JediVCS2026.groupproj` in the IDE. Summary in English:
 [Building from source](doc/en/06-Building-from-Source.md). Full reference (Portuguese):
-[Compilação](doc/fontes/Compilacao.md) and [tools/LEIAME-compilar.md](tools/LEIAME-compilar.md).
+[Compilação](doc/pt/fontes/Compilacao.md) and [tools/LEIAME-compilar.md](tools/LEIAME-compilar.md).
 
 ## Repository layout
 
@@ -163,9 +163,9 @@ You can also open `JediVCS2026.groupproj` in the IDE. Summary in English:
 | `tools` | build scripts, expert checker, protocol golden tests, test channel, AI tools |
 | `setup` | Inno Setup installer and development `.reg` files |
 | `3rdparty` | 2.5.0.1030 runtime (`fvcscrypt.dll`, help files, lists) and reference binaries |
-| `skills\jedi-vcs` | skill for AI assistants |
-| `novidades` | release notes for each beta |
-| `doc` | documentation (below) |
+| `skills\en`, `skills\pt` | `jedi-vcs` skill for AI assistants, in English and in Portuguese ([skills](skills/README.md)) |
+| `news\en`, `news\pt` | release notes for each beta, per language |
+| `doc\en`, `doc\pt` | documentation per language (below); `doc\original` = original JEDI VCS files |
 
 ## Documentation
 
@@ -176,12 +176,12 @@ documentation is in Brazilian Portuguese.
 |---|---|
 | Install and use (English) | [doc/en](doc/en/README.md) |
 | What changed in each version (English) | [What's new](news/en/README.md) |
-| Full user manual (Portuguese) | [doc/manual](doc/manual/README.md) |
-| AI usage (Portuguese) | [doc/ia](doc/ia/README.md) |
-| Source code: architecture, units, build, conventions (Portuguese) | [doc/fontes](doc/fontes/README.md) |
-| History, decisions, tests and release process (Portuguese) | [doc/processo](doc/processo/README.md) |
+| Full user manual (Portuguese) | [doc/pt/manual](doc/pt/manual/README.md) |
+| AI usage (Portuguese) | [doc/pt/ia](doc/pt/ia/README.md) |
+| Source code: architecture, units, build, conventions (Portuguese) | [doc/pt/fontes](doc/pt/fontes/README.md) |
+| History, decisions, tests and release process (Portuguese) | [doc/pt/processo](doc/pt/processo/README.md) |
 | Technical changelog (Portuguese) | [CHANGELOG](CHANGELOG.md) |
-| Full index (Portuguese) | [doc/README.md](doc/README.md) |
+| Full index (Portuguese) | [doc/pt/README.md](doc/pt/README.md) |
 
 ## Licenses
 
@@ -197,8 +197,8 @@ documentation is in Brazilian Portuguese.
   This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.
 - Components: JCL/JVCL (MPL 1.1), SynEdit (MPL 1.1/GPL 2), VirtualTreeView (MPL 1.1/LGPL 2.1), ICS
   (freeware), Abbrevia (MPL 1.1). `fvcscrypt.dll` is the original binary redistributed from the 2.50 Beta 3
-  installer. Summary (Portuguese): [Licenças](doc/common/Licencas.md) and
-  [Componentes](doc/common/Componentes.md).
+  installer. Summary (Portuguese): [Licenças](doc/pt/common/Licencas.md) and
+  [Componentes](doc/pt/common/Componentes.md).
 
 ## Credits
 
@@ -214,4 +214,4 @@ Issues and pull requests are welcome, in English or Portuguese. Before you submi
 in Debug and Release, run the tests for the area you changed (console golden tests for protocol changes;
 the harness for the DLL/expert; `-formsweep` for forms) and describe what you tested. Coding rules (sources
 in Windows-1252 with CRLF line endings), defines and commit style:
-[Convenções (Portuguese)](doc/fontes/Convencoes.md).
+[Convenções (Portuguese)](doc/pt/fontes/Convencoes.md).

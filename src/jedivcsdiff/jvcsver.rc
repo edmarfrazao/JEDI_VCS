@@ -1,5 +1,5 @@
 /* VERSIONINFO e manifesto do JEDIVCSDiff (v2026). O jvcsver.res e gerado a
-   partir deste arquivo com brcc32 (ver doc\client\Port-Diff.md):
+   partir deste arquivo com brcc32 (ver doc\pt\client\Port-Diff.md):
      brcc32 -fojvcsver.res jvcsver.rc
    O About le ProductVersion, BuildTimestamp e VCS. */
 

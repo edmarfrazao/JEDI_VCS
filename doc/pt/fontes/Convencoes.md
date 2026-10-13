@@ -17,7 +17,7 @@ Regras para mexer no código e na documentação do JEDI VCS 2.5 Beta 2026.
 - O compilador é chamado com `--codepage:1252`.
 - **Nunca** regrave um fonte ANSI com uma ferramenta que salva em UTF-8 (inclusive o `Edit`/`Write` de
   assistentes de IA): acentos viram U+FFFD em linhas não editadas. Para a IA há um editor que preserva
-  bytes ([doc/ia](../ia/README.md)). Confira com `file <arquivo>` ou um editor que mostre a codificação.
+  bytes ([doc/pt/ia](../ia/README.md)). Confira com `file <arquivo>` ou um editor que mostre a codificação.
 - No fio do protocolo, texto é sempre cp1252 (`MWCodePage`); na ABI da DLL, `PAnsiChar` sem "best fit".
 
 ## 2. Defines

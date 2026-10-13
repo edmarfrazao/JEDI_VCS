@@ -10,7 +10,7 @@ no Delphi 13 antes do port, ou a **nova** (port para o Delphi 13, F5, mesma ABI;
 `compilar-expert.bat` desde 12/10/2026). As duas falam com o servidor 2.5 Beta 3.
 
 O comportamento do expert original foi obtido por engenharia reversa estática, documentada em
-[`doc\client\Expert-IDE-Analise.md`](../../doc/client/Expert-IDE-Analise.md). As referências como
+[`doc\pt\client\Expert-IDE-Analise.md`](../../doc/pt/client/Expert-IDE-Analise.md). As referências como
 "3.4" e "6.3" neste texto e nos fontes apontam para seções desse documento.
 
 ## Arquivos
@@ -140,7 +140,7 @@ tools\compilar-expert.bat [Debug|Release] [nova|original]     (padrão: Release 
 
 O segundo parâmetro escolhe a `JvcsExternalDll.dll` copiada para a pasta do expert: `nova` é o port
 para o Delphi 13 (F5, `bin\client\Win32`, gerada por `tools\compilar.bat dll Release Win32`; ver
-[`doc\client\Port-DLL-IDE.md`](../../doc/client/Port-DLL-IDE.md)); `original` é a 2.5.0.1030.
+[`doc\pt\client\Port-DLL-IDE.md`](../../doc/pt/client/Port-DLL-IDE.md)); `original` é a 2.5.0.1030.
 
 - **Saída.**
   - `bin\ideclient\Win32\JvcsExpertBDS37.dll`, mais `.map` (`-GD`) para localizar AVs.
@@ -183,7 +183,7 @@ para o Delphi 13 (F5, `bin\client\Win32`, gerada por `tools\compilar.bat dll Rel
 
 Harness da `JvcsExternalDll.dll` **real** (nova e/ou original) fora da IDE, pelo mesmo
 `TJVCSDllBridge` e callbacks do expert: `src\jvcsideexpert\tests\testar-dll.bat [nova|original|ambas]`
-(ver `doc\client\Port-DLL-IDE.md`).
+(ver `doc\pt\client\Port-DLL-IDE.md`).
 
 ## Registro na IDE (manual; o script não grava no registro)
 

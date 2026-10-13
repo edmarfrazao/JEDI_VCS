@@ -2,7 +2,7 @@
 
 História, decisões, testes e release do port do cliente JEDI VCS 2.5 para o Delphi 11/12/13
 (**JEDI VCS 2.5 Beta 2026**). Para o estado detalhado por fase, veja [Status](../common/Status.md); para os
-fontes, [doc/fontes](../fontes/README.md).
+fontes, [doc/pt/fontes](../fontes/README.md).
 
 | Página | Conteúdo |
 |---|---|

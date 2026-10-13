@@ -133,8 +133,8 @@ Origem: `git log` do repositório `D:\Delphi\JediVCS\v2026` (autor Edmar Frazão
 
 Ainda **não commitado** (12/10/2026, na hora desta consolidação):
 
-- `doc/common/Decisoes.md` alterado: nova linha "Versão" (JEDI VCS 2.5 Beta 2026).
+- `doc/pt/common/Decisoes.md` alterado: nova linha "Versão" (JEDI VCS 2.5 Beta 2026).
 - `bin/ideclient/` (saída do expert), `src/jvcsideexpert/` (fonte do expert, `LEIAME.md` e testes) e `tools/compilar-expert.bat`.
-- A documentação consolidada (`doc/README.md`, `Componentes.md`, `Versoes.md`, `Ambiente.md`, `Status.md`).
+- A documentação consolidada (`doc/pt/README.md`, `Componentes.md`, `Versoes.md`, `Ambiente.md`, `Status.md`).
 
 Marcos fora do git, 12/10/2026: dependências instaladas via GetIt; GetIt SynEdit TurboPack e VTV 8.3 removidos da IDE com backup; SynEdit e VTV fixados instalados a partir de `lib\bpl\Win32` ([Ambiente.md](Ambiente.md)).

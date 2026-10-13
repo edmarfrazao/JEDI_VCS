@@ -79,5 +79,5 @@ All clients talk to the same server and the same database. The 2026 edition repl
 - **Disabled on purpose:** reports, translations, plug-ins, notifications between workstations, branch UI.
   None of them affects the protocol.
 
-More (Portuguese): [history and motivation](../processo/01-Historia-e-Motivacao.md),
-[architecture decisions](../processo/03-Decisoes-de-Arquitetura.md).
+More (Portuguese): [history and motivation](../pt/processo/01-Historia-e-Motivacao.md),
+[architecture decisions](../pt/processo/03-Decisoes-de-Arquitetura.md).

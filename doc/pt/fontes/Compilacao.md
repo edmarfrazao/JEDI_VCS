@@ -1,7 +1,7 @@
 # Compilação
 
-Resumo consolidado de [tools/LEIAME-compilar.md](../../tools/LEIAME-compilar.md) (referência completa,
-com todas as variáveis de ambiente) e de [setup/LEIAME.md](../../setup/LEIAME.md). Comandos rodam a partir
+Resumo consolidado de [tools/LEIAME-compilar.md](../../../tools/LEIAME-compilar.md) (referência completa,
+com todas as variáveis de ambiente) e de [setup/LEIAME.md](../../../setup/LEIAME.md). Comandos rodam a partir
 da raiz do repositório (`<pasta-do-projeto>`), num `cmd.exe`.
 
 ## 1. Pré-requisitos
