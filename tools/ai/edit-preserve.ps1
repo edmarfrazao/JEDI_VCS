@@ -151,7 +151,7 @@ function Invoke-JvcsGate {
 }
 
 try {
-    $full = [IO.Path]::GetFullPath($Path)
+    $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Path)
     $script:Res.path = $full
     if (Test-JaAgentContext) {
         # a IA não pode usar este script para contornar as regras deny do settings
