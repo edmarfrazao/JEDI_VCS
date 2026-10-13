@@ -402,11 +402,10 @@ begin
   try
     JVCSUIRefreshHostTheme;
     JVCSApplyAppearanceToForm(Self);
-    if not JVCSUIFontSettings.IsDefaultUI then
-    begin
-      DesignW := Width;
-      DesignH := Height;
-    end;
+    // v2026: tambem a 100% (o tamanho salvo por versoes antigas pode ser menor
+    // que o DFM e cortar rotulos, ex.: Synchronize com 400x520)
+    DesignW := Width;
+    DesignH := Height;
   except
     // a aparencia nunca impede a criacao do form
   end;
@@ -429,7 +428,8 @@ var
   WA: TRect;
 begin
   if (FScaledMinW > 0) and (BorderStyle in [bsSizeable, bsSizeToolWin]) and
-     (Self <> Application.MainForm) and (WindowState = wsNormal) then
+     (Self <> Application.MainForm) and (WindowState = wsNormal) and
+     (Parent = nil) and (HostDockSite = nil) then // acoplados (dock) ficam como estao
   try
     WA := Screen.MonitorFromRect(BoundsRect).WorkareaRect;
     // menor que o DFM escalado: cresce; maior que a area de trabalho (200% numa
