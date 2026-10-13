@@ -788,7 +788,7 @@ function Get-DefaultProjectName {
     $here = @(Get-ChildItem -LiteralPath (Get-Location).Path -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.dpr' -or $_.Extension -ieq '.dpk' })
     if ($here.Count -eq 1) { return $here[0].Name.ToLowerInvariant() }
     # o JEDI VCS recusa nomes padrão do Delphi (Project1, Package1): descarta-os na escolha automática
-    $named = @($here | Where-Object { $_.BaseName -notmatch '^(Project|Package)\d*$' })
+    $named = @($here | Where-Object { $_.BaseName -notmatch '^(Project|Package)\d*$' -and $_.BaseName -notmatch ' - (C[oó]pia|Copy)( \(\d+\))?$' })
     if ($named.Count -eq 1) { return $named[0].Name.ToLowerInvariant() }
     throw (New-JaError 2 'informe -Project <nome.dpr> (não há um único .dpr/.dpk na pasta atual)')
 }
