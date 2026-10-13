@@ -397,6 +397,96 @@ com o núcleo **fora do processo** (o caminho previsto no ADR-001: console/servi
 a DLL para Win64 com um substituto da `fvcscrypt.dll`. Recomendação: manter o expert 32 bits (a IDE de 32 bits
 continua sendo a principal no 12.3/13) e tratar o Win64 junto com a separação núcleo/IDE do ADR-001.
 
+## 5B. IDEs antigas: expert original + núcleo novo (13/10/2026)
+
+**Ideia.** O expert novo (`src\jvcsideexpert`) só é compilado para Delphi 11, 12 e 13. Para as IDEs que o
+2.5.0.1030 suportava (Delphi 7 e BDS 1.0 a 21.0), o instalador reaproveita os **experts originais**. São
+binários finos que só fazem a ponte com a ToolsAPI (análise em [Expert-IDE-Analise.md](Expert-IDE-Analise.md)),
+e eles carregam a `JvcsExternalDll.dll` **nova** no lugar da antiga. Isso funciona porque a DLL nova
+mantém a ABI da original:
+
+- os mesmos 4 exports, por nome: `JEDIVCSDLLINIT`, `JEDIVCSDLLFINALIZE`, `JEDIVCSDLLHISTORYINIT` e
+  `JEDIVCSDLLOPERATIONINIT` (conferidos com `tdump -ee` na DLL do pacote);
+- registros de 24/10/2/9/10 ponteiros, `stdcall`, `PAnsiChar` e buffers alocados por quem chama;
+- nenhum ShareMem: cada lado tem seu gerenciador de memória, e nada gerenciado atravessa a fronteira.
+
+O expert original procura a DLL só na própria pasta (`JvcsExternalDll.dll`, `jedivcsexternaldll.dll`,
+`jedivcsdll.dll`) e não confere a versão dela.
+
+**Mapeamento confirmado** por dois caminhos: os pacotes importados de cada DLL (sufixo de
+`designide<nn>.bpl`) e o `unins000.dat` do instalador original (componentes `\BDS1`…`\BDS21`, chaves
+`...\Experts`, valor `JVCSIDEClient`). A tabela completa, com os SHA-256, está em
+`3rdparty\experts-originais-2.5.0.1030\LEIAME.md`.
+
+| Arquivo | Pacotes | IDE | Chave HKCU (`JVCSIDEClient`) |
+|---|---|---|---|
+| `JvcsExpertD7.dll` | …70 | Delphi 7 | `Software\Borland\Delphi\7.0\Experts` |
+| `JvcsExpertBDS1.dll` / `BDS2` | …71 | C#Builder 1.0 / Delphi 8 for .NET | `Software\Borland\BDS\1.0` / `2.0\Experts` |
+| `JvcsExpertBDS3.dll` | …90 | Delphi 2005 | `Software\Borland\BDS\3.0\Experts` |
+| `JvcsExpertBDS4.dll` / `BDS5` | …100 | 2006 / 2007 | `Software\Borland\BDS\4.0` / `5.0\Experts` |
+| `JvcsExpertBDS6.dll` / `BDS7` | …120 / …140 | 2009 / 2010 | `Software\CodeGear\BDS\6.0` / `7.0\Experts` |
+| `JvcsExpertBDS8.dll` … `BDS12` | …150 … …190 | XE … XE5 | `Software\Embarcadero\BDS\8.0` … `12.0\Experts` |
+| `JvcsExpertBDS14.dll` … `BDS21` | …200 … …270 | XE6 … 10.4 Sydney | `Software\Embarcadero\BDS\14.0` … `21.0\Experts` (não há 13) |
+
+Ficaram **de fora** os `JvcsVcsManagerD5/D6.dll`. Cada um é o cliente 2.5.0.1030 inteiro para
+D5/D6/BCB5/BCB6 (interface `VCSIntf`, `INITVCS0014`, com `borlndmm.dll`) e não usa a
+`JvcsExternalDll.dll`.
+
+**Instalador.** O componente "IDEs antigas" tem um subcomponente por IDE detectada. Para cada IDE
+marcada, ele copia o expert original e o registra, guardando o valor anterior e restaurando esse valor
+na desinstalação. O detalhamento está em `setup\LEIAME.md`, seção 4A.
+
+**Testes feitos (sem IDE):**
+
+- instalação, reinstalação e desinstalação silenciosas com chaves falsas de XE3, 10.4, 2007 e Delphi 7
+  (`setup\LEIAME.md` 6.1, 43 verificações, 0 falhas, com o registro real do Delphi intacto);
+- `src\jvcsideexpert\tests\testar-dll.bat nova`: o harness percorre toda a sequência da ABI com a DLL
+  do pacote (a de `bin\client` é igual à de `bin\ideclient`). Resultado: init, 27 verbos, imagens,
+  notificações, `ExecuteVerb` de Connect/Project Manager/Properties/Recent/About, operação sem conexão,
+  `FINALIZE` + `FreeLibrary` com **0 access violations**, `fails=0`.
+
+O harness usa a ponte do expert **novo**, não o binário do expert original. Esse binário só carrega
+dentro da IDE dele, porque precisa de `designide<nn>.bpl`.
+
+**Suporte por versão:**
+
+| IDE | Status |
+|---|---|
+| Delphi 7, 2007, XE3, 10.4 | instalador testado com chaves falsas; **IDE real não testada** |
+| C#Builder 1, Delphi 8, 2005, 2006, 2009, 2010, XE, XE2, XE4–XE8, 10–10.3 | mesmo código do instalador, não exercitado; **IDE real não testada** |
+
+**Teste pendente na IDE real (usuário; XE3 em outro PC):**
+
+1. Feche o XE3, instale o setup e confira:
+   - `{app}\JvcsExpertBDS10.dll` existe;
+   - `HKCU\Software\Embarcadero\BDS\10.0\Experts\JVCSIDEClient` aponta para ele.
+2. Abra o XE3 e confira:
+   - o splash e o About com "JEDI VCS";
+   - o menu **JEDI VCS** com os 27 verbos e as imagens;
+   - nenhum erro "Could not find Wizard".
+3. Teste as operações:
+   - Connect Server: login no servidor e versão 250 no `LOGIN`;
+   - abrir um `.dproj`: o Project Manager do JEDI VCS mostra o `.dpr`;
+   - Check In, Check Out e Get de um arquivo de teste;
+   - Compare/Diff (`JEDIVCSDiff.exe` novo);
+   - aba **History** do editor;
+   - menu de contexto JEDI VCS no Project Manager da IDE.
+4. Confira os acentos:
+   - num comentário com acento no fonte, com a expansão de keywords ligada;
+   - num caminho com acento.
+5. Feche o XE3 com e sem sessão aberta e confira que não há access violation no fechamento.
+6. Desinstale e confira que o `JVCSIDEClient` anterior, se havia, voltou.
+7. Se possível, repita em um BDS ≤ 5 (2007) e no Delphi 7. Esses experts ANSI usam `LoadLibraryA` e
+   têm menos recursos (D7: sem History nem menu do Project Manager).
+
+Riscos a observar:
+
+- a DLL nova (VCL do Delphi 13, 18 MB) dentro de uma IDE antiga que não é DPI-aware: tamanho e posição
+  das janelas;
+- `SourceReadString`/`SourceWriteString` com UTF-8 cru vindo do expert original (itens 3.7-5 da
+  análise; o expert novo converte e o original não);
+- falta do tema (`JVCS_IDE_THEME`, que só o expert novo define).
+
 ## 6. Pendências
 
 - **Teste na IDE** (seção 5), incluindo History, menu do Project Manager, Compare/Diff, fechamento com
