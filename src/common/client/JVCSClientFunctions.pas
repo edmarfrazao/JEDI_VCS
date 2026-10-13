@@ -90,7 +90,7 @@ function IsFileTypeAlwaysWritable(const FileExt: string): Boolean;
 implementation
 
 uses
-  Registry, JVCSClientConsts, Checksum, TZHandling, JclStrings, JclFileUtils;
+  Registry, JVCSClientConsts, Checksum, TZHandling, JclStrings, JclFileUtils, System.AnsiStrings;
 
 // -----------------------------------------------------------------------------
 function FileSetReadOnlyAttribute(const AFileName: string; ASetReadOnly: Boolean): Boolean;
@@ -502,7 +502,7 @@ const
 var
   Count: Integer;
   OldPos: Integer;
-  LineBuffer: array [0..MaxLineLength] of Char;
+  LineBuffer: array [0..MaxLineLength] of AnsiChar; // v2026: era Char (lia bytes em WideChar)
   str: string;
 begin
   Result := True;
@@ -514,8 +514,16 @@ begin
     if Count > 0 then
     begin
       AStream.Read(LineBuffer, Count);
-      str := UpperCase(StrPas(LineBuffer));
-      Result := not ((Pos('INHERITED', str) = 1) or (Pos('OBJECT', str) = 1));
+      str := UpperCase(string(AnsiString(PAnsiChar(@LineBuffer))));
+      // DFM texto em UTF-8 com BOM
+      if Copy(str, 1, 3) = #$EF#$BB#$BF then
+        Delete(str, 1, 3)
+      else
+      if Copy(str, 1, 1) = #$FEFF then // ACP 65001
+        Delete(str, 1, 1);
+      str := TrimLeft(str);
+      Result := not ((Pos('INHERITED', str) = 1) or (Pos('OBJECT', str) = 1) or
+        (Pos('INLINE', str) = 1));
 //the other method to determine the type could be checking the first byte
 //binary DFM's start with #FF
     end;
@@ -540,13 +548,17 @@ begin
 end;
 
 function IsTextStream(Stream: TStream): Boolean;
+// v2026: o buffer era array of Char (WideChar no Delphi Unicode) lido com
+// Stream.Read em BYTES: o #13 nunca era achado e todo arquivo parecia binario
+// (Compare de .dfm texto dava "Invalid stream format"; KWExpansion, Line
+// History e Compressed Diff tratavam fontes como binarios). Agora bytes ANSI.
 const
   MaxLineLength = 255;
 var
-  LineBuffer: array [0..MaxLineLength] of Char;
+  LineBuffer: array [0..MaxLineLength] of AnsiChar;
   CharFlags: array of Word;
   I, Count: Integer;
-  P, S: PChar;
+  P, S: PAnsiChar;
 begin
   Result := False;
   FillChar(LineBuffer, SizeOf(LineBuffer), 0);
@@ -559,7 +571,7 @@ begin
   // see if we can come up with an EOL (unless we read the whole file)
   if Count < Stream.Size then
   begin
-    P := StrPos(LineBuffer, #13);
+    P := System.AnsiStrings.StrPos(PAnsiChar(@LineBuffer), #13);
     if P = nil then
       Exit;
     // terminate the string here
@@ -573,22 +585,23 @@ begin
       Inc(S);
     end;
   end;
-  Count := StrLen(LineBuffer);
+  Count := System.AnsiStrings.StrLen(PAnsiChar(@LineBuffer));
   if Count > 0 then
   begin
     // some editors place a $1A (26) as an EOF marker
-    if LineBuffer[Count - 1] = Char($1A) then
+    if LineBuffer[Count - 1] = AnsiChar($1A) then
     begin
       LineBuffer[Count - 1] := #0;
       Dec(Count);
     end;
     // if first character is $FF, then it's likely not text
-    if LineBuffer[0] = Char($FF) then
+    if LineBuffer[0] = AnsiChar($FF) then
       Exit;
     // get the char flags
     SetLength(CharFlags, Count);
-    GetStringTypeEx(LOCALE_USER_DEFAULT, CT_CTYPE1, LineBuffer, Count,
-      CharFlags[0]);
+    if Count > 0 then
+      GetStringTypeExA(LOCALE_USER_DEFAULT, CT_CTYPE1, @LineBuffer, Count,
+        CharFlags[0]);
     // check the CharFlags array to see if anything looks fishy
     for I := Low(CharFlags) to High(CharFlags) do
       if ((CharFlags[I] and C1_CNTRL) <> 0) and ((CharFlags[I] and $0F) = 0) then

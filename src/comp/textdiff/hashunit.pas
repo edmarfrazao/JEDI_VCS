@@ -95,7 +95,7 @@ const
 
 //CRC algorithm courtesy of Earl F. Glynn ...
 //(http://www.efg2.com/Lab/Mathematics/CRC.htm)
-function CalcCRC32(p: pchar; length: integer): dword;
+function CalcCRC32(p: PByte; length: integer): dword;
 var
   i: integer;
 begin
@@ -133,7 +133,8 @@ begin
   end;
   if IgnoreCase then s := AnsiLowerCase(s);
   //return result as a pointer to save typecasting later...
-  result := pointer(CalcCRC32(pchar(s), length(s)));
+  // v2026: CRC sobre todos os bytes da string (UTF-16), nao so o byte baixo
+  result := pointer(CalcCRC32(PByte(PChar(s)), length(s) * SizeOf(Char)));
 end;
 //---------------------------------------------------------------------
 
