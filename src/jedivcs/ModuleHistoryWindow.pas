@@ -78,7 +78,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ComCtrls, JVCSDockForm, EnhListView, Menus, ImgList, JVCSInterfaces,
+  ComCtrls, JVCSDockForm, JVCSListView, Menus, ImgList, JVCSInterfaces,
   JVCSThreads;
 
 type

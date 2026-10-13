@@ -66,7 +66,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Buttons, StdCtrls, ImgList, ExtCtrls, ComCtrls, Menus, EnhListView,
+  Buttons, StdCtrls, ImgList, ExtCtrls, ComCtrls, Menus, JVCSListView,
   ActnList, JVCSForms;
 
 type
@@ -82,7 +82,7 @@ type
     PopupMenu1: TPopupMenu;
     SelectAll1: TMenuItem;
     UnselectAll1: TMenuItem;
-    elvModules: TdfsEnhListView;
+    elvModules: TJVCSListView;
     SelectHighlighted1: TMenuItem;
     rbWhole: TRadioButton;
     edOldPart: TEdit;

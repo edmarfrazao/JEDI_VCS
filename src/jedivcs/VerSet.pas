@@ -992,6 +992,8 @@ begin
       IDESource2Stream(AProjectFileName, MS);
       PasParser := TmwPasLex.Create;
       try
+        MS.Seek(0, soEnd); // v2026: o lexer precisa do terminador #0
+        MS.WriteData(Byte(0));
         PasParser.Origin := MS.Memory;
         while PasParser.TokenID <> ptNull do
         begin

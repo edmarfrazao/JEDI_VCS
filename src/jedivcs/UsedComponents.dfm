@@ -141,7 +141,7 @@ object VCSUsedComponents: TVCSUsedComponents
       OnClick = btnReportClick
     end
   end
-  object elvperForm: TdfsEnhListView
+  object elvperForm: TJVCSListView
     Left = 0
     Top = 0
     Width = 313
@@ -166,7 +166,7 @@ object VCSUsedComponents: TVCSUsedComponents
     TabOrder = 1
     ViewStyle = vsReport
   end
-  object elvperProject: TdfsEnhListView
+  object elvperProject: TJVCSListView
     Left = 316
     Top = 0
     Width = 176

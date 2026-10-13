@@ -50,7 +50,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  JVCSDockForm, ImgList, ComCtrls, ToolWin, EnhListView, JVCSInterfaces,
+  JVCSDockForm, ImgList, ComCtrls, ToolWin, JVCSListView, JVCSInterfaces,
   JVCSThreads, VCSBase, Menus, JVCSCompressedDiffDialog;
 
 type
@@ -58,7 +58,7 @@ type
     ToolBar1: TToolBar;
     tbRefresh: TToolButton;
     ToolImageList: TImageList;
-    elvLockedModules: TdfsEnhListView;
+    elvLockedModules: TJVCSListView;
     popmSharedby: TPopupMenu;
     mnCheckIn: TMenuItem;
     N5: TMenuItem;

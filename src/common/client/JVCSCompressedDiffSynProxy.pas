@@ -132,10 +132,10 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     function GetEol: Boolean; override;
-    {$IFDEF UNISYNEDIT}
-    function GetExpandedToken: UnicodeString; override;
-    function GetExpandedTokenPos: Integer; override;
-    {$ENDIF UNISYNEDIT}
+    // v2026: SynEdit pyscripter - GetTokenLength e obrigatorio; nomes da linguagem sao abstratos
+    function GetTokenLength: Integer; override;
+    class function GetLanguageName: string; override;
+    class function GetFriendlyLanguageName: string; override;
     function GetToken: string; override;
     function GetTokenAttribute: TSynHighlighterAttributes; override;
     function GetTokenKind: Integer; override;
@@ -390,17 +390,20 @@ begin
   Result := FIdx >= FTokens.Count;
 end;
 
-{$IFDEF UNISYNEDIT}
-function TJVCSCompressedDiffSynProxyHighlighter.GetExpandedToken: UnicodeString;
+function TJVCSCompressedDiffSynProxyHighlighter.GetTokenLength: Integer;
 begin
-  Result := GetToken;
+  Result := Length(FTokens[FIdx].Text);
 end;
 
-function TJVCSCompressedDiffSynProxyHighlighter.GetExpandedTokenPos: Integer;
+class function TJVCSCompressedDiffSynProxyHighlighter.GetLanguageName: string;
 begin
-  Result := GetTokenPos;
+  Result := 'JVCSCompressedDiff';
 end;
-{$ENDIF UNISYNEDIT}
+
+class function TJVCSCompressedDiffSynProxyHighlighter.GetFriendlyLanguageName: string;
+begin
+  Result := 'JEDI VCS Compressed Diff';
+end;
 
 function TJVCSCompressedDiffSynProxyHighlighter.GetToken: string;
 begin
@@ -478,7 +481,8 @@ begin
   FLineStr := NewValue;
   FLineNumber := LineNumber;
 
-  Line := FHighlightLines.Find(LineNumber);
+  // v2026: o SynEdit pyscripter pinta com LineNumber em base 1 (as linhas do diff sao base 0)
+  Line := FHighlightLines.Find(LineNumber - 1);
   if Assigned(Line) then
   begin
     FTokens.SplitByChar;

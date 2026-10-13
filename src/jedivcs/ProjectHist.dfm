@@ -190,7 +190,7 @@ object VCSProjectHistory: TVCSProjectHistory
       OnClick = cbCommentsClick
     end
   end
-  object elvHistory: TdfsEnhListView
+  object elvHistory: TJVCSListView
     Left = 0
     Top = 0
     Width = 552

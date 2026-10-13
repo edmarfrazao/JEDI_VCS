@@ -440,7 +440,7 @@ object VCSProjAdmin: TVCSProjAdmin
     BevelOuter = bvNone
     Constraints.MinHeight = 75
     TabOrder = 1
-    object dfsStatusBar: TdfsStatusBar
+    object dfsStatusBar: TJVCSStatusBar
       Left = 0
       Top = 131
       Width = 791
@@ -549,7 +549,7 @@ object VCSProjAdmin: TVCSProjAdmin
         Height = 338
         Cursor = crHSplit
       end
-      object elvModules: TdfsEnhListView
+      object elvModules: TJVCSListView
         Left = 100
         Top = 0
         Width = 683

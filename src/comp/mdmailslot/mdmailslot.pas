@@ -715,7 +715,7 @@ end;
 
 Function SendToWinpopup(Server, Reciever, Sender, Msg : String) : Boolean;
 Begin
-  {$IFDEF VER200}
+  {$IFDEF UNICODE} // v2026: era VER200 (Delphi 2009); notificacao desligada no cliente
   {$Message Warn 'Fix me'}
   {$ELSE}
   CharToOEM(PChar(Server),  PChar(Server));
@@ -1240,7 +1240,7 @@ Begin
     If NewMsg Then  // Ver 1.8 - Thanks to Alek Shamrai
     Begin
       P := PChar(Data);
-      {$IFDEF VER200}
+      {$IFDEF UNICODE} // v2026: era VER200 (Delphi 2009); notificacao desligada no cliente
       {$Message Warn 'Fix me'}
       {$ELSE}
       OemToChar(P,P);
@@ -1249,7 +1249,7 @@ Begin
       While NOT (P[0] = #0) do
         Inc(P);
       Inc(P);
-      {$IFDEF VER200}
+      {$IFDEF UNICODE} // v2026: era VER200 (Delphi 2009); notificacao desligada no cliente
       {$Message Warn 'Fix me'}
       {$ELSE}
       OemToChar(P,P);
@@ -1258,7 +1258,7 @@ Begin
       While NOT (P[0] = #0) do
         Inc(P);
       Inc(P);
-      {$IFDEF VER200}
+      {$IFDEF UNICODE} // v2026: era VER200 (Delphi 2009); notificacao desligada no cliente
       {$Message Warn 'Fix me'}
       {$ELSE}
       OemToChar(P,P);

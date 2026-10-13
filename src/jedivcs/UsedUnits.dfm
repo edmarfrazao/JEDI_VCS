@@ -179,7 +179,7 @@ object VCSUsedUnits: TVCSUsedUnits
       OnClick = btnEditClick
     end
   end
-  object lvUnits: TdfsEnhListView
+  object lvUnits: TJVCSListView
     Left = 0
     Top = 0
     Width = 532

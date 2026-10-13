@@ -45,7 +45,7 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   JVCSDockForm, ComCtrls, ActnList, ImgList, Menus, StdCtrls, ToolWin,
-  EnhListView, ExtCtrls, JVCSInterfaces, JVCSThreads;
+  JVCSListView, ExtCtrls, JVCSInterfaces, JVCSThreads;
 
 type //USc - should be moved into JVCSTypes because it's also defined in ProjAdmin.pas
   // Listview columns width
@@ -74,7 +74,7 @@ type
     popupMyToDoLv: TPopupMenu;
     RefreshToDoList1: TMenuItem;
     spltMyToDo: TSplitter;
-    elvToDo: TdfsEnhListView;
+    elvToDo: TJVCSListView;
     ToolBar1: TToolBar;
     ToolButton36: TToolButton;
     mmoToDo: TMemo;

@@ -154,8 +154,8 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   StdCtrls, ExtCtrls, Buttons, Menus, ComCtrls, ImgList, JvSpin,
-  JvLED, dfsStatusBar, JvCombobox, JvListView, JvComponent, JVCSMruList,
-  Mask, JvMaskEdit, JvEdit, JVCSClasses, EnhListView, JvExMask,
+  JvLED, JVCSStatusBar, JvCombobox, JvListView, JvComponent, JVCSMruList,
+  Mask, JvMaskEdit, JvEdit, JVCSClasses, JVCSListView, JvExMask,
   JvExControls, JvExStdCtrls, JvListComb, JvExComCtrls, JvComCtrls,
   JvCheckTreeView, JvExExtCtrls, JvNetscapeSplitter, JVCSForms;
 
@@ -193,11 +193,11 @@ type
     Panel5: TPanel;
     PageControl1: TPageControl;
     SheetDate: TTabSheet;
-    lvDateItems: TdfsEnhListView;
+    lvDateItems: TJVCSListView;
     SheetKey: TTabSheet;
     Panel4: TPanel;
     Label2: TLabel;
-    lvKWItems: TdfsEnhListView;
+    lvKWItems: TJVCSListView;
     Panel6: TPanel;
     cbReload: TCheckBox;
     cbSummary: TCheckBox;
@@ -205,7 +205,7 @@ type
     SheetVer: TTabSheet;
     Panel7: TPanel;
     Label1: TLabel;
-    lvVersion: TdfsEnhListView;
+    lvVersion: TJVCSListView;
     speVer: TJvSpinEdit;
     speRev: TJvSpinEdit;
     Label4: TLabel;
@@ -217,10 +217,10 @@ type
     btnReport: TButton;
     SheetRollBack: TTabSheet;
     Date: TLabel;
-    lvRollBack: TdfsEnhListView;
+    lvRollBack: TJVCSListView;
     dtpRollbackDate: TDateTimePicker;
     dtpRollbackTime: TDateTimePicker;
-    StatusBar: TdfsStatusBar;
+    StatusBar: TJVCSStatusBar;
     rcbxNewFolder: TJvComboBox;
     ecbxKeyword: TJvComboBox;
     cbRemoveHidden: TCheckBox;
@@ -288,8 +288,8 @@ type
     procedure CheckBranch1Click(Sender: TObject);
     procedure UncheckBranch1Click(Sender: TObject);
     procedure btnSearchFilesClick(Sender: TObject);
-    procedure StatusBarPanels1DrawPanel(StatusBar: TdfsStatusBar;
-      Panel: TdfsStatusPanel; const Rect: TRect);
+    procedure StatusBarPanels1DrawPanel(StatusBar: TJVCSStatusBar;
+      Panel: TJVCSStatusPanel; const Rect: TRect);
     procedure sbLoadProjectTreeClick(Sender: TObject);
     procedure cbROFlagClick(Sender: TObject);
   private
@@ -314,13 +314,13 @@ type
     FPressedEsc: Boolean;
     FProject_Tree_Loaded: Boolean;
     FRemoveHiddenFilesYesToAll: Boolean;
-    function GetCurrLV: TdfsEnhListView;
-    procedure CheckMembers(CurrLV: TdfsEnhListView; SearchIndex, NewState: Integer;
+    function GetCurrLV: TJVCSListView;
+    procedure CheckMembers(CurrLV: TJVCSListView; SearchIndex, NewState: Integer;
       RevisionID: string; NewDiffType: string);
     function SelectModules(Project_ID: Integer; Target: string; var AIgnoredModules,
       AIgnoredFiles, ACheckedOutModules, ACheckedOutFiles: Integer): Integer;
     procedure HideUncheckedModules;
-    function GetListViewString(LV: TdfsEnhListView): string;
+    function GetListViewString(LV: TJVCSListView): string;
     procedure ShowStatusBarGauge(const ShowGauge, Indeterminate: Boolean);
     procedure StatusBarGaugePos(Value: Word);
 
@@ -335,14 +335,14 @@ type
     function IsIgnoredModule(AModuleID, ARevisionID: Integer;
       APath: string): Boolean;
     function IsIgnoreModulesEnabled: Boolean;
-    procedure CheckAllListViewItems(AListView: TdfsEnhListView; ANewState: Integer);
+    procedure CheckAllListViewItems(AListView: TJVCSListView; ANewState: Integer);
     procedure Fill_ProjectTree(Project_ID: Integer; Complete: Boolean);
     procedure Clear_ProjectTree;
     procedure tv_Project_List_CheckAll(Value: Boolean);
     procedure tv_Project_List_CheckBranch(Node: TTreeNode; Value: Boolean);
     procedure Reload_Wait4Server;
     procedure Reload_ProcessAnswer(Project_ID: Integer;
-      var Res: TProjectSearchRec; Lv_Target: TdfsEnhListView);
+      var Res: TProjectSearchRec; Lv_Target: TJVCSListView);
     procedure Reload_Project(ProjectID: Integer; var Res: TProjectSearchRec);
     procedure Reload_Version(ProjectID: Integer; var Res: TProjectSearchRec);
     procedure Reload_Labeled(ProjectID: Integer; LabelID: string; var Res: TProjectSearchRec);
@@ -446,7 +446,7 @@ begin
     SendMessage(ToolTipHandle, TTM_SETDELAYTIME, TTDT_AUTOMATIC, 1);
     SendMessage(ToolTipHandle, TTM_SETDELAYTIME, TTDT_AUTOPOP, 3000);
 
-    //USc 21.10.2003 TdfsEnhListView doesn't publish RowSelect and thatwhy
+    //USc 21.10.2003 TJVCSListView doesn't publish RowSelect and thatwhy
     // we must set it here
     lvDateItems.RowSelect := True;
     lvVersion.RowSelect := True;
@@ -784,7 +784,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-function TVCSSync.GetCurrLV: TdfsEnhListView;
+function TVCSSync.GetCurrLV: TJVCSListView;
 begin
   Result := lvDateItems;
   if PageControl1.ActivePage = SheetDate then
@@ -1021,7 +1021,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TVCSSync.CheckMembers(CurrLV: TdfsEnhListView;
+procedure TVCSSync.CheckMembers(CurrLV: TJVCSListView;
   SearchIndex, NewState: Integer; RevisionID: string; NewDiffType: string);
 var
   CurrentIndex: Integer;
@@ -1078,7 +1078,7 @@ var
   TargetFile, CRC1, CRC2, Mess: string;
   ArchiveModuleDate, TargetFDate: Double;
   I, SelModules: Integer;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
   IgnoredModules, CheckedOutModules: TSortedIntegerList;
   ModuleID: Integer;
   NotReadOnlyFilter: string;
@@ -1283,7 +1283,7 @@ end;
 
 procedure TVCSSync.lvDateItemsClick(Sender: TObject);
 var
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
 begin
   CurrLV := GetCurrLV;
   if (CurrLV.Items.Count > 0) and (CurrLV.Selected <> nil) then
@@ -1305,7 +1305,7 @@ end;
 procedure TVCSSync.btnCompareClick(Sender: TObject);
 var
   RevisionKey, CompareFile, CompareFileMember, Target: string;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
 begin
   CurrLV := GetCurrLV;
   if (CurrLV.Items.Count > 0) and (CurrLV.Selected <> nil) then
@@ -1377,7 +1377,7 @@ var
   TargetFile, AffectedFiles, NotReadOnlyFilter, ErrMsg: string;
   I: Integer;
   FuncRes: Integer;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
   CloseIDEView, SetROFlag: Boolean;
   Project_ID: string;
   FileAttrs: Integer;
@@ -1901,7 +1901,7 @@ end;
 
 procedure TVCSSync.FormClose(Sender: TObject; var Action: TCloseAction);
 var
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
 begin
   if ProjectIDChanged then
   begin
@@ -2074,7 +2074,7 @@ begin
   end;
 end;
 
-procedure TVCSSync.Reload_ProcessAnswer(Project_ID: Integer; var Res: TProjectSearchRec; Lv_Target: TdfsEnhListView);
+procedure TVCSSync.Reload_ProcessAnswer(Project_ID: Integer; var Res: TProjectSearchRec; Lv_Target: TJVCSListView);
 var
   ModuleID: Integer;
   CurrentPath, CurrentFileBase, CurrentFile: string;
@@ -2263,7 +2263,7 @@ var
   Node: TTreeNode;
   ProjectID: Integer;
   LabelID: string;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
   TotalCnt: Integer;
 begin
   if btnSearchFiles.Caption = JVCSRES_Cancel then
@@ -2411,9 +2411,9 @@ var
   HitTest: THitTests;
   HitItem: TListItem;
   NewState: Integer;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
 begin
-  CurrLV := Sender as TdfsEnhListView;
+  CurrLV := Sender as TJVCSListView;
 
   HitTest := CurrLV.GetHitTestInfoAt(X, Y);
   if (Button = mbLeft) and (htOnStateIcon in HitTest) then
@@ -2443,9 +2443,9 @@ procedure TVCSSync.lvDateItemsKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 var
   NewState: Integer;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
 begin
-  CurrLV := Sender as TdfsEnhListView;
+  CurrLV := Sender as TJVCSListView;
   if (CurrLV.Selected <> nil) and (Key = VK_SPACE) then
   begin
     if CurrLV.Selected.StateIndex = 0 then
@@ -2494,7 +2494,7 @@ end;
 
 procedure TVCSSync.btnHistoryClick(Sender: TObject);
 var
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
   LModuleName: string;
   LFound: Boolean;
   I, LRevisionID: Integer;
@@ -2572,7 +2572,7 @@ end;
 procedure TVCSSync.HideUncheckedModules;
 var
   I: Integer;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
 begin
   CurrLV := GetCurrLV;
 
@@ -2618,7 +2618,7 @@ end;
 
 //------------------------------------------------------------------------------
 
-function TVCSSync.GetListViewString(LV: TdfsEnhListView): string;
+function TVCSSync.GetListViewString(LV: TJVCSListView): string;
 var
   CurrentText: string;
   I, J: Integer;
@@ -2767,7 +2767,7 @@ end;
 procedure TVCSSync.btnReportClick(Sender: TObject);
 var
   ResultString: string;
-  CurrLV: TdfsEnhListView;
+  CurrLV: TJVCSListView;
 begin
   CurrLV := GetCurrLV;
   ResultString := GetListViewString(CurrLV);
@@ -3163,7 +3163,7 @@ end;
 
 procedure TVCSSync.mmiIgnoreModuleRevisionClick(Sender: TObject);
 var
-  LV: TdfsEnhListView;
+  LV: TJVCSListView;
   LVItem: TListItem;
   ListItems: TList;
   ModuleID, RevisionID: Integer;
@@ -3210,7 +3210,7 @@ procedure TVCSSync.lvSortItems(Sender: TObject; Item1,
   Item2: TListItem; SortColumn: Integer; var SortAs: TSortAs;
   var CompResult: Integer);
 
-  function GetParentItem(AListItem: TListItem; AListView: TdfsEnhListView): TListItem;
+  function GetParentItem(AListItem: TListItem; AListView: TJVCSListView): TListItem;
   var
     I: Integer;
     ModuleIDstr: string;
@@ -3279,8 +3279,8 @@ begin
 
   if KeepModuleTogether then
   begin
-    ListItem1 := GetParentItem(Item1, TdfsEnhListView(Sender));
-    ListItem2 := GetParentItem(Item2, TdfsEnhListView(Sender));
+    ListItem1 := GetParentItem(Item1, TJVCSListView(Sender));
+    ListItem2 := GetParentItem(Item2, TJVCSListView(Sender));
   end
   else
   begin
@@ -3320,7 +3320,7 @@ begin
     CompResult := AnsiCompareStr(Item1.Caption, Item2.Caption);
 end;
 
-procedure TVCSSync.CheckAllListViewItems(AListView: TdfsEnhListView; ANewState: Integer);
+procedure TVCSSync.CheckAllListViewItems(AListView: TJVCSListView; ANewState: Integer);
 var
   I: Integer;
 begin
@@ -3404,8 +3404,8 @@ begin
   end;
 end;
 
-procedure TVCSSync.StatusBarPanels1DrawPanel(StatusBar: TdfsStatusBar;
-  Panel: TdfsStatusPanel; const Rect: TRect);
+procedure TVCSSync.StatusBarPanels1DrawPanel(StatusBar: TJVCSStatusBar;
+  Panel: TJVCSStatusPanel; const Rect: TRect);
 begin
   TransLED1.Top := 1;
   TransLED1.Left := Rect.Left;

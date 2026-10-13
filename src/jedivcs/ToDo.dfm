@@ -320,7 +320,7 @@ object VCSToDo: TVCSToDo
       TabOrder = 0
     end
   end
-  object elvToDo: TdfsEnhListView
+  object elvToDo: TJVCSListView
     Left = 0
     Top = 0
     Width = 622

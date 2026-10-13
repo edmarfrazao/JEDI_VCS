@@ -41,7 +41,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, EnhListView, ExtCtrls, JVCSClientObj, JVCSGUIClientResources,
+  StdCtrls, ComCtrls, JVCSListView, ExtCtrls, JVCSClientObj, JVCSGUIClientResources,
   VCSBase, JVCSBranchClientObj;
 
 type
@@ -49,7 +49,7 @@ type
 
   TVCSLabelHistory = class(TForm)
     Panel1: TPanel;
-    elvHistory: TdfsEnhListView;
+    elvHistory: TJVCSListView;
     lbFromLabel: TLabel;
     cbFromLabel: TComboBox;
     cbToLabel: TComboBox;

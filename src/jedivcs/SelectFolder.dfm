@@ -156,7 +156,7 @@ object VCSSelectFolder: TVCSSelectFolder
     Align = alClient
     BevelOuter = bvNone
     TabOrder = 1
-    object SystemTree: TdfsSystemTreeView
+    object SystemTree: TJVCSFolderTreeView
       Left = 0
       Top = 78
       Width = 292

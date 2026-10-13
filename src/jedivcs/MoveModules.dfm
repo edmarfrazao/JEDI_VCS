@@ -199,7 +199,7 @@ object VCSModMove: TVCSModMove
       TabOrder = 7
     end
   end
-  object elvModules: TdfsEnhListView
+  object elvModules: TJVCSListView
     Left = 0
     Top = 0
     Width = 362

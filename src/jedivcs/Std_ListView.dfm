@@ -117,7 +117,7 @@ object VCSStdListView: TVCSStdListView
       OnClick = btnReportClick
     end
   end
-  object elv: TdfsEnhListView
+  object elv: TJVCSListView
     Left = 0
     Top = 0
     Width = 232

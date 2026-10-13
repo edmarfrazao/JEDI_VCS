@@ -68,7 +68,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, SystemTreeView, SystemControlPack, ExtCtrls, Menus, Buttons,
+  StdCtrls, ComCtrls, JVCSFolderTree, ExtCtrls, Menus, Buttons,
   JvCombobox, JvSearchFiles, JVCSMruList, JvExStdCtrls, JVCSForms;
 
 type
@@ -87,7 +87,7 @@ type
     Help: TSpeedButton;
     DisconnectNetworkDrive1: TMenuItem;
     Panel3: TPanel;
-    SystemTree: TdfsSystemTreeView;
+    SystemTree: TJVCSFolderTreeView;
     PanelRecursive: TPanel;
     cbRecursive: TCheckBox;
     cbExclude: TCheckBox;
@@ -155,7 +155,7 @@ uses
   {$IFDEF LANGUAGE}
   JvGnugettext,
   {$ENDIF LANGUAGE}
-  VCSProcBase, VCSBase, JVCSClientConsts, Options, ListEdit, DirWatch, RekScan,
+  VCSProcBase, VCSBase, JVCSClientConsts, Options, ListEdit, DirWatch, JVCSFileSearch,
   JVCSDialogs, ConfigStorage, JVCSGUIClientResources, JVCSClientFunctions;
 
 {$R *.dfm}

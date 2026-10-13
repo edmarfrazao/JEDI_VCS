@@ -134,7 +134,7 @@ object VCSSearchModules: TVCSSearchModules
       OnChange = rcbxMaskChange
     end
   end
-  object elvResult: TdfsEnhListView
+  object elvResult: TJVCSListView
     Left = 0
     Top = 0
     Width = 442

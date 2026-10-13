@@ -576,6 +576,17 @@ begin
   Assert((Key <> ''), 'Parameter Key is blank');
   Assert((Name <> ''), 'Parameter Name is blank');
   {$ENDIF DEBUG}
+  {$IFNDEF JVCS_NOTIFY}
+  // v2026: notificacao entre estacoes (mailslot) e SMTP desligadas (Decisoes.md).
+  // As opcoes ficam gravadas, mas o cliente le sempre False.
+  if (lstrcmpi(PChar(Name), 'NotifyActive') = 0) or
+    (lstrcmpi(PChar(Name), 'SMTPMessages') = 0) or
+    (lstrcmpi(PChar(Name), 'ProjMan_NotifyActive') = 0) then
+  begin
+    Result := False;
+    Exit;
+  end;
+  {$ENDIF ~JVCS_NOTIFY}
   if UseRegistryStorage then
   begin
     with TJVCSRegistry.Create do

@@ -135,7 +135,10 @@ set "ALL_PROJECTS=exe dll diff console"
 
 set "PRJ_exe_DIR=src\jedivcs"
 set "PRJ_exe_NAME=Jedivcs"
-set "PRJ_exe_DEFINES=USECLIENTDISPATCHER;LANGUAGE"
+rem  exe (F4): sem REPORTDLL/LANGUAGE/plugins/notificacao (Decisoes.md, "so o basico").
+rem  BRANCHING fica ligado (protocolo igual ao 2.5.0.1030 com servidor 2.50) e
+rem  JVCS_NOBRANCHUI esconde o menu Branch e fixa a GUI em HEAD.
+set "PRJ_exe_DEFINES=USECLIENTDISPATCHER;BRANCHING;JVCS_NOBRANCHUI;UNISYNEDIT"
 set "PRJ_exe_PATH="
 
 set "PRJ_dll_DIR=src\jedivcs"
@@ -338,7 +341,8 @@ if defined BLD_EXTRA set "BLD_UPATH=%BLD_UPATH%;%BLD_EXTRA%"
 if defined BLD_EXTRA set "BLD_IPATH=%BLD_IPATH%;%BLD_EXTRA%"
 set "BLD_RPATH=%BLD_RELDIR%;%BLD_IPATH%"
 set "BLD_EXEOUT=..\..\bin\client\%BLD_PLAT%"
-set "BLD_DCUOUT=..\..\dcu\%BLD_PLAT%\%BLD_CFG%"
+rem  DCUs separados por projeto: units compartilhadas mudam com os defines de cada alvo
+set "BLD_DCUOUT=..\..\dcu\%BLD_PLAT%\%BLD_CFG%\%BLD_K%"
 
 echo.
 echo ==== %BLD_K% : %BLD_NAME% - %BLD_PLAT% %BLD_CFG% ====

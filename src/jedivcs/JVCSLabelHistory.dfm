@@ -132,7 +132,7 @@ object VCSLabelHistory: TVCSLabelHistory
         'Branchpoint to latest')
     end
   end
-  object elvHistory: TdfsEnhListView
+  object elvHistory: TJVCSListView
     Left = 0
     Top = 0
     Width = 634

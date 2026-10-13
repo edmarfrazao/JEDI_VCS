@@ -99,7 +99,7 @@ inherited VCSBugWindow: TVCSBugWindow
       OnClick = tbShowModuleBugsClick
     end
   end
-  object elvBugs: TdfsEnhListView
+  object elvBugs: TJVCSListView
     Tag = 1
     Left = 0
     Top = 24

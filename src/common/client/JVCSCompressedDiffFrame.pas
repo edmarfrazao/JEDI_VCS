@@ -43,7 +43,7 @@ uses
   Variants,
   {$ENDIF HAS_UNIT_VARIANTS}
   Dialogs, SynEdit, JVCSCompressedDiffUnit, SynHighlighterPas, JVCSLineHistoryHighlighterUnit,
-  JVCSCompressedDiffSynProxy;
+  JVCSCompressedDiffSynProxy, JVCSSynEditUtils;
 
 type
   TJVCSCompressedDiffFrm = class(TFrame)
@@ -127,11 +127,7 @@ begin
       begin
         ACanvas.Pen.Color := ACanvas.Font.Color;
         ACanvas.MoveTo(2, Y + LH div 2);
-        {$IFDEF UNISYNEDIT}
-        ACanvas.LineTo(FSynEdit.Gutter.Width - 2, Y + LH div 2);
-        {$ELSE}
         ACanvas.LineTo(FSynEdit.GutterWidth - 2, Y + LH div 2);
-        {$ENDIF}
       end
       else
       if FCompressedDiff[FirstLine - 1].Kind in [cdtNone, cdtAdd, cdtModifyAdd] then
@@ -191,7 +187,7 @@ begin
   finally
     FontBitmap.Free;
   end;
-  FSynEdit.Gutter.Width := GutterWidth;
+  SetCustomGutterBandWidth(FSynEdit, GutterWidth); // v2026: SynEdit pyscripter
 end;
 
 { TJVCSCompressedDiffFrm }

@@ -80,7 +80,7 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Buttons, StdCtrls, ExtCtrls, ComCtrls, ImgList, Menus, EnhListView, RFormat,
+  Buttons, StdCtrls, ExtCtrls, ComCtrls, ImgList, Menus, JVCSListView, RFormat,
   JVCSForms;
 
 type
@@ -115,7 +115,7 @@ type
     spBtnInfo: TSpeedButton;
     ModuleHistory1: TMenuItem;
     spBtnMHistory: TSpeedButton;
-    elvHistory: TdfsEnhListView;
+    elvHistory: TJVCSListView;
     btnReport: TButton;
     CheckInComment1: TMenuItem;
     N2: TMenuItem;

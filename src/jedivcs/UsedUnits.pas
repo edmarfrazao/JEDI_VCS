@@ -95,7 +95,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ImgList, ComCtrls, EnhListView, Buttons, StdCtrls, ExtCtrls, Menus;
+  ImgList, ComCtrls, JVCSListView, Buttons, StdCtrls, ExtCtrls, Menus;
 
 type
   TVCSUsedUnits = class(TForm)
@@ -106,7 +106,7 @@ type
     btnParse: TButton;
     btnDefFilter: TButton;
     cbFilter: TCheckBox;
-    lvUnits: TdfsEnhListView;
+    lvUnits: TJVCSListView;
     edSearchPath: TEdit;
     Label1: TLabel;
     btnAdd: TButton;
@@ -787,6 +787,8 @@ begin
     {$ENDIF IDEDLL}
     PasParser := TmwPasLex.Create;
     try
+      MS.Seek(0, soEnd); // v2026: o lexer precisa do terminador #0
+      MS.WriteData(Byte(0));
       PasParser.Origin := MS.Memory;
       //--- C++ Builder --------------------------------------------------------
       if bIsCppBuilder then

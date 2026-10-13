@@ -41,7 +41,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  VirtualTrees, DBModule, JVCSBranchClientObj, Contnrs, JVCSClientObj;
+  VirtualTrees, VirtualTrees.Types, DBModule, JVCSBranchClientObj, Contnrs, JVCSClientObj;
 
 type
   TJVCSBranchTreeViewFrm = class(TFrame)
@@ -52,7 +52,7 @@ type
       Node: PVirtualNode; var ChildCount: Cardinal);
     procedure vtBranchGetText(Sender: TBaseVirtualTree; Node: PVirtualNode;
       Column: TColumnIndex; TextType: TVSTTextType;
-      var CellText: WideString);
+      var CellText: string);
     procedure vtBranchFocusChanged(Sender: TBaseVirtualTree;
       Node: PVirtualNode; Column: TColumnIndex);
   private
@@ -422,7 +422,7 @@ end;
 
 procedure TJVCSBranchTreeViewFrm.vtBranchGetText(Sender: TBaseVirtualTree;
   Node: PVirtualNode; Column: TColumnIndex; TextType: TVSTTextType;
-  var CellText: WideString);
+  var CellText: string);
 var
   Data: ^TJVCSBranchTreeItem;
 begin

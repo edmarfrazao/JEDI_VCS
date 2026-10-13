@@ -17,7 +17,7 @@ inherited JVCSDockToDoWindow: TJVCSDockToDoWindow
     Height = 212
     Cursor = crHSplit
   end
-  object elvToDo: TdfsEnhListView
+  object elvToDo: TJVCSListView
     Left = 0
     Top = 24
     Width = 610

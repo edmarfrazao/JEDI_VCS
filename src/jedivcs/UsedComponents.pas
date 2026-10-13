@@ -55,7 +55,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls, ComCtrls, Buttons, Menus, EnhListView;
+  StdCtrls, ExtCtrls, ComCtrls, Buttons, Menus, JVCSListView;
 
 type
   TVCSUsedComponents = class(TForm)
@@ -67,8 +67,8 @@ type
     btnFilter: TButton;
     Help: TSpeedButton;
     btnReport: TButton;
-    elvperForm: TdfsEnhListView;
-    elvperProject: TdfsEnhListView;
+    elvperForm: TJVCSListView;
+    elvperProject: TJVCSListView;
     procedure btnParseClick(Sender: TObject);
     procedure btnFilterClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);

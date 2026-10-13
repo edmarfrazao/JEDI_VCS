@@ -299,7 +299,7 @@ object VCSSync: TVCSSync
         TabOrder = 2
       end
     end
-    object StatusBar: TdfsStatusBar
+    object StatusBar: TJVCSStatusBar
       Left = 0
       Top = 51
       Width = 672
@@ -351,7 +351,7 @@ object VCSSync: TVCSSync
       OnChange = PageControl1Change
       object SheetDate: TTabSheet
         Caption = 'Synchroni&ze to latest'
-        object lvDateItems: TdfsEnhListView
+        object lvDateItems: TJVCSListView
           Left = 0
           Top = 0
           Width = 408
@@ -470,7 +470,7 @@ object VCSSync: TVCSSync
             ClipboardCommands = []
           end
         end
-        object lvVersion: TdfsEnhListView
+        object lvVersion: TJVCSListView
           Left = 0
           Top = 29
           Width = 408
@@ -573,7 +573,7 @@ object VCSSync: TVCSSync
             OnChange = ecbxKeywordChange
           end
         end
-        object lvKWItems: TdfsEnhListView
+        object lvKWItems: TJVCSListView
           Left = 0
           Top = 29
           Width = 408
@@ -690,7 +690,7 @@ object VCSSync: TVCSSync
             TabOrder = 1
           end
         end
-        object lvRollBack: TdfsEnhListView
+        object lvRollBack: TJVCSListView
           Left = 0
           Top = 29
           Width = 408
