@@ -81,7 +81,7 @@ function Get-FileArgs {
     if ($files.Count -lt $Min) { throw (New-JaError 2 "informe o(s) arquivo(s): jvcs-ai.ps1 $script:Cmd <arquivo>") }
     if ($files.Count -gt $Max) { throw (New-JaError 2 "o comando $script:Cmd aceita no máximo $Max arquivo(s)") }
     $out = New-Object System.Collections.ArrayList
-    foreach ($f in $files) { [void]$out.Add([IO.Path]::GetFullPath($f)) }
+    foreach ($f in $files) { [void]$out.Add($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($f)) }
     return , $out
 }
 
@@ -787,13 +787,16 @@ function Get-DefaultProjectName {
     if ($Project) { return (Get-ProjectNameFromArg $Project) }
     $here = @(Get-ChildItem -LiteralPath (Get-Location).Path -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.dpr' -or $_.Extension -ieq '.dpk' })
     if ($here.Count -eq 1) { return $here[0].Name.ToLowerInvariant() }
+    # o JEDI VCS recusa nomes padrão do Delphi (Project1, Package1): descarta-os na escolha automática
+    $named = @($here | Where-Object { $_.BaseName -notmatch '^(Project|Package)\d*$' })
+    if ($named.Count -eq 1) { return $named[0].Name.ToLowerInvariant() }
     throw (New-JaError 2 'informe -Project <nome.dpr> (não há um único .dpr/.dpk na pasta atual)')
 }
 
 function Get-ProjectDir {
     param([string]$ProjectName)
     if ($Project -and ($Project -match '[\\/]')) {
-        $full = [IO.Path]::GetFullPath($Project)
+        $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Project)
         if (Test-Path -LiteralPath $full -PathType Leaf) { return (Split-Path -Parent $full) }
         if (Test-Path -LiteralPath $full -PathType Container) { return $full }
     }
@@ -859,6 +862,17 @@ function Find-LocalMember {
         $hits = @(Get-ChildItem -LiteralPath $ProjectDir -Recurse -File -Filter $Row.File -ErrorAction SilentlyContinue |
                 Where-Object { ($_.DirectoryName.ToLowerInvariant() + '\').StartsWith($vis, [StringComparison]::OrdinalIgnoreCase) })
     }
+    if ($hits.Count -eq 0) {
+        # pasta do projeto desconhecida (rodado fora dela): procura a partir da maior pasta existente do prefixo visível
+        $root = $vis.Substring(0, $vis.LastIndexOf('\') + 1)
+        if ($root.Length -gt 3 -and (Test-Path -LiteralPath $root -PathType Container)) {
+            $hits = @(Get-ChildItem -LiteralPath $root -Recurse -Depth 8 -File -Filter $Row.File -ErrorAction SilentlyContinue |
+                    Where-Object { ($_.DirectoryName.ToLowerInvariant() + '\').StartsWith($vis, [StringComparison]::OrdinalIgnoreCase) })
+            if ($hits.Count -gt 1 -and $script:JaProjectName) {
+                $hits = @($hits | Where-Object { Test-Path -LiteralPath (Join-Path $_.DirectoryName $script:JaProjectName) -PathType Leaf })
+            }
+        }
+    }
     if ($hits.Count -eq 1) { return [pscustomobject]@{ Path = $hits[0].FullName; Exact = $false } }
     return [pscustomobject]@{ Path = $null; Exact = $false; Count = $hits.Count }
 }
@@ -894,6 +908,7 @@ function Invoke-CmdStatus {
     if ($null -eq $listing[$name]) { throw (New-JaError 5 "projeto '$name' não existe no servidor") }
     $script:Res.project = $name
     $pdir = Get-ProjectDir $name
+    $script:JaProjectName = $name
     $groups = Get-ModuleGroups $listing[$name]
     $ids = @($groups.Keys | ForEach-Object { [int]$_ })
     if ($ids.Count -eq 0) { $script:Res.message = 'projeto sem módulos'; return }
