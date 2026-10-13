@@ -48,9 +48,7 @@ type
     { Private declarations }
   protected
     { Protected declarations }
-{$IFNDEF IDEDLL}
     procedure CreateParams(var Params: TCreateParams); override;
-{$ENDIF ~IDEDLL}
     procedure DoCreate; override;
     procedure DoShow; override;
     procedure WndProc(var Message: TMessage); override;
@@ -84,6 +82,15 @@ procedure JVCSRemoveAppearanceHook;
   (MIIM_STRING; continua owner-draw) a cada WM_INITMENUPOPUP: o hook da IDE
   passa a desenhar o texto com as cores do tema da IDE (claro ou escuro). }
 procedure JVCSInstallHostMenuFix;
+
+var
+  { DLL na IDE: classe da janela principal do host ('TAppBuilder' no Delphi);
+    '' = nao muda o dono dos forms (EXE) }
+  JVCSFormsOwnerClass: string = '';
+
+{ janela principal visivel do host (classe JVCSFormsOwnerClass, no thread
+  atual); 0 = nao achou }
+function JVCSHostMainWindow: HWND;
 { grava o texto dos itens owner-draw de AMenu achando o TMenuItem em AMenus }
 procedure JVCSFixOwnerDrawMenuText(AMenu: HMENU; const AMenus: array of TMenu);
 
@@ -310,6 +317,37 @@ begin
   end;
 end;
 
+type
+  PHostFind = ^THostFind;
+  THostFind = record
+    Wnd: HWND;
+  end;
+
+function EnumHostProc(W: HWND; L: LPARAM): BOOL; stdcall;
+var
+  Buf: array [0..63] of Char;
+begin
+  Result := True;
+  if IsWindowVisible(W) and (GetClassName(W, Buf, Length(Buf)) > 0) and
+     SameText(string(Buf), JVCSFormsOwnerClass) then
+  begin
+    PHostFind(L)^.Wnd := W;
+    Result := False;
+  end;
+end;
+
+function JVCSHostMainWindow: HWND;
+var
+  F: THostFind;
+begin
+  Result := 0;
+  if JVCSFormsOwnerClass = '' then
+    Exit;
+  F.Wnd := 0;
+  EnumThreadWindows(GetCurrentThreadId, @EnumHostProc, LPARAM(@F));
+  Result := F.Wnd;
+end;
+
 { TJVCSForm }
 
 procedure TJVCSForm.WndProc(var Message: TMessage);
@@ -323,10 +361,21 @@ begin
   end;
 end;
 
-{$IFNDEF IDEDLL}
 procedure TJVCSForm.CreateParams(var Params: TCreateParams);
+var
+  Host: HWND;
 begin
   inherited CreateParams(Params);
+  // DLL na IDE: a janela dona passa a ser a janela principal da IDE (e nao a
+  // janela oculta do Application da IDE), para o form ficar na frente da IDE
+  // e minimizar/restaurar junto (Alt+Tab)
+  if (JVCSFormsOwnerClass <> '') and (Params.WndParent = Application.Handle) then
+  begin
+    Host := JVCSHostMainWindow;
+    if Host <> 0 then
+      Params.WndParent := Host;
+  end;
+  {$IFNDEF IDEDLL}
   {$IFNDEF DELPHI2007_UP}
   if Owner is TWinControl then
   begin
@@ -336,8 +385,8 @@ begin
     Params.WndParent := Application.Mainform.Handle;
   end;
   {$ENDIF ~DELPHI2007_UP}
+  {$ENDIF ~IDEDLL}
 end;
-{$ENDIF ~IDEDLL}
 
 procedure TJVCSForm.DoCreate;
 begin

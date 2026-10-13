@@ -83,14 +83,17 @@ procedure JVCSUISetHostTheme(IsDark: Boolean);
 procedure JVCSUIStartFollowingSystem;
 procedure JVCSUIStopFollowingSystem;
 
-{ Estilo por form (DLL dentro da IDE): com JVCSUIPerFormStyle = True o tema
-  NAO troca o estilo global (TStyleManager.SetStyle instalaria os style hooks
-  de sistema no thread da IDE e pintaria menus/dialogos da propria IDE); cada
-  form recebe Form.StyleName (estilo por controle, Delphi 11+). }
-var
-  JVCSUIPerFormStyle: Boolean = False;
+{ DLL dentro da IDE: a VCL da DLL e estatica e o estilo global dela vale so
+  para os controles VCL da DLL, MAS o motor de estilos instala um hook WH_CBT
+  no thread (o da IDE) que estiliza janelas de sistema (#32768 menus, #32770
+  dialogos, Edit, Button, ScrollBar...) que nao sao da VCL da DLL, ou seja,
+  tambem as da IDE. Com JVCSUIContainStyleHooks os "sys style hooks" sao
+  desregistrados e SystemHooks = [] (o hook fica sem efeito): o estilo da DLL
+  so pinta os forms da DLL. Os menus (#32768) e as caixas de mensagem da DLL
+  ficam com o estilo da IDE (hook da propria IDE). }
+procedure JVCSUIContainStyleHooks;
 
-{ aplica o tema em uso a um form (so faz algo com JVCSUIPerFormStyle) }
+{ aplica o tema em uso a um form (barra de titulo; hoje o estilo e global) }
 procedure JVCSUIApplyThemeToForm(AForm: TCustomForm);
 
 { tema do Delphi gravado em HKCU\<ABaseKey>\Theme, valor "Theme"
@@ -99,7 +102,7 @@ function JVCSUIReadDelphiTheme(const ABaseKey: string; out ADark: Boolean): Bool
 { chave base do Delphi do processo hospedeiro (bds.exe): Software\Embarcadero\
   BDS\<versao> (ou <-r> da linha de comando); '' se o host nao for o bds.exe }
 function JVCSUIGuessDelphiBaseKey: string;
-{ DLL na IDE: liga o estilo por form e passa a seguir o tema da IDE lido do
+{ DLL na IDE: contem os style hooks e passa a seguir o tema da IDE lido do
   registro (ABaseKey = chave base da IDE; '' = JVCSUIGuessDelphiBaseKey) }
 procedure JVCSUIFollowDelphiIDE(const ABaseKey: string);
 { rele o tema da IDE (se JVCSUIFollowDelphiIDE foi chamada) e chama
@@ -240,47 +243,25 @@ begin
     Fn(AWnd, DWMWA_USE_IMMERSIVE_DARK_MODE_OLD, @Value, SizeOf(Value));
 end;
 
-function DarkStyleAvailable: Boolean;
-begin
-  try
-    Result := TStyleManager.Style[cJVCSDarkStyleName] <> nil;
-  except
-    Result := False;
-  end;
-end;
-
 procedure JVCSUIApplyThemeToForm(AForm: TCustomForm);
-var
-  NewName: string;
 begin
-  if not JVCSUIPerFormStyle or not Assigned(AForm) then
-    Exit;
-  if GDark then
-    NewName := cJVCSDarkStyleName
-  else
-    NewName := '';
-  if not SameText(AForm.StyleName, NewName) then
-    AForm.StyleName := NewName;
+  // o estilo e global (TStyleManager); nada por form por enquanto
 end;
 
-procedure ApplyPerFormTheme(AMode: TJVCSUIThemeMode);
+procedure JVCSUIContainStyleHooks;
+const
+  cSysClasses: array [0..26] of string = ('#32768', '#32770', 'Button',
+    'ComboBox', 'ComboLBox', 'Edit', 'ListBox', 'RebarWindow32', 'RichEdit20A',
+    'RichEdit20W', 'RichEdit30A', 'RichEdit30W', 'RichEdit41A', 'RichEdit41W',
+    'RichEdit50A', 'RichEdit50W', 'ScrollBar', 'Static', 'SysListView32',
+    'SysTabControl32', 'SysTreeView32', 'ToolbarWindow32', 'msctls_progress32',
+    'msctls_statusbar32', 'msctls_trackbar32', 'msctls_updown32', 'tooltips_class32');
 var
-  NewDark, Changed: Boolean;
   I: Integer;
 begin
-  GMode := AMode;
-  NewDark := JVCSUIIsDarkMode(AMode);
-  if NewDark and not DarkStyleAvailable then
-    NewDark := False;
-  Changed := NewDark <> GDark;
-  GDark := NewDark;
-  if Changed then
-  begin
-    for I := 0 to Screen.FormCount - 1 do
-      JVCSUIApplyThemeToForm(Screen.Forms[I]);
-    if Assigned(JVCSUIOnThemeChanged) then
-      JVCSUIOnThemeChanged(nil);
-  end;
+  TStyleManager.SystemHooks := [];
+  for I := Low(cSysClasses) to High(cSysClasses) do
+    TCustomStyleEngine.UnRegisterSysStyleHook(cSysClasses[I], nil);
 end;
 
 procedure JVCSUIApplyTheme(AMode: TJVCSUIThemeMode);
@@ -288,11 +269,6 @@ var
   NewDark, Changed: Boolean;
   StyleName: string;
 begin
-  if JVCSUIPerFormStyle then
-  begin
-    ApplyPerFormTheme(AMode);
-    Exit;
-  end;
   GMode := AMode;
   NewDark := JVCSUIIsDarkMode(AMode);
   if NewDark then
@@ -433,7 +409,7 @@ end;
 
 procedure JVCSUIFollowDelphiIDE(const ABaseKey: string);
 begin
-  JVCSUIPerFormStyle := True;
+  JVCSUIContainStyleHooks;
   GFollowDelphi := True;
   GDelphiBaseKey := ABaseKey;
   if GDelphiBaseKey = '' then
