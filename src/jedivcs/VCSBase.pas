@@ -202,6 +202,8 @@ const
   cspDebug = 16;
   cspExtBugTrack = 17;
   cspSaveWIP = 18;
+  cspAppearance = 19;  // v2026: fonte, escala e tema
+  cspAI = 20;          // v2026: IA e automacao (config.ini do jvcs-ai.ps1)
 
 
   // consts for Notify-Filter
