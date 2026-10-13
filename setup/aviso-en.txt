@@ -1,0 +1,14 @@
+﻿IMPORTANT NOTICE - DISCLAIMER OF WARRANTY
+
+JEDI VCS 2.5 Beta 2026 is provided "as is", without warranty of any kind, express or implied, including any warranty of operation.
+
+This is a BETA release. Before using it in production:
+
+1. Test and validate it in your own test environment, using a COPY of your JEDI VCS database/archive - never directly against the production server.
+2. Take a full backup of the JEDI VCS server (database and files) and of the workstations before installing or upgrading.
+3. Verify the operations of your workflow (login, check-in, check-out, get, history, labels, backup) with your own projects and Delphi versions.
+4. Apply any local fixes you need (the source code is available at github.com/edmarfrazao/JEDI_VCS) before rolling it out to users.
+
+The authors and contributors accept no liability for data loss, work interruption or any damages arising from the use of this product. Use it at your own risk.
+
+Close Delphi before continuing.
