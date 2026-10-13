@@ -279,7 +279,11 @@ rem ---- Bibliotecas de terceiros - pastas raiz (GetIt / versoes.ini) ----------
 rem  CatalogRepository: JVCS_CATALOG > chave catalog do .ini > padrao do usuario.
 rem  Tambem procura na pasta comum (Public\Documents\...\CatalogRepository).
 if not defined JVCS_CATALOG if defined VD_CATALOG set "JVCS_CATALOG=%VD_CATALOG%"
-if not defined JVCS_CATALOG set "JVCS_CATALOG=%USERPROFILE%\Documents\Embarcadero\Studio\%BDSVER%\CatalogRepository"
+rem  Pasta Documentos real (pode estar redirecionada, ex.: OneDrive): pergunta ao Windows.
+if not defined BLD_DOCS for /f "usebackq delims=" %%D in (`powershell -NoProfile -Command "[Environment]::GetFolderPath('MyDocuments')"`) do set "BLD_DOCS=%%D"
+if not defined BLD_DOCS set "BLD_DOCS=%USERPROFILE%\Documents"
+if not defined JVCS_CATALOG if not exist "%BLD_DOCS%\Embarcadero\Studio\%BDSVER%\CatalogRepository\" if exist "%USERPROFILE%\Documents\Embarcadero\Studio\%BDSVER%\CatalogRepository\" set "BLD_DOCS=%USERPROFILE%\Documents"
+if not defined JVCS_CATALOG set "JVCS_CATALOG=%BLD_DOCS%\Embarcadero\Studio\%BDSVER%\CatalogRepository"
 set "JVCS_CATALOG=%JVCS_CATALOG:"=%"
 if "%JVCS_CATALOG:~-1%"=="\" set "JVCS_CATALOG=%JVCS_CATALOG:~0,-1%"
 set "BLD_CATALL=%PUBLIC%\Documents\Embarcadero\Studio\%BDSVER%\CatalogRepository"
@@ -464,6 +468,8 @@ rem  FVCSCrypt.dll (32 bits) e necessaria ao lado do EXE/DLL para o LOGIN
 if /i "%BLD_PLAT%"=="Win32" if exist "%BLD_ROOT%\3rdparty\fvcscrypt.dll" if not exist "%BLD_OUTDIR%\fvcscrypt.dll" copy /y "%BLD_ROOT%\3rdparty\fvcscrypt.dll" "%BLD_OUTDIR%\" >nul
 rem  Ajuda: jedivcs.chm (cliente/DLL) e jedivcsdiff.chm (Diff), se existirem em 3rdparty
 for %%H in (jedivcs.chm jedivcsdiff.chm) do if exist "%BLD_ROOT%\3rdparty\%%H" if not exist "%BLD_OUTDIR%\%%H" copy /y "%BLD_ROOT%\3rdparty\%%H" "%BLD_OUTDIR%\" >nul
+rem  Arquivos de dados do cliente (*.jvcs: familias, listas de units), se ainda nao estiverem na saida
+if /i "%BLD_PLAT%"=="Win32" for %%H in ("%BLD_ROOT%\3rdparty\*.jvcs") do if not exist "%BLD_OUTDIR%\%%~nxH" copy /y "%%~fH" "%BLD_OUTDIR%\" >nul
 goto :eof
 
 :bo_fail

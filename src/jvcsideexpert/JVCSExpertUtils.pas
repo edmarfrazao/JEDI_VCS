@@ -159,6 +159,17 @@ begin
     if not GLogFileRead then
     begin
       GLogFile := Trim(GetEnvironmentVariable('JVCS_EXPERT_LOG'));
+      // padrao (como o EXE/DLL): %LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-expert-AAAAMMDD.log
+      if GLogFile = '' then
+      begin
+        GLogFile := GetEnvironmentVariable('LOCALAPPDATA');
+        if GLogFile <> '' then
+        begin
+          GLogFile := IncludeTrailingPathDelimiter(GLogFile) + 'JEDI\JVCS\logs\';
+          ForceDirectories(GLogFile);
+          GLogFile := GLogFile + 'jvcs-expert-' + FormatDateTime('yyyymmdd', Now) + '.log';
+        end;
+      end;
       GLogFileRead := True;
     end;
     if (GLogFile <> '') and Assigned(GLogLock) then
