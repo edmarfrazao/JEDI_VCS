@@ -186,7 +186,22 @@ só pelo `jvcs-ai.ps1 config set`.
   `LoginTimer`). Agora cada uso pega um ID livre e o texto tem contador de referências.
 
 `Options` crashou uma vez (`0EEDFADE`) ao abrir por teclado numa sessão em que o login tinha sido feito
-automaticamente; não reproduziu nas execuções seguintes (com o log ligado). Se voltar, o log terá a pilha.
+automaticamente; não reproduziu nas execuções seguintes (com o log ligado). Ver 4.4 (causas prováveis
+corrigidas).
+
+### 4.4 Correções de 13/10/2026 (lentidão, crash, senha, layout, menu)
+
+| Bug | Causa | Correção | Evidência |
+|---|---|---|---|
+| **Lentidão ao abrir projeto** (~21–24 s com 4 módulos na DLL dentro da IDE; uma vez 22 s no EXE), entre `Local: (File size & attributes)` e `Server request: (Modules without revision …)` | `ProjAdmin.GetFileImageIndex`/`GetCorrectedImageIndex` copiava **todos** os ícones da lista de imagens do sistema, do índice 0 até o índice do arquivo (posição = índice do sistema + 1). A lista do sistema é do processo e é preenchida sob demanda: cada `GetIcon` obriga o shell a extrair ícones que o projeto nem usa. Dentro do `bds.exe` (que já pediu centenas/milhares de ícones) o custo explode | só o ícone usado é copiado, uma vez; `FSysIconMap` guarda índice do sistema → posição no `ModuleImageList` | log de DEBUG com o tempo de cada etapa do laço (`FillListView laco local: …` em `%LOCALAPPDATA%\JEDI\JVCS\logs`). Host interativo com 306 ícones pré-carregados (`-primeicons 600`): **209 ms → 49 ms** (ícones 192 ms/151 cópias → 30 ms/4 cópias). EXE: **188 ms → 44 ms**. DLL Release no host: `Local … /0,06 s` → `Modules without revision … /0,16 s`. As demais etapas (SHGetFileInfo do tipo, labels, tamanho, atributos, plugin, gauge, ProcessMessages) somam < 15 ms |
+| **Crash ao abrir Options** (não reproduzido do mesmo jeito) | reproduzido um crash parecido: valor de aparência com outro tipo no registro (`UIFontScale` REG_SZ, como gravaria outra versão ou a mão) → `ERegistryException: Failed to get data for 'UIFontScale'` não tratada → 0EEDFADE. Candidato ao caso original: a janela `AllocateHWnd` que segue o tema do Windows não tinha `try/except`; o `WM_SETTINGCHANGE` chega por `SendMessage` de outro processo e uma exceção na troca do VCL Style (recria todas as janelas, inclusive o Options modal) atravessava o user32 sem passar pelo `Application.OnException` | leitura tolerante (`JVCSClientAppearance`: tipo esperado → outro tipo → padrão); `JVCSClientAppearanceInit` em `try/except` com log no EXE e na DLL; troca de tema adiada com `PostMessage` e exceções para `Application.HandleException` (log); `Options` carrega/grava aparência e IA em `try/except` (log; o diálogo abre com os padrões); `ProjAdmin.ShowVCSOptions` com `try/except` e `bStopRefresh` restaurado; `config.ini` lido com `fmShareDenyNone` | com `UIFontScale`=REG_SZ "150", `UITheme`=REG_SZ "abc" e `UIFontName`=DWORD o EXE abre, aplica 150% e o Options abre (antes: crash na partida) |
+| **Senha apagada** ao conectar/trocar de identidade | `btnOpenClick` chama `UpdateIdentity` em todo Connect; com "Store Password with identity" desmarcado ele gravava a senha **vazia** na identidade selecionada. O checkbox era o padrão global `SavePassword` (= 0 nesta máquina), não o estado da identidade (a DEFAULT tem senha salva pelo `jvcs-ai.ps1`) | o checkbox mostra se a identidade selecionada tem senha salva (sem senha: padrão global); marcado = grava a senha digitada (vazia só se o usuário apagou a senha); desmarcado **por clique** = apaga; desmarcado sem clique = não mexe; `SavePassword` só é gravado se o usuário clicou | reproduzido antes da correção (o primeiro Connect com `JVCS2026TEST` apagou a senha). Depois: Connect direto, troca TEST2→TEST→TEST2→TEST + Connect e Connect com TEST2 (sem senha) mantêm a senha de TEST; desmarcar + Connect apaga só a de TEST; DEFAULT intacta |
+| **Rótulos cortados a 150%** | o `OnCreate` dos forms restaura o tamanho salvo em pixels de outra escala (o VCS Properties ficava 430×335 com conteúdo a 150%); rótulos `AutoSize = False` com altura para Tahoma 8; caminho do `config.ini` sem espaços não quebra | `TJVCSForm.DoCreate`: forms redimensionáveis (menos a principal) ficam no mínimo com o tamanho do DFM já escalado (limitado à área de trabalho); Appearance: rótulos de fonte com 18 px e reticências; AI: caminho em linha própria com reticências no meio (`epPathEllipsis`, completo no hint); User Interface: combos de cor afastados dos rótulos | capturas a 150% das páginas User Interface, Common Options, Appearance e AI / Automation sem cortes |
+| **Atalho para a fonte** | requisito do monitor 32" QHD | item **View → Appearance / Font Si&ze...** (`mmiAppearance`) abre o VCS Properties direto na página Appearance (também no Project Manager da DLL) | `Alt+V Z` abre a página Appearance |
+
+Host interativo: novos parâmetros `-project <arquivo.dpr>` (projeto "aberto" na Fake IDE, devolvido pela
+callback `GetProjectName`) e `-primeicons <n>` (pede ícones de `System32\*.exe` ao shell antes de carregar a
+DLL, como a IDE já aberta).
 
 ## 5. Pendências
 
@@ -199,10 +214,10 @@ automaticamente; não reproduziu nas execuções seguintes (com o log ligado). S
   Compressed Diff, UsedUnits/ToDo com o lexer novo, SelectFolder com `TShellTreeView`, ordenação por
   coluna e setas, gauge da status bar, ExtBugtracker, Save WIP, Compare all.
 - **mdMailSlot** não portado (só compila); `SMTPSend` intacto.
-- ~~Opções de fonte/tema/aba IA~~: feitas (seção 4). Faltam: item de menu **View → Font size**
-  (atalho de escala), ícones da toolbar para o tema escuro, esquema escuro dos highlighters do
-  SynEdit, `ImageList` escalada pelo DPI, ajuste fino de layouts a 150–200% (alguns rótulos cortados,
-  ex. a página User Interface do Options), `DiffAbout` voltar a herdar de `JVCSBaseAboutDialog`, e os
+- ~~Opções de fonte/tema/aba IA~~: feitas (seção 4); ~~View → Font size~~ e o VCS Properties a 150%
+  feitos (4.4). Faltam: ícones da toolbar para o tema escuro, esquema escuro dos highlighters do
+  SynEdit, `ImageList` escalada pelo DPI, revisão de layout a 175–200% nos demais forms (conferidos só
+  Project Manager, login e VCS Properties), `DiffAbout` voltar a herdar de `JVCSBaseAboutDialog`, e os
   demais valores do `[ai]` (prefixo, identidade, `asciiAs`) na página AI / Automation.
 - `.dproj` do EXE (F0) e builds em D11/D12.
 - Exceção no lugar da cifragem LZH: se algum servidor exigir `EncryptServerData`, a conexão falha
