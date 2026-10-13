@@ -83,7 +83,7 @@ seções `[22.0]`/`[23.0]` de `tools\versoes.ini`; os valores de lá são prová
 |---|---|
 | Windows | 11 Enterprise 10.0.26200, **ARM64** (Delphi 13.2 roda por emulação x64) |
 | `dcc32.exe` / `bds.exe` | 37.0.60952.8797 |
-| Claude Code CLI | 2.1.296 (`C:\Users\edmarfrazao\.local\bin\claude.exe`, verificado). A informação inicial dizia 2.1.168; vale o valor lido do executável |
+| Claude Code CLI | 2.1.296 (`%USERPROFILE%\.local\bin\claude.exe`, verificado). A informação inicial dizia 2.1.168; vale o valor lido do executável |
 | Skill Delphi | `D:\skills\delphi` (SKILL.md + `references`) |
 | Git | repositório local em `D:\Delphi\JediVCS\v2026`, sem conversão de fim de linha (`.gitattributes: * -text`) |
 

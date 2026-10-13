@@ -71,7 +71,7 @@ No port, `createproject` e `addmodule` podem ser acrescentados: as classes de pr
 Modo interativo, **sem senha na linha de comando** (o programa pergunta, sem eco):
 
 ```
-"C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 10.211.55.3:2106 /user edmar
+"C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 192.168.0.10:2106 /user edmar
 jvcs> help
 jvcs> listprojects
 jvcs> listproject Ex1
@@ -81,7 +81,7 @@ jvcs> exit
 Uma consulta direta, com a senha lida no console (sem `/password`):
 
 ```
-"C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 10.211.55.3:2106 /user edmar /listlocks all_users
+"C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 192.168.0.10:2106 /user edmar /listlocks all_users
 ```
 
 Vários comandos num arquivo, `C:\temp\verificar.txt`:
@@ -93,7 +93,7 @@ listlocks
 ```
 
 ```
-"C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 10.211.55.3:2106 /user edmar /input C:\temp\verificar.txt > C:\temp\verificar-saida.txt
+"C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 192.168.0.10:2106 /user edmar /input C:\temp\verificar.txt > C:\temp\verificar-saida.txt
 ```
 
 Fluxo com gravação (só depois de testar no projeto Dummy), arquivo `C:\temp\trabalho.txt`:
@@ -128,7 +128,7 @@ Alternativas com o cliente **atual**:
 ```powershell
 $sec = Read-Host "Senha do JEDI VCS" -AsSecureString
 $pw  = [System.Net.NetworkCredential]::new('', $sec).Password
-$pw | & "C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 10.211.55.3:2106 /user edmar /listprojects
+$pw | & "C:\Program Files (x86)\JEDI\JVCS\jvcs.exe" 192.168.0.10:2106 /user edmar /listprojects
 ```
 
 3. Um usuário **só para a automação**, com poucos direitos (capítulo 02, seção 5), para o estrago ser pequeno se a senha vazar.

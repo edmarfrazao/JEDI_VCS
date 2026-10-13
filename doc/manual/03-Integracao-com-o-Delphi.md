@@ -55,7 +55,7 @@ reg import "D:\Delphi\JediVCS\v2026\setup\Delphi13-JVCS-v2026.reg"
 
 (ou duplo clique no arquivo.) Ele aplica de uma vez: SynEdit e Virtual Treeview da v2026 em `Known Packages` (e remove os do GetIt), Library Path, PATH da IDE e o expert `JVCSIDEClient`.
 
-> **Só no ambiente de teste:** esse `.reg` tem caminhos fixos desta máquina (`D:\Delphi\JediVCS\v2026\...`, `C:\Users\edmarfrazao\...`) e mexe em bibliotecas de desenvolvimento do port. **Não importe nas máquinas dos colegas.**
+> **Só no ambiente de teste:** esse `.reg` tem caminhos fixos desta máquina (`D:\Delphi\JediVCS\v2026\...`, `%USERPROFILE%\...`) e mexe em bibliotecas de desenvolvimento do port. **Não importe nas máquinas dos colegas.**
 
 ### Método B: só o expert (colegas e produção)
 

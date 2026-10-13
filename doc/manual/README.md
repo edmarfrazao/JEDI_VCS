@@ -44,7 +44,7 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 | Servidor JEDI VCS (versão aplicação) | `C:\Program Files (x86)\JEDI\JVCS\Server` (`JVCSSrv.exe`) |
 | Banco em uso | `C:\Program Files (x86)\JEDI\JVCS\Server\archive\db_fib\JEDIVCS.FDB` (ODS 11.2) |
 | Backup oficial do banco em branco | `C:\Program Files (x86)\JEDI\JVCS\Server\archive\db_fib\jedivcs.fbk` |
-| Configuração efetiva do servidor | `C:\Users\edmarfrazao\AppData\Local\VirtualStore\Program Files (x86)\JEDI\JVCS\Server\jvcssrv.ini` |
+| Configuração efetiva do servidor | `%USERPROFILE%\AppData\Local\VirtualStore\Program Files (x86)\JEDI\JVCS\Server\jvcssrv.ini` |
 | Firebird 2.5.9 | `C:\Program Files\Firebird\Firebird_2_5` (`bin\gbak.exe`, `bin\gstat.exe`, `bin\isql.exe`) |
 | Biblioteca cliente do Firebird (32 bits) | `C:\Windows\SysWOW64\fbclient.dll` (2.5.9) |
 | Cliente oficial 2.5.0.1030 | `C:\Program Files (x86)\JEDI\JVCS` (`jedivcs.exe`, `jvcs.exe`, `jedivcsdiff.exe`, `jedivcs.chm`) |

@@ -60,7 +60,7 @@ O instalador:
 Depois abra o projeto no Claude Code e **aceite a confiança da pasta**: hooks e regras `allow` do
 `.claude\settings.json` do projeto só valem depois disso (as `deny`/`ask` valem sempre).
 
-Instalação de teste feita nesta máquina: `C:\Users\edmarfrazao\Documents\Embarcadero\Studio\Projects\Ex1`
+Instalação de teste feita nesta máquina: `%USERPROFILE%\Documents\Embarcadero\Studio\Projects\Ex1`
 com `-Mode auto` (decisão do usuário para esta máquina).
 
 ---
@@ -452,7 +452,7 @@ nunca bloqueia nem faz o Claude continuar, e não desfaz nada sozinho.
 
 ---
 
-## 9. Testes (12/10/2026, servidor 10.211.55.3:2106, identidade DEFAULT, Exemplo01)
+## 9. Testes (12/10/2026, servidor 192.168.0.10:2106, identidade DEFAULT, Exemplo01)
 
 - **Console falso** (`Invoke-Jvcs` trocado por um console que imita o `jvcs.dpr`, inclusive `Stamp`/`CRC`
   no caminho do servidor): 32/32 — D7, `-Discard`, `-Force` com e sem `-Confirmed`, lock de outro,

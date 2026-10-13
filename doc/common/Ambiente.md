@@ -21,7 +21,7 @@ Como o ambiente do port do JEDI VCS 2.5 Beta 2026 foi montado, o que foi alterad
 | Clone de origem | `D:\Delphi\JediVCS\Fontes_JediVCS_2.5` |
 | Cliente oficial instalado | `C:\Program Files (x86)\JEDI\JVCS` (2.5.0.1030) |
 | Instalador oficial | `D:\Delphi\JediVCS\Instalador_2.50_Beta3_10.4Sydney\JVCSv2.50ClientSetupBeta3_Refresh_till_10_4Sydney.exe` |
-| Claude Code CLI | 2.1.296 em `C:\Users\edmarfrazao\.local\bin\claude.exe` (está no PATH do usuário). A informação inicial era 2.1.168; o valor acima foi lido do executável |
+| Claude Code CLI | 2.1.296 em `%USERPROFILE%\.local\bin\claude.exe` (está no PATH do usuário). A informação inicial era 2.1.168; o valor acima foi lido do executável |
 | Skill Delphi | `D:\skills\delphi` (`SKILL.md`, `README.md`, `references\`, `scripts\build.bat`) |
 | Servidor | **não portado**. O usuário vai montar um servidor 2.5 Beta 3 (Firebird) de teste com cópia do banco |
 
@@ -38,7 +38,7 @@ Como o ambiente do port do JEDI VCS 2.5 Beta 2026 foi montado, o que foi alterad
 
 ## 3. O que está instalado e onde
 
-`CatalogRepository` = `C:\Users\edmarfrazao\Documents\Embarcadero\Studio\37.0\CatalogRepository`. Conteúdo verificado:
+`CatalogRepository` = `%USERPROFILE%\Documents\Embarcadero\Studio\37.0\CatalogRepository`. Conteúdo verificado:
 
 | Pasta | Versão |
 |---|---|
