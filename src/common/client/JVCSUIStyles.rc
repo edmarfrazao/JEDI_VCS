@@ -1,0 +1,6 @@
+/* VCL Styles embutidos pelo JVCSUITheme.pas (v2026).
+   Origem: Studio 37.0, pasta Redist\styles\vcl (redistribuivel).
+   Gerar o .res (nesta pasta): brcc32 -foJVCSUIStyles.res JVCSUIStyles.rc
+   O nome interno do estilo e "Windows Modern Dark" (cJVCSDarkStyleName). */
+
+WINDOWSMODERNDARK VCLSTYLE "styles\\WindowsModernDark.vsf"
