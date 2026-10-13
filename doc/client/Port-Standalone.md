@@ -1,4 +1,4 @@
-# Port do cliente standalone `jedivcs.exe` para Delphi 13.2 (F4, 1ª e 2ª etapas)
+# Port do cliente standalone `jedivcs.exe` para Delphi 13.2 (F4, 1ª a 3ª etapas)
 
 Estado em **12/10/2026**. O cliente GUI (`src\jedivcs\Jedivcs.dpr`) compila no Delphi 13.2 Win32
 (Debug e Release, 0 erros). Ele foi testado contra o servidor de teste JEDI VCS 2.50
@@ -10,6 +10,8 @@ o FavOpenDialog, o RekScan, o ItemProp, o HtmlHlp, o BFCrypt e o mwPasLex foram 
 nativo ou novo. A troca da JVCL visual (lotes 4.4/4.5) e a auditoria completa de forms ficam para as
 próximas etapas. A 2ª etapa (13/10/2026) trouxe as opções de aparência e de IA e o log de erros
 (seção 4).
+A 3ª etapa (13/10/2026) trouxe a varredura de todos os forms, os testes funcionais dos recursos que
+faltavam, correções Unicode, a troca da JVCL visual simples e o tema escuro legível (seção 5).
 
 Referências: [Plano-de-Port.md](../common/Plano-de-Port.md) (F4 e adendo),
 [Decisoes.md](../common/Decisoes.md), [Port-Console.md](Port-Console.md),
@@ -53,7 +55,7 @@ tools\compilar.bat exe Release Win32
 | `DEBUG`/`RELEASE` | pela linha de comando | o `compopt.inc` não força mais `{$DEFINE DEBUG}`/`{$DEFINE RELEASE}`; `MEMCHECK`/`IMAGEBASE` removidos |
 
 Recursos de 2012 mantidos (ExtBugtracker, Save WIP, Compare all local/archive): compilam como
-estão. O ExtBugtracker ainda usa a JclPCRE do GetIt (troca por `TRegEx` pendente).
+estão. O ExtBugtracker usa `System.RegularExpressions.TRegEx` (13/10, §5.5).
 
 ## 2. O que mudou
 
@@ -203,22 +205,169 @@ Host interativo: novos parâmetros `-project <arquivo.dpr>` (projeto "aberto" na
 callback `GetProjectName`) e `-primeicons <n>` (pede ícones de `System32\*.exe` ao shell antes de carregar a
 DLL, como a IDE já aberta).
 
-## 5. Pendências
+## 5. 3ª etapa (13/10/2026): varredura de forms, testes funcionais e tema escuro
 
-- **JVCL visual** ainda presente (47 DFMs): lotes 4.4/4.5 do plano; `JvPluginManager` ainda no DFM do
-  ProjAdmin. JCL ainda usada (`JclDebug`, `JclFileUtils`, `JclStrings`, `JclSecurity`, `JclPCRE` no
-  ExtBugtracker → `TRegEx`).
-- **Auditoria de forms**: abrir todos os forms em Debug procurando `EReadError` e handlers ligados
-  pelo DFM com assinatura errada (JVCL 2026 × 3.x). Feito só para VTV e a lista DFS.
-- **Testes não feitos**: Syncronice, Backup/restore (senha), Blowfish de blobs, Line History,
-  Compressed Diff, UsedUnits/ToDo com o lexer novo, SelectFolder com `TShellTreeView`, ordenação por
-  coluna e setas, gauge da status bar, ExtBugtracker, Save WIP, Compare all.
+### 5.1 Ferramentas de teste (só no build Debug)
+
+`src\jedivcs\JVCSFormSweep.pas`, ligada ao `Jedivcs.dpr` sob `{$IFDEF DEBUG}`:
+
+- **Varredura de forms**: `Jedivcs.exe -formsweep=<pasta> [-sweepscale=175] [-sweepfilter=X] [-sweepnoshow]`.
+  Encontra por RTTI todos os forms/frames das units do JEDI VCS (95 classes com DFM), cria, mostra,
+  fecha e destrói cada um sem login e grava `<pasta>\formsweep.log`: exceções (EReadError, AV) na
+  criação/OnShow/fechamento/destruição com unit e linha (`.map`), **assinatura de cada handler ligado
+  pelo DFM comparada com o tipo do evento** (parâmetros, var/out, tipos e convenção pela RTTI), cortes
+  de layout na escala pedida (controle fora do pai, rótulo/botão/check com texto maior que a largura,
+  rótulo por cima de campo, form maior que a área de trabalho), componentes JVCL por form e os
+  diálogos que apareceram (fechados sozinhos com Cancelar/Não). A escala vale só na memória.
+- **Automação de teste**: com `JVCS_DEBUG_AUTOMATION=1` no ambiente, um `TTimer` executa comandos de
+  `%TEMP%\jvcs-debug-cmd.txt` e responde em `%TEMP%\jvcs-debug-out.txt`: `click`, `set`, `check`,
+  `index` (combo/list/listview/radiogroup/pagecontrol), `get`, `dump`, `forms`, `stack` (pilha do
+  thread principal), `shot`, `colclick`, `popup`, `gauge`, `stateidx`, `checkitem`. Funciona com
+  diálogos modais abertos (o loop modal processa o timer). Sem a variável, nada é criado.
+
+### 5.2 Resultado da varredura
+
+| | 100% | 175% | 200% |
+|---|---|---|---|
+| EReadError / propriedade inexistente | 0 | 0 | 0 |
+| Handlers com assinatura errada | **0** (3 avisos benignos: `TImageIndex`×`Integer` em 2 `OnGetImageIndex` do VTV; `TJvBitmap`×`TBitmap` no plugin manager) | 0 | 0 |
+| Cortes de layout (1ª rodada → final) | 16 → 9 | 56 → 18 | 67 → 22 |
+
+Os 10 "erros" restantes são de contexto da varredura (form filho aberto sem o chamador: `ChkInSingle`/
+`ChkOutSingle` sem `ModuleKey`, `DeletePH`/`PHFilter`/`ToDoFilter` sem o form pai, `ShowTimeLog` sem
+nome, `CompressedDiff` sem arquivo, `GET_BRANCH_LIST`/`GET_LABELS` 403 sem login) e não acontecem no uso
+normal. Corrigido pela varredura:
+
+- AV ao sair (`TRefreshDispatcher.RemoveClient` em `nil`: forms destruídos no `DoneApplication`, depois do
+  `finalization` de `JVCSInterfaces`).
+- 175–200%: muitos forms restauram o tamanho salvo no `OnShow`/`OnActivate` (`jvcsLoadFormPosSize`), em
+  pixels de outra escala, depois do mínimo aplicado no `DoCreate` (§4.4). `TJVCSForm` agora aplica o
+  mínimo (tamanho do DFM já escalado) também depois do `OnShow` e do `OnActivate`, inclusive a 100%
+  (o Synchronize abria com 400×520 e cortava rótulos), encolhe o form que passa da área de trabalho e
+  não mexe em forms acoplados (dock). Corrigidos AddLabel, AddUser, AddNewGroup, ToDoEdit,
+  MaintainBugs, ProjectHistory, Std_ListView, NtfySend, BackupTreeOptions, Synchronize...
+- `Options.dfm`: `PasswordChar = #207` ("Ï" num Delphi Unicode) → `*` nas senhas Blowfish.
+
+Cortes que sobram (pequenos): a 200% numa área de trabalho de 1280×755 (esta VM) o Synchronize e o
+Line History não cabem; rótulos de 2–4 px a mais na altura (login `lblOs`, `lblModule` do check-in,
+`Purge`); `OpenProject` (rótulo sobre o campo a 175/200%); botões do `JvWizard` (Create Branch, oculto).
+
+### 5.3 JVCL visual → VCL (lotes 4.4/4.5, baixo risco)
+
+Trocados em 36 forms (53 objetos): `TJvMemo` → `TMemo` (18), `TJvComboBox` → `TComboBox` (21), `TJvEdit` →
+`TEdit` (6), `TJvSplitter` → `TSplitter` (3), `TJvListBox`/`TJvTextListBox` → `TListBox` (4), `TJvTreeView`
+→ `TTreeView` (1). Saíram dos DFMs as propriedades só da JVCL (`AutoSize`/`HideCaret`/`MaxLines`/
+`ClipboardCommands`, `ProtectPassword`/`Modified`, `Background.*`, `LineColor`) e dos `uses` as units que
+ficaram sem uso. Varredura: nenhum EReadError.
+
+Restam 66 objetos: `TJvSpinEdit` 22 (Options, ServerOptions, Syncronice, ToDoEdit, Purge, DirectSQL e
+VerSet da DLL; valores `Extended` no DFM), `TJvWizard`+páginas 8 (Create Branch, oculto), `TJvOfficeColorButton`
+5, `TJvGradient` 2 e `TJvColorDialog` 1 (Line History Settings), `TJvLED` 5, `TJvFilenameEdit` 5, `TJvColorComboBox`
+4, `TJvArrowButton` 3, `TJvImageComboBox` 2 (ordem dos itens enviada ao servidor, R14), `TJvxSlider`,
+`TJvxCheckListBox`, `TJvSearchFiles`, `TJvDriveCombo`, `TJvCheckTreeView`, `TJvNetscapeSplitter`,
+`TJvToolBar` e `TJvPluginManager` (1 cada). JVCL não visual: diálogos DSA (`JvDSADialogs`,
+`JvDynControlEngineVCL`), `ItemHtDraw` (`JvJCLUtils`), MRU.
+
+### 5.4 Tema escuro (pedido do usuário: textos invisíveis no Project Manager)
+
+Reproduzido com `UITheme = 2` (árvore de projetos só com ícones, lista de módulos com linhas brancas, ícones
+da toolbar sumindo). Causas e correções:
+
+- `ProjectTreeDockWnd.VSTHierarchyDrawNode` (VirtualDrawTree) e o custom draw do `TJVCSListView`
+  usavam `clWindowText`/`clHighlightText`/`clWindow` crus (preto/branco do sistema). Novas
+  `JVCSUITextColor`/`JVCSUIBackColor` (`JVCSUITheme`) convertem pelas cores do estilo ativo e, no escuro,
+  clareiam cores escuras demais para o fundo (as cores de "módulo em uso" do usuário, `clNavy`...).
+  Também no painel de mensagens e no Module Info.
+- Ícones: `JVCSUIAdaptImagesToTheme` (chamada por `JVCSUIApplyThemeToForm`) adapta, no tema escuro, as
+  image lists das toolbars, menus e `StateImages`, e os `Glyph` de botões (`TSpeedButton`,
+  `TJvArrowButton`...): pixels neutros têm a luminosidade invertida (contorno preto → claro,
+  preenchimento branco → escuro), pixels coloridos escuros clareiam. No claro, volta o original
+  (cópia guardada). Listas de 32 bits com alfa ficam como estão.
+- Conferido por captura de janela: Project Manager (árvore, lista, abas Messages/ToDo/Module History/
+  My Locked Modules, toolbar), login, VCS Properties, Check Out; troca em tempo real escuro → claro e o
+  tema claro sem regressão.
+
+### 5.5 Testes funcionais (servidor de teste 127.0.0.1:2106, identidade JVCS2026TEST, Exemplo01)
+
+Automação: comandos da §5.1 + `PostMessage` nas caixas de mensagem do Windows. Build Debug.
+
+| Recurso | Resultado | Detalhe |
+|---|---|---|
+| Ordenação por coluna | OK | nome asc/desc, tamanho numérico; seta no cabeçalho |
+| Gauge da status bar | OK | Synchronize: "Working..." com barra e LED; Project Manager não capturado (operações rápidas) |
+| Checkout / check-in / undo checkout | OK | 0.9 → 0.10 → 0.11 → 0.12; undo com "restaurar arquivo" pede confirmação quando o local é mais novo (correto) e restaura a revisão |
+| Save WIP | OK | 7-Zip com `#y##m##d#`, `#vcsusername#`, `@#vcslistfile#`: `.pas`+`.dfm` do módulo bloqueado; corrigido vazamento de handles do `CreateProcess` |
+| Compare all local/archive (Project Manager e My Locked Modules) | **corrigido** | `EInvalidImage: Invalid stream format` (bug Unicode em `IsTextStream`: todo arquivo parecia binário); `%3/%4` iam literais para a ferramenta. Agora abre o JEDIVCSDiff para `.pas` e `.dfm` com legendas "(local)"/"(archive)" |
+| Backup sem senha | OK | 5 arquivos; `7z t` OK |
+| Backup com senha | **corrigido** | Cancelar no pedido de senha fazia o backup **sem** senha; agora não faz. Senha ASCII e com acento (`Senhaçã1`): 7-Zip abre com a certa e falha com a errada; restauração (diálogo da Abbrevia) para pasta temporária byte a byte igual |
+| Blowfish de blobs | OK | chave em Data Encryption → check-in 0.11 cifrado (histórico marca "!Encrypted!"); Get da 0.11 com a chave = enviado; com chave errada "not a PKZip file"; checkout da 0.11 decifra; 0.12 em texto puro. **Fica uma revisão cifrada (0.11 do uPrincipal.pas) no servidor de teste** |
+| Line History | **corrigido** | AV no "Show History" (`DiffUnit`: alinhamento com aritmética de `PChar`); agora mostra autoria por linha |
+| Compressed Diff | OK | local × última com realce inline (depois da correção do `IsTextStream`) |
+| Used Units (lexer novo) | **corrigido** | nomes com ponto (`Winapi.Windows`) viravam duas units; no EXE o caminho de busca começava vazio (tudo "Not found"); filtro `ulist.jvcs` pelo último segmento |
+| ToDo (scan) | não testável no EXE | o scan de `TODO` só existe na DLL (`{$IFDEF IDEDLL}`); o lexer foi exercitado pelo Used Units |
+| SelectFolder (`TShellTreeView`) | OK | Get de revisão com "Select target folder" e Backup; janela pequena e árvore rola à direita em caminhos longos (cosmético) |
+| Synchronize | OK | "pasta nova" (temporária): 4 módulos/5 arquivos; diálogo DSA reentrante com o mesmo nome corrigido (abaixo) |
+| Labels | OK | criar label, atribuir à revisão 0.10 (aparece no histórico e na coluna Labels), remover a atribuição e apagar o label |
+| Histórico / rollback para pasta temporária | OK | Module Info → Get da 0.8 numa pasta temporária (548 bytes, conteúdo da 0.8); cópia de trabalho intacta |
+| ExtBugtracker (`TRegEx`) | OK | `(?i)MANTIS +#*(?<bug>[\d]+)` → "Open Bug \"4242\"" na 0.10; sem grupo nomeado (`MANTIS #(\d+)`) idem; regex inválida → item oculto, sem exceção |
+
+Outras correções vindas dos testes:
+
+- **DSA reentrante pelo nome**: a correção de 13/10 (§4.3) dava um ID por contador (não seguro fora de
+  ordem) e o mesmo nome reentrante (`SyncRes` com o primeiro aberto; OK no VCS Properties com um DSA
+  aberto) levantava `EJvDSADialog: DSA dialog named ... is already assigned to another dialog ID`. Agora:
+  primeiro ID realmente livre e reutilização do registro existente pelo nome.
+- `IsBinaryDFMStream` (mesmo defeito do `IsTextStream`) e `HashUnit` (CRC só do byte baixo de cada
+  caractere).
+- `Get` com chave Blowfish errada deixa `_vcsblob.ulock` na pasta de destino (não corrigido).
+
+### 5.6 Item: "o EXE não fechou no primeiro WM_CLOSE"
+
+Reproduzido duas vezes e analisado (pilhas com `cdb -pv` + `.map` e o comando `stack`): o processo **não
+estava preso no fechamento**. O app estava **minimizado** antes do `WM_CLOSE`: com
+`MainFormOnTaskBar = False` (como no 2.5.0.1030), minimizar esconde a janela principal e deixa só a janela
+do `TApplication` (iconizada); o `Application.Run` seguia ocioso (`WaitMessage`). Os scripts procuravam a
+janela principal **visível** e não mandavam o `WM_CLOSE`; um `WM_CLOSE` na janela principal oculta fecha
+na hora (testado). Quem minimizou não foi identificado (não houve `SC_MINIMIZE` do próprio JEDI VCS
+nos testes seguintes; a automação agora registra `Application.OnMinimize` com a pilha). Possíveis:
+"Mostrar área de trabalho"/minimizar tudo por outro processo. Sugestão (não aplicada):
+`Application.MainFormOnTaskBar := True` no `Jedivcs.dpr`, que é o padrão desde o Delphi 2007 e mantém a
+janela principal como a janela da barra de tarefas.
+
+### 5.7 Builds e DLL
+
+- `exe`/`dll`/`diff`/`console` Debug e Release Win32: 0 erros (exe 313/312 avisos, dll 328/327).
+- `tools\compilar-expert.bat Release nova`: `bin\ideclient\Win32` atualizado com a DLL Release nova.
+- `src\jvcsideexpert\tests\testar-dll.bat ambas`: nova e original 21 ok, 0 falhas, 0 AV.
+- Ambiente: em 13/10 a pasta Documentos passou para o OneDrive (`...\OneDrive - sesistemas.com.br\Documentos`);
+  o `compilar.bat` procura o CatalogRepository em `%USERPROFILE%\Documents` e não acha a JCL/JVCL/ICS
+  (`jedi.inc` não encontrado). Contorno usado: `JVCS_CATALOG` apontando para a pasta do OneDrive.
+  O Exemplo01 está registrado no servidor com o caminho antigo (`C:\Users\...\Documents\...\Ex1`);
+  para os testes foi usada uma junção temporária para a cópia no OneDrive (removida no fim).
+- `bin\client\Win32` não recebia os `*.jvcs` (lista de filtros do Used Units etc.); copiados de
+  `3rdparty` para os testes. O `compilar.bat exe` deveria copiar como o `compilar-expert.bat` faz.
+
+## 6. Pendências
+
+- **JVCL visual** restante: 66 objetos (§5.3), `TJvSpinEdit` o maior grupo; `JvPluginManager` no DFM do
+  ProjAdmin. JCL ainda usada (`JclDebug`, `JclFileUtils`, `JclStrings`, `JclSecurity`). ~~`JclPCRE` no
+  ExtBugtracker~~ (13/10: `TRegEx`).
+- ~~Auditoria de forms~~ (13/10, §5.2: 95 forms/frames, 0 EReadError, 0 assinatura errada). Faltam os
+  forms só da DLL (`VerSet`, `UsedComponents`, `Recent`) na varredura e a varredura no tema escuro.
+- ~~Testes não feitos~~ (13/10, §5.5). Faltam: scan de ToDo (só na DLL, testar na IDE), gauge do Project
+  Manager por captura, restauração de backups antigos (Abbrevia 3.05/ZipMaster) com senha.
+- Cortes pequenos a 175–200% (§5.2) e Synchronize/Line History maiores que a área de trabalho em telas
+  pequenas a 200%; `SelectFolder` pequeno para caminhos longos.
+- `Get` com chave Blowfish errada deixa `_vcsblob.ulock` na pasta de destino.
+- "Não fecha no primeiro WM_CLOSE" (§5.6): app minimizado por agente externo não identificado; avaliar
+  `Application.MainFormOnTaskBar := True`.
+- `compilar.bat`: achar o CatalogRepository na pasta Documentos real (OneDrive/KFM) e copiar `*.jvcs` para
+  `bin\client\Win32` (§5.7).
 - **mdMailSlot** não portado (só compila); `SMTPSend` intacto.
-- ~~Opções de fonte/tema/aba IA~~: feitas (seção 4); ~~View → Font size~~ e o VCS Properties a 150%
-  feitos (4.4). Faltam: ícones da toolbar para o tema escuro, esquema escuro dos highlighters do
-  SynEdit, `ImageList` escalada pelo DPI, revisão de layout a 175–200% nos demais forms (conferidos só
-  Project Manager, login e VCS Properties), `DiffAbout` voltar a herdar de `JVCSBaseAboutDialog`, e os
-  demais valores do `[ai]` (prefixo, identidade, `asciiAs`) na página AI / Automation.
-- `.dproj` do EXE (F0) e builds em D11/D12.
+- ~~Opções de fonte/tema/aba IA~~ (seção 4); ~~ícones da toolbar no tema escuro~~ (§5.4). Faltam:
+  esquema escuro dos highlighters do SynEdit, `ImageList` escalada pelo DPI, `DiffAbout` voltar a herdar
+  de `JVCSBaseAboutDialog`, e os demais valores do `[ai]` (prefixo, identidade, `asciiAs`) na página
+  AI / Automation.
+- Builds em D11/D12.
 - Exceção no lugar da cifragem LZH: se algum servidor exigir `EncryptServerData`, a conexão falha
   com mensagem explícita.

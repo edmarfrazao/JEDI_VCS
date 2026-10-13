@@ -215,6 +215,18 @@ Detalhes em [Port-Standalone.md](Port-Standalone.md) §4.4:
   em `try/except` com log.
 - **View → Appearance / Font Size...** também no Project Manager da DLL.
 
+### 4A.5c 3ª etapa do EXE (13/10/2026, mesmas fontes)
+
+Valem para a DLL (detalhes em [Port-Standalone.md](Port-Standalone.md) §5): tema escuro legível (árvore,
+listas, ícones e glifos), `IsTextStream`/`IsBinaryDFMStream` Unicode (Compare all, Line History, Compressed
+Diff, KWExpansion), AV do `DiffUnit` no Line History, DSA reentrante pelo nome, Backup com senha
+(Cancelar), Used Units (nomes com ponto), ExtBugtracker com `TRegEx`, JVCL simples → VCL e tamanho mínimo
+dos forms depois do `OnShow`/`OnActivate`. `compilar-expert.bat Release nova` atualizou
+`bin\ideclient\Win32` (DLL Release) e `testar-dll.bat ambas` deu 21 ok, 0 falhas, 0 AV (nova e
+original). Não testado na DLL: varredura de forms (o modo `-formsweep` é do EXE) e o scan de ToDo.
+Observação: o `compilar-expert.bat` copia para `bin\ideclient\Win32` o `jedivcsdiff.exe` do 2.5.0.1030
+(`3rdparty\referencia-2.5.0.1030`), não o Diff portado.
+
 ### 4A.6 Host interativo
 
 ```
