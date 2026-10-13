@@ -258,7 +258,12 @@ uses
   JVCSLineHistoryUnit in '..\common\client\JVCSLineHistoryUnit.pas',
   JVCSNewClientObj in '..\common\client\JVCSNewClientObj.pas',
   JVCSTypes in '..\common\client\JVCSTypes.pas',
-  JVCSForms in '..\common\JVCSForms.pas';
+  JVCSForms in '..\common\JVCSForms.pas',
+  JVCSUIScale in '..\common\client\JVCSUIScale.pas',
+  JVCSUITheme in '..\common\client\JVCSUITheme.pas',
+  JVCSAIConfig in '..\common\client\JVCSAIConfig.pas',
+  JVCSErrorLog in '..\common\client\JVCSErrorLog.pas',
+  JVCSClientAppearance in 'JVCSClientAppearance.pas';
 
 {$R *.res}
 {$R jvcsver.res} // DLL-Version information
@@ -288,6 +293,9 @@ begin
       );
   end;
   Application.Initialize;
+  // v2026: fonte/escala, menus, editores e tema (VCS Properties > Appearance)
+  JVCSErrorLogInstall(False);
+  JVCSClientAppearanceInit;
   Application.Title := 'JEDI VCS';
   Application.CreateForm(TVCSProjAdmin, VCSProjAdmin);
   Application.CreateForm(TDataModule1, DataModule1);

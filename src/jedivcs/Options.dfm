@@ -2189,7 +2189,9 @@ object VCSOptions: TVCSOptions
       'Data Encryption'
       'Special/Debug'
       'External Bugtracker'
-      'Save WIP')
+      'Save WIP'
+      'Appearance'
+      'AI / Automation')
     TabOrder = 0
     OnClick = lbSelectSheetClick
   end
@@ -2396,6 +2398,247 @@ object VCSOptions: TVCSOptions
       Height = 17
       Caption = 'Execute on close'
       TabOrder = 1
+    end
+  end
+  object PanelAppearance: TPanel
+    Left = 132
+    Top = 18
+    Width = 290
+    Height = 250
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    BevelOuter = bvNone
+    TabOrder = 21
+    Visible = False
+    object lblUIScale: TLabel
+      Left = 0
+      Top = 8
+      Width = 101
+      Height = 13
+      Caption = 'Interface font &scale'
+      FocusControl = cbUIScale
+    end
+    object lblUIFontCaption: TLabel
+      Left = 0
+      Top = 34
+      Width = 69
+      Height = 13
+      Caption = 'Interface font'
+    end
+    object lblUIFont: TLabel
+      Left = 8
+      Top = 52
+      Width = 160
+      Height = 13
+      AutoSize = False
+      Caption = 'System default'
+    end
+    object lblMenuFontCaption: TLabel
+      Left = 0
+      Top = 78
+      Width = 52
+      Height = 13
+      Caption = 'Menu font'
+    end
+    object lblMenuFont: TLabel
+      Left = 8
+      Top = 96
+      Width = 160
+      Height = 13
+      AutoSize = False
+      Caption = 'Same as interface'
+    end
+    object lblEditorFontCaption: TLabel
+      Left = 0
+      Top = 122
+      Width = 147
+      Height = 13
+      Caption = 'Editor font (Diff, Line History)'
+    end
+    object lblEditorFont: TLabel
+      Left = 8
+      Top = 140
+      Width = 160
+      Height = 13
+      AutoSize = False
+      Caption = 'Consolas, 10 pt'
+    end
+    object lblTheme: TLabel
+      Left = 0
+      Top = 172
+      Width = 33
+      Height = 13
+      Caption = '&Theme'
+      FocusControl = cbTheme
+    end
+    object cbUIScale: TComboBox
+      Left = 150
+      Top = 4
+      Width = 80
+      Height = 21
+      TabOrder = 0
+      OnChange = AppearanceChange
+      Items.Strings = (
+        '100%'
+        '125%'
+        '150%'
+        '175%'
+        '200%')
+    end
+    object btnUIFont: TButton
+      Left = 172
+      Top = 46
+      Width = 56
+      Height = 23
+      Caption = 'Font...'
+      TabOrder = 1
+      OnClick = btnUIFontClick
+    end
+    object btnUIFontDefault: TButton
+      Left = 230
+      Top = 46
+      Width = 56
+      Height = 23
+      Caption = 'Default'
+      TabOrder = 2
+      OnClick = btnUIFontDefaultClick
+    end
+    object btnMenuFont: TButton
+      Left = 172
+      Top = 90
+      Width = 56
+      Height = 23
+      Caption = 'Font...'
+      TabOrder = 3
+      OnClick = btnMenuFontClick
+    end
+    object btnMenuFontDefault: TButton
+      Left = 230
+      Top = 90
+      Width = 56
+      Height = 23
+      Caption = 'Default'
+      TabOrder = 4
+      OnClick = btnMenuFontDefaultClick
+    end
+    object btnEditorFont: TButton
+      Left = 172
+      Top = 134
+      Width = 56
+      Height = 23
+      Caption = 'Font...'
+      TabOrder = 5
+      OnClick = btnEditorFontClick
+    end
+    object btnEditorFontDefault: TButton
+      Left = 230
+      Top = 134
+      Width = 56
+      Height = 23
+      Caption = 'Default'
+      TabOrder = 6
+      OnClick = btnEditorFontDefaultClick
+    end
+    object cbTheme: TComboBox
+      Left = 90
+      Top = 168
+      Width = 196
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 7
+      OnChange = AppearanceChange
+      Items.Strings = (
+        'Follow Delphi / Windows'
+        'Light'
+        'Dark')
+    end
+    object btnUIDefaults: TButton
+      Left = 0
+      Top = 200
+      Width = 120
+      Height = 25
+      Caption = '&Restore defaults'
+      TabOrder = 8
+      OnClick = btnUIDefaultsClick
+    end
+  end
+  object PanelAI: TPanel
+    Left = 132
+    Top = 18
+    Width = 290
+    Height = 250
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    BevelOuter = bvNone
+    TabOrder = 22
+    Visible = False
+    DesignSize = (
+      290
+      250)
+    object lblAICheckout: TLabel
+      Left = 0
+      Top = 8
+      Width = 79
+      Height = 13
+      Caption = 'Check &out by AI'
+      FocusControl = cbAICheckout
+    end
+    object lblAICheckin: TLabel
+      Left = 0
+      Top = 36
+      Width = 71
+      Height = 13
+      Caption = 'Check &in by AI'
+      FocusControl = cbAICheckin
+    end
+    object lblAIHelp: TLabel
+      Left = 0
+      Top = 64
+      Width = 286
+      Height = 120
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 
+        'Manual: the AI never checks out or in; you do it (IDE, JEDI VCS o' +
+        'r the wrapper in your terminal).'#13#10'Ask for confirmation (defaul' +
+        't): Claude Code asks you before each operation.'#13#10'Automatic: t' +
+        'he AI does it by itself; its check-in comments get the [IA] pref' +
+        'ix.'
+      WordWrap = True
+    end
+    object lblAIFile: TLabel
+      Left = 0
+      Top = 180
+      Width = 286
+      Height = 66
+      Anchors = [akLeft, akTop, akRight]
+      AutoSize = False
+      Caption = 'config.ini'
+      WordWrap = True
+    end
+    object cbAICheckout: TComboBox
+      Left = 110
+      Top = 4
+      Width = 176
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 0
+      OnChange = edArchLimitChange
+      Items.Strings = (
+        'Manual'
+        'Ask for confirmation'
+        'Automatic')
+    end
+    object cbAICheckin: TComboBox
+      Left = 110
+      Top = 32
+      Width = 176
+      Height = 21
+      Style = csDropDownList
+      TabOrder = 1
+      OnChange = edArchLimitChange
+      Items.Strings = (
+        'Manual'
+        'Ask for confirmation'
+        'Automatic')
     end
   end
   object PopupMenu2: TPopupMenu

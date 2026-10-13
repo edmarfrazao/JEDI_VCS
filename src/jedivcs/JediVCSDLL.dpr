@@ -384,7 +384,12 @@ uses
   JVCSLineHistoryUnit in '..\common\client\JVCSLineHistoryUnit.pas',
   JVCSNewClientObj in '..\common\client\JVCSNewClientObj.pas',
   JVCSIDESettings in '..\common\JVCSIDESettings.pas',
-  JVCSForms in '..\common\JVCSForms.pas';
+  JVCSForms in '..\common\JVCSForms.pas',
+  JVCSUIScale in '..\common\client\JVCSUIScale.pas',
+  JVCSUITheme in '..\common\client\JVCSUITheme.pas',
+  JVCSAIConfig in '..\common\client\JVCSAIConfig.pas',
+  JVCSErrorLog in '..\common\client\JVCSErrorLog.pas',
+  JVCSClientAppearance in 'JVCSClientAppearance.pas';
 
 const
   cJediVCS = 'JEDI VCS';
@@ -543,6 +548,7 @@ var
 
 procedure HandleException(ExcType, InProc: string);
 begin
+  JVCSLogException(ExceptObject, InProc, ExceptAddr);
   if ShowDebugMsg then
     JclDebug.TraceMsg(cPrgType + 'Core Exception: ' + ExcType + ' in ' + InProc);
 
@@ -3490,65 +3496,101 @@ end;
 //------------------------------------------------------------------------------
 
 {$IFDEF EXT_IDE_INTF}
+{ v2026: nenhuma excecao atravessa a fronteira da DLL (a IDE nao conhece as
+  classes da VCL da DLL): cada entrada exportada registra o erro no log
+  (JVCSErrorLog) e mostra no maximo uma mensagem. }
+procedure DllEntryFailed(const AWhere: string; AShow: Boolean = True);
+begin
+  JVCSLogException(ExceptObject, AWhere, ExceptAddr);
+  if AShow and not (ExceptObject is EAbort) then
+    JVCSErrorLogShow(ExceptObject, AWhere);
+end;
+
 procedure GetIDString(AIDString: PAnsiChar); stdcall;
 var
   S: string;
 begin
-  if Assigned(JVCSClient) then
-    S := JVCSClient.GetIDString
-  else
-    S := '';
-  JvcsAnsiCopy(AIDString, S);
+  try
+    if Assigned(JVCSClient) then
+      S := JVCSClient.GetIDString
+    else
+      S := '';
+    JvcsAnsiCopy(AIDString, S);
+  except
+    DllEntryFailed('GetIDString', False);
+  end;
 end;
 
 procedure ExecuteVerb(const AIndex: Integer); stdcall;
 begin
-  if Assigned(JVCSClient) then
-    JVCSClient.ExecuteVerb(AIndex);
+  try
+    if Assigned(JVCSClient) then
+      JVCSClient.ExecuteVerb(AIndex);
+  except
+    DllEntryFailed('ExecuteVerb(' + IntToStr(AIndex) + ')');
+  end;
 end;
 
 procedure GetMenuName(AMenuName: PAnsiChar); stdcall;
 var
   S: string;
 begin
-  if Assigned(JVCSClient) then
-    S := JVCSClient.GetMenuName
-  else
-    S := '';
-  JvcsAnsiCopy(AMenuName, S);
+  try
+    if Assigned(JVCSClient) then
+      S := JVCSClient.GetMenuName
+    else
+      S := '';
+    JvcsAnsiCopy(AMenuName, S);
+  except
+    DllEntryFailed('GetMenuName', False);
+  end;
 end;
 
 procedure GetVerb(const AIndex: Integer; AVerb: PAnsiChar); stdcall;
 var
   S: string;
 begin
-  if Assigned(JVCSClient) then
-    S := JVCSClient.GetVerb(AIndex)
-  else
-    S := '';
-  JvcsAnsiCopy(AVerb, S);
+  try
+    if Assigned(JVCSClient) then
+      S := JVCSClient.GetVerb(AIndex)
+    else
+      S := '';
+    JvcsAnsiCopy(AVerb, S);
+  except
+    DllEntryFailed('GetVerb(' + IntToStr(AIndex) + ')', False);
+  end;
 end;
 
 function GetVerbCount: Integer; stdcall;
 begin
-  if Assigned(JVCSClient) then
-    Result := JVCSClient.GetVerbCount
-  else
-    Result := 0;
+  Result := 0;
+  try
+    if Assigned(JVCSClient) then
+      Result := JVCSClient.GetVerbCount;
+  except
+    DllEntryFailed('GetVerbCount', False);
+  end;
 end;
 
 function GetVerbState(const AIndex: Integer): Word; stdcall;
 begin
-  if Assigned(JVCSClient) then
-    Result := JVCSClient.GetVerbState(AIndex)
-  else
-    Result := 0;
+  Result := 0;
+  try
+    if Assigned(JVCSClient) then
+      Result := JVCSClient.GetVerbState(AIndex);
+  except
+    DllEntryFailed('GetVerbState(' + IntToStr(AIndex) + ')', False);
+  end;
 end;
 
 procedure ProjectChange; stdcall;
 begin
-  if Assigned(JVCSClient) then
-    JVCSClient.ProjectChange;
+  try
+    if Assigned(JVCSClient) then
+      JVCSClient.ProjectChange;
+  except
+    DllEntryFailed('ProjectChange');
+  end;
 end;
 
 function GetVerbImages(ABMPContent: Pointer; const AMaxBMPContentSize,
@@ -3636,15 +3678,23 @@ end;
 procedure FileNotification(const ANotifyCode: TIDEFileNotification;
   const AFileName: PAnsiChar; var ACancel: Boolean); stdcall;
 begin
-  if Assigned(JVCSNotifier) then
-    JVCSNotifier.IDEFileNotification(ANotifyCode, JvcsFromAnsi(AFileName), ACancel);
+  try
+    if Assigned(JVCSNotifier) then
+      JVCSNotifier.IDEFileNotification(ANotifyCode, JvcsFromAnsi(AFileName), ACancel);
+  except
+    DllEntryFailed('FileNotification(' + IntToStr(Ord(ANotifyCode)) + ')');
+  end;
 end;
 
 procedure EventNotification(const ANotifyCode: TIDEEventNotification;
   var ACancel: Boolean); stdcall;
 begin
-  if Assigned(JVCSNotifier) then
-    JVCSNotifier.IDEEventNotification(ANotifyCode, ACancel);
+  try
+    if Assigned(JVCSNotifier) then
+      JVCSNotifier.IDEEventNotification(ANotifyCode, ACancel);
+  except
+    DllEntryFailed('EventNotification(' + IntToStr(Ord(ANotifyCode)) + ')');
+  end;
 end;
 {$ENDIF EXT_IDE_INTF}
 
@@ -3714,6 +3764,9 @@ begin
         // access to subkey of registry is done with leading BS
         sIDERegistryKey := StrRestOf(sIDERegistryKey, 2);
       end;
+      // v2026: aparencia (fonte/escala, menus, tema por form seguindo a IDE)
+      JVCSErrorLogInstall(True);
+      JVCSClientAppearanceInit(sIDERegistryKey);
       // Delphi or C++B?
       bIsCppBuilder := IDEInterface.JVCSIDESettings.IsIDEBCB;
       if bIsCppBuilder then
@@ -3823,7 +3876,12 @@ begin
   AExternalNotifierFunctionRec^.FileNotification  := FileNotification;
   AExternalNotifierFunctionRec^.EventNotification := EventNotification;
 
-  Result := Assigned(JediVCSInternalInit(AExternalIDEFunctionRec));
+  try
+    Result := Assigned(JediVCSInternalInit(AExternalIDEFunctionRec));
+  except
+    DllEntryFailed('JEDIVCSDLLINIT');
+    Result := False;
+  end;
   JclDebug.TraceMsg('JediVCSInit  Ext <');
 end;
 
@@ -3839,7 +3897,13 @@ begin
   if NeedsFinalization then
   begin
     NeedsFinalization := False;
-    LibExit;
+    try
+      LibExit;
+    except
+      // no fechamento da IDE: so registra (sem mensagem)
+      DllEntryFailed('JEDIVCSDLLFINALIZE', False);
+    end;
+    JVCSLogMessage('JEDIVCSDLLFINALIZE concluido');
   end;
   {$IFDEF DEBUG}
   JclDebug.TraceMsg('< JediVCSDLLFinalize Ext');

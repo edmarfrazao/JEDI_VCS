@@ -106,7 +106,8 @@ uses
   Windows, Messages, Forms, SysUtils, JvComponent, JvSearchFiles, Dialogs,
   ImgList, Controls, Menus, StdCtrls, ExtCtrls, JvExStdCtrls, JvEdit, Graphics,
   JvTextListBox, JvExControls, JvxSlider, JvCombobox, JvColorCombo, ComCtrls,
-  JvToolEdit, Mask, JvExMask, JvSpin, Buttons, Classes, JvComponentBase, JVCSForms;
+  JvToolEdit, Mask, JvExMask, JvSpin, Buttons, Classes, JvComponentBase, JVCSForms, JVCSUIScale,
+  JVCSUITheme, JVCSAIConfig;
 
 const
   WM_DLGSTARTUP = WM_APP + 100;   // startup message
@@ -353,6 +354,39 @@ type
     Label30: TLabel;
     Label66: TLabel;
     cbSaveWIPauto: TCheckBox;
+    PanelAppearance: TPanel;
+    lblUIScale: TLabel;
+    lblUIFontCaption: TLabel;
+    lblUIFont: TLabel;
+    lblMenuFontCaption: TLabel;
+    lblMenuFont: TLabel;
+    lblEditorFontCaption: TLabel;
+    lblEditorFont: TLabel;
+    lblTheme: TLabel;
+    cbUIScale: TComboBox;
+    btnUIFont: TButton;
+    btnUIFontDefault: TButton;
+    btnMenuFont: TButton;
+    btnMenuFontDefault: TButton;
+    btnEditorFont: TButton;
+    btnEditorFontDefault: TButton;
+    cbTheme: TComboBox;
+    btnUIDefaults: TButton;
+    PanelAI: TPanel;
+    lblAICheckout: TLabel;
+    lblAICheckin: TLabel;
+    lblAIHelp: TLabel;
+    lblAIFile: TLabel;
+    cbAICheckout: TComboBox;
+    cbAICheckin: TComboBox;
+    procedure AppearanceChange(Sender: TObject);
+    procedure btnUIFontClick(Sender: TObject);
+    procedure btnUIFontDefaultClick(Sender: TObject);
+    procedure btnMenuFontClick(Sender: TObject);
+    procedure btnMenuFontDefaultClick(Sender: TObject);
+    procedure btnEditorFontClick(Sender: TObject);
+    procedure btnEditorFontDefaultClick(Sender: TObject);
+    procedure btnUIDefaultsClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure btnApplyClick(Sender: TObject);
@@ -451,6 +485,9 @@ type
     sftUser,
     sftNeverSync,
     ProjectRegistryKey: string;
+    FUISettings, FUISettingsLoaded: TJVCSUIFontSettings;
+    FThemeLoaded: TJVCSUIThemeMode;
+    FAICheckoutLoaded, FAICheckinLoaded: TJVCSAIMode;
     procedure WMDLGStartup(var msg: TMessage); message WM_DLGSTARTUP;
     function CheckValues: Boolean;
     procedure GetValues;
@@ -459,6 +496,12 @@ type
     function GetMRUListIndex: string;
     procedure CheckGlobalcbOption(cb: TCheckBox; Nr: Integer);
     procedure UpgradeRegistryKeys;
+    // v2026: Appearance e AI / Automation
+    procedure LoadAppearanceAndAI;
+    procedure SaveAppearanceAndAI;
+    procedure ShowAppearance;
+    function PickFont(var AName: string; var ASize: Integer;
+      const ADefName: string; ADefSize: Integer): Boolean;
   public
     { Public-Deklarationen }
     DefaultSheet: Integer;
@@ -495,9 +538,225 @@ uses
   , JVCSDebug
   {$ENDIF DEBUG}
   , JVCSDialogs
+  , JVCSClientAppearance
   ;
 
 {$R *.dfm}
+
+//=== v2026: Appearance e AI / Automation =====================================
+
+function FontText(const AName: string; ASize: Integer): string;
+begin
+  Result := Format('%s, %d pt', [AName, ASize]);
+end;
+
+procedure TVCSOptions.ShowAppearance;
+begin
+  if FUISettings.UIFontName = '' then
+    lblUIFont.Caption := FontText(FUISettings.EffectiveUIFontName,
+      FUISettings.EffectiveUIFontSize) + ' (system)'
+  else
+    lblUIFont.Caption := FontText(FUISettings.EffectiveUIFontName,
+      FUISettings.EffectiveUIFontSize);
+  if (FUISettings.MenuFontName = '') and (FUISettings.MenuFontSize = 0) then
+    lblMenuFont.Caption := 'Same as interface'
+  else
+    lblMenuFont.Caption := FontText(FUISettings.EffectiveMenuFontName,
+      FUISettings.EffectiveMenuFontSize);
+  lblEditorFont.Caption := FontText(FUISettings.EffectiveEditorFontName,
+    FUISettings.EffectiveEditorFontSize);
+  // tamanho em pt prevalece sobre a escala
+  cbUIScale.Enabled := FUISettings.UIFontSize = 0;
+  lblUIScale.Enabled := cbUIScale.Enabled;
+end;
+
+procedure TVCSOptions.LoadAppearanceAndAI;
+begin
+  FUISettings := JVCSUILoadFontSettings;
+  FUISettingsLoaded := FUISettings;
+  FThemeLoaded := JVCSUILoadThemeMode;
+  cbUIScale.Text := JVCSUIScaleToText(FUISettings.Scale);
+  {$IFDEF IDEDLL}
+  cbTheme.Items[0] := 'Follow Delphi';
+  {$ELSE}
+  cbTheme.Items[0] := 'Follow Windows';
+  {$ENDIF IDEDLL}
+  cbTheme.ItemIndex := Ord(FThemeLoaded);
+  ShowAppearance;
+
+  FAICheckoutLoaded := JVCSAIReadMode(cJVCSAIKeyCheckout);
+  FAICheckinLoaded := JVCSAIReadMode(cJVCSAIKeyCheckin);
+  cbAICheckout.ItemIndex := Ord(FAICheckoutLoaded);
+  cbAICheckin.ItemIndex := Ord(FAICheckinLoaded);
+  lblAIFile.Caption := 'Stored in ' + JVCSAIConfigPath +
+    ' ([ai] checkout= / checkin=), read by tools\ai\jvcs-ai.ps1 (Claude Code). ' +
+    'Valid for all projects of this Windows user.';
+end;
+
+function SameFontSettings(const A, B: TJVCSUIFontSettings): Boolean;
+begin
+  Result := (A.Scale = B.Scale) and SameText(A.UIFontName, B.UIFontName) and
+    (A.UIFontSize = B.UIFontSize) and SameText(A.MenuFontName, B.MenuFontName) and
+    (A.MenuFontSize = B.MenuFontSize) and SameText(A.EditorFontName, B.EditorFontName) and
+    (A.EditorFontSize = B.EditorFontSize);
+end;
+
+procedure TVCSOptions.SaveAppearanceAndAI;
+var
+  Theme: TJVCSUIThemeMode;
+  M: TJVCSAIMode;
+begin
+  // aparencia
+  FUISettings.Scale := JVCSUITextToScale(cbUIScale.Text, FUISettings.Scale);
+  if (cbTheme.ItemIndex >= Ord(Low(TJVCSUIThemeMode))) and
+     (cbTheme.ItemIndex <= Ord(High(TJVCSUIThemeMode))) then
+    Theme := TJVCSUIThemeMode(cbTheme.ItemIndex)
+  else
+    Theme := tmFollowHost;
+  if not SameFontSettings(FUISettings, FUISettingsLoaded) or (Theme <> FThemeLoaded) then
+  begin
+    JVCSUISaveFontSettings(FUISettings);
+    JVCSUISaveThemeMode(Theme);
+    FUISettingsLoaded := FUISettings;
+    FThemeLoaded := Theme;
+    // aplica ja em todas as janelas abertas (inclusive esta)
+    JVCSClientAppearanceApplyAll;
+  end;
+  // IA: so grava o que mudou (o config.ini e do wrapper; formato preservado)
+  if cbAICheckout.ItemIndex >= 0 then
+  begin
+    M := TJVCSAIMode(cbAICheckout.ItemIndex);
+    if M <> FAICheckoutLoaded then
+    begin
+      JVCSAIWriteMode(cJVCSAIKeyCheckout, M);
+      FAICheckoutLoaded := M;
+    end;
+  end;
+  if cbAICheckin.ItemIndex >= 0 then
+  begin
+    M := TJVCSAIMode(cbAICheckin.ItemIndex);
+    if M <> FAICheckinLoaded then
+    begin
+      JVCSAIWriteMode(cJVCSAIKeyCheckin, M);
+      FAICheckinLoaded := M;
+    end;
+  end;
+end;
+
+function TVCSOptions.PickFont(var AName: string; var ASize: Integer;
+  const ADefName: string; ADefSize: Integer): Boolean;
+var
+  Dlg: TFontDialog;
+begin
+  Dlg := TFontDialog.Create(Self);
+  try
+    Dlg.Options := [fdNoStyleSel, fdNoVectorFonts, fdScalableOnly];
+    if AName <> '' then
+      Dlg.Font.Name := AName
+    else
+      Dlg.Font.Name := ADefName;
+    if ASize > 0 then
+      Dlg.Font.Size := ASize
+    else
+      Dlg.Font.Size := ADefSize;
+    Result := Dlg.Execute(Handle);
+    if Result then
+    begin
+      AName := Dlg.Font.Name;
+      ASize := Dlg.Font.Size;
+    end;
+  finally
+    Dlg.Free;
+  end;
+end;
+
+procedure TVCSOptions.AppearanceChange(Sender: TObject);
+begin
+  edArchLimitChange(Sender);
+end;
+
+procedure TVCSOptions.btnUIFontClick(Sender: TObject);
+var
+  N: string;
+  S: Integer;
+begin
+  N := FUISettings.UIFontName;
+  S := FUISettings.UIFontSize;
+  if PickFont(N, S, FUISettings.EffectiveUIFontName, FUISettings.EffectiveUIFontSize) then
+  begin
+    FUISettings.UIFontName := N;
+    FUISettings.UIFontSize := S;
+    ShowAppearance;
+    edArchLimitChange(Sender);
+  end;
+end;
+
+procedure TVCSOptions.btnUIFontDefaultClick(Sender: TObject);
+begin
+  FUISettings.UIFontName := '';
+  FUISettings.UIFontSize := 0;
+  ShowAppearance;
+  edArchLimitChange(Sender);
+end;
+
+procedure TVCSOptions.btnMenuFontClick(Sender: TObject);
+var
+  N: string;
+  S: Integer;
+begin
+  N := FUISettings.MenuFontName;
+  S := FUISettings.MenuFontSize;
+  if PickFont(N, S, FUISettings.EffectiveMenuFontName, FUISettings.EffectiveMenuFontSize) then
+  begin
+    FUISettings.MenuFontName := N;
+    FUISettings.MenuFontSize := S;
+    ShowAppearance;
+    edArchLimitChange(Sender);
+  end;
+end;
+
+procedure TVCSOptions.btnMenuFontDefaultClick(Sender: TObject);
+begin
+  FUISettings.MenuFontName := '';
+  FUISettings.MenuFontSize := 0;
+  ShowAppearance;
+  edArchLimitChange(Sender);
+end;
+
+procedure TVCSOptions.btnEditorFontClick(Sender: TObject);
+var
+  N: string;
+  S: Integer;
+begin
+  N := FUISettings.EditorFontName;
+  S := FUISettings.EditorFontSize;
+  if PickFont(N, S, FUISettings.EffectiveEditorFontName, FUISettings.EffectiveEditorFontSize) then
+  begin
+    FUISettings.EditorFontName := N;
+    FUISettings.EditorFontSize := S;
+    ShowAppearance;
+    edArchLimitChange(Sender);
+  end;
+end;
+
+procedure TVCSOptions.btnEditorFontDefaultClick(Sender: TObject);
+begin
+  FUISettings.EditorFontName := '';
+  FUISettings.EditorFontSize := 0;
+  ShowAppearance;
+  edArchLimitChange(Sender);
+end;
+
+procedure TVCSOptions.btnUIDefaultsClick(Sender: TObject);
+begin
+  FUISettings.SetDefaults;
+  cbUIScale.Text := JVCSUIScaleToText(FUISettings.Scale);
+  cbTheme.ItemIndex := Ord(tmFollowHost);
+  ShowAppearance;
+  edArchLimitChange(Sender);
+end;
+
+//------------------------------------------------------------------------------
 
 procedure TVCSOptions.UpgradeRegistryKeys;
 begin
@@ -581,6 +840,7 @@ begin
   Screen.Cursor := crHourGlass;
   try
     cbUseFileStorage.Checked := not UseRegistryStorage;
+    LoadAppearanceAndAI;
 
     ShowHint :=
       jvcsReadBool(sBaseRegistryKey + crbOptions, 'ShowToolTip', True);
@@ -1902,6 +2162,7 @@ begin
     {$ENDIF IDEDLL}
 
     SetDSAMSettings;
+    SaveAppearanceAndAI;
   finally
     Screen.Cursor := crDefault;
     if not jvcsUpdateStorageObject then
@@ -2391,6 +2652,8 @@ begin
   PanelDebug.Visible := (lbSelectSheet.ItemIndex = cspDebug);
   PanelExtBugTrack.Visible := (lbSelectSheet.ItemIndex = cspExtBugTrack);
   PanelSaveWIP.Visible := (lbSelectSheet.ItemIndex = cspSaveWIP);
+  PanelAppearance.Visible := (lbSelectSheet.ItemIndex = cspAppearance);
+  PanelAI.Visible := (lbSelectSheet.ItemIndex = cspAI);
 end;
 
 //------------------------------------------------------------------------------

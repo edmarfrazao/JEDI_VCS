@@ -237,13 +237,57 @@ begin
   jvcsWriteString(Self.Key + '\' + DSAInfo.Name, Key, Value);
 end;
 
+{ v2026: os dialogos DSA podem ser reentrantes (um TTimer - ex. LoginTimer,
+  UpdateTimer do Project Manager - mostra outro dialogo enquanto um esta
+  aberto). Antes todos usavam o ID 0 e o texto ctkOwnDSAMsg e o segundo
+  levantava EJvDSADialog "CheckMarkText ID 99 already registered" / "DSA ID 0
+  already registered". Agora cada uso pega um ID livre e o texto da marca e
+  registrado uma vez (contador). }
+var
+  GDSAIDsInUse: Integer = 0;
+  GDSACheckMarkRefs: Integer = 0;
+
+const
+  cDSAIDBase = 26000;
+
+function AcquireDSAID: Integer;
+begin
+  Result := cDSAIDBase + GDSAIDsInUse;
+  Inc(GDSAIDsInUse);
+end;
+
+procedure ReleaseDSAID;
+begin
+  if GDSAIDsInUse > 0 then
+    Dec(GDSAIDsInUse);
+end;
+
+procedure AcquireCheckMarkText(const AText: string);
+begin
+  if GDSACheckMarkRefs = 0 then
+    RegisterDSACheckMarkText(ctkOwnDSAMsg, AText);
+  Inc(GDSACheckMarkRefs);
+end;
+
+procedure ReleaseCheckMarkText;
+begin
+  if GDSACheckMarkRefs > 0 then
+  begin
+    Dec(GDSACheckMarkRefs);
+    if GDSACheckMarkRefs = 0 then
+      UnregisterDSACheckMarkText(ctkOwnDSAMsg);
+  end;
+end;
+
 function DSAIdentsMessageDlg(const Msg: string; AType: TMsgDlgType;
   AButtons: TMsgDlgButtons; HelpCtx: Longint; Filename, ID: string;
   DefaultResult: Word): Word;
 var
   CStorage: TDSAJVCSConfigStorage;
+  LID: Integer;
 begin
   CStorage := nil;
+  LID := AcquireDSAID;
   try
     CStorage := TDSAJVCSConfigStorage.Create(Filename);
 
@@ -252,15 +296,16 @@ begin
     then
       Delete(DontShowMsgText, Length(DontShowMsgText), 1);
 
-    RegisterDSACheckMarkText(ctkOwnDSAMsg, DontShowMsgText);
-    RegisterDSA(0, ID, '', CStorage, ctkOwnDSAMsg);
-    SetDSAState(0, GetDSAState(0), DefaultResult);
+    AcquireCheckMarkText(DontShowMsgText);
+    RegisterDSA(LID, ID, '', CStorage, ctkOwnDSAMsg);
+    SetDSAState(LID, GetDSAState(LID), DefaultResult);
 
-    Result := DSAMessageDlg(0, Msg, AType, AButtons, HelpCtx);
+    Result := DSAMessageDlg(LID, Msg, AType, AButtons, HelpCtx);
 
   finally
-    UnRegisterDSA(0);
-    UnregisterDSACheckMarkText(ctkOwnDSAMsg);
+    UnRegisterDSA(LID);
+    ReleaseDSAID;
+    ReleaseCheckMarkText;
     CStorage.Free;
   end;
 end;
@@ -268,18 +313,21 @@ end;
 function DSAIdentsGetState(Filename, ID: string): Boolean;
 var
   CStorage: TDSAJVCSConfigStorage;
+  LID: Integer;
 begin
   CStorage := nil;
+  LID := AcquireDSAID;
   try
     CStorage := TDSAJVCSConfigStorage.Create(Filename);
-    RegisterDSA(0, ID, '', CStorage, ctkOwnDSAMsg);
+    RegisterDSA(LID, ID, '', CStorage, ctkOwnDSAMsg);
 
     //why "not" ? - DFS.DSA... does the same and it seam to be the
     //same result
-    Result := not GetDSAState(0);
+    Result := not GetDSAState(LID);
 
   finally
-    UnRegisterDSA(0);
+    UnRegisterDSA(LID);
+    ReleaseDSAID;
     CStorage.Free;
   end;
 end;
@@ -287,20 +335,23 @@ end;
 procedure DSAIdentsSetState(Filename, ID: string; Value: Boolean);
 var
   CStorage: TDSAJVCSConfigStorage;
+  LID: Integer;
   DefaultResult: Integer;
 begin
   CStorage := nil;
+  LID := AcquireDSAID;
   try
     CStorage := TDSAJVCSConfigStorage.Create(Filename);
-    RegisterDSA(0, ID, '', CStorage, ctkOwnDSAMsg);
+    RegisterDSA(LID, ID, '', CStorage, ctkOwnDSAMsg);
 
-    GetDSAState(0, DefaultResult);
+    GetDSAState(LID, DefaultResult);
     //why "not" ? - DFS.DSA... does the same and it seam to be the
     //same result
-    SetDSAState(0, not Value, DefaultResult);
+    SetDSAState(LID, not Value, DefaultResult);
 
   finally
-    UnRegisterDSA(0);
+    UnRegisterDSA(LID);
+    ReleaseDSAID;
     CStorage.Free;
   end;
 end;
