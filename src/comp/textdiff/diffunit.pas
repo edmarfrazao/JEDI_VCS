@@ -278,8 +278,10 @@ begin
     GetMem(IntArr_b,sizeof(integer)*(MaxD*2+1));
     //Align the forward and backward diagonal vector arrays
     //with the memory which has just been allocated ...
-    pchar(diagVecF) := pchar(IntArr_f) - sizeof(integer)*(MAX_DIAGONAL-MaxD);
-    pchar(diagVecB) := pchar(IntArr_b) - sizeof(integer)*(MAX_DIAGONAL-MaxD);
+    // v2026: PByte (com PChar = PWideChar o deslocamento dobrava e os vetores
+    // ficavam fora do bloco alocado: AV no Line History/Compressed Diff)
+    PByte(diagVecF) := PByte(IntArr_f) - sizeof(integer)*(MAX_DIAGONAL-MaxD);
+    PByte(diagVecB) := PByte(IntArr_b) - sizeof(integer)*(MAX_DIAGONAL-MaxD);
 
     fCancelled := false;
 
