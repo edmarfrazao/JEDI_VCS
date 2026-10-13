@@ -61,7 +61,7 @@ Ordem sugerida de prioridade. Cada item remete à fase do plano ou ao marco do A
 | C3 | Expert Win64 + `jvcs-agent.exe` (núcleo fora do processo) para a IDE de 64 bits — só se a IDE de 64 bits for usada | M1 (Win64), M2 |
 | C4 | IA e GUI/IDE com o mesmo usuário sem "re-connect" (re-login transparente ou agente de sessão) — decidir na F4/F5 (ADR D11) | M6/M7 |
 | C5 | Mensagens do wrapper `jvcs-ai.ps1` e da skill por projeto só em português | Docs/IA |
-| C6 | Expor no wrapper `jvcs-ai.ps1` os comandos novos do console (`addproject`, `addmodule`, 1º check-in) e um `diff` contra a revisão do servidor (`getmodule rev= dest= noprompt`); hoje o wrapper usa o console original, que não tem esses comandos. Feito e testado no console novo em 13/10 (Port-Console.md §5) | M3 |
+| C6 | **Feito em 13/10 (wrapper 1.2.0: `diff`, `addproject`, `add`; ver `tools\ai\LEIAME.md` §11).** Era: expor no wrapper `jvcs-ai.ps1` os comandos novos do console (`addproject`, `addmodule`, 1º check-in) e um `diff` contra a revisão do servidor (`getmodule rev= dest= noprompt`); hoje o wrapper usa o console original, que não tem esses comandos. Feito e testado no console novo em 13/10 (Port-Console.md §5) | M3 |
 | C7 | Wrapper e `edit-preserve.ps1` deduzem o projeto pelos `.dpr` da pasta: com mais de um `.dpr` ou projeto com outro nome, exigem `-Project` (e o `edit-preserve` não faz o checkout automático) | Docs/IA |
 | C8 | Remover pelo standalone os módulos de teste quebrados do projeto `ex2.dpr` no servidor de teste (IDs 5–9) | Teste |
 

@@ -1,6 +1,6 @@
 # tools\ai — JEDI VCS para a IA (Claude Code)
 
-Versão **1.1.1** (12/10/2026). Camada 0 do ADR-001 (`doc\pt\common\ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`):
+Versão **1.2.0** (13/10/2026). Camada 0 do ADR-001 (`doc\pt\common\ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`):
 a IA faz checkout e check-in das units Delphi usando o console **original** `jvcs.exe` 2.5.0.1030
 (Delphi 2007), sempre por trás de um wrapper PowerShell que torna o console seguro para automação.
 
@@ -143,6 +143,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "D:/Delphi/JediVCS/v2026/too
 | `ensure-checkout <arq> [-CheckOnly]` | Para hooks, idempotente. Não versionado → ok (no-op); já é meu → ok; de outro → 6; local alterado → 8. `-CheckOnly` só informa (`needsCheckout`) |
 | `checkin <arq...> -Comment "texto"` | Check-in (ver abaixo) |
 | `undocheckout <arq...> [-Discard]` | Desfaz o checkout só se o local for igual à base; com `-Discard`, faz backup e restaura a base |
+| `diff <arq> [-Rev x.y]` | Diff unificado do arquivo local contra a revisão do servidor (padrão: a última), com `getmodule <id> [rev=x.y] dest="<pasta nova>"` e `git diff --no-index` sobre o texto decodificado; diferença de codificação/quebras vai para `warnings`. Só leitura; funciona com o console original |
+| `addproject <proj.dpr> [-Comment "descrição"]` | Cria o projeto no servidor (use o nome do `.dpr`, como a IDE). Passa pelo modo `checkin`. **Exige o console 2026** (`config set jvcsExe`), senão código 12 |
+| `add <arq...> -Comment "texto"` | Cadastra o arquivo no projeto (com a pasta local) e faz o 1º check-in 0.1, com a família (o `.dfm` de uma unit). Já versionado → 3. Passa pelo modo `checkin`; exige o console 2026 |
 | `config list\|get\|set` | Configuração |
 
 Opções: `-Project <nome.dpr\|caminho>`, `-Identity <nome>`, `-Text` (saída legível), `-Agent` (força
@@ -488,3 +491,16 @@ nunca bloqueia nem faz o Claude continuar, e não desfaz nada sozinho.
 - Caminhos relativos (arquivos e `-Project`) eram resolvidos pela pasta do **processo**, não pela pasta atual do PowerShell; agora usam `GetUnresolvedProviderPathFromPSPath` (também no `edit-preserve.ps1`).
 - Sem `-Project`, numa pasta com mais de um `.dpr`/`.dpk`, os nomes padrão do Delphi (`Project1`, `Package1`), que o JEDI VCS recusa, são ignorados na escolha automática.
 - Testado no Ex1: `status` (na pasta e fora dela), `status uPrincipal.pas`, `status -Project .\Exemplo01.dpr` → 4 módulos `clean`, sem locks.
+
+## 11. Versão 1.2.0 — diff, addproject e add
+
+- `diff <arq> [-Rev x.y]`: diff unificado contra a revisão do servidor (só leitura; funciona com o console
+  original, porque `getmodule <id> rev= dest=` cabe no limite de opções dele).
+- `addproject` e `add` (cadastro + 1º check-in 0.1 com a família, ex.: `.pas` + `.dfm`): usam os comandos
+  novos do console **2026** (`addproject`, `addmodule`, 1º check-in). Com o console original → código 12.
+  Passam pelo modo `checkin` (manual → 10; confirm → 10 até `-Confirmed`; auto → executa).
+- Testado (13/10/2026, servidor de teste, `APPDATA` temporário com `jvcsExe` = console 2026):
+  `addproject Ex4IA.dpr` → criado; `add Ex4IA.dpr uTeste4.pas` → 0.1 (revisão com `uTeste4.pas` e
+  `uTeste4.dfm`); `add` de novo → 3; checkout → `edit-preserve` no `.dfm` → `diff` (só a linha do Caption) →
+  check-in 0.1 → 0.2 → `diff` idêntico; modo confirm → `add`/`addproject` com 10 e nada criado; console
+  original → `add` com 12; `diff -Rev 0.1` e revisão inexistente (5) com o console original.

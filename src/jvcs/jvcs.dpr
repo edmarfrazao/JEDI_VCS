@@ -835,6 +835,9 @@ var
   ModuleOriginalSize, ModuleOriginalCRC, ModuleCompressedSize: Integer;
   ModuleFileStream: TFileStream;
   CrcErr: string;
+  MemberFiles, FamilyList, ZipFiles: TStringList;
+  MemberFile: string;
+  I: Integer;
 begin
   Result := False;
   ModuleFileName := ExpandFileName(ModuleName);
@@ -853,42 +856,66 @@ begin
     GetFamilyExtensions.Free;
   end;
 
-  if not JVCSCompressFile(ModuleFileName, ZipFileName) then
-    raise Exception.CreateFmt('Could not compress %s', [ModuleFileName]);
+  // the module file plus the family members that exist beside it (e.g. the .dfm
+  // of a unit), as the standalone sends them
+  MemberFiles := TStringList.Create;
+  FamilyList := TStringList.Create;
+  ZipFiles := TStringList.Create;
   try
-    ModuleOriginalTime := FileGetUTCDateTime(ModuleFileName);
-    ModuleOriginalSize := GetSizeOfFile(ModuleFileName);
-    ModuleOriginalCRC := CRCInt(ModuleFileName, CrcErr);
-    ModuleCompressedSize := GetSizeOfFile(ZipFileName);
-    ModuleFileStream := TFileStream.Create(ZipFileName, fmOpenRead);
+    MemberFiles.Add(ModuleFileName);
+    StrTokenToStrings(AnsiLowerCase(FamilyExtensions), ';', FamilyList);
+    for I := 0 to FamilyList.Count - 1 do
+    begin
+      MemberFile := ChangeFileExt(ModuleFileName, ExtractFileExt(Trim(FamilyList[I])));
+      if (ExtractFileExt(MemberFile) <> '') and FileExists(MemberFile) and
+        (MemberFiles.IndexOf(MemberFile) < 0) then
+        MemberFiles.Add(MemberFile);
+    end;
+
+    CheckinModule := TJVCSCheckinModule.Create(nil);
     try
-      CheckinModule := TJVCSCheckinModule.Create(nil);
-      try
-        CheckinModule.PutOnly := False;
-        CheckinModule.AddInputItem(ProjectID, Connection.UserID, ModuleID, 0
-                                  , 0, 0, 1
-                                  , ModuleOriginalTime, ModuleOriginalSize, ModuleOriginalCRC
-                                  , ModuleCompressedSize, ExtractFileExt(ModuleName)
-                                  , ModuleFileStream, CheckinComment, 0
-                                  , ModuleFileName, FamilyID);
-        Connection.SendRequest(CheckinModule);
-        ShowLog(CheckinModule);
-        Result := CheckinModule.ErrorMessage = '';
-        if Result then
-        begin
-          Writeln('First check-in: ', ModuleName, ' (version 0.1)');
-          SetVCSReadOnlyFile(ModuleName, FamilyExtensions);
-        end
-        else
-          Writeln('First check-in failed: ', ModuleName, ' - ', CheckinModule.ErrorMessage);
-      finally
-        CheckinModule.Free;
+      CheckinModule.PutOnly := False;
+      for I := 0 to MemberFiles.Count - 1 do
+      begin
+        MemberFile := MemberFiles[I];
+        if not JVCSCompressFile(MemberFile, ZipFileName) then
+          raise Exception.CreateFmt('Could not compress %s', [MemberFile]);
+        ZipFiles.Add(ZipFileName);
+        ModuleOriginalTime := FileGetUTCDateTime(MemberFile);
+        ModuleOriginalSize := GetSizeOfFile(MemberFile);
+        ModuleOriginalCRC := CRCInt(MemberFile, CrcErr);
+        ModuleCompressedSize := GetSizeOfFile(ZipFileName);
+        ModuleFileStream := TFileStream.Create(ZipFileName, fmOpenRead);
+        try
+          CheckinModule.AddInputItem(ProjectID, Connection.UserID, ModuleID, 0
+                                    , 0, 0, 1
+                                    , ModuleOriginalTime, ModuleOriginalSize, ModuleOriginalCRC
+                                    , ModuleCompressedSize, ExtractFileExt(MemberFile)
+                                    , ModuleFileStream, CheckinComment, 0
+                                    , MemberFile, FamilyID);
+        finally
+          ModuleFileStream.Free;
+        end;
       end;
+      Connection.SendRequest(CheckinModule);
+      ShowLog(CheckinModule);
+      Result := CheckinModule.ErrorMessage = '';
+      if Result then
+      begin
+        Writeln('First check-in: ', ModuleFileName, ' (version 0.1, ', MemberFiles.Count, ' file(s))');
+        SetVCSReadOnlyFile(ModuleFileName, FamilyExtensions);
+      end
+      else
+        Writeln('First check-in failed: ', ModuleFileName, ' - ', CheckinModule.ErrorMessage);
     finally
-      ModuleFileStream.Free;
+      CheckinModule.Free;
     end;
   finally
-    DeleteFile(PChar(ZipFileName));
+    for I := 0 to ZipFiles.Count - 1 do
+      DeleteFile(PChar(ZipFiles[I]));
+    ZipFiles.Free;
+    FamilyList.Free;
+    MemberFiles.Free;
   end;
 end;
 

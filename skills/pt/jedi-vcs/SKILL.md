@@ -62,6 +62,12 @@ Abaixo, `jvcs-ai.ps1 X` = `<wrapperCommand> X`. Um comando por chamada (sem `;`,
 
 Desistiu ou não mudou nada? `jvcs-ai.ps1 undocheckout "<arq>"`.
 
+Diff contra o servidor (só leitura): `jvcs-ai.ps1 diff "<arq>"` (última revisão) ou `-Rev 0.3`.
+
+Arquivo novo (não versionado): `jvcs-ai.ps1 add "<arq>" -Comment "..."` cadastra e faz o 1º check-in
+0.1 (com o `.dfm`). Projeto novo: `jvcs-ai.ps1 addproject <proj.dpr>` antes. Os dois seguem o modo de
+check-in e exigem o console 2026 (código 12 = peça ao usuário para apontar `jvcsExe`).
+
 ## Códigos de saída
 
 | Código | Ação |

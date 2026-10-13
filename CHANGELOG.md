@@ -11,6 +11,10 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Console `jvcs.exe`: criar projeto e módulos **sem IDE** — `addproject`, `addmodule` (grava também a
   pasta local) e `setmodulepath`; `checkin` faz o 1º check-in (0.1) de módulo recém-criado. Ver
   `doc/pt/client/Port-Console.md` §5.
+- 1º check-in pelo console envia também a família do módulo (o `.dfm` de uma unit), como o standalone.
+- Wrapper da IA `tools/ai/jvcs-ai.ps1` 1.2.0: `diff <arq> [-Rev x.y]` (diff contra a revisão do
+  servidor; funciona com o console original), `addproject` e `add` (cadastro + 1º check-in; exigem o
+  console 2026 e seguem o modo de check-in). Skills pt/en e guias atualizados.
 
 ### Corrigido
 - Console: `getmodule` recusava `rev=` + `dest=` + `noprompt` juntos (bug do original).

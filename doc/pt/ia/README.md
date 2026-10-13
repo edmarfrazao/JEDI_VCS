@@ -16,8 +16,14 @@ codificação e faz check-in com comentário marcado `[IA]`. Os modos e as aprov
 | Editar preservando a codificação | `Edit` do Claude Code (UTF-8) ou `edit-preserve.ps1` (ANSI 1252, UTF-16, arquivo inteiro) | mantém BOM e quebras de linha (CRLF/LF/CR) |
 | Fazer check-in | `jvcs-ai.ps1 checkin -Comment "..."` | prefixo `[IA]` automático; sem mudança → desfaz o checkout |
 | Desfazer checkout | `jvcs-ai.ps1 undocheckout` | só quando o arquivo voltou a ser igual ao servidor (`-Discard` exige aprovação) |
+| Ver o diff contra o servidor | `jvcs-ai.ps1 diff <arq> [-Rev x.y]` | diff unificado contra a última revisão (ou a pedida); só leitura |
+| Criar projeto | `jvcs-ai.ps1 addproject <proj.dpr>` | segue o modo de check-in; exige o console 2026 |
+| Adicionar arquivo novo | `jvcs-ai.ps1 add <arq> -Comment "..."` | cadastra e faz o 1º check-in 0.1 (com o `.dfm`); segue o modo de check-in; exige o console 2026 |
 
-A IA **não** cria projetos, não adiciona módulos novos (o console não tem `add`), não faz sync, label
+`addproject` e `add` precisam do console `jvcs.exe` **2026** (o original não cria projeto nem módulo):
+`jvcs-ai.ps1 config set jvcsExe <caminho do jvcs.exe 2026>` no seu terminal.
+
+Fora isso, a IA **não** faz sync, label
 nem administra usuários.
 
 ## Arquitetura em camadas

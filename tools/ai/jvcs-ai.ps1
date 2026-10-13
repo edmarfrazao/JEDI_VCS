@@ -35,6 +35,7 @@ param(
     [string]$Project = '',
     [string]$Comment = '',
     [string]$Identity = '',
+    [string]$Rev = '',
     [switch]$Force,
     [switch]$Discard,
     [switch]$Confirmed,
@@ -1352,6 +1353,243 @@ function Invoke-CmdUndo {
 
 # ======================================================================= config
 
+# ======================================================================= diff e criação (console 2026)
+
+# addproject/add usam comandos que só o console 2026 tem (src\jvcs: addproject, addmodule,
+# setmodulepath e o 1º check-in); o original 2.5.0.1030 não cria projeto nem módulo.
+function Assert-Console2026 {
+    param([string]$What)
+    $exe = [string]$script:Cfg.jvcsExe
+    if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw (New-JaError 12 "jvcs.exe não encontrado: $exe") }
+    $bytes = [IO.File]::ReadAllBytes($exe)
+    $needle = 'setmodulepath'
+    $has = [Text.Encoding]::Unicode.GetString($bytes).Contains($needle) -or
+        [Text.Encoding]::Unicode.GetString($bytes, 1, $bytes.Length - 1).Contains($needle) -or
+        $script:JaLatin1.GetString($bytes).Contains($needle)
+    if (-not $has) {
+        throw (New-JaError 12 "$What exige o console jvcs.exe 2026 (com addproject/addmodule); o configurado ($exe) não tem. Ajuste: jvcs-ai.ps1 config set jvcsExe <caminho do jvcs.exe 2026>")
+    }
+}
+
+# Texto opcional (descrição): uma linha, sem aspas nem controle, ANSI.
+function Get-OptionalText {
+    param([string]$Value, [string]$What)
+    $t = ([string]$Value).Trim()
+    if (-not $t) { return '' }
+    if ($t -match '[\x00-\x1f"]') { throw (New-JaError 2 "$What não pode ter aspas duplas nem caractere de controle") }
+    Assert-AnsiArg $t $What
+    if ($t.Length -gt 2000) { throw (New-JaError 2 "$What muito longo (máximo 2000 caracteres)") }
+    return $t
+}
+
+# Baixa uma revisão (ou a última) de um módulo numa pasta nova e vazia (sem Prompt).
+function Get-JaRevisionFiles {
+    param([string]$ProjectName, [int]$Id, [string]$RevText)
+    $root = New-JaTempDir -Prefix 'rev'
+    try {
+        $get = 'getmodule ' + $Id + ' dest="' + $root + '"'
+        if ($RevText) { $get = 'getmodule ' + $Id + ' rev=' + $RevText + ' dest="' + $root + '"' }
+        $r = Invoke-Jvcs @(('openproject "' + $ProjectName + '"'), $get)
+        $e0 = Get-SectionError $r.Sections[0]
+        if ($e0) { throw (New-JaError 5 "openproject $($ProjectName): $e0") }
+        $e = Get-SectionError $r.Sections[1]
+        if ($e) { throw (New-JaError 5 "getmodule $Id $($RevText): $e") }
+        $files = @(Get-ChildItem -LiteralPath $root -File)
+        if ($files.Count -eq 0) { throw (New-JaError 5 "a revisão '$RevText' do módulo $Id não foi encontrada no servidor") }
+        return [pscustomobject]@{ Root = $root; Files = $files }
+    } catch {
+        Remove-JaTempDir $root
+        throw
+    }
+}
+
+# Diff unificado (git diff --no-index) do texto decodificado de cada lado, com as quebras de
+# linha normalizadas; diferenças de codificação/quebras vão para os avisos. $null sem git.
+function Get-JaUnifiedDiff {
+    param([string]$BasePath, [string]$LocalPath, [string]$BaseLabel, [string]$LocalLabel)
+    $bi = Get-JaTextInfoFromFile $BasePath
+    $li = Get-JaTextInfoFromFile $LocalPath
+    if ($bi.Kind -eq 'binary' -or $li.Kind -eq 'binary') { return $null }
+    $git = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $git) { return $null }
+    $tmp = New-JaTempDir -Prefix 'diff'
+    try {
+        $u8 = New-Object Text.UTF8Encoding $false
+        $a = Join-Path $tmp 'a.txt'
+        $b = Join-Path $tmp 'b.txt'
+        [IO.File]::WriteAllText($a, ($bi.Text -replace "`r`n?", "`n"), $u8)
+        [IO.File]::WriteAllText($b, ($li.Text -replace "`r`n?", "`n"), $u8)
+        $psi = New-Object Diagnostics.ProcessStartInfo $git.Source
+        $psi.Arguments = 'diff --no-index --no-color --text -U3 -- "' + $a + '" "' + $b + '"'
+        $psi.UseShellExecute = $false
+        $psi.CreateNoWindow = $true
+        $psi.RedirectStandardOutput = $true
+        $psi.RedirectStandardError = $true
+        $psi.StandardOutputEncoding = $u8
+        $p = [Diagnostics.Process]::Start($psi)
+        $eTask = $p.StandardError.ReadToEndAsync()
+        $out = $p.StandardOutput.ReadToEnd()
+        $p.WaitForExit()
+        [void]$eTask.Result
+        $lines = New-Object System.Collections.ArrayList
+        [void]$lines.Add('--- ' + $BaseLabel)
+        [void]$lines.Add('+++ ' + $LocalLabel)
+        $body = $false
+        foreach ($l in ($out -split "`n")) {
+            if ($l.StartsWith('@@')) { $body = $true }
+            if ($body -and $l -ne '') { [void]$lines.Add($l) }
+        }
+        return ($lines -join "`n")
+    } finally { Remove-JaTempDir $tmp }
+}
+
+function Invoke-CmdDiff {
+    $f = (Get-FileArgs -Max 1)[0]
+    $revText = ([string]$Rev).Trim()
+    if ($revText -and $revText -notmatch '^\d{1,4}\.\d{1,5}$') { throw (New-JaError 2 "revisão inválida: '$revText' (use -Rev versão.revisão, ex.: -Rev 0.1)") }
+    if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { throw (New-JaError 5 "arquivo local não encontrado: $f") }
+    Enter-JaLock
+    $ctx = Resolve-FileContext $f
+    if ($ctx.Status -ne 'versioned') { throw (New-JaError 5 ('não versionado: ' + $ctx.Note)) }
+    $script:Res.project = $ctx.Project
+    $item = New-ModuleItem $ctx.ModuleRows $f
+    $label = $revText
+    if (-not $label) { $label = [string]$item.version }
+    $item['revision'] = $label
+    $rev = Get-JaRevisionFiles -ProjectName $ctx.Project -Id $item.id -RevText $revText
+    try {
+        $name = [IO.Path]::GetFileName($f)
+        $bf = @($rev.Files | Where-Object { $_.Name -ieq $name })
+        if ($bf.Count -eq 0) { throw (New-JaError 5 "a revisão $label não tem o arquivo $name (tem: $(@($rev.Files | ForEach-Object Name) -join ', '))") }
+        $baseBytes = [IO.File]::ReadAllBytes($bf[0].FullName)
+        $localBytes = [IO.File]::ReadAllBytes($f)
+        if (Test-JaBytesEqual $baseBytes $localBytes) {
+            $item.localState = 'clean'; $item.state = 'identical'
+            $item.message = "idêntico à revisão $label do servidor"
+            $script:Res['diff'] = ''
+        } else {
+            $item.localState = 'modified'; $item.state = 'different'
+            foreach ($p in (Compare-JaEncoding $baseBytes $localBytes)) { Add-JaWarning "$($name): $p" }
+            $d = Get-JaUnifiedDiff -BasePath $bf[0].FullName -LocalPath $f -BaseLabel "$name (servidor, revisão $label)" -LocalLabel "$name (local)"
+            if ($null -eq $d) {
+                $item.message = "diferente da revisão $label do servidor (arquivo binário ou git ausente: sem diff de texto)"
+                $script:Res['diff'] = $null
+            } else {
+                $n = @(($d -split "`n") | Where-Object { $_ -match '^[-+](?![-+]{2} )' }).Count
+                $item.message = "diferente da revisão $label do servidor ($n linha(s) alterada(s))"
+                $script:Res['diff'] = $d
+            }
+        }
+    } finally { Remove-JaTempDir $rev.Root }
+    [void]$script:Res.modules.Add($item)
+}
+
+function Invoke-CmdAddProject {
+    $args1 = @($Rest | Where-Object { $_ -and $_.Trim() })
+    if ($args1.Count -ne 1) { throw (New-JaError 2 'informe o projeto: jvcs-ai.ps1 addproject <projeto.dpr> [-Comment "descrição"]') }
+    $name = Get-ProjectNameFromArg $args1[0]
+    if ($name -notmatch '\.(dpr|dpk)$') { throw (New-JaError 2 "use o nome do .dpr/.dpk do projeto (ex.: meuapp.dpr), como a IDE faz: '$name'") }
+    $desc = Get-OptionalText $Comment 'descrição'
+    Assert-Console2026 'addproject'
+    $item = [ordered]@{ id = $null; name = $name; path = $null; version = $null; lockedBy = $null; localState = $null; state = $null; exitCode = 0; message = '' }
+    $script:Res.project = $name
+    if (Test-ModeGate -Item $item -Kind 'checkin' -What ("addproject $name")) {
+        Enter-JaLock
+        $line = 'addproject "' + $name + '"'
+        if ($desc) { $line += ' "' + $desc + '"' }
+        $r = Invoke-Jvcs @($line)
+        $e = Get-SectionError $r.Sections[0]
+        $t = $r.Sections[0].Lines -join "`n"
+        $m = [regex]::Match($t, 'Project (created|already exists): .* \(ID (\d+)\)')
+        if ($e) { $item.state = 'failed'; $item.exitCode = 9; $item.message = "addproject: $e" }
+        elseif (-not $m.Success) { $item.state = 'failed'; $item.exitCode = 9; $item.message = 'resposta inesperada do console: ' + $t.Trim() }
+        else {
+            $item.id = [int]$m.Groups[2].Value
+            if ($m.Groups[1].Value -eq 'created') { $item.state = 'created'; $item.message = "projeto $name criado no servidor (ID $($item.id))" }
+            else { $item.state = 'exists'; $item.exitCode = 3; $item.message = "o projeto $name já existe no servidor (ID $($item.id)); nada a fazer" }
+        }
+    }
+    [void]$script:Res.modules.Add($item)
+}
+
+# Cadastra um arquivo no projeto (addmodule grava também a pasta local) e faz o 1º check-in (0.1).
+function Invoke-AddOne {
+    param([string]$FullPath, [string]$CommentText)
+    $item = [ordered]@{ id = $null; name = [IO.Path]::GetFileName($FullPath); path = $FullPath; version = $null; lockedBy = $null; localState = $null; state = $null; exitCode = 0; message = ''; pathCheck = $null }
+    if (-not (Test-Path -LiteralPath $FullPath -PathType Leaf)) { $item.state = 'localMissing'; $item.exitCode = 5; $item.message = 'arquivo local não encontrado'; return $item }
+    $ctx = Resolve-FileContext $FullPath
+    if ($ctx.Status -eq 'versioned') {
+        $m = New-ModuleItem $ctx.ModuleRows $FullPath
+        foreach ($k in @('id', 'version', 'lockedBy', 'pathCheck')) { $item[$k] = $m[$k] }
+        $script:Res.project = $ctx.Project
+        $item.state = 'alreadyVersioned'; $item.exitCode = 3
+        $item.message = "já é módulo do projeto $($ctx.Project) (versão $($item.version)); nada a fazer"
+        return $item
+    }
+    if ($ctx.Status -eq 'noProject') {
+        $item.state = 'noProject'; $item.exitCode = 5
+        $item.message = $ctx.Note + '. Crie o projeto antes: jvcs-ai.ps1 addproject <projeto.dpr>'
+        return $item
+    }
+    $cands = @($ctx.Candidates)
+    if ($cands.Count -ne 1) {
+        $item.state = 'ambiguousProject'; $item.exitCode = 2
+        $item.message = "mais de um projeto possível ($($cands -join ', ')): informe -Project"
+        return $item
+    }
+    $proj = $cands[0]
+    $script:Res.project = $proj
+    if (-not (Test-ModeGate -Item $item -Kind 'checkin' -What ("add `"$FullPath`" -Comment `"$CommentText`""))) { return $item }
+    $r = Invoke-Jvcs @(('openproject "' + $proj + '"'), ('addmodule "' + $FullPath + '" "' + $CommentText + '"'), ('checkin "' + $FullPath + '" "' + $CommentText + '"'), ('listproject "' + $proj + '"'))
+    $e0 = Get-SectionError $r.Sections[0]
+    if ($e0) { throw (New-JaError 5 "openproject $($proj): $e0") }
+    $t1 = $r.Sections[1].Lines -join "`n"
+    $e1 = Get-SectionError $r.Sections[1]
+    $mid = [regex]::Match($t1, '\(ID (\d+)\)')
+    if ($mid.Success) { $item.id = [int]$mid.Groups[1].Value }
+    if ($e1 -or -not $mid.Success) { $item.state = 'failed'; $item.exitCode = 9; $item.message = "addmodule: $e1 $($t1.Trim())".Trim(); return $item }
+    if ($t1 -match 'Module path not set') { Add-JaWarning "$($item.name): o servidor não gravou a pasta local do módulo" }
+    $t2 = $r.Sections[2].Lines -join "`n"
+    $e2 = Get-SectionError $r.Sections[2]
+    $fail = [regex]::Match($t2, 'First check-in failed: .* - (.+)')
+    $after = @((ConvertFrom-ListProject $r.Sections[3]) | Where-Object { $_.Id -eq $item.id })
+    if ($after.Count -gt 0) {
+        $a = New-ModuleItem $after $FullPath
+        foreach ($k in @('version', 'lockedBy', 'pathCheck')) { $item[$k] = $a[$k] }
+    }
+    if ($fail.Success) { $item.state = 'failed'; $item.exitCode = 9; $item.message = "módulo cadastrado (ID $($item.id)), mas o 1º check-in falhou: $($fail.Groups[1].Value.Trim())"; return $item }
+    if ($e2) { $item.state = 'failed'; $item.exitCode = 9; $item.message = "módulo cadastrado (ID $($item.id)), mas o check-in falhou: $e2"; return $item }
+    if ($t2 -notmatch 'First check-in:' -or $after.Count -eq 0) {
+        $item.state = 'failed'; $item.exitCode = 9
+        $item.message = "módulo cadastrado (ID $($item.id)), mas o 1º check-in não foi confirmado pelo console; confira com list/status"
+        return $item
+    }
+    $item.state = 'added'
+    $item.message = "adicionado ao projeto $proj e check-in da versão $($item.version)"
+    $nb = Get-JvcsBase -ProjectName $proj -Ids @($item.id)
+    try {
+        $cmp = Compare-WithBase -BaseFiles $nb.Map[[string]$item.id] -LocalDir ([IO.Path]::GetDirectoryName($FullPath))
+        $item.localState = $cmp.State
+        $item['files'] = ConvertTo-FileItems $cmp
+        if ($cmp.State -ne 'clean') { Add-JaWarning "$($item.name): depois do check-in o arquivo local difere da revisão $($item.version) do servidor" }
+    } finally { Remove-JaTempDir $nb.Root }
+    return $item
+}
+
+function Invoke-CmdAdd {
+    $files = Get-FileArgs
+    $c = Get-CheckinComment
+    $script:Res['comment'] = $c
+    Assert-Console2026 'add'
+    Enter-JaLock
+    foreach ($f in $files) {
+        try { [void]$script:Res.modules.Add((Invoke-AddOne -FullPath $f -CommentText $c)) }
+        catch {
+            [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'error'; exitCode = (Get-JaErrorCode $_); message = (Get-JaErrorMessage $_) })
+        }
+    }
+}
+
 function Invoke-CmdConfig {
     $sub = ''
     if ($Rest.Count -gt 0) { $sub = $Rest[0].ToLowerInvariant() }
@@ -1398,8 +1636,11 @@ jvcs-ai.ps1 <comando> [argumentos] [opções]
   ensure-checkout <arquivo> [-CheckOnly]   para hooks (idempotente)
   checkin <arquivo...> -Comment "..." [-AllowEncodingChange]   (esta opção pela IA exige -Confirmed)
   undocheckout <arquivo...> [-Discard]   (-Discard pela IA exige -Confirmed)
+  diff <arquivo> [-Rev x.y]           diff do arquivo local contra a revisão do servidor (padrão: a última)
+  addproject <projeto.dpr> [-Comment "descrição"]   cria o projeto no servidor (console 2026; modo checkin)
+  add <arquivo...> -Comment "..."     cadastra no projeto e faz o 1º check-in 0.1 (console 2026; modo checkin)
   config list | get <chave> | set <chave> <valor>   (set: só humano)
-Opções: -Project -Identity -Text -Agent -Confirmed -TimeoutSec -LockWaitSec -Raw
+Opções: -Project -Identity -Rev -Text -Agent -Confirmed -TimeoutSec -LockWaitSec -Raw
 Códigos: 0 ok, 2 uso, 3 nada a fazer, 4 credencial, 5 não encontrado, 6 travado por outro,
          7 pré-condição, 8 conflito local, 9 servidor/console, 10 confirmação, 11 parcial, 12 ambiente
 '@
@@ -1443,6 +1684,7 @@ function Format-Text {
     if ($script:Res.Contains('config')) { foreach ($k in $script:Res.config.Keys) { [void]$sb.AppendLine("  $k = $($script:Res.config[$k].value)   [$($script:Res.config[$k].source)]") } }
     if ($script:Res.message) { [void]$sb.AppendLine($script:Res.message) }
     if ($script:Res.Contains('warnings')) { foreach ($w in $script:Res.warnings) { [void]$sb.AppendLine("aviso: $w") } }
+    if ($script:Res.Contains('diff') -and $script:Res['diff']) { [void]$sb.AppendLine($script:Res['diff']) }
     return $sb.ToString().TrimEnd()
 }
 
@@ -1493,6 +1735,9 @@ try {
         'ensure-checkout' { Invoke-CmdCheckout -Ensure $true }
         'checkin' { Invoke-CmdCheckin }
         'undocheckout' { Invoke-CmdUndo }
+        'diff' { Invoke-CmdDiff }
+        'addproject' { Invoke-CmdAddProject }
+        'add' { Invoke-CmdAdd }
         'config' { Invoke-CmdConfig }
         default { throw (New-JaError 2 "comando desconhecido: '$Command'. Use: jvcs-ai.ps1 help") }
     }

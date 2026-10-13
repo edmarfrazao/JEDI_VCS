@@ -55,7 +55,9 @@ Leia `message` e `modules[].state`; não tente interpretar a saída do `jvcs.exe
    - Código 7 com `encodingChanged`: a codificação ou as quebras de linha mudaram; corrija com edit-preserve (não use `-AllowEncodingChange` sem o usuário pedir).
 6. Desistiu (ou o usuário negou a edição depois do checkout automático)? `jvcs-ai.ps1 undocheckout "<arq>"` (só funciona se o arquivo voltou a ser igual ao servidor).
    Descartar alteração: `undocheckout "<arq>" -Discard -Confirmed` (sempre pede aprovação; faz backup).
-7. Ao terminar: `jvcs-ai.ps1 locks` e informe o que continua em checkout. O hook Stop também lembra o usuário dos checkouts desta sessão que ficaram presos.
+7. Diff contra o servidor (só leitura): `jvcs-ai.ps1 diff "<arq>"` (última revisão) ou `-Rev 0.3`.
+   Arquivo novo: `jvcs-ai.ps1 add "<arq>" -Comment "..."` (cadastra e faz o 1º check-in 0.1; projeto novo: `addproject <proj.dpr>` antes). Seguem o modo de check-in e exigem o console 2026 (código 12 = peça ao usuário para apontar `jvcsExe`).
+8. Ao terminar: `jvcs-ai.ps1 locks` e informe o que continua em checkout. O hook Stop também lembra o usuário dos checkouts desta sessão que ficaram presos.
 
 ## Códigos de saída
 

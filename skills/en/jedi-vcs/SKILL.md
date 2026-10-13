@@ -63,6 +63,12 @@ Below, `jvcs-ai.ps1 X` = `<wrapperCommand> X`. One command per call (no `;`, `&&
 
 Gave up or changed nothing? `jvcs-ai.ps1 undocheckout "<file>"`.
 
+Diff against the server (read-only): `jvcs-ai.ps1 diff "<file>"` (last revision) or `-Rev 0.3`.
+
+New file (not versioned): `jvcs-ai.ps1 add "<file>" -Comment "..."` registers it and checks in version
+0.1 (with the `.dfm`). New project: `jvcs-ai.ps1 addproject <proj.dpr>` first. Both follow the check-in
+mode and need the 2026 console (exit 12 = ask the user to point `jvcsExe` to it).
+
 ## Exit codes
 
 | Code | Action |

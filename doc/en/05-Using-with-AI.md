@@ -16,8 +16,14 @@ Full guide (Portuguese): [doc/pt/ia](../pt/ia/README.md); technical reference:
 | Edit and keep the encoding | Claude Code `Edit` (UTF-8 files) or `edit-preserve.ps1` (ANSI 1252, UTF-16, whole file) | keeps BOM and line endings (CRLF/LF/CR) |
 | Check in | `jvcs-ai.ps1 checkin -Comment "..."` | `[IA]` prefix added automatically; no change → the check-out is undone |
 | Undo check-out | `jvcs-ai.ps1 undocheckout` | only when the file is equal to the server again (`-Discard` needs approval) |
+| Diff against the server | `jvcs-ai.ps1 diff <file> [-Rev x.y]` | unified diff against the last revision (or the one asked for); read-only |
+| Create a project | `jvcs-ai.ps1 addproject <proj.dpr>` | follows the check-in mode; needs the 2026 console |
+| Add a new file | `jvcs-ai.ps1 add <file> -Comment "..."` | registers it and checks in version 0.1 (with the `.dfm`); follows the check-in mode; needs the 2026 console |
 
-The AI does **not** create projects, add modules, synchronize, set labels or manage users.
+`addproject` and `add` need the **2026** `jvcs.exe` console (the original cannot create projects or
+modules): run `jvcs-ai.ps1 config set jvcsExe <path of the 2026 jvcs.exe>` in your own terminal.
+
+The AI does **not** synchronize, set labels or manage users.
 
 ## 2. Layers
 

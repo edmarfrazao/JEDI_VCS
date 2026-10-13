@@ -180,7 +180,9 @@ novo ganhou três comandos, que usam as mesmas requisições do standalone:
 E mudanças nos comandos existentes:
 
 - `checkin` de um módulo **sem revisões** faz o 1º check-in (versão 0.1), como o `ChkInSingle` do
-  standalone faz depois de "Add module". O arquivo é lido da pasta atual.
+  standalone faz depois de "Add module", com os membros da família que existirem ao lado do arquivo
+  (o `.dfm` de uma unit). O arquivo é lido da pasta atual (ou pelo caminho completo).
+- O wrapper da IA usa esses comandos em `add` e `addproject` (`tools\ai\LEIAME.md` §11).
 - `checkin`, `checkout`, `undocheckout`, `getmodule` e `setmodulepath` aceitam o **nome curto**
   mesmo quando o módulo já tem pasta gravada (o servidor procura pelo nome completo; o console tenta
   de novo com o arquivo da pasta atual).
