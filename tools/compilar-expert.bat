@@ -267,12 +267,15 @@ echo ==== JvcsExternalDll ^(%BLD_EXTDLL%^) e runtime ====
 rem  (chamadas explicitas: um FOR expandiria *.jvcs/*.chm na pasta atual)
 if "%BLD_EXTDLL%"=="nova" (call :copy_newdll) else (call :copy_extdll)
 call :copy_rt "fvcscrypt.dll" req
-call :copy_rt "zipdll.dll" req
-call :copy_rt "unzdll.dll" req
+rem  zipdll/unzdll: so a DLL original (2.5.0.1030) usa; a nova usa o Abbrevia embutido
+if not "%BLD_EXTDLL%"=="nova" call :copy_rt "zipdll.dll" req
+if not "%BLD_EXTDLL%"=="nova" call :copy_rt "unzdll.dll" req
 call :copy_rt "htm_rep.htm" req
 call :copy_rt "*.jvcs" req
 call :copy_rt "*.chm" req
 call :copy_rt "jedivcsdiff.exe" opt
+rem  com a DLL nova, o Compare usa o JEDIVCSDiff portado (bin\client\Win32)
+if "%BLD_EXTDLL%"=="nova" if exist "%BLD_ROOT%\bin\client\Win32\JEDIVCSDiff.exe" copy /y "%BLD_ROOT%\bin\client\Win32\JEDIVCSDiff.exe" "%BLD_OUTDIR%\jedivcsdiff.exe" >nul && echo [OK] jedivcsdiff.exe - JEDIVCSDiff portado
 
 echo.
 if "%BLD_RESULT%"=="0" (
