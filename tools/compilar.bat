@@ -141,10 +141,14 @@ rem  JVCS_NOBRANCHUI esconde o menu Branch e fixa a GUI em HEAD.
 set "PRJ_exe_DEFINES=USECLIENTDISPATCHER;BRANCHING;JVCS_NOBRANCHUI;UNISYNEDIT"
 set "PRJ_exe_PATH="
 
+rem  dll (F5): mesmas fontes e defines do exe + IDEDLL;EXT_IDE_INTF (ABI externa
+rem  do expert). Sem LANGUAGE/REPORTDLL. PRJ_chave_OUT renomeia a saida: a DLL
+rem  do expert se chama JvcsExternalDll.dll (nome que o expert procura).
 set "PRJ_dll_DIR=src\jedivcs"
 set "PRJ_dll_NAME=JediVCSDLL"
-set "PRJ_dll_DEFINES=IDEDLL;EXT_IDE_INTF;LANGUAGE;DelphiPersonalEdition"
+set "PRJ_dll_DEFINES=IDEDLL;EXT_IDE_INTF;USECLIENTDISPATCHER;BRANCHING;JVCS_NOBRANCHUI;UNISYNEDIT"
 set "PRJ_dll_PATH="
+set "PRJ_dll_OUT=JvcsExternalDll"
 
 rem  diff (F3): sem LANGUAGE (dxgettext ainda nao portado; a JVCL nao entra no Diff)
 rem  e sem ..\jedivcs (o Diff nao depende mais das units do EXE)
@@ -362,6 +366,8 @@ set /a "BLD_NOK+=1"
 set "BLD_RES_%BLD_K%=OK"
 set "BLD_SEC_%BLD_K%=%BLD_SECS%"
 echo [OK] %BLD_K% %BLD_PLAT% %BLD_CFG% - %BLD_SECS% s - log: %BLD_LOG%
+call set "BLD_OUTNAME=%%PRJ_%BLD_K%_OUT%%"
+if defined BLD_OUTNAME call :rename_out
 rem  FVCSCrypt.dll (32 bits) e necessaria ao lado do EXE/DLL para o LOGIN
 if /i "%BLD_PLAT%"=="Win32" if exist "%BLD_ROOT%\3rdparty\fvcscrypt.dll" if not exist "%BLD_ROOT%\bin\client\Win32\fvcscrypt.dll" copy /y "%BLD_ROOT%\3rdparty\fvcscrypt.dll" "%BLD_ROOT%\bin\client\Win32\" >nul
 goto :eof
@@ -381,6 +387,17 @@ set "BLD_RES_%BLD_K%=FALHOU"
 set "BLD_SEC_%BLD_K%=0,00"
 set "BLD_RESULT=1"
 echo [FALHOU] %BLD_K% - projeto nao encontrado: "%BLD_PROJDIR%\%BLD_NAME%.dpr"
+goto :eof
+
+rem ---- :rename_out  - renomeia NAME.dll/.map/.drc para PRJ_chave_OUT ---------
+rem  (o dcc32 nao tem opcao de nome de saida; a library continua JediVCSDLL)
+:rename_out
+set "BLD_OUTDIR=%BLD_ROOT%\bin\client\%BLD_PLAT%"
+for %%E in (dll map drc) do if exist "%BLD_OUTDIR%\%BLD_NAME%.%%E" (
+    if exist "%BLD_OUTDIR%\%BLD_OUTNAME%.%%E" del /f /q "%BLD_OUTDIR%\%BLD_OUTNAME%.%%E"
+    move /y "%BLD_OUTDIR%\%BLD_NAME%.%%E" "%BLD_OUTDIR%\%BLD_OUTNAME%.%%E" >nul
+)
+echo      Saida: %BLD_OUTDIR%\%BLD_OUTNAME%.dll
 goto :eof
 
 rem ==========================================================================
