@@ -1,0 +1,119 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  JediVCS2026.props - configuracao comum dos .dproj do JEDI VCS 2.5 Beta 2026
+  (Jedivcs, JediVCSDLL, JEDIVCSDiff, jvcs e JvcsExpertBDS), para Delphi 11, 12 e 13.
+
+  Importado no topo de cada .dproj (depois do PropertyGroup principal, onde ja
+  existem $(Config) e $(Platform)). Espelha o tools\compilar.bat:
+    - versao do Delphi pela DLL do compilador em $(BDS)\bin (dcc32280/290/370.dll);
+    - pastas de JCL, JVCL, ICS e Abbrevia: 1) lib\paths\JediVCS2026-<BDS>.props
+      (gravado pelo compilar.bat com o que ele encontrou), 2) variaveis de
+      ambiente JVCS_JCL_DIR, JVCS_JVCL_DIR, JVCS_ICS_DIR, JVCS_ABBREVIA_DIR,
+      3) padrao do GetIt (mesmos valores do tools\versoes.ini);
+    - SynEdit e VirtualTreeView fixados: DCUs em lib[\D11|D12]\<lib>\<plat>\<cfg>
+      (rode antes "tools\compilar.bat [/delphi:NN] libs <cfg> <plat>");
+    - search path base, namespaces, codepage 1252 e OVERBYTEV6_UP comuns;
+    - saidas FORA de bin\client: bin\msbuild\<Dnn>\<plat>\<cfg> (EXE/DLL) e
+      dcu\msbuild\<Dnn>\<plat>\<cfg>\<projeto> (DCUs). O binario distribuido
+      continua sendo o do tools\compilar.bat (ADR-001).
+    - SkipResGeneration: o MSBuild NAO regrava o <Projeto>.res versionado em src\.
+
+  Mantenha os defines e caminhos iguais aos do tools\compilar.bat.
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- ==== versao do Delphi ================================================ -->
+  <PropertyGroup>
+    <JvcsRoot>$(MSBuildThisFileDirectory)..\..</JvcsRoot>
+    <JvcsBdsVer Condition="'$(JvcsBdsVer)'=='' And Exists('$(BDS)\bin\dcc32370.dll')">37.0</JvcsBdsVer>
+    <JvcsBdsVer Condition="'$(JvcsBdsVer)'=='' And Exists('$(BDS)\bin\dcc32290.dll')">23.0</JvcsBdsVer>
+    <JvcsBdsVer Condition="'$(JvcsBdsVer)'=='' And Exists('$(BDS)\bin\dcc32280.dll')">22.0</JvcsBdsVer>
+    <JvcsBdsVer Condition="'$(JvcsBdsVer)'==''">37.0</JvcsBdsVer>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(JvcsBdsVer)'=='37.0'">
+    <JvcsDelphi>13</JvcsDelphi>
+    <JvcsLibTag></JvcsLibTag>
+    <JvcsJclLibDef>d37</JvcsJclLibDef>
+    <JvcsJclRel>JEDICodeLibraryJCL-13\2026.08</JvcsJclRel>
+    <JvcsJvclRel>JEDIVisualComponentLibraryJVCL-13\2026.08</JvcsJvclRel>
+    <JvcsIcsRel>ICS_VCL-13\9.7</JvcsIcsRel>
+    <JvcsAbbreviaRel>Abbrevia-13\2026.10</JvcsAbbreviaRel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(JvcsBdsVer)'=='23.0'">
+    <JvcsDelphi>12</JvcsDelphi>
+    <JvcsLibTag>\D12</JvcsLibTag>
+    <JvcsJclLibDef>d29</JvcsJclLibDef>
+    <JvcsJclRel>JEDICodeLibraryJCL-12</JvcsJclRel>
+    <JvcsJvclRel>JEDIVisualComponentLibraryJVCL-12</JvcsJvclRel>
+    <JvcsIcsRel>ICS_VCL-12</JvcsIcsRel>
+    <JvcsAbbreviaRel>Abbrevia-12</JvcsAbbreviaRel>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(JvcsBdsVer)'=='22.0'">
+    <JvcsDelphi>11</JvcsDelphi>
+    <JvcsLibTag>\D11</JvcsLibTag>
+    <JvcsJclLibDef>d28</JvcsJclLibDef>
+    <JvcsJclRel>JEDICodeLibraryJCL-11</JvcsJclRel>
+    <JvcsJvclRel>JEDIVisualComponentLibraryJVCL-11</JvcsJvclRel>
+    <JvcsIcsRel>ICS_VCL-11</JvcsIcsRel>
+    <JvcsAbbreviaRel>Abbrevia-11</JvcsAbbreviaRel>
+  </PropertyGroup>
+  <PropertyGroup>
+    <JvcsTag>D$(JvcsDelphi)</JvcsTag>
+  </PropertyGroup>
+
+  <!-- ==== pastas das bibliotecas do GetIt ================================= -->
+  <!-- 1) o que o tools\compilar.bat encontrou para esta versao -->
+  <Import Project="$(JvcsRoot)\lib\paths\JediVCS2026-$(JvcsBdsVer).props" Condition="Exists('$(JvcsRoot)\lib\paths\JediVCS2026-$(JvcsBdsVer).props')"/>
+  <PropertyGroup>
+    <!-- 2) variaveis de ambiente -->
+    <JvcsJclDir Condition="'$(JvcsJclDir)'=='' And '$(JVCS_JCL_DIR)'!=''">$(JVCS_JCL_DIR)</JvcsJclDir>
+    <JvcsJvclDir Condition="'$(JvcsJvclDir)'=='' And '$(JVCS_JVCL_DIR)'!=''">$(JVCS_JVCL_DIR)</JvcsJvclDir>
+    <JvcsIcsDir Condition="'$(JvcsIcsDir)'=='' And '$(JVCS_ICS_DIR)'!=''">$(JVCS_ICS_DIR)</JvcsIcsDir>
+    <JvcsAbbreviaDir Condition="'$(JvcsAbbreviaDir)'=='' And '$(JVCS_ABBREVIA_DIR)'!=''">$(JVCS_ABBREVIA_DIR)</JvcsAbbreviaDir>
+    <!-- 3) padrao do GetIt (CatalogRepository do usuario) -->
+    <JvcsCatalog Condition="'$(JvcsCatalog)'=='' And '$(JVCS_CATALOG)'!=''">$(JVCS_CATALOG)</JvcsCatalog>
+    <JvcsCatalog Condition="'$(JvcsCatalog)'=='' And '$(BDSCatalogRepository)'!=''">$(BDSCatalogRepository)</JvcsCatalog>
+    <JvcsCatalog Condition="'$(JvcsCatalog)'==''">$(USERPROFILE)\Documents\Embarcadero\Studio\$(JvcsBdsVer)\CatalogRepository</JvcsCatalog>
+    <JvcsJclDir Condition="'$(JvcsJclDir)'==''">$(JvcsCatalog)\$(JvcsJclRel)</JvcsJclDir>
+    <JvcsJvclDir Condition="'$(JvcsJvclDir)'==''">$(JvcsCatalog)\$(JvcsJvclRel)</JvcsJvclDir>
+    <JvcsIcsDir Condition="'$(JvcsIcsDir)'==''">$(JvcsCatalog)\$(JvcsIcsRel)</JvcsIcsDir>
+    <JvcsAbbreviaDir Condition="'$(JvcsAbbreviaDir)'==''">$(JvcsCatalog)\$(JvcsAbbreviaRel)</JvcsAbbreviaDir>
+    <JvcsJclLib Condition="'$(JvcsJclLib)'==''">$(JvcsJclLibDef)</JvcsJclLib>
+  </PropertyGroup>
+
+  <!-- ==== caminhos (iguais aos do tools\compilar.bat) ===================== -->
+  <PropertyGroup>
+    <JvcsLibRoot>$(JvcsRoot)\lib$(JvcsLibTag)</JvcsLibRoot>
+    <!-- base, relativo a pasta do .dproj/.dpr (src\<projeto>) -->
+    <JvcsBasePath>..\common;..\common\client;..\comp\midware;..\comp\textdiff;..\comp\mdmailslot;..\comp\crc;..\comp\mwtools</JvcsBasePath>
+    <!-- DCUs pre-compilados das bibliotecas -->
+    <JvcsLibDcu>$(JvcsJclDir)\lib\$(JvcsJclLib)\$(Platform);$(JvcsJvclDir)\lib\$(JvcsJclLib)\$(Platform);$(JvcsIcsDir)\Lib\$(Config)\$(Platform)\$(JvcsBdsVer);$(JvcsLibRoot)\synedit\$(Platform)\$(Config);$(JvcsLibRoot)\virtualtreeview\$(Platform)\$(Config);$(JvcsAbbreviaDir)\packages\11AndAbove\Delphi\$(Platform)\$(Config)</JvcsLibDcu>
+    <!-- so pastas de .inc (o MSBuild usa o unit path tambem como include path;
+         pastas com .pas das bibliotecas ficam so no resource path, senao seriam
+         recompiladas com as opcoes do JVCS) -->
+    <JvcsLibInc>$(JvcsJclDir)\source\include;$(JvcsJclDir)\source\include\jedi;$(JvcsJvclDir)\common;$(JvcsIcsDir)\Source\Include</JvcsLibInc>
+    <JvcsLibRes>$(JvcsJvclDir)\Resources;$(JvcsIcsDir)\Source;$(JvcsRoot)\src\comp\synedit\Source;$(JvcsRoot)\src\comp\synedit\Source\Highlighters;$(JvcsRoot)\src\comp\virtualtreeview\Source;$(JvcsAbbreviaDir)\source;$(BDS)\lib\$(Platform)\release</JvcsLibRes>
+    <JvcsCommonDefs>OVERBYTEV6_UP</JvcsCommonDefs>
+    <JvcsCommonDefs Condition="'$(JVCS_EXTRA_DEFS)'!=''">$(JvcsCommonDefs);$(JVCS_EXTRA_DEFS)</JvcsCommonDefs>
+    <JvcsExtraPath>$(JVCS_EXTRA_PATH)</JvcsExtraPath>
+    <JvcsNamespaces>Winapi;System.Win;Data.Win;Datasnap.Win;Web.Win;Soap.Win;Xml.Win;Bde;System;Data;Datasnap;Web;Soap;Xml;Vcl;Vcl.Imaging;Vcl.Touch;Vcl.Samples;Vcl.Shell</JvcsNamespaces>
+    <!-- saidas (fora de bin\client e de src\) -->
+    <JvcsOutDir>$(JvcsRoot)\bin\msbuild\$(JvcsTag)\$(Platform)\$(Config)</JvcsOutDir>
+    <JvcsDcuDir>$(JvcsRoot)\dcu\msbuild\$(JvcsTag)\$(Platform)\$(Config)\$(MSBuildProjectName)</JvcsDcuDir>
+    <SkipResGeneration>true</SkipResGeneration>
+    <!-- MSBuild de linha de comando: NAO importa o EnvOptions.proj (Library Path
+         da IDE). O GetIt poe la as FONTES do ICS e do Abbrevia, que seriam
+         recompiladas com as opcoes do JVCS; sem ele o unit path e so o do
+         projeto + $(BDS)\lib\<plat>\<cfg>, igual ao tools\compilar.bat.
+         Dentro da IDE vale o Library Path da propria IDE (esta chave nao muda
+         nada la). Para usar o Library Path da IDE na linha de comando:
+         msbuild ... /p:ImportEnvOptions=true -->
+    <ImportEnvOptions Condition="'$(ImportEnvOptions)'==''">false</ImportEnvOptions>
+    <!-- PostBuildEvent dos clientes: runtime ao lado do EXE/DLL (como o
+         compilar.bat faz em bin\client): fvcscrypt.dll (32 bits, LOGIN) e ajudas -->
+    <JvcsPostRuntime>if /i "$(Platform)"=="Win32" if exist "$(JvcsRoot)\3rdparty\fvcscrypt.dll" copy /y "$(JvcsRoot)\3rdparty\fvcscrypt.dll" "$(JvcsOutDir)\" &gt;nul
+if exist "$(JvcsRoot)\3rdparty\jedivcs.chm" copy /y "$(JvcsRoot)\3rdparty\jedivcs.chm" "$(JvcsOutDir)\" &gt;nul
+if exist "$(JvcsRoot)\3rdparty\jedivcsdiff.chm" copy /y "$(JvcsRoot)\3rdparty\jedivcsdiff.chm" "$(JvcsOutDir)\" &gt;nul
+exit /b 0</JvcsPostRuntime>
+  </PropertyGroup>
+</Project>

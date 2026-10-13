@@ -1,0 +1,90 @@
+﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <!-- JediVCS2026.groupproj - grupo de projetos do JEDI VCS 2.5 Beta 2026
+         (Delphi 11, 12 e 13). Saidas em bin\msbuild\<Dnn>\<plat>\<cfg>; o build
+         oficial continua sendo tools\compilar.bat e tools\compilar-expert.bat.
+         Linha de comando: rsvars.bat e depois
+           msbuild JediVCS2026.groupproj /p:Config=Release /p:Platform=Win32
+         (SynEdit/VTV antes: tools\compilar.bat [/delphi:NN] libs Release Win32) -->
+    <PropertyGroup>
+        <ProjectGuid>{E4FB58A9-18DE-40F6-B368-AC6A2546ECDF}</ProjectGuid>
+    </PropertyGroup>
+    <ItemGroup>
+        <Projects Include="src\jedivcs\Jedivcs.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="src\jedivcs\JediVCSDLL.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="src\jedivcsdiff\JEDIVCSDiff.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="src\jvcs\jvcs.dproj">
+            <Dependencies/>
+        </Projects>
+        <Projects Include="src\jvcsideexpert\JvcsExpertBDS.dproj">
+            <Dependencies/>
+        </Projects>
+    </ItemGroup>
+    <ProjectExtensions>
+        <Borland.Personality>Default.Personality.12</Borland.Personality>
+        <Borland.ProjectType/>
+        <BorlandProject>
+            <Default.Personality/>
+        </BorlandProject>
+    </ProjectExtensions>
+    <Target Name="Jedivcs">
+        <MSBuild Projects="src\jedivcs\Jedivcs.dproj"/>
+    </Target>
+    <Target Name="Jedivcs:Clean">
+        <MSBuild Projects="src\jedivcs\Jedivcs.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="Jedivcs:Make">
+        <MSBuild Projects="src\jedivcs\Jedivcs.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JediVCSDLL">
+        <MSBuild Projects="src\jedivcs\JediVCSDLL.dproj"/>
+    </Target>
+    <Target Name="JediVCSDLL:Clean">
+        <MSBuild Projects="src\jedivcs\JediVCSDLL.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JediVCSDLL:Make">
+        <MSBuild Projects="src\jedivcs\JediVCSDLL.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JEDIVCSDiff">
+        <MSBuild Projects="src\jedivcsdiff\JEDIVCSDiff.dproj"/>
+    </Target>
+    <Target Name="JEDIVCSDiff:Clean">
+        <MSBuild Projects="src\jedivcsdiff\JEDIVCSDiff.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JEDIVCSDiff:Make">
+        <MSBuild Projects="src\jedivcsdiff\JEDIVCSDiff.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="jvcs">
+        <MSBuild Projects="src\jvcs\jvcs.dproj"/>
+    </Target>
+    <Target Name="jvcs:Clean">
+        <MSBuild Projects="src\jvcs\jvcs.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="jvcs:Make">
+        <MSBuild Projects="src\jvcs\jvcs.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="JvcsExpertBDS">
+        <MSBuild Projects="src\jvcsideexpert\JvcsExpertBDS.dproj"/>
+    </Target>
+    <Target Name="JvcsExpertBDS:Clean">
+        <MSBuild Projects="src\jvcsideexpert\JvcsExpertBDS.dproj" Targets="Clean"/>
+    </Target>
+    <Target Name="JvcsExpertBDS:Make">
+        <MSBuild Projects="src\jvcsideexpert\JvcsExpertBDS.dproj" Targets="Make"/>
+    </Target>
+    <Target Name="Build">
+        <CallTarget Targets="Jedivcs;JediVCSDLL;JEDIVCSDiff;jvcs;JvcsExpertBDS"/>
+    </Target>
+    <Target Name="Clean">
+        <CallTarget Targets="Jedivcs:Clean;JediVCSDLL:Clean;JEDIVCSDiff:Clean;jvcs:Clean;JvcsExpertBDS:Clean"/>
+    </Target>
+    <Target Name="Make">
+        <CallTarget Targets="Jedivcs:Make;JediVCSDLL:Make;JEDIVCSDiff:Make;jvcs:Make;JvcsExpertBDS:Make"/>
+    </Target>
+    <Import Project="$(BDS)\Bin\CodeGear.Group.Targets" Condition="Exists('$(BDS)\Bin\CodeGear.Group.Targets')"/>
+</Project>
