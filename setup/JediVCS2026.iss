@@ -117,8 +117,8 @@ VersionInfoDescription=Instalador do {#AppName}
 VersionInfoCompany={#AppPublisher}
 
 [Languages]
-Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"
-Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"; InfoBeforeFile: "aviso-pt.txt"
+Name: "english"; MessagesFile: "compiler:Default.isl"; InfoBeforeFile: "aviso-en.txt"
 
 [CustomMessages]
 brazilianportuguese.TypeFull=Instalação completa
