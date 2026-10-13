@@ -33,6 +33,10 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
   importados, todos os símbolos resolvidos). Em 13/10/2026: 37 (Delphi 13.2) e 22 (Delphi 11.3).
 - O expert é registrado só em `HKCU\...\BDS\<v>\Experts` (IDE de 32 bits); um valor nosso em `Experts x64`
   (IDE de 64 bits do 12.3/13) é removido na instalação.
+- IDEs antigas (Delphi 7 a 10.4): os 21 experts **originais** 2.5.0.1030 vêm de
+  `3rdparty\experts-originais-2.5.0.1030` (seção 4A). O `gerar-instalador.bat` confere os 21 contra o
+  `SHA256SUMS.txt` da pasta e falha se algum mudar.
+- Skill do Claude Code: `skills\jedi-vcs` (pasta inteira) entra no componente **Ferramentas da IA**.
 
 ## 2. Instalar, reinstalar/reparar, desinstalar
 
@@ -50,7 +54,9 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 - **Desinstalar:** Painel de Controle → Programas → "JEDI VCS 2.5 Beta 2026", ou o atalho no Menu
   Iniciar, ou `unins000.exe` na pasta. Feche o Delphi antes.
 - Silencioso: `JediVCS-2.5-Beta2026-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR=...]
-  [/COMPONENTS=client,ide,maps,ai] [/TASKS=desktopicon,aiconsole] [/LOG=arquivo]`;
+  [/COMPONENTS=client,ide,ideold\bds10,ideold\bds21,maps,ai] [/TASKS=desktopicon,aiconsole] [/LOG=arquivo]`;
+  os nomes das IDEs antigas são `ideold\d7` e `ideold\bds<n>` (n = 1…12, 14…21). Sem `/COMPONENTS`, a
+  reinstalação repete a seleção da vez anterior;
   `unins000.exe /VERYSILENT /SUPPRESSMSGBOXES`. Com o Delphi aberto, o silencioso **aborta**
   (setup: código 7; desinstalação: código 1) sem mudar nada.
 
@@ -63,12 +69,26 @@ Tudo marcado por padrão, exceto a tarefa "Usar o console novo na IA".
 | **Cliente** (`client`) | `Jedivcs.exe`, `JEDIVCSDiff.exe`, `jvcs.exe`, `fvcscrypt.dll`, `jedivcs.chm`, `jedivcsdiff.chm`, `htm_rep.htm`, `ffdef.jvcs`, `ulist.jvcs`, `vcllist.jvcs`, `vcllistbcb.jvcs`, `verinf.jvcs`, `license.txt`. Menu Iniciar → "JEDI VCS 2026": cliente, Diff, as duas ajudas e desinstalar |
 | tarefa `desktopicon` | Atalho "JEDI VCS 2026" na área de trabalho |
 | **Expert** (`ide`) | `JvcsExpertBDS<nn>.dll` + `JvcsExternalDll.dll` (e o runtime acima, que a DLL procura na própria pasta, inclusive o `JEDIVCSDiff.exe` do Compare). Registra o expert nas IDEs detectadas (seção 4) |
+| **IDEs antigas** (`ideold`, com subcomponentes `ideold\d7`, `ideold\bds1` … `ideold\bds21`) | Aparece só se alguma IDE antiga for detectada, com um subcomponente por IDE detectada (todos marcados). Instala o `JvcsExpertD7.dll`/`JvcsExpertBDS<n>.dll` **original** 2.5.0.1030 de cada IDE marcada, mais a `JvcsExternalDll.dll` **nova** e o runtime, e registra o expert na IDE (seção 4A) |
 | **.map** (`maps`) | `Jedivcs.map` e `JvcsExternalDll.map` ao lado dos módulos: o log de erros (`%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-exe|dll-*.log`, JclDebug) passa a mostrar unit/rotina/linha. ~14 MB cada sem compressão, poucos MB no setup (texto comprime bem). Diff, console e expert não usam `.map` |
-| **Ferramentas da IA** (`ai`) | `tools\ai` inteiro em `{app}\tools\ai`, byte a byte (os `.ps1` continuam UTF-8 com BOM e CRLF). Menu Iniciar: atalho para a pasta. Para usar num projeto: `{app}\tools\ai\instalar-no-projeto.ps1 -ProjectDir ...` (ver `tools\ai\LEIAME.md`) |
+| **Ferramentas da IA** (`ai`) | `tools\ai` inteiro em `{app}\tools\ai`, byte a byte (os `.ps1` continuam UTF-8 com BOM e CRLF). Menu Iniciar: atalho para a pasta. Para usar num projeto: `{app}\tools\ai\instalar-no-projeto.ps1 -ProjectDir ...` (ver `tools\ai\LEIAME.md`). Também instala a **skill distribuível** `skills\jedi-vcs` (SKILL.md, README.md, `references\`, `scripts\`), byte a byte, em `{app}\tools\ai\skills\jedi-vcs` (ver "Skill do Claude Code" abaixo) |
 | tarefa `aiconsole` (desmarcada) | Grava `jvcsExe={app}\jvcs.exe` na seção `[ai]` de `%APPDATA%\JEDI\JVCS\config.ini`, com o mesmo algoritmo do `jvcs-ai.ps1 config set` (UTF-8 com BOM, CRLF, resto do arquivo preservado; `checkout=`/`checkin=` intactos). O valor anterior é guardado e volta na desinstalação (ou se a tarefa for desmarcada numa reinstalação); se o `config.ini` foi criado pelo instalador e ficou vazio, ele é apagado |
 
+**Skill do Claude Code:** o instalador **não** copia a skill para o perfil do usuário. Para que o Claude
+Code a use em todos os projetos, copie a pasta (feche o Claude Code antes):
+
+```
+robocopy "C:\Program Files (x86)\JEDI\JVCS 2026\tools\ai\skills\jedi-vcs" "%USERPROFILE%\.claude\skills\jedi-vcs" /E
+```
+
+Troque o caminho de origem se instalou em outra pasta; com `/CURRENTUSER` ele fica em
+`%LOCALAPPDATA%\Programs\JEDI\JVCS 2026`. Para usar a skill só num projeto, copie a pasta para
+`<projeto>\.claude\skills\jedi-vcs`. A desinstalação não mexe nessas cópias.
+
 **Não instalados de propósito:** `.drc`, `.dcu`, `zipdll.dll`/`unzdll.dll` (DelZip, trocado pelo
-Abbrevia; só o About as listava), `borlndmm.dll` (sem ShareMem), o `jedivcsdiff.exe` 2.5.0.1030 que o
+Abbrevia; só o About as listava, e nenhum expert original as usa), `borlndmm.dll` (sem ShareMem),
+`JvcsVcsManagerD5.dll`/`JvcsVcsManagerD6.dll` (não são experts finos: cada uma é o cliente 2.5.0.1030
+inteiro para Delphi/C++Builder 5 e 6 e não usa a DLL nova; para essas IDEs, use o instalador original), o `jedivcsdiff.exe` 2.5.0.1030 que o
 `compilar-expert.bat` copia para `bin\ideclient\Win32` (aqui a DLL usa o `JEDIVCSDiff.exe` novo da mesma
 pasta) e os `.reg` de desenvolvimento.
 
@@ -100,8 +120,64 @@ Desinstalação: remove `JVCSIDEClient` **só se ele aponta para a pasta desta i
 instalação ou o expert de desenvolvimento ficam como estão); se havia valor anterior, ele volta.
 
 **Delphi aberto:** antes de instalar (com o expert marcado ou já instalado na pasta) e antes de
-desinstalar, se houver um `bds.exe` rodando (WMI, e janela `TAppBuilder` como reserva), o setup pede para
-fechar (Repetir/Cancelar). A IDE regrava `Experts` ao fechar e prende a DLL do expert.
+desinstalar, se houver um `bds.exe` ou `delphi32.exe` (Delphi 7) rodando (WMI, e janela `TAppBuilder`
+como reserva), o setup pede para fechar (Repetir/Cancelar). A IDE regrava `Experts` ao fechar e prende a
+DLL do expert.
+
+## 4A. IDEs antigas: expert original + núcleo novo
+
+O JEDI VCS 2.5.0.1030 suportava Delphi 7 e BDS 1.0 a 21.0 (10.4 Sydney) com experts **finos**. Esses
+experts só fazem a ponte com a ToolsAPI e carregam a `JvcsExternalDll.dll` da própria pasta, pela ABI de
+4 exports (`JEDIVCSDLLINIT`/`FINALIZE`/`HISTORYINIT`/`OPERATIONINIT`), 24 callbacks e `PAnsiChar`. A
+`JvcsExternalDll.dll` 2.5.0.2026 mantém essa ABI. Por isso o instalador põe o expert **original** de
+cada IDE antiga ao lado da DLL **nova** em `{app}`, e essas IDEs passam a usar o cliente 2026. Os
+binários, a origem, o SHA-256 e a licença estão em `3rdparty\experts-originais-2.5.0.1030\LEIAME.md`.
+
+| IDE | Arquivo | Chave (HKCU), valor `JVCSIDEClient` |
+|---|---|---|
+| Delphi 7 | `JvcsExpertD7.dll` | `Software\Borland\Delphi\7.0\Experts` |
+| C#Builder 1.0, Delphi 8, 2005, 2006, 2007 (BDS 1.0–5.0) | `JvcsExpertBDS1…5.dll` | `Software\Borland\BDS\<n>.0\Experts` |
+| Delphi 2009, 2010 (BDS 6.0–7.0) | `JvcsExpertBDS6/7.dll` | `Software\CodeGear\BDS\<n>.0\Experts` |
+| XE a 10.4 Sydney (BDS 8.0–12.0, 14.0–21.0) | `JvcsExpertBDS8…21.dll` | `Software\Embarcadero\BDS\<n>.0\Experts` |
+
+As chaves e o nome do valor são **os mesmos do instalador original**, conferidos no `unins000.dat`
+dele.
+
+1. **Detecção:** a IDE conta como instalada se `HKCU` ou `HKLM` (32 bits, `WOW6432Node`), na chave
+   acima sem o `\Experts`, tem `App` apontando para um executável existente, ou, na falta dele,
+   `RootDir` com `bin\bds.exe` ou `bin\delphi32.exe`. Só as IDEs detectadas aparecem como
+   subcomponentes de "IDEs antigas" (todas marcadas). Se nenhuma for detectada, o componente nem
+   aparece.
+2. **Arquivos:** para cada IDE marcada, o expert original correspondente vai para `{app}`, junto com a
+   `JvcsExternalDll.dll` nova, `fvcscrypt.dll`, `*.jvcs`, `htm_rep.htm`, `*.chm` e `JEDIVCSDiff.exe` (o
+   Diff portado; a DLL o procura como `jedivcsdiff.exe` na própria pasta). Não há outros arquivos
+   (seção 3, "Não instalados").
+3. **Registro:** valem as mesmas regras da seção 4. Se `HKCU\<chave da IDE>` não existe (IDE nunca
+   aberta por este usuário), o setup não registra e avisa. O valor anterior (por exemplo, o
+   `C:\Program Files (x86)\JEDI\JVCS\JvcsExpertBDS10.dll` do original) é guardado em
+   `jvcs2026-setup.ini` (`old.<id>.*`) e **restaurado na desinstalação**. Desmarcar uma IDE numa
+   reinstalação desfaz o registro dela. Nada é gravado em `Experts x64`.
+4. A pasta desta versão contém `JvcsExpertBDS21.dll`/`JvcsExpertD7.dll`, mas não é confundida com a do
+   JEDI VCS original: a recusa de pasta (seção 2) ignora uma pasta cuja `JvcsExternalDll.dll` ou cujo
+   `jedivcs.exe` é 2.5.0.2026.
+
+**Suporte por versão** (13/10/2026):
+
+| IDE | Instalador (arquivos + registro) | Expert original + DLL nova numa IDE real |
+|---|---|---|
+| Delphi 7, 2007, XE3, 10.4 | testado com chaves falsas (seção 6) | **não testado** |
+| Demais (C#Builder 1, Delphi 8, 2005, 2006, 2009, 2010, XE, XE2, XE4–XE8, 10–10.3) | mesmo código, não exercitado | **não testado** |
+| Delphi 11/12/13 | expert **novo** (seção 4), não usa os originais | ver `doc\client\Port-DLL-IDE.md` |
+
+O teste da ABI fora da IDE (`src\jvcsideexpert\tests\testar-dll.bat nova`) passou com a DLL do pacote.
+O teste real (XE3 em outro PC) está em `doc\client\Port-DLL-IDE.md`, seção 5B.
+
+Limitações herdadas do expert original, que a DLL nova não corrige:
+
+- O conteúdo do editor chega em UTF-8 cru nas IDEs Unicode (2009+), afetando acentos na expansão de
+  keywords.
+- Os buffers de nomes têm 256 bytes.
+- A DLL não recebe o tema da IDE (`JVCS_IDE_THEME` só vem do expert novo).
 
 ## 5. Convivência
 
@@ -141,3 +217,38 @@ registro real da IDE nem no `config.ini` real. Dois parâmetros **só para teste
 
 Não testados: instalação em modo administrador (pede UAC), assistente interativo, IDE nunca aberta
 (precisa de chave em `HKLM`), Delphi 11/12.
+
+### 6.1 IDEs antigas e skill (13/10/2026)
+
+Há um terceiro parâmetro **só para teste**, `/OLDIDEROOT=Software\<chave de teste>`. Ele troca o
+`Software` do início das chaves das IDEs antigas (`<raiz>\Borland\Delphi\7.0`,
+`<raiz>\Borland|CodeGear|Embarcadero\BDS\<n>.0`), tanto em HKCU quanto em HKLM. A desinstalação usa a
+chave guardada no `jvcs2026-setup.ini`.
+
+O roteiro `teste-ideold.ps1` (scratchpad da sessão) roda o setup gerado com `--sem-build` em modo
+silencioso, com `/CURRENTUSER`, numa pasta do scratchpad, com `/BDSKEY` e `/OLDIDEROOT` em
+`HKCU\Software\JVCS2026Teste` e `/AICONFIG` no scratchpad. Ele cria estas IDEs falsas (`App`/`RootDir`
+apontando para arquivos vazios do scratchpad):
+
+- **XE3** (`Embarcadero\BDS\10.0`): `JVCSIDEClient` do original
+  `C:\Program Files (x86)\JEDI\JVCS\JvcsExpertBDS10.dll` e mais um valor `OutroExpert`;
+- **10.4** (`Embarcadero\BDS\21.0`): sem `Experts`;
+- **2007** (`Borland\BDS\5.0`): `JVCSIDEClient` do original;
+- **Delphi 7** (`Borland\Delphi\7.0`): só `RootDir` com `Bin\delphi32.exe`;
+- **2010** (`CodeGear\BDS\7.0`): `App` apontando para um arquivo inexistente.
+
+Resultado: **43 verificações, 0 falhas**.
+
+| Cenário | Resultado |
+|---|---|
+| `delphi32.exe` rodando (cópia renomeada do `ping.exe`) | setup abortado (código 7), nada instalado, registro intacto |
+| Instalação completa | `JvcsExpertBDS10/21/5.dll` e `JvcsExpertD7.dll` copiados, com hash igual ao de `3rdparty`; `JvcsExpertBDS7.dll` **não** copiado (2010 não detectado); `JvcsExternalDll.dll` nova e runtime na pasta; sem `zipdll`/`borlndmm` |
+| Registro | XE3 e 2007 → `{app}\JvcsExpertBDS<n>.dll`, com o valor anterior guardado (`old.<id>.prev`); 10.4 e D7 criados; `OutroExpert` intacto; nada na chave do 2010 nem em `Experts x64` |
+| Skill | os 6 arquivos de `skills\jedi-vcs` em `{app}\tools\ai\skills\jedi-vcs`, byte a byte; nada copiado para `%USERPROFILE%\.claude\skills` |
+| Reinstalar com `/COMPONENTS=…` sem `ideold\bds21` | `JVCSIDEClient` do 10.4 removido; XE3 continua registrado e o valor anterior dele não se perde |
+| Reinstalar na mesma pasta (com `JvcsExpertBDS21.dll`) sem `/COMPONENTS` | aceito; repete a seleção anterior (10.4 continua fora); com `/COMPONENTS` incluindo `ideold\bds21`, o 10.4 volta a ser registrado |
+| Desinstalar | XE3 e 2007 voltam ao expert **original** 2.5.0.1030; 10.4 e D7 removidos; `OutroExpert` intacto; arquivos removidos |
+| Registro real | `HKCU\Software\Embarcadero` exportado antes e depois: **idêntico**; `HKCU\Software\Borland`/`CodeGear` não criados |
+
+`tools\gerar-instalador.bat` com um hash alterado no `SHA256SUMS.txt`: `[FALHOU] experts originais
+2.5.0.1030 ...: ERRO JvcsExpertD7.dll`, código 1, instalador não gerado.

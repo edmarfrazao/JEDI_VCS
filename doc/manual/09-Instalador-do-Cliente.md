@@ -13,7 +13,7 @@ testes: [setup\LEIAME.md](../../setup/LEIAME.md).
 
 ## 2. Antes de instalar
 
-1. **Feche o Delphi** (todas as janelas do `bds.exe`). Se ele estiver aberto, o instalador pede para
+1. **Feche o Delphi** (todas as janelas do `bds.exe`; no Delphi 7, `delphi32.exe`). Se ele estiver aberto, o instalador pede para
    fechar (Repetir/Cancelar).
 2. Abra o Delphi **pelo menos uma vez** com o seu usuário antes de instalar: se a IDE nunca foi aberta,
    o expert não é registrado (aparece um aviso; abra e feche o Delphi e rode o setup de novo).
@@ -31,8 +31,9 @@ testes: [setup\LEIAME.md](../../setup/LEIAME.md).
    |---|---|
    | Cliente | `Jedivcs.exe` (standalone), `JEDIVCSDiff.exe`, `jvcs.exe` (console) e ajudas |
    | Expert para o Delphi | Menu **JEDI VCS** na IDE de 32 bits; a linha mostra os Delphi detectados |
+   | IDEs antigas detectadas | Só aparece se houver um Delphi de 7 a 10.4 Sydney instalado, com uma linha por IDE detectada. Instala o expert **original** 2.5.0.1030 daquela IDE ligado ao cliente novo (seção 4A) |
    | Arquivos `.map` | O log de erros passa a dizer unit e linha (útil para relatar erro) |
-   | Ferramentas da IA | `tools\ai` (wrapper, hooks e skill do Claude Code) dentro da pasta instalada |
+   | Ferramentas da IA | `tools\ai` (wrapper, hooks) e a skill `jedi-vcs` do Claude Code em `tools\ai\skills\jedi-vcs`, dentro da pasta instalada. Para usar a skill, copie-a para `%USERPROFILE%\.claude\skills\jedi-vcs` (ver [setup\LEIAME.md](../../setup/LEIAME.md), seção 3) |
 
 5. Tarefas: atalho na área de trabalho (marcado) e **"Usar o console novo na IA"** (desmarcado: marque
    só se quiser que a automação por IA use o `jvcs.exe` novo em vez do original).
@@ -52,11 +53,37 @@ para compilar o port (ver [capítulo 03](03-Integracao-com-o-Delphi.md), método
 
 Abra o Delphi e confira como no [capítulo 03, seção 5](03-Integracao-com-o-Delphi.md#5-verificar-se-carregou).
 
+## 4A. IDEs antigas (Delphi 7 a 10.4 Sydney)
+
+O JEDI VCS original 2.5.0.1030 tinha um expert para cada Delphi, do 7 ao 10.4 Sydney. O instalador 2026
+reaproveita esses experts **originais**. Eles são só a ponte com a IDE: o trabalho fica todo na
+`JvcsExternalDll.dll`, que agora é a **nova**. Assim, um Delphi XE3, por exemplo, ganha o menu **JEDI
+VCS** com o cliente 2026 (as mesmas janelas, correções e opções do `Jedivcs.exe` novo).
+
+- Na tela de componentes, **IDEs antigas detectadas** lista só os Delphi antigos encontrados no
+  computador, todos marcados. Desmarque os que não quiser.
+- Para cada IDE marcada, o setup grava o mesmo valor que o instalador original gravava:
+  `HKCU\Software\<Borland|CodeGear|Embarcadero>\...\Experts` → `JVCSIDEClient` =
+  `<pasta>\JvcsExpertBDS<n>.dll` (no Delphi 7, `JvcsExpertD7.dll`). Se o JEDI VCS original estava
+  registrado ali, o valor dele é guardado e **volta na desinstalação**.
+- Versões cobertas: Delphi 7, 2005, 2006, 2007, 2009, 2010, XE a XE8, 10 Seattle, 10.1 Berlin, 10.2
+  Tokyo, 10.3 Rio e 10.4 Sydney. Também C#Builder 1 e Delphi 8 for .NET, como no original.
+- **Delphi 5 e 6 (e C++Builder 5/6) ficam de fora.** Para eles, o original usava um cliente completo
+  antigo, que não usa o núcleo novo. Nessas IDEs, continue com o instalador original.
+- **Status:** o instalador foi testado com IDEs simuladas. O expert original com a DLL nova ainda **não
+  foi testado numa IDE antiga real**. Se algo falhar, desmarque a IDE numa reinstalação: o
+  `JVCSIDEClient` volta ao valor anterior.
+- Limitações herdadas do expert original:
+  - acentos no conteúdo do editor podem sair errados nas operações que leem ou escrevem o fonte (por
+    exemplo, na expansão de keywords);
+  - as janelas não seguem o tema escuro da IDE.
+
 ## 5. Reinstalar, reparar ou atualizar
 
 Rode o setup de novo (o mesmo ou um mais novo), com o Delphi fechado. Ele reaproveita a pasta e as
-escolhas anteriores e substitui todos os arquivos. Para tirar o expert sem desinstalar o resto, rode de
-novo e desmarque **Expert para o Delphi**: o `JVCSIDEClient` volta ao valor anterior.
+escolhas anteriores e substitui todos os arquivos. Para tirar o expert sem desinstalar o resto, rode o
+setup de novo e desmarque **Expert para o Delphi** (ou a IDE, em **IDEs antigas detectadas**): o
+`JVCSIDEClient` volta ao valor anterior.
 
 ## 6. Desinstalar
 
@@ -78,11 +105,14 @@ JediVCS-2.5-Beta2026-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES /CURRENTUSER /COMPO
 Sem `/CURRENTUSER` instala para todos (precisa de prompt elevado). Com o Delphi aberto, o modo silencioso
 aborta sem mudar nada (setup: código 7; desinstalação: código 1).
 
+Em `/COMPONENTS`, as IDEs antigas se chamam `ideold\d7` e `ideold\bds<n>` (por exemplo, `ideold\bds10` =
+XE3 e `ideold\bds21` = 10.4). Sem `/COMPONENTS`, uma reinstalação repete as escolhas anteriores.
+
 ## 8. Problemas comuns
 
 | Sintoma | Causa e solução |
 |---|---|
-| "O Delphi (bds.exe) está aberto" | Feche todas as instâncias do Delphi (veja o Gerenciador de Tarefas) e clique em Repetir |
+| "O Delphi (bds.exe ou delphi32.exe) está aberto" | Feche todas as instâncias do Delphi (veja o Gerenciador de Tarefas) e clique em Repetir |
 | Aviso "ainda não foi aberto por este usuário" | Abra e feche o Delphi uma vez e rode o setup de novo (reparar) |
 | Menu JEDI VCS não aparece | Confira o `JVCSIDEClient` no registro e se a IDE é a de 32 bits (`bin\bds.exe`); veja o [capítulo 08](08-Solucao-de-Problemas.md) |
 | O UAC pediu senha de outra conta e o expert não apareceu | O registro foi gravado no perfil da outra conta. Rode o setup escolhendo "só para mim" |
