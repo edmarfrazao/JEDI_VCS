@@ -2,8 +2,13 @@
 rem ==========================================================================
 rem  compilar-expert.bat - Compila o expert de IDE do JEDI VCS (wizard DLL)
 rem
-rem  Uso:   compilar-expert.bat [Debug ou Release] [nova ou original]
-rem         Padrao: Release nova
+rem  Uso:   compilar-expert.bat [/delphi:11|12|13 | /bds:22|23|37] [Debug ou Release] [nova ou original]
+rem         Padrao: Delphi 13 (ou JVCS_DELPHI), Release nova
+rem         /delphi:NN ou /bds:NN escolhe o Delphi que compila (tools\versoes.ini,
+rem         lido por tools\versao-delphi.bat); cada versao gera o seu
+rem         JvcsExpertBDS<nn>.dll na mesma pasta bin\ideclient\Win32 (o instalador
+rem         pega todos os que existirem). Versao nao instalada: mensagem e
+rem         codigo 1, nada e alterado.
 rem
 rem  Compila src\jvcsideexpert\JvcsExpertBDS.dpr com dcc32 (Win32, runtime
 rem  packages rtl;vcl;designide) e gera:
@@ -11,9 +16,10 @@ rem    bin\ideclient\Win32\JvcsExpertBDS<nn>.dll   (nn = numero BDS:
 rem                                                22 = Delphi 11, 23 = Delphi 12,
 rem                                                37 = Delphi 13)
 rem  O nome sai do $LIBSUFFIX do .dpr (CompilerVersion); o script descobre o
-rem  nn pela DLL gerada. DCUs e o .res de versao em dcu\Win32\expert.
+rem  nn pela DLL gerada e confere com a versao pedida. DCUs e o .res de versao
+rem  em dcu\Win32\expert (Delphi 13) ou dcu\<D11|D12>\Win32\expert.
 rem
-rem  A DLL e compilada em dcu\Win32\expert\out e so e copiada para
+rem  A DLL e compilada em dcu[\<tag>]\Win32\expert\out e so e copiada para
 rem  bin\ideclient\Win32 se a compilacao e a verificacao do PE derem certo:
 rem  um build com falha NAO apaga o expert que a IDE ja usa.
 rem
@@ -39,7 +45,9 @@ rem
 rem  Variaveis de ambiente opcionais:
 rem    BDSROOT      = pasta raiz do RAD Studio (sobrescreve o caminho padrao
 rem                   ProgramFiles(x86)\Embarcadero\Studio\BDSVER). Se a pasta
-rem                   final for numerica (ex.: ...\Studio\23.0) ela define o BDSVER.
+rem                   final for numerica (ex.: ...\Studio\23.0) ela define a versao
+rem                   (e precisa bater com /delphi ou /bds).
+rem    JVCS_DELPHI  = versao padrao (11, 12, 13) sem /delphi nem /bds.
 rem    JVCS_INSTALL = pasta da instalacao original do JEDI VCS 2.5
 rem                   (padrao: ProgramFiles(x86)\JEDI\JVCS)
 rem
@@ -53,7 +61,7 @@ rem ==========================================================================
 setlocal EnableExtensions DisableDelayedExpansion
 
 rem ---- Configuracao (ajuste aqui) -------------------------------------------
-set "BDSVER=37.0"
+rem  (versao do Delphi: /delphi:, /bds:, JVCS_DELPHI ou BDSROOT - ver versoes.ini)
 set "BLD_PROJ=JvcsExpertBDS"
 set "BLD_RCNAME=JvcsExpertBDS_ver"
 set "BLD_CODEPAGE=65001"
@@ -70,8 +78,6 @@ for %%I in ("%~dp0.") do set "BLD_TOOLS=%%~fI"
 set "BLD_LOGDIR=%BLD_TOOLS%\logs"
 set "BLD_SRCDIR=%BLD_ROOT%\src\jvcsideexpert"
 set "BLD_OUTDIR=%BLD_ROOT%\bin\ideclient\Win32"
-set "BLD_DCUDIR=%BLD_ROOT%\dcu\Win32\expert"
-set "BLD_STAGE=%BLD_DCUDIR%\out"
 set "BLD_3RD=%BLD_ROOT%\3rdparty"
 set "BLD_3RDREF=%BLD_ROOT%\3rdparty\referencia-2.5.0.1030"
 if not defined JVCS_INSTALL set "JVCS_INSTALL=%ProgramFiles(x86)%\JEDI\JVCS"
@@ -79,13 +85,31 @@ set "JVCS_INSTALL=%JVCS_INSTALL:"=%"
 if "%JVCS_INSTALL:~-1%"=="\" set "JVCS_INSTALL=%JVCS_INSTALL:~0,-1%"
 
 rem ---- Parametros -----------------------------------------------------------
-if "%~1"=="/?" goto :usage
-if /i "%~1"=="-h" goto :usage
-if /i "%~1"=="--help" goto :usage
+rem  /delphi:NN ou /bds:NN em qualquer posicao; o resto e posicional (config, dll)
+set "BLD_VERARG="
+set "BLD_CFG="
+set "BLD_EXTDLL="
+set "BLD_NPOS=0"
+:args
+if "%~1"=="" goto :args_done
+set "BLD_A=%~1"
+if "%BLD_A%"=="/?" goto :usage
+if /i "%BLD_A%"=="-h" goto :usage
+if /i "%BLD_A%"=="--help" goto :usage
+if /i "%BLD_A:~0,8%"=="/delphi:" (
+    set "BLD_VERARG=%BLD_A:~8%"
+) else if /i "%BLD_A:~0,5%"=="/bds:" (
+    set "BLD_VERARG=%BLD_A:~5%"
+) else if "%BLD_A:~0,1%"=="/" (
+    goto :bad_opt
+) else (
+    call :posarg
+)
+shift
+goto :args
+:args_done
 
-set "BLD_CFG=%~1"
 if not defined BLD_CFG set "BLD_CFG=Release"
-set "BLD_EXTDLL=%~2"
 if not defined BLD_EXTDLL set "BLD_EXTDLL=nova"
 if /i "%BLD_EXTDLL%"=="nova" (
     set "BLD_EXTDLL=nova"
@@ -103,12 +127,20 @@ if /i "%BLD_CFG%"=="Debug" (
     goto :bad_cfg
 )
 
-rem ---- Instalacao do RAD Studio ---------------------------------------------
-set "BLD_BDSDIR=%ProgramFiles(x86)%\Embarcadero\Studio\%BDSVER%"
-if defined BDSROOT set "BLD_BDSDIR=%BDSROOT:"=%"
-if "%BLD_BDSDIR:~-1%"=="\" set "BLD_BDSDIR=%BLD_BDSDIR:~0,-1%"
-if defined BDSROOT for %%I in ("%BLD_BDSDIR%") do call :ver_from_leaf "%%~nxI"
-rem  (o numero BDS do nome da DLL e dos imports vem da DLL gerada - :find_output)
+rem ---- Versao do Delphi (tools\versoes.ini) e instalacao do RAD Studio -------
+call "%BLD_TOOLS%\versao-delphi.bat" "%BLD_VERARG%"
+if errorlevel 1 goto :bad_ver
+set "BLD_BDSDIR=%VD_BDSDIR%"
+if not "%VD_INSTALLED%"=="1" goto :not_installed
+rem  DCUs, .res e preparacao por versao (Delphi 13 sem subpasta, como antes)
+set "BLD_TAGP="
+set "BLD_TAGL="
+if defined VD_TAG set "BLD_TAGP=\%VD_TAG%"
+if defined VD_TAG set "BLD_TAGL=%VD_TAG%_"
+set "BLD_DCUDIR=%BLD_ROOT%\dcu%BLD_TAGP%\Win32\expert"
+set "BLD_STAGE=%BLD_DCUDIR%\out"
+rem  (o numero BDS do nome da DLL vem da DLL gerada - :find_output - e tem de
+rem  ser o da versao pedida, VD_BDSNUM; o sufixo dos pacotes vem do versoes.ini)
 
 rem ---- Opcoes do compilador conforme a configuracao ------------------------
 rem  -GD = .map detalhado (enderecos de AV dentro da IDE)
@@ -125,7 +157,6 @@ set "BLD_SW=%BLD_SW% -W+ -H+"
 
 rem ---- Ambiente do RAD Studio (rsvars.bat) ----------------------------------
 set "BLD_RSVARS=%BLD_BDSDIR%\bin\rsvars.bat"
-if not exist "%BLD_RSVARS%" goto :no_rsvars
 call "%BLD_RSVARS%"
 set "BLD_DCC=%BLD_BDSDIR%\bin\DCC32.EXE"
 if not exist "%BLD_DCC%" goto :no_dcc
@@ -135,15 +166,19 @@ set "BLD_RELDIR=%BLD_BDSDIR%\lib\win32\release"
 set "BLD_LIBDIR=%BLD_BDSDIR%\lib\win32\%BLD_LIBCFG%"
 if not exist "%BLD_RELDIR%\designide.dcp" goto :no_lib
 set "BLD_OBJDUMP=%BLD_BDSDIR%\bin64\llvm-objdump.exe"
+rem  o Delphi 11 nao traz llvm-objdump: usa o de outra versao instalada (le qualquer PE)
+for %%V in (37.0 23.0) do call :find_objdump %%V
+rem  .bpl desta versao para tools\verificar-expert.ps1 (simbolos importados x exportados)
+set "BLD_BPLREF=%BLD_BDSDIR%\bin"
 
 if not exist "%BLD_LOGDIR%" mkdir "%BLD_LOGDIR%"
 if not exist "%BLD_OUTDIR%" mkdir "%BLD_OUTDIR%"
 if not exist "%BLD_DCUDIR%" mkdir "%BLD_DCUDIR%"
 if not exist "%BLD_STAGE%" mkdir "%BLD_STAGE%"
-set "BLD_LOG=%BLD_LOGDIR%\compilar-expert_Win32_%BLD_CFG%.log"
+set "BLD_LOG=%BLD_LOGDIR%\compilar-expert_%BLD_TAGL%Win32_%BLD_CFG%.log"
 
 echo Raiz    : %BLD_ROOT%
-echo Delphi  : %BLD_BDSDIR%
+echo Delphi  : %VD_NAME% - %BLD_BDSDIR% ^(BDS %BDSVER%, JvcsExpertBDS%VD_BDSNUM%.dll, pacotes %VD_PKG%^)
 echo Config  : %BLD_CFG% Win32 ^(dcc32, pacotes %BLD_PACKAGES%^)
 echo Saida   : %BLD_OUTDIR%\%BLD_PROJ%^<nn^>.dll ^(compilada antes em %BLD_STAGE%^)
 echo DLL     : JvcsExternalDll.dll %BLD_EXTDLL% ^(nova = %BLD_NEWDLLDIR%^)
@@ -190,6 +225,7 @@ echo.
 echo ==== Verificacao do PE ====
 set "BLD_PEFAIL=0"
 call :verify_pe
+call :verify_syms
 
 rem ---- 4) Instala a DLL em bin\ideclient\Win32 -------------------------------
 echo.
@@ -235,9 +271,8 @@ for %%F in ("%BLD_STAGE%\%BLD_PROJ%*.dll") do set "BLD_DLLNAME=%%~nxF"
 if not defined BLD_DLLNAME goto :eof
 set "BLD_BDSNUM=%BLD_DLLNAME:.dll=%"
 call set "BLD_BDSNUM=%%BLD_BDSNUM:%BLD_PROJ%=%%"
-set "BLD_PKGVER=%BLD_BDSNUM%0"
-if "%BLD_BDSNUM%"=="22" set "BLD_PKGVER=280"
-if "%BLD_BDSNUM%"=="23" set "BLD_PKGVER=290"
+set "BLD_PKGVER=%VD_PKG%"
+if not "%BLD_BDSNUM%"=="%VD_BDSNUM%" echo [AVISO] o $LIBSUFFIX gerou %BLD_DLLNAME%, mas a versao pedida e BDS %VD_BDSNUM% ^(confira o .dpr^)
 set "BLD_DLLSTG=%BLD_STAGE%\%BLD_DLLNAME%"
 set "BLD_DLL=%BLD_OUTDIR%\%BLD_DLLNAME%"
 goto :eof
@@ -273,6 +308,30 @@ call :pe_check "INITWIZARD0001" "export INITWIZARD0001"
 call :pe_check "DLL Name: rtl%BLD_PKGVER%.bpl" "import rtl%BLD_PKGVER%.bpl"
 call :pe_check "DLL Name: vcl%BLD_PKGVER%.bpl" "import vcl%BLD_PKGVER%.bpl"
 call :pe_check "DLL Name: designide%BLD_PKGVER%.bpl" "import designide%BLD_PKGVER%.bpl"
+goto :eof
+
+rem ---- :find_objdump VER  - llvm-objdump de outra versao, se faltar o desta ----
+:find_objdump
+if exist "%BLD_OBJDUMP%" goto :eof
+set "BLD_OBJDUMP=%ProgramFiles(x86)%\Embarcadero\Studio\%~1\bin64\llvm-objdump.exe"
+goto :eof
+
+rem ==========================================================================
+rem  :verify_syms  - todo simbolo importado dos .bpl existe nos .bpl desta
+rem  instalacao? (tools\verificar-expert.ps1; mesma resolucao do LoadLibrary)
+rem ==========================================================================
+:verify_syms
+>>"%BLD_LOG%" echo.
+>>"%BLD_LOG%" echo ---- verificar-expert.ps1 %BLD_DLLNAME% contra %BLD_BPLREF%
+powershell -NoProfile -ExecutionPolicy Bypass -File "%BLD_TOOLS%\verificar-expert.ps1" -Expert "%BLD_DLLSTG%" -BplDir "%BLD_BPLREF%" >>"%BLD_LOG%" 2>&1
+if errorlevel 1 (
+    echo [FALHOU] simbolos importados ausentes nos .bpl de "%BLD_BPLREF%" ^(veja o log^)
+    set "BLD_RESULT=2"
+    set "BLD_PEFAIL=1"
+    goto :eof
+)
+for /f "tokens=1,* delims=:" %%A in ('findstr /b /c:"Pacotes importados:" "%BLD_LOG%"') do set "BLD_SYMLINE=%%B"
+echo [OK] simbolos importados resolvidos nos .bpl desta instalacao -%BLD_SYMLINE%
 goto :eof
 
 :pe_check
@@ -397,8 +456,8 @@ rem ---- :count_msgs  - conta avisos e dicas no log ----------------------------
 :count_msgs
 set "BLD_NWARN=0"
 set "BLD_NHINT=0"
-for /f %%N in ('findstr /i /c:" Warning: " "%BLD_LOG%" ^| find /c /v ""') do set "BLD_NWARN=%%N"
-for /f %%N in ('findstr /i /c:" Hint: " "%BLD_LOG%" ^| find /c /v ""') do set "BLD_NHINT=%%N"
+for /f %%N in ('findstr /i /c:" Warning: " "%BLD_LOG%" ^| "%SystemRoot%\System32\find.exe" /c /v ""') do set "BLD_NWARN=%%N"
+for /f %%N in ('findstr /i /c:" Hint: " "%BLD_LOG%" ^| "%SystemRoot%\System32\find.exe" /c /v ""') do set "BLD_NHINT=%%N"
 goto :eof
 
 rem ---- :show_warnings  - mostra os primeiros BLD_MAXWARN avisos ---------------
@@ -429,9 +488,12 @@ for /f "usebackq delims=" %%L in (`findstr /i /c:"Fatal:" /c:"Error:" /c:"error 
 endlocal
 goto :eof
 
-rem ---- :ver_from_leaf NOME  - se NOME for NN.N define BDSVER (ex.: 23.0) --------
-:ver_from_leaf
-echo %~1| findstr /r /x "[0-9][0-9]*\.[0-9][0-9]*" >nul && set "BDSVER=%~1"
+rem ---- :posarg  - parametro posicional (config, dll) ---------------------------
+:posarg
+set /a "BLD_NPOS+=1"
+if %BLD_NPOS% equ 1 set "BLD_CFG=%BLD_A%"
+if %BLD_NPOS% equ 2 set "BLD_EXTDLL=%BLD_A%"
+if %BLD_NPOS% gtr 2 echo [AVISO] parametro ignorado: %BLD_A%
 goto :eof
 
 rem ---- :now VAR  - hora atual em centesimos de segundo ----------------------
@@ -452,8 +514,9 @@ goto :eof
 
 rem ---- Mensagens de uso/erro ------------------------------------------------
 :usage
-echo Uso: %~nx0 [Debug^|Release] [nova^|original]
-echo      Padrao: Release nova. Gera bin\ideclient\Win32\JvcsExpertBDS^<nn^>.dll e copia
+echo Uso: %~nx0 [/delphi:11^|12^|13 ^| /bds:22^|23^|37] [Debug^|Release] [nova^|original]
+echo      Padrao: Delphi 13 ^(ou JVCS_DELPHI^), Release nova. Versoes em tools\versoes.ini.
+echo      Gera bin\ideclient\Win32\JvcsExpertBDS^<nn^>.dll ^(22, 23 ou 37^) e copia
 echo      a JvcsExternalDll.dll ^(nova = bin\client\Win32, port Delphi 13; original =
 echo      2.5.0.1030 de 3rdparty\referencia-2.5.0.1030^) e o runtime para a mesma pasta.
 echo      Defina BDSROOT para usar outra instalacao do RAD Studio ^(ex.: ...\Studio\23.0^).
@@ -468,11 +531,19 @@ endlocal & exit /b 1
 echo [ERRO] DLL invalida: "%BLD_EXTDLL%". Use nova ou original.
 endlocal & exit /b 1
 
-:no_rsvars
-echo [ERRO] rsvars.bat nao encontrado em:
-echo        "%BLD_RSVARS%"
-echo        Verifique a instalacao do RAD Studio %BDSVER% ou defina BDSROOT
-echo        com a pasta raiz correta (ex.: set BDSROOT=D:\Embarcadero\Studio\%BDSVER%).
+:bad_opt
+echo [ERRO] Opcao invalida: "%BLD_A%". Use /delphi:NN ou /bds:NN ^(%~nx0 /? para ajuda^).
+endlocal & exit /b 1
+
+:bad_ver
+echo [ERRO] %VD_ERR%
+endlocal & exit /b 1
+
+:not_installed
+echo [ERRO] %VD_NAME% ^(BDS %BDSVER%^) nao esta instalado nesta maquina:
+echo        faltam "%BLD_BDSDIR%\bin\rsvars.bat" ou "%BLD_BDSDIR%\bin\dcc32.exe".
+echo        Instale o %VD_NAME% ou defina BDSROOT com a pasta raiz correta
+echo        ^(ex.: set BDSROOT=D:\Embarcadero\Studio\%BDSVER%^). Nada foi alterado.
 endlocal & exit /b 1
 
 :no_dcc
