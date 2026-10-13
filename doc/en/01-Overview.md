@@ -55,7 +55,7 @@ All clients talk to the same server and the same database. The 2026 edition repl
 | `Jedivcs.exe` | Standalone GUI client |
 | `JvcsExternalDll.dll` | The same client built as a DLL: the **core** used inside the IDE |
 | `JvcsExpertBDS22/23/37.dll` | New thin IDE experts for Delphi 11 / 12 / 13 |
-| `JvcsExpertD7.dll`, `JvcsExpertBDS<n>.dll` | **Original** 2.5.0.1030 thin experts for older IDEs (Delphi 7 to 10.4), used with the new core (Beta 4) |
+| `JvcsExpertD7.dll`, `JvcsExpertBDS<n>.dll` | **Original** 2.5.0.1030 thin experts for older IDEs (Delphi 7 to 10.4), used with the new core (Beta 4 and newer) |
 | `JEDIVCSDiff.exe` | Diff tool |
 | `jvcs.exe` | Console client |
 | `fvcscrypt.dll` | Original password encryption library (32-bit, redistributed) |
@@ -65,7 +65,7 @@ All clients talk to the same server and the same database. The 2026 edition repl
 
 - **New Delphi versions:** IDE integration for Delphi 11, 12 and 13, in **any update** (for example 13.0,
   13.1 and 13.2). The expert imports only the `rtl`, `vcl` and `xmlrtl` packages of the IDE.
-- **Older IDEs (Beta 4; on Delphi XE3 the JEDI VCS toolbar buttons still crash — fix in progress):** Delphi 7 to 10.4 Sydney get the new core through the original
+- **Older IDEs (since Beta 4; Delphi XE3 toolbar crash fixed in Beta 5):** Delphi 7 to 10.4 Sydney get the new core through the original
   experts.
 - **Same protocol:** the new client sends byte-identical requests to the 2.5 Beta 3 server, verified
   against the original 2.5.0.1030 client. The original and the new client can be used side by side.

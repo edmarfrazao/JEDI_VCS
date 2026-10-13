@@ -5,7 +5,11 @@ English: see [news/en](news/en/README.md) and each release page (English summary
 Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Anúncios com mais detalhes em [`news/pt/`](news/pt/README.md).
 
-## [Não publicado]
+## [Beta 5] — 2026-10-13 (build 2050)
+
+### Adicionado
+- Numeração de versão no padrão do JEDI VCS original (`2.5.0.<build>`, beta 5 = 2050) com fonte única `tools/versao.ini`; versão visível no título, About, console, Painel de Controle e nome do instalador. `PRODUCTVERSION` fixo em 2.5.0.0 (login 250).
+
 
 ### Alterado
 - Documentação e skill organizadas por idioma: `doc/pt` (toda a documentação em português), `doc/en` e
@@ -14,7 +18,7 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
   `tools\ai\skills\pt\jedi-vcs` e `tools\ai\skills\en\jedi-vcs` e remove a pasta antiga `tools\ai\skills\jedi-vcs`.
 
 ### Corrigido
-- (em andamento) AV ao clicar na barra de ferramentas do JEDI VCS dentro de IDEs antigas (ex.: XE3).
+- AV ao clicar na barra de ferramentas, no Get do diálogo de revisões e em menus do JEDI VCS dentro de IDEs antigas (ex.: XE3): o núcleo agora tem a própria janela de aplicação.
 
 ## [Beta 4] — 2026-10-13
 
@@ -57,6 +61,7 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Expert do Delphi 13.2; instalador Inno Setup; ferramentas de IA (`tools/ai`).
 - Aviso de licença do MidWare no About e no console.
 
+[Beta 5]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5
 [Beta 4]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4
 [Beta 2]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2
 [Beta 1]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1
