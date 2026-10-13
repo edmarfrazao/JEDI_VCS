@@ -76,7 +76,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls, Menus, ComCtrls, ImgList, Buttons, JvCombobox,
+  StdCtrls, ExtCtrls, Menus, ComCtrls, ImgList, Buttons,
   JvExStdCtrls, JVCSForms;
 
 type
@@ -96,7 +96,7 @@ type
     btnReport: TButton;
     GetModule1: TMenuItem;
     Compare1: TMenuItem;
-    ecbModules: TJvComboBox;
+    ecbModules: TComboBox;
     N2: TMenuItem;
     AssignLabels1: TMenuItem;
     LabelTimer: TTimer;

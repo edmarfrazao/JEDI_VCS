@@ -52,11 +52,11 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, Buttons, ExtCtrls, JvExStdCtrls, JvListBox, JVCSForms;
+  StdCtrls, Buttons, ExtCtrls, JVCSForms;
 
 type
   TVCSListEdit = class(TJVCSForm)
-    lbStrings: TJvListBox;
+    lbStrings: TListBox;
     Panel1: TPanel;
     edStrings: TEdit;
     btnReplace: TButton;

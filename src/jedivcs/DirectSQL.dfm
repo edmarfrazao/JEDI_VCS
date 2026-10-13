@@ -244,14 +244,11 @@ object VCSDirectSQL: TVCSDirectSQL
       TabOrder = 0
     end
   end
-  object SQLMemo: TJvMemo
+  object SQLMemo: TMemo
     Left = 0
     Top = 65
     Width = 492
     Height = 110
-    AutoSize = False
-    MaxLines = 0
-    HideCaret = False
     Align = alClient
     Font.Charset = DEFAULT_CHARSET
     Font.Color = clWindowText

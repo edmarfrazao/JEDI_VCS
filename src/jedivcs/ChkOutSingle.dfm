@@ -161,7 +161,7 @@ object VCSChkOutSingle: TVCSChkOutSingle
         AutoSize = False
       end
     end
-    object rcbxTargetFld: TJvComboBox
+    object rcbxTargetFld: TComboBox
       Left = 8
       Top = 61
       Width = 289
@@ -172,14 +172,11 @@ object VCSChkOutSingle: TVCSChkOutSingle
       TabOrder = 5
     end
   end
-  object meComment: TJvMemo
+  object meComment: TMemo
     Left = 0
     Top = 121
     Width = 283
     Height = 72
-    AutoSize = False
-    MaxLines = 0
-    HideCaret = False
     Align = alClient
     MaxLength = 2000
     TabOrder = 0

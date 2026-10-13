@@ -49,8 +49,7 @@ unit AddNewGroup;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Forms, StdCtrls, Controls,
-  JvMemo, Buttons, ExtCtrls, JvExStdCtrls, JVCSForms;
+  Windows, Messages, SysUtils, Classes, Forms, StdCtrls, Controls, Buttons, ExtCtrls, JVCSForms;
 
 type
   TVCSAddNewGroup = class(TJVCSForm)
@@ -59,7 +58,7 @@ type
     btnOK: TButton;
     btnCancel: TButton;
     gbDEscription: TGroupBox;
-    meDescription: TJvMemo;
+    meDescription: TMemo;
     pnlHead: TPanel;
     lblParent: TLabel;
     edParent: TEdit;

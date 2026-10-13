@@ -103,8 +103,7 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
-  StdCtrls, ExtCtrls, ImgList, Buttons, ComCtrls, RFormat, JvLED, JvComponent,
-  JvCombobox, JvMemo, JvExStdCtrls, JvExControls, JvArrowButton, JVCSChkInOutCommon,
+  StdCtrls, ExtCtrls, ImgList, Buttons, ComCtrls, RFormat, JvLED, JvComponent, JvExStdCtrls, JvExControls, JvArrowButton, JVCSChkInOutCommon,
   Menus;
 
 type
@@ -114,7 +113,7 @@ type
     btnOK: TButton;
     btnCancel: TButton;
     Label2: TLabel;
-    meComment: TJvMemo;
+    meComment: TMemo;
     Delay: TTimer;
     spBtnKeyword: TSpeedButton;
     lblQueue: TLabel;
@@ -135,7 +134,7 @@ type
     lblModule: TLabel;
     Panel6: TPanel;
     lblVer: TLabel;
-    ecbxKeyword: TJvComboBox;
+    ecbxKeyword: TComboBox;
     LabelBuffer: TMWBuffer;
     spBtnCompare: TSpeedButton;
     spbtnDiff1: TSpeedButton;

@@ -53,7 +53,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Forms, StdCtrls, Buttons,
-  Controls, ExtCtrls, JvMemo, JvExStdCtrls, JVCSForms;
+  Controls, ExtCtrls, JVCSForms;
 
 type
   TVCSAddMilestone = class(TJVCSForm)
@@ -63,7 +63,7 @@ type
     btnCancel: TButton;
     gbDescription: TGroupBox;
     pnlHead: TPanel;
-    meDescription: TJvMemo;
+    meDescription: TMemo;
     Label1: TLabel;
     edMilestone: TEdit;
     procedure btnOKClick(Sender: TObject);

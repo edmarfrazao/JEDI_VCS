@@ -154,9 +154,9 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   StdCtrls, ExtCtrls, Buttons, Menus, ComCtrls, ImgList, JvSpin,
-  JvLED, JVCSStatusBar, JvCombobox, JvListView, JvComponent, JVCSMruList,
-  Mask, JvMaskEdit, JvEdit, JVCSClasses, JVCSListView, JvExMask,
-  JvExControls, JvExStdCtrls, JvListComb, JvExComCtrls, JvComCtrls,
+  JvLED, JVCSStatusBar, JvListView, JvComponent, JVCSMruList,
+  Mask, JvMaskEdit, JVCSClasses, JVCSListView, JvExMask,
+  JvExControls, JvExStdCtrls, JvListComb, JvExComCtrls,
   JvCheckTreeView, JvExExtCtrls, JvNetscapeSplitter, JVCSForms;
 
 type
@@ -221,8 +221,8 @@ type
     dtpRollbackDate: TDateTimePicker;
     dtpRollbackTime: TDateTimePicker;
     StatusBar: TJVCSStatusBar;
-    rcbxNewFolder: TJvComboBox;
-    ecbxKeyword: TJvComboBox;
+    rcbxNewFolder: TComboBox;
+    ecbxKeyword: TComboBox;
     cbRemoveHidden: TCheckBox;
     cbInclChkOutByMe: TCheckBox;
     N3: TMenuItem;

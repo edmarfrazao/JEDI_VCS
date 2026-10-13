@@ -307,7 +307,7 @@ object VCSChkInSingle: TVCSChkInSingle
         Top = 2
       end
     end
-    object ecbxKeyword: TJvComboBox
+    object ecbxKeyword: TComboBox
       Left = 8
       Top = 61
       Width = 287
@@ -319,7 +319,7 @@ object VCSChkInSingle: TVCSChkInSingle
       TabOrder = 0
     end
   end
-  object meComment: TJvMemo
+  object meComment: TMemo
     Left = 0
     Top = 121
     Width = 281

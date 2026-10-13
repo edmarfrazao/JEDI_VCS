@@ -72,13 +72,13 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  JVCSDockForm, ComCtrls, JvComCtrls, ImgList, Menus, JVCSInterfaces,
-  JVCSDataClasses, JVCSThreads, JvExComCtrls, JVCSProjectTreeUnit,
+  JVCSDockForm, ComCtrls, ImgList, Menus, JVCSInterfaces,
+  JVCSDataClasses, JVCSThreads, JVCSProjectTreeUnit,
   VirtualTrees, VirtualTrees.Types, VirtualTrees.DrawTree, StdCtrls, ExtCtrls;
 
 type
   TJVCSDockProjectTree = class(TJVCSDockableForm, IJVCSRefresh)
-    tvHierachy: TJvTreeView;
+    tvHierachy: TTreeView;
     HierachyImageList: TImageList;
     ProjectFolderPopup: TPopupMenu;
     Expandall1: TMenuItem;

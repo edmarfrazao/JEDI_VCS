@@ -51,7 +51,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls, Menus, Buttons, JvMemo, JvExStdCtrls, JVCSForms;
+  StdCtrls, ExtCtrls, Menus, Buttons, JVCSForms;
 
 type
   TVCSListView = class(TJVCSForm)
@@ -59,7 +59,7 @@ type
     btnClose: TButton;
     PopupMenu1: TPopupMenu;
     CopytoClipboard1: TMenuItem;
-    Memo1: TJvMemo;
+    Memo1: TMemo;
     spBtnCopyClipbrd: TSpeedButton;
     Help: TSpeedButton;
     procedure btnCloseClick(Sender: TObject);

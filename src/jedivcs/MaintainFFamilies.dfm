@@ -214,14 +214,11 @@ object VCSMaintainFFamilies: TVCSMaintainFFamilies
       Align = alClient
       BevelOuter = bvNone
       TabOrder = 0
-      object meDescr: TJvMemo
+      object meDescr: TMemo
         Left = 0
         Top = 30
         Width = 292
         Height = 57
-        AutoSize = False
-        MaxLines = 0
-        HideCaret = False
         Align = alClient
         MaxLength = 2000
         TabOrder = 1

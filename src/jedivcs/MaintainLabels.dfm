@@ -198,14 +198,11 @@ object VCSMaintainLabels: TVCSMaintainLabels
         OnClick = btnOKClick
       end
     end
-    object meLabelDescr: TJvMemo
+    object meLabelDescr: TMemo
       Left = 0
       Top = 0
       Width = 278
       Height = 47
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       MaxLength = 2000
       TabOrder = 0

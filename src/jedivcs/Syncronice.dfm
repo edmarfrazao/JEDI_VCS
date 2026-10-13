@@ -288,7 +288,7 @@ object VCSSync: TVCSSync
         TabOrder = 1
         OnClick = rbChkInfldClick
       end
-      object rcbxNewFolder: TJvComboBox
+      object rcbxNewFolder: TComboBox
         Left = 112
         Top = 16
         Width = 505
@@ -560,7 +560,7 @@ object VCSSync: TVCSSync
             Alignment = taRightJustify
             Caption = 'L&abel:'
           end
-          object ecbxKeyword: TJvComboBox
+          object ecbxKeyword: TComboBox
             Left = 40
             Top = 4
             Width = 251

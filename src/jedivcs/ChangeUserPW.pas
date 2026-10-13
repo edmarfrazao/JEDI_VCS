@@ -48,7 +48,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, Buttons, JvEdit, JvExStdCtrls, JVCSForms;
+  StdCtrls, Buttons, JVCSForms;
 
 type
   TVCSChangeUserPW = class(TJVCSForm)
@@ -59,9 +59,9 @@ type
     Label5 : TLabel;
     lblUser : TLabel;
     Help : TSpeedButton;
-    pwedOldPW : TJvEdit;
-    pwedPW : TJvEdit;
-    pwedPW2 : TJvEdit;
+    pwedOldPW : TEdit;
+    pwedPW : TEdit;
+    pwedPW2 : TEdit;
     procedure btnOKClick(Sender : TObject);
     procedure FormCreate(Sender : TObject);
     procedure btnCancelClick(Sender : TObject);

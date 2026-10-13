@@ -62,7 +62,7 @@ interface
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   StdCtrls, Buttons, ExtCtrls, ComCtrls, JVCSListView, ImgList,
-  Menus, JvCombobox, JVCSMruList, JvExStdCtrls,JVCSForms;
+  Menus, JVCSMruList,JVCSForms;
 
 type
   TVCSCompareFolders = class(TJVCSForm)
@@ -90,8 +90,8 @@ type
     N1: TMenuItem;
     OpenBaseFolder1: TMenuItem;
     OpenTargetFolder1: TMenuItem;
-    rcbxBaseFolder: TJvComboBox;
-    rcbxTargetFolder: TJvComboBox;
+    rcbxBaseFolder: TComboBox;
+    rcbxTargetFolder: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure spBtnBrowseBaseClick(Sender: TObject);
     procedure spBtnBrowseTargetClick(Sender: TObject);

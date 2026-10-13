@@ -52,7 +52,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, Buttons, JvCombobox, JvExStdCtrls, JVCSForms;
+  StdCtrls, ComCtrls, Buttons, JVCSForms;
 
 type
   TFilterDefinition = record
@@ -76,17 +76,17 @@ type
     dtpTargetDate: TDateTimePicker;
     rbAllUsers: TRadioButton;
     rbCurrentUser: TRadioButton;
-    cbUser: TJvComboBox;
+    cbUser: TComboBox;
     rbSelectUser: TRadioButton;
     rbAllProject: TRadioButton;
     rbCurrentProject: TRadioButton;
-    cbProjects: TJvComboBox;
+    cbProjects: TComboBox;
     rbSelectProject: TRadioButton;
-    cbCategory: TJvComboBox;
+    cbCategory: TComboBox;
     Label1: TLabel;
     cbNotDone: TCheckBox;
     Label2: TLabel;
-    cbPriority: TJvComboBox;
+    cbPriority: TComboBox;
     rbIgnoreOverdue: TRadioButton;
     rbOverdueAt: TRadioButton;
     rbOverdueNow: TRadioButton;
@@ -277,7 +277,7 @@ end;
 procedure TVCSToDoFilter.btnOkClick(Sender: TObject);
   //var CurrentSelection: String;
 
-  function CheckComboBox(CB: TJvComboBox; ErrMsg: string): Boolean;
+  function CheckComboBox(CB: TComboBox; ErrMsg: string): Boolean;
   begin
     Result := False;
     if CB.Text = '' then 

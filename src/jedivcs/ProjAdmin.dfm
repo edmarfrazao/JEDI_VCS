@@ -542,7 +542,7 @@ object VCSProjAdmin: TVCSProjAdmin
     object tsDefault: TTabSheet
       Caption = 'Project View'
       TabVisible = False
-      object JvSplitter1: TJvSplitter
+      object JvSplitter1: TSplitter
         Left = 97
         Top = 0
         Width = 3

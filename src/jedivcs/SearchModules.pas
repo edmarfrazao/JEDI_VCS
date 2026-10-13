@@ -69,8 +69,8 @@ uses
   JclDebug,
   {$ENDIF DEBUG}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  ComCtrls, StdCtrls, Buttons, ExtCtrls, Menus, JVCSListView, JvCombobox,
-  JVCSMruList, JvExStdCtrls, ImgList, JVCSForms;
+  ComCtrls, StdCtrls, Buttons, ExtCtrls, Menus, JVCSListView,
+  JVCSMruList, ImgList, JVCSForms;
 
 type
   TVCSSearchModules = class(TJVCSForm)
@@ -85,7 +85,7 @@ type
     elvResult: TJVCSListView;
     ModuleHistory1: TMenuItem;
     N1: TMenuItem;
-    rcbxMask: TJvComboBox;
+    rcbxMask: TComboBox;
     N2: TMenuItem;
     mnCheckIn: TMenuItem;
     mnCompare: TMenuItem;

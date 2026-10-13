@@ -149,7 +149,7 @@ object VCSHistory: TVCSHistory
       TabOrder = 2
       OnClick = btnReportClick
     end
-    object ecbModules: TJvComboBox
+    object ecbModules: TComboBox
       Left = 86
       Top = 10
       Width = 131

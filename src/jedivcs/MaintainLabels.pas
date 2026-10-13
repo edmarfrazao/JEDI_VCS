@@ -54,7 +54,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, JvMemo, JvExStdCtrls, JVCSForms;
+  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, JVCSForms;
 
 type
   TVCSMaintainLabels = class(TJVCSForm)
@@ -73,7 +73,7 @@ type
     Help: TSpeedButton;
     btnCancel: TButton;
     btnOK: TButton;
-    meLabelDescr: TJvMemo;
+    meLabelDescr: TMemo;
     procedure FormCreate(Sender: TObject);
     procedure FormActivate(Sender: TObject);
     procedure btnOKClick(Sender: TObject);

@@ -58,15 +58,15 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, ImgList, JvListComb, JvMemo,
-  JvExStdCtrls, JvCombobox, JVCSForms;
+  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, ImgList, JvListComb,
+  JvExStdCtrls, JVCSForms;
 
 type
   TVCSMaintainBugs = class(TJVCSForm)
     lvBugs: TListView;
     Splitter1: TSplitter;
     Panel2: TPanel;
-    meDescr: TJvMemo;
+    meDescr: TMemo;
     PopupMenu2: TPopupMenu;
     Add1: TMenuItem;
     Edit1: TMenuItem;

@@ -27,14 +27,11 @@ object VCSAddBug: TVCSAddBug
     Align = alBottom
     Caption = '&Workaround'
     TabOrder = 2
-    object meWorkaround: TJvMemo
+    object meWorkaround: TMemo
       Left = 2
       Top = 15
       Width = 435
       Height = 88
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       TabOrder = 0
     end
@@ -99,14 +96,11 @@ object VCSAddBug: TVCSAddBug
     Align = alClient
     Caption = '&Desription'
     TabOrder = 1
-    object meDescription: TJvMemo
+    object meDescription: TMemo
       Left = 2
       Top = 15
       Width = 435
       Height = 109
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       MaxLength = 2000
       TabOrder = 0

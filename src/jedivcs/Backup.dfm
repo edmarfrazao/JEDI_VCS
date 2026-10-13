@@ -278,7 +278,7 @@ object VCSBackup: TVCSBackup
           State = cbChecked
           TabOrder = 0
         end
-        object rcbRestorePath: TJvComboBox
+        object rcbRestorePath: TComboBox
           Left = 8
           Top = 16
           Width = 313
@@ -331,7 +331,7 @@ object VCSBackup: TVCSBackup
         DesignSize = (
           359
           23)
-        object cbxRestoreFile: TJvComboBox
+        object cbxRestoreFile: TComboBox
           Left = 1
           Top = 0
           Width = 357

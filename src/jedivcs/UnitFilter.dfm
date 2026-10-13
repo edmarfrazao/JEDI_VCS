@@ -127,7 +127,7 @@ object VCSUnitFilter: TVCSUnitFilter
       TabOrder = 1
       OnClick = btnAddClick
     end
-    object extlbItems: TJvTextListBox
+    object extlbItems: TListBox
       Left = 8
       Top = 71
       Width = 201

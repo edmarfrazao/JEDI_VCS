@@ -6,7 +6,7 @@ inherited JVCSDockProjectTree: TJVCSDockProjectTree
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
-  object tvHierachy: TJvTreeView
+  object tvHierachy: TTreeView
     Left = 0
     Top = 109
     Width = 562
@@ -21,7 +21,6 @@ inherited JVCSDockProjectTree: TJVCSDockProjectTree
     Visible = False
     OnClick = tvHierachyClick
     OnKeyPress = tvHierachyKeyPress
-    LineColor = 13160660
   end
   object VSTHierarchy: TVirtualDrawTree
     Left = 0

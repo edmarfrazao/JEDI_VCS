@@ -126,7 +126,7 @@ interface
 
 uses
   SysUtils, Windows, Messages, Classes, Controls, Forms, StdCtrls,
-  Buttons, ExtCtrls, JvCombobox, JvExStdCtrls, Contnrs, JVCSForms;
+  Buttons, ExtCtrls, Contnrs, JVCSForms;
 
 type
   TCompareTool = class(TObject)
@@ -263,7 +263,7 @@ type
     rbSource_Archive: TRadioButton;
     rbArchive_Archive: TRadioButton;
     cbShortNames: TCheckBox;
-    ecbxSource: TJvComboBox;
+    ecbxSource: TComboBox;
     spBtnNextRev: TSpeedButton;
     spBtnPrevRev: TSpeedButton;
     cbIncludeVRFileName: TCheckBox;

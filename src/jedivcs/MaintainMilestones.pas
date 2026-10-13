@@ -54,7 +54,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, JvMemo, JvExStdCtrls, JVCSForms;
+  StdCtrls, ComCtrls, ExtCtrls, Buttons, Menus, JVCSForms;
 
 type
   TVCSMaintainMilestones = class(TJVCSForm)
@@ -63,7 +63,7 @@ type
     PopupMenu2: TPopupMenu;
     Add1: TMenuItem;
     Panel2: TPanel;
-    meDescr: TJvMemo;
+    meDescr: TMemo;
     PopupMenu1: TPopupMenu;
     RemoveMilestone1: TMenuItem;
     Panel3: TPanel;

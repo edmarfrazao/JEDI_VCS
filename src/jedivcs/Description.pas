@@ -53,11 +53,11 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls, Buttons, JvMemo, JvExStdCtrls, JVCSForms;
+  StdCtrls, ExtCtrls, Buttons, JVCSForms;
 
 type
   TVCSDescription = class(TJVCSForm)
-    meDescription: TJvMemo;
+    meDescription: TMemo;
     Panel1: TPanel;
     Panel2: TPanel;
     lblDescript: TLabel;

@@ -123,7 +123,7 @@ object VCSSearchModules: TVCSSearchModules
       TabOrder = 2
       OnClick = btnReportClick
     end
-    object rcbxMask: TJvComboBox
+    object rcbxMask: TComboBox
       Left = 40
       Top = 19
       Width = 153

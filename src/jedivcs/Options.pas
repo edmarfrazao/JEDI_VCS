@@ -104,8 +104,7 @@ interface
 
 uses
   Windows, Messages, Forms, SysUtils, JvComponent, JvSearchFiles, Dialogs,
-  ImgList, Controls, Menus, StdCtrls, ExtCtrls, JvExStdCtrls, JvEdit, Graphics,
-  JvTextListBox, JvExControls, JvxSlider, JvCombobox, JvColorCombo, ComCtrls,
+  ImgList, Controls, Menus, StdCtrls, ExtCtrls, JvExStdCtrls, Graphics, JvExControls, JvxSlider, JvColorCombo, ComCtrls,
   JvToolEdit, Mask, JvExMask, JvSpin, Buttons, Classes, JvComponentBase, JVCSForms, JVCSUIScale,
   JVCSUITheme, JVCSAIConfig;
 
@@ -240,7 +239,7 @@ type
     btnClrMRUItem: TButton;
     btnClrMRUAll: TButton;
     Label47: TLabel;
-    lbMRUList: TJvTextListBox;
+    lbMRUList: TListBox;
     ccbxLVOut: TJvColorComboBox;
     ccbxLVNA: TJvColorComboBox;
     Label48: TLabel;
@@ -294,8 +293,8 @@ type
     Label59: TLabel;
     Label60: TLabel;
     btnShowBackups: TButton;
-    pwedBFKey: TJvEdit;
-    pwedBFKeyConfirm: TJvEdit;
+    pwedBFKey: TEdit;
+    pwedBFKeyConfirm: TEdit;
     Image2: TImage;
     Image4: TImage;
     PanelDebug: TPanel;

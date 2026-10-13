@@ -54,7 +54,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, Buttons, JvCombobox, JVCSMruList, JvExStdCtrls, JVCSForms;
+  StdCtrls, ComCtrls, Buttons, JVCSMruList, JVCSForms;
 
 type
   TVCSWCViewFilter = class(TJVCSForm)
@@ -72,7 +72,7 @@ type
     cbxFileFilters: TComboBox;
     spBtnSetFilter: TSpeedButton;
     Label2: TLabel;
-    rcbxWildcards: TJvComboBox;
+    rcbxWildcards: TComboBox;
     procedure btnApplyClick(Sender: TObject);
     procedure btnCloseClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);

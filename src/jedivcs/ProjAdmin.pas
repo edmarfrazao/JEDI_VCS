@@ -265,7 +265,7 @@ uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, JVCSForms, Dialogs,
   StdCtrls, Menus, ExtCtrls, ImgList, ComCtrls, Buttons, JVCSListView, ActnList,
   ToolWin, JVCSMruList, JvToolBar, mdMailSlot, ApsCli, RFormat, JVCSStatusBar,
-  FavOpenDialog, JvComponent, JvPluginManager, JvComCtrls, JvSplitter,
+  FavOpenDialog, JvComponent, JvPluginManager,
   JVCSDataClasses, JVCSInterfaces, JvExExtCtrls, JvExComCtrls, JVCSClasses,
   JvComponentBase, JVCSLineHistoryDefaultProvider, JVCSLineHistoryFrame,
   JVCSLineHistoryUnit, JVCSLabelHistory, JVCSBrowserFrame, SaveWIP
@@ -707,7 +707,7 @@ type
     acPrintReports: TAction;
     pgMain: TPageControl;
     tsDefault: TTabSheet;
-    JvSplitter1: TJvSplitter;
+    JvSplitter1: TSplitter;
     elvModules: TJVCSListView;
     tvHierachyPlaceholder: TPanel;
     miLineHistory: TMenuItem;

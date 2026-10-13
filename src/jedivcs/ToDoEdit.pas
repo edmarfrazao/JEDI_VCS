@@ -62,8 +62,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ExtCtrls, Menus, JvSpin, Buttons, JvCombobox, JVCSForms,
-  JvEdit, JVCSMruList, Mask, JvMaskEdit, JvMemo, JvExStdCtrls, JvExMask;
+  StdCtrls, ComCtrls, ExtCtrls, Menus, JvSpin, Buttons, JVCSForms, JVCSMruList, Mask, JvMaskEdit, JvExStdCtrls, JvExMask;
 
 type
   TVCSToDoEdit = class(TJVCSForm)
@@ -88,9 +87,9 @@ type
     cbDone: TCheckBox;
     Help: TSpeedButton;
     btnToday: TSpeedButton;
-    rcbxCategory: TJvComboBox;
+    rcbxCategory: TComboBox;
     gbDescription: TGroupBox;
-    meToDo: TJvMemo;
+    meToDo: TMemo;
     procedure FormShow(Sender: TObject);
     procedure btnOKClick(Sender: TObject);
     procedure btnCancelClick(Sender: TObject);

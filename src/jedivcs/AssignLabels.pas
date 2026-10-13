@@ -72,8 +72,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Forms, StdCtrls, ComCtrls, ExtCtrls,
-  Buttons, Menus, JvCombobox, Controls, Dialogs, JVCSMruList, JvComponent,
-  JvSplit, JvSplitter, JvExStdCtrls, JvExExtCtrls, ActnList, JVCSForms;
+  Buttons, Menus, Controls, Dialogs, JVCSMruList, JvComponent,
+  JvSplit, JvExStdCtrls, JvExExtCtrls, ActnList, JVCSForms;
 
 type
   TVCSAssignLabels = class(TJVCSForm)
@@ -83,7 +83,7 @@ type
     RemoveLabel1: TMenuItem;
     Addlabel1: TMenuItem;
     pnlMiddle: TPanel;
-    JvSplitterDesc: TJvSplitter;
+    JvSplitterDesc: TSplitter;
     Panel1: TPanel;
     spBtnAdd: TSpeedButton;
     spBtnRemove: TSpeedButton;
@@ -91,7 +91,7 @@ type
     Help: TSpeedButton;
     btnCancel: TButton;
     meLabelDescr: TMemo;
-    JvSplitterTop: TJvSplitter;
+    JvSplitterTop: TSplitter;
     pnlSearchFind: TPanel;
     lvLabels: TListView;
     Panel3: TPanel;
@@ -100,7 +100,7 @@ type
     spBtnApply: TSpeedButton;
     edSearch: TEdit;
     cbMask: TCheckBox;
-    rcbLabelMask: TJvComboBox;
+    rcbLabelMask: TComboBox;
     ActionList1: TActionList;
     acAdd: TAction;
     acRemove: TAction;

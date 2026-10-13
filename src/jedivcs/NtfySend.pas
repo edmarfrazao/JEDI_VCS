@@ -52,7 +52,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, Buttons, ExtCtrls, JvMemo, JvExStdCtrls, JVCSForms;
+  StdCtrls, Buttons, ExtCtrls, JVCSForms;
 
 type
   TNtfySendForm = class(TJVCSForm)
@@ -61,7 +61,7 @@ type
     btnSendM: TButton;
     Button1: TButton;
     gbMessage: TGroupBox;
-    meMessage: TJvMemo;
+    meMessage: TMemo;
     pnlHead: TPanel;
     plFrom: TPanel;
     Panel1: TPanel;

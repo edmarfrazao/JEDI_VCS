@@ -64,8 +64,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ComCtrls, ImgList, Buttons, ExtCtrls, JvCombobox,
-  JVCSMruList, JvExStdCtrls, JVCSForms;
+  StdCtrls, ComCtrls, ImgList, Buttons, ExtCtrls,
+  JVCSMruList, JVCSForms;
 
 type
   TVCSDistribution = class(TJVCSForm)
@@ -84,7 +84,7 @@ type
     OpenDialog1: TOpenDialog;
     spBtnCheck: TSpeedButton;
     spBtnResult: TSpeedButton;
-    rcbxTargetFile: TJvComboBox;
+    rcbxTargetFile: TComboBox;
     procedure FormCreate(Sender: TObject);
     procedure spBtnAddClick(Sender: TObject);
     procedure btnCreateClick(Sender: TObject);

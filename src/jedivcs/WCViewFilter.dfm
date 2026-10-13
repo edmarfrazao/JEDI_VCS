@@ -121,7 +121,7 @@ object VCSWCViewFilter: TVCSWCViewFilter
         TabOrder = 3
         OnChange = cbxFileFiltersChange
       end
-      object rcbxWildcards: TJvComboBox
+      object rcbxWildcards: TComboBox
         Left = 32
         Top = 22
         Width = 161

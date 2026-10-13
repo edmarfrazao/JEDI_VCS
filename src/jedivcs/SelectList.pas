@@ -48,7 +48,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  StdCtrls, ExtCtrls, Buttons, Menus, JvExStdCtrls, JvTextListBox, JVCSForms;
+  StdCtrls, ExtCtrls, Buttons, Menus, JVCSForms;
 
 type
   TVCSSelectList = class(TJVCSForm)
@@ -59,7 +59,7 @@ type
     Panel2: TPanel;
     Label1: TLabel;
     edFind: TEdit;
-    exlbItems: TJvTextListBox;
+    exlbItems: TListBox;
     PopupMenu1: TPopupMenu;
     ColouredRows1: TMenuItem;
     procedure FormCreate(Sender: TObject);

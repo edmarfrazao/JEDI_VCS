@@ -195,14 +195,11 @@ object VCSMaintainUsers: TVCSMaintainUsers
           'Archive administrator')
       end
     end
-    object meDescr: TJvMemo
+    object meDescr: TMemo
       Left = 0
       Top = 59
       Width = 288
       Height = 48
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       MaxLength = 2000
       TabOrder = 1

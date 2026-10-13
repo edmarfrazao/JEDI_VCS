@@ -114,14 +114,11 @@ object VCSMaintainMilestones: TVCSMaintainMilestones
     BevelOuter = bvNone
     Constraints.MinHeight = 90
     TabOrder = 1
-    object meDescr: TJvMemo
+    object meDescr: TMemo
       Left = 0
       Top = 33
       Width = 279
       Height = 59
-      AutoSize = False
-      MaxLines = 0
-      HideCaret = False
       Align = alClient
       MaxLength = 2000
       PopupMenu = PopupMenu2

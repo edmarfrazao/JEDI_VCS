@@ -109,8 +109,7 @@ uses
   {$ENDIF OVERBYTEV6_UP}
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   ExtCtrls, StdCtrls, Menus, Buttons, ComCtrls, RFormat,
-  ApsCli,
-  JvCombobox, JvEdit, JvExStdCtrls, JVCSForms;
+  ApsCli, JVCSForms;
 
 type
   TVCSLoad = class(TJVCSForm)
@@ -150,7 +149,7 @@ type
     Label4: TLabel;
     Label1: TLabel;
     Label12: TLabel;
-    pwUserPasswordEdit: TJvEdit;
+    pwUserPasswordEdit: TEdit;
     UserEdit: TEdit;
     GroupBox2: TGroupBox;
     cbUseCurrentIP: TCheckBox;

@@ -75,7 +75,7 @@ object VCSSelectFolder: TVCSSelectFolder
       Height = 13
       AutoSize = False
     end
-    object rcbxRecent: TJvComboBox
+    object rcbxRecent: TComboBox
       Left = 8
       Top = 20
       Width = 278
