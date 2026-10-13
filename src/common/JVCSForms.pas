@@ -97,7 +97,7 @@ procedure JVCSFixOwnerDrawMenuText(AMenu: HMENU; const AMenus: array of TMenu);
 implementation
 
 uses
-  SysUtils, JVCSUIScale, JVCSUITheme;
+  SysUtils, Types, Math, JVCSUIScale, JVCSUITheme;
 
 type
   TControlAccess = class(TControl);
@@ -389,16 +389,43 @@ begin
 end;
 
 procedure TJVCSForm.DoCreate;
+var
+  DesignW, DesignH: Integer;
+  WA: TRect;
 begin
+  DesignW := 0;
+  DesignH := 0;
   // antes do OnCreate (que restaura posicao/tamanho salvos)
   if JVCSFormsApplyAppearance then
   try
     JVCSUIRefreshHostTheme;
     JVCSApplyAppearanceToForm(Self);
+    if not JVCSUIFontSettings.IsDefaultUI then
+    begin
+      DesignW := Width;
+      DesignH := Height;
+    end;
   except
     // a aparencia nunca impede a criacao do form
   end;
   inherited DoCreate;
+  // v2026: o OnCreate de muitos forms restaura o tamanho salvo, gravado em
+  // pixels numa sessao com outra escala/fonte (ou ate menor que o DFM): com
+  // 125-200% o conteudo escalado ficava cortado (ex.: VCS Properties). Forms
+  // redimensionaveis (menos a janela principal) ficam no minimo com o tamanho
+  // do DFM ja escalado, limitado a area de trabalho do monitor.
+  if (DesignW > 0) and (BorderStyle in [bsSizeable, bsSizeToolWin]) and
+     (Self <> Application.MainForm) and
+     ((Width < DesignW) or (Height < DesignH)) then
+  try
+    WA := Screen.MonitorFromRect(BoundsRect).WorkareaRect;
+    DesignW := Min(Max(Width, DesignW), WA.Width);
+    DesignH := Min(Max(Height, DesignH), WA.Height);
+    SetBounds(Max(WA.Left, Min(Left, WA.Right - DesignW)),
+      Max(WA.Top, Min(Top, WA.Bottom - DesignH)), DesignW, DesignH);
+  except
+    // idem
+  end;
 end;
 
 procedure TJVCSForm.DoShow;

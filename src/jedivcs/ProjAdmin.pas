@@ -530,6 +530,8 @@ type
     N36: TMenuItem;
     RefreshTimer: TTimer;
     mmiAutorefresh: TMenuItem;
+    N65: TMenuItem;
+    mmiAppearance: TMenuItem;
     acShowSharedBy: TAction;
     Sharedby2: TMenuItem;
     N15: TMenuItem;
@@ -856,6 +858,7 @@ type
     procedure mmiDisconnectserverClick(Sender: TObject);
     procedure mmiMergeClick(Sender: TObject);
     procedure mmiVCSpropertiesClick(Sender: TObject);
+    procedure mmiAppearanceClick(Sender: TObject);
     procedure AboutFreeVCS1Click(Sender: TObject);
     procedure mmiCloseProjectClick(Sender: TObject);
     procedure mmiBranchClick(Sender: TObject);
@@ -1007,6 +1010,7 @@ type
     procedure SetStatusBar;
     procedure ShowStatusBarGauge(const ShowGauge, Indeterminate: Boolean);
     procedure StatusBarGaugePos(Value: Word);
+    procedure ShowVCSOptions(ASheet: Integer);
     procedure SetStatusWinState;
     procedure AddMessage(MsgStr: string; const MsgCol: Word);
     procedure SetMenuState;
@@ -10447,17 +10451,36 @@ end;
 
 procedure TVCSProjAdmin.mmiVCSpropertiesClick(Sender: TObject);
 begin
+  ShowVCSOptions(cspInterface);
+end;
+
+// v2026: abre VCS Properties numa pagina; erro ao criar/mostrar vai para o log
+// (Application.OnException -> JVCSErrorLog) e nao deixa bStopRefresh preso
+procedure TVCSProjAdmin.ShowVCSOptions(ASheet: Integer);
+begin
   bStopRefresh := True;
-  VCSOptions := TVCSOptions.Create(Application); // unit Options
   try
-    VCSOptions.DefaultSheet := cspInterface;
-    VCSOptions.ShowModal;
+    try
+      VCSOptions := TVCSOptions.Create(Application); // unit Options
+      try
+        VCSOptions.DefaultSheet := ASheet;
+        VCSOptions.ShowModal;
+      finally
+        FreeAndNil(VCSOptions);
+      end;
+      GetVCSOptions;
+      elvModules.Repaint;
+    except
+      Application.HandleException(Self);
+    end;
   finally
-    VCSOptions.Free;
+    bStopRefresh := False;
   end;
-  GetVCSOptions;
-  elvModules.Repaint;
-  bStopRefresh := False;
+end;
+
+procedure TVCSProjAdmin.mmiAppearanceClick(Sender: TObject);
+begin
+  ShowVCSOptions(cspAppearance);
 end;
 
 //------------------------------------------------------------------------------

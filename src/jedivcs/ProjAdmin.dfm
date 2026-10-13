@@ -1824,6 +1824,16 @@ object VCSProjAdmin: TVCSProjAdmin
         Caption = '&Auto Refresh'
         OnClick = mmiAutorefreshClick
       end
+      object N65: TMenuItem
+        Tag = 9000
+        Caption = '-'
+      end
+      object mmiAppearance: TMenuItem
+        Tag = 9000
+        Caption = 'Appearance / Font Si&ze...'
+        Hint = 'Font size, scale and theme (VCS Properties - Appearance)'
+        OnClick = mmiAppearanceClick
+      end
       object N48: TMenuItem
         Tag = 11000
         Caption = '-'
