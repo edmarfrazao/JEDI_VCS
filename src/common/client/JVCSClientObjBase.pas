@@ -166,6 +166,7 @@ uses
   , AbZipper
   , AbUtils
   , AbUnzPrc
+  , AbZipPrc
   ;
 
 function GetFunctionCode(ClientObject: TClientObjectClass): string;
@@ -217,9 +218,12 @@ type
     FRootPath: string;
     FOnSimpleProgress: TNotifyEvent;
     procedure SetRootPath(const AValue: string);
+    procedure ZipFromStreamKeepDate(Sender: TObject; Item: TAbArchiveItem;
+      OutStream, InStream: TStream);
   protected
     procedure DoConfirmProcessItem(Sender: TObject; Item: TAbArchiveItem;
       ProcessType: TAbProcessType; var Confirm: Boolean); override;
+    procedure InitArchive; override;
   public
     constructor Create(AOwner: TComponent); override;
     property RootPath: string read FRootPath write SetRootPath;
@@ -264,6 +268,35 @@ end;
 procedure TJVCSAbZipper.SetRootPath(const AValue: string);
 begin
   FRootPath := PathAddSeparator(AValue);
+end;
+
+// JVCS 2026: o Abbrevia atual (AbZipFromStream) grava a hora ATUAL no item
+// adicionado por stream. O Abbrevia do cliente 2.5 mantinha a data do arquivo
+// (posta em DoConfirmProcessItem). Para o blob ficar igual ao do original,
+// guarda a data do item, comprime e restaura antes de gravar o cabecalho local.
+procedure TJVCSAbZipper.InitArchive;
+begin
+  inherited InitArchive;
+  if Archive is TAbZipArchive then
+    TAbZipArchive(Archive).InsertFromStreamHelper := ZipFromStreamKeepDate;
+end;
+
+procedure TJVCSAbZipper.ZipFromStreamKeepDate(Sender: TObject; Item: TAbArchiveItem;
+  OutStream, InStream: TStream);
+var
+  SaveTime, SaveDate: Word;
+begin
+  if Assigned(InStream) then
+  begin
+    SaveTime := Item.LastModFileTime;
+    SaveDate := Item.LastModFileDate;
+    AbZipFromStream(TAbZipArchive(Sender), TAbZipItem(Item), OutStream, InStream);
+    if (SaveTime <> 0) or (SaveDate <> 0) then
+    begin
+      Item.LastModFileTime := SaveTime;
+      Item.LastModFileDate := SaveDate;
+    end;
+  end;
 end;
 
 { JVCSCompressFile
