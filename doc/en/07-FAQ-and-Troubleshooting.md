@@ -34,6 +34,20 @@ and loads in any update of Delphi 11, 12 and 13.
 | You opened the 64-bit IDE (`bin64\bds.exe`) | Use the 32-bit IDE (`bin\bds.exe`). The 64-bit IDE is **not supported** |
 | The `JVCSIDEClient` value is missing or points to a wrong path | Check `HKCU\Software\Embarcadero\BDS\<nn>.0\Experts` (22.0 = Delphi 11, 23.0 = Delphi 12, 37.0 = Delphi 13) |
 
+### Access violation in Delphi XE3 (or another older IDE) when clicking a JEDI VCS button
+
+**Symptom:** inside an older IDE (Delphi 7 to 10.4, reported on XE3), clicking a JEDI VCS toolbar button
+(Synchronize, Get, Refresh…), the **Get** button of the revisions dialog, or a menu item shows
+"Access violation at address … Write of address …". The call stack goes from the JEDI VCS DLL
+(`TBasicActionLink.Execute` or `TApplication.Idle`) through `SendMessageW` into the IDE's
+`vcl<nn>.bpl` (`TApplication.WndProc` → `DispatchAction`). The operation itself (e.g. Get) usually completes.
+
+**Cause:** Beta 4 and earlier used the IDE's application window as the DLL's `Application.Handle`. The VCL
+sends action messages (`CM_ACTIONEXECUTE` / `CM_ACTIONUPDATE`) carrying a **pointer** to a VCL object to that
+window, and the IDE's different VCL version misread the object.
+
+**Solution:** install **Beta 5 or newer** — the DLL now owns its application window. In Beta 4, use the
+standalone client (`Jedivcs.exe`) in older IDEs.
 ### The menu shows "JvcsExternalDll.dll not loaded - details…"
 
 The expert is loaded but the core DLL is not. `JvcsExternalDll.dll`, `fvcscrypt.dll` and the other runtime

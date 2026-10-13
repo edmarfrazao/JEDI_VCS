@@ -1205,30 +1205,9 @@ end;
 { ---------------------------------------------------------------- eventos do assistente }
 
 procedure InitializeWizard;
-var
-  I: Integer;
-  L, Ver, Found, Base: String;
 begin
-  Base := BdsBase;
-  Found := '';
-  L := ExpertsInPackage;
-  while L <> '' do
-  begin
-    Ver := NextItem(L);
-    if (Ver <> '') and IdeExists(Base, Ver) then
-    begin
-      if Found <> '' then
-        Found := Found + ', ';
-      Found := Found + IdeName(Ver);
-    end;
-  end;
-  if Found = '' then
-    Found := CustomMessage('IdeNone')
-  else
-    Found := FmtMessage(CustomMessage('IdeDetected'), [Found]);
-  for I := 0 to WizardForm.ComponentsList.Items.Count - 1 do
-    if WizardForm.ComponentsList.ItemCaption[I] = CustomMessage('CompIde') then
-      WizardForm.ComponentsList.ItemCaption[I] := CustomMessage('CompIde') + ' - ' + Found;
+  { As IDEs detectadas ja aparecem como subcomponentes (ide\bds22/23/37 e ideold\*);
+    o titulo do grupo nao repete a lista (beta 5). }
 end;
 
 function NextButtonClick(CurPageID: Integer): Boolean;
