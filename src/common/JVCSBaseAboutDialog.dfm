@@ -2414,6 +2414,9 @@ object JVCSBaseAboutDlg: TJVCSBaseAboutDlg
         Font.Name = 'Courier New'
         Font.Style = []
         Lines.Strings = (
+          'This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.'
+          ' (MidWare client units modified for Unicode/Delphi 13 in JEDI VCS 2.5 Beta 2026.)'
+          ''
           'JVCS team gives credit for:'
           ''
           'Portions of this code are based on/derived from:'

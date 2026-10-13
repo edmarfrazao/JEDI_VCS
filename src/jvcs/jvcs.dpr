@@ -3493,6 +3493,8 @@ begin
   try
     with VersionInfo do
       Writeln(FileDescription, ' ', FileVersion, ' (', CompanyName, ')');
+      // JVCS 2026: exigido pela licenca do MidWare (clausula 2)
+      Writeln('This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.');
       Writeln;
 {     //USc 24.01.2004 now the values from VCSCommon will be used
       Writeln(#9+SInfoLinkSF);
