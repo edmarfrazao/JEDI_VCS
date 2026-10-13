@@ -1,0 +1,17 @@
+=== C2S ===
+GET_SERVER_TIME -1-1
+LOGIN sysdba<PWD>239<NOW>
+GET_PROJECT_ID <TID>1exemplo01.dpr
+GET_VERSION_LIST <TID>111
+GET_LATEST_REVISIONS <TID>1110
+LOGOUT <TID>11
+
+=== S2C ===
+Welcome to JEDI VCS Firebird Server
+200 <SRVTIME>-3<SRVFLOAT>
+200 11<TID>User accepted. Access level: 4 [Archive Admin]250Firebird0
+200 10<TID>4
+200 4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\046308,00610402778241805053exemplo01.resc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\046307,93298484954241301012exemplo01.dprojc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\046307,9329763773121201011exemplo01.dprc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\046307,9329645833344110101
+200 4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\80546308,006040520832.dfm-1776181078480546307,9938418518528.pas-14069861153exemplo01.resc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\30146307,9218454282368.res18031991702exemplo01.dprojc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\20146307,921829398144.dproj-2584943411exemplo01.dprc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\10146307,9218287036992.dpr-2054589188
+200 
+

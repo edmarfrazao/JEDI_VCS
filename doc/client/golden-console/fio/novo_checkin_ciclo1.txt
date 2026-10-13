@@ -1,0 +1,29 @@
+=== C2S ===
+GET_SERVER_TIME -1-1
+LOGIN sysdba<PWD>239<NOW>
+GET_PROJECT_ID <TID>1exemplo01.dpr
+GET_PROJECT_ID <TID>1exemplo01.dpr
+GET_MODULE_NAME <TID>14
+GET_REVISION_LIST_BY_ID <TID>140
+GET_REVISION_STATUS <TID>18
+GET_FAMILY_EXTENSIONS <TID>1.pas
+CHECKIN_MODULE <TID>10114080646308,0181409143552510-763147432444.pasT1PKRNNNNG«L]XKƒÒ>NNþNNNNNuPrincipal.pasmPÍN1¾o²ï0`–]vM<`<-j0šA<×îN£Ý¶i»(1<-^Ã¶¢\<Í|?3ßd:Iº©!ÉI3q•&iBÒ¡Y2ŽtmšN¼dšr_õa³_üˆÖ²zb¶µÛÜ—gGâD,˜!&Ý‰¨³6L,¸ÈïÓkâ6¨•tF‰£|«L{lÇÄ„ZÙx¡Ûjó —pC<ììEØ‚6´a.zN¾`ú¡Ao4Ì‘’vAÕÝ« þç‹èÊ&o˜	0ä”£c|R¨Õ[”.Næëì	ÎófÙîòòP‹æhã)À×Èß$A£`P?L Qp3žÀ¢žAïmÃmŽŸØ‡”UQ‹jX]ÆþIV	­Œc~¨7FáßåE^õG§Å>ÄÅ´°Ã^e`pC64‡öiòCPKRNRNNNNG«L]XKƒÒ>NNþNNNNNNNNNNNNNNNNNNNuPrincipal.pasPKNNNNNN<NNNjNNNNteste console portado - ação, revisão (ç, ã)0c:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\uprincipal.pas1114080646308,006040520832295-1776181078317.dfmT1PKRNNNNG«L]ª !–¿NNN'NNNNNuPrincipal.dfmEO‚@Åï‚ßanžŠRët0ÿ r­CD˜N¹a;aÕ·ÏÚNóÞïÍ›¡óC+†„º»;1LÛXã…a­=~2,,IõÖød„,€Ue°sgXh%*NQ^Ý÷}÷O÷²æ¦‡3Ï µÔõ¶j—¬’²BCR<›²{¢îGqFRkqLÓ`›Çâ¿aº{©jz	|³	Í÷‘ë¸)ïØ#'Ç+!R™c’œ?­ŽGô%sÀÚªÚ¶¾PKRNRNNNNG«L]ª !–¿NNN'NNNNNNNNNNNNNNNNNNNuPrincipal.dfmPKNNNNNN<NNNëNNNNNteste console portado - ação, revisão (ç, ã)0c:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\uprincipal.dfm1
+GET_REVISION_LIST_BY_ID <TID>140
+GET_REVISION_STATUS <TID>19
+LOGOUT <TID>11
+
+=== S2C ===
+Welcome to JEDI VCS Firebird Server
+200 <SRVTIME>-3<SRVFLOAT>
+200 11<TID>User accepted. Access level: 4 [Archive Admin]250Firebird0
+200 10<TID>4
+200 10<TID>4
+200 c:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\uprincipal.pas
+200 4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\146308,01803190972161401sysdba104146308,01803190972161502sysdba104146308,01803190972161603sysdba104146308,01803190972161704sysdba104146308,01803190972161805sysdba10
+200 4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\10546307,9938418518528509-1406986115447.pas4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\10546308,006040520832295-1776181078317.dfm
+200 .dfm;1
+200 1
+200 4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\046308,0182279166721401104046308,0182279166721502104046308,0182279166721603104046308,0182279166721704104046308,0182279166721805104046308,018227916672190610
+200 4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\00646308,0181409143552510-763147432444.pas4uprincipal.pasc:\users\edmarfrazao\documents\embarcadero\studio\projects\ex1\00646308,006040520832295-1776181078317.dfm
+200 
+

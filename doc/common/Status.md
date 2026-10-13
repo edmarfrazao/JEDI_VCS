@@ -7,14 +7,14 @@ Situação por fase do [Plano-de-Port.md](Plano-de-Port.md) (F0 a F6), com o que
 | Fase | Objetivo | Situação |
 |---|---|---|
 | F0 | Ambiente, dependências, build e linha de base | **Em andamento** (cerca de metade: ambiente e dependências do D13 prontos; faltam `.dproj`, D11/D12, cópias locais e linha de base golden) |
-| F1 | Midware portado, `JVCSTransport.pas`, teste golden | Não iniciada |
-| F2 | Núcleo do cliente e console `jvcs.exe` | Não iniciada |
+| F1 | Midware portado, `JVCSTransport.pas`, teste golden | **Em andamento**: Midware portado (Unicode, cp1252, ICS 9) e golden de fio do console idêntico ao original; faltam `JVCSTransport.pas`, pacote design-time e suíte golden automatizada (ACP 65001, en-US) |
+| F2 | Núcleo do cliente e console `jvcs.exe` | **Console pronto e validado** (Win32 Debug/Release, golden idêntico ao 2.5.0.1030, ver [Port-Console.md](../client/Port-Console.md)); faltam os helpers nativos (sem JCL/Abbrevia), `BFCrypt.pas` e testes de sync/arquivo vazio/binário |
 | F3 | Infraestrutura comum de GUI e `JEDIVCSDiff.exe` | Não iniciada |
 | F4 | EXE standalone `Jedivcs.exe` | Não iniciada |
 | F5 | DLL da IDE, novo expert ToolsAPI e setup | **Trilha 5A (expert) em andamento**; DLL e setup não iniciados |
 | F6 | Win64 / ARM64EC (opcional) | Não iniciada; bloqueada pela `fvcscrypt.dll` |
 
-Nenhum dos 4 projetos do cliente (`exe`, `dll`, `diff`, `console`) compila ainda; `bin\client\Win32` está vazio. Só o expert (`JvcsExpertBDS37.dll`) e as bibliotecas fixadas (SynEdit, VTV) compilam.
+**Console:** `tools\compilar.bat console Debug|Release Win32` gera `bin\client\Win32\jvcs.exe`, validado contra o servidor de teste (12/10/2026). Os outros 3 projetos do cliente (`exe`, `dll`, `diff`) ainda não compilam. Só o expert (`JvcsExpertBDS37.dll`) e as bibliotecas fixadas (SynEdit, VTV) compilam.
 
 ## Erros atuais do `tools\compilar.bat all`
 
@@ -24,7 +24,7 @@ Fonte: logs em `tools\logs\compilar_<chave>_Win32_Debug.log`, gerados em 12/10/2
 |---|---|---|
 | `exe` (`Jedivcs.dpr`) | `F2613 Unit 'FastMM4' not found` | Os `.dpr` originais usam `FastMM4` e `src\comp\fastmm` não existe no layout novo. Remover a unit do `uses` e usar o gerenciador de memória embutido (`ReportMemoryLeaksOnShutdown` sob `DEBUG`). Previsto em F4 (4.1) |
 | `diff` (`JEDIVCSDiff.dpr`) | `F2613 Unit 'FastMM4' not found` | Idem. Previsto em F3 (3.7) |
-| `console` (`jvcs.dpr`) | `F1026 File not found: '..\comp\fastmm\FastMM4.pas'` | Idem (aqui a unit vem com caminho explícito). Previsto em F2 (2.7) |
+| `console` (`jvcs.dpr`) | ~~`F1026 File not found: '..\comp\fastmm\FastMM4.pas'`~~ | **Resolvido** (FastMM4 removido; compila e passa no golden, ver [Port-Console.md](../client/Port-Console.md)) |
 | `dll` (`JediVCSDLL.dpr`) | `E2029 Identifier expected but ',' found` em `src\common\JVCSIDESettings.pas(99)`, seguido de `E2003` (`DelphiHKEY`, `RegKeyExists`, `RegGetKeyNames`, `RegReadString`), `E2012` e `F2063 Could not compile used unit 'JVCSIDESettings.pas'` (chamada em `JVCSIDEInterface.pas(2378)`) | `JVCSIDESettings.pas` usa `{$ifdef WINDOWS}`, símbolo que o Delphi 13 não define (só `MSWINDOWS`). Correção definitiva no fonte: trocar por `MSWINDOWS` (F5 5.3, na linha 95 conforme o plano). Contorno só no script, sem editar o fonte: `set JVCS_EXTRA_DEFS=WINDOWS` |
 
 Pendências que aparecerão a seguir (units ainda sem fonte nem DCU, com os defines atuais), conforme [tools\LEIAME-compilar.md](../../tools/LEIAME-compilar.md): `EnhListView`, `dfsStatusBar`, `FavOpenDialog`, `Checksum`, `BFCrypt`, `CipherLz`, `SortGrid`, `SystemTreeView`, `SystemControlPack`, `RekScan`, `HtmlHlp`, `mwPasLex`, `mwPasLexTypes`, `ItemProp`, `RegAcc`, `SynHighlighterMPerl` e `WSocket` (em `ApsCli.pas`); mais o `{$R ...winxp.res}` com caminho absoluto do ambiente antigo nos `.dpr`. Destino de cada uma: [Componentes.md](Componentes.md), seção 3.
@@ -60,24 +60,29 @@ Verificações que passam (últimos logs): `libs Debug Win32`, `libs Release Win
 
 ## F1: Midware portado e teste golden
 
-- [ ] `MWDefs.inc` com `OverbyteIcsDefs.inc` do ICS V9
-- [ ] `RFormat.pas` (`PAnsiChar`, code page fixa configurável, `AppendFields` com `vtUnicodeString`, `vtWideChar`, `vtInt64`, `vtExtended`; `MoveEscaped`/`AppendStreamField`; bookmarks)
-- [ ] `ApsCli.pas` (`WSocket` → `OverbyteIcsWSocket`, `TIcsWndControl`, `SocketFamily := sfIPv4`)
-- [ ] `CBroker.pas` (`FUserData: NativeInt`)
+- [x] `MWDefs.inc` com `OverbyteIcsDefs.inc` do ICS V9 (sem `USE_SSL`)
+- [x] `RFormat.pas` (`PAnsiChar`, code page fixa configurável `MWCodePage` = 1252, `AppendFields` com `vtUnicodeString`/`vtWideString`/`vtWideChar`/`vtPWideChar`/`vtInt64`, `vtExtended` com `FloatToStrF(ffGeneral,18)`; bookmarks restaurados)
+- [x] `ApsCli.pas` (`OverbyteIcsWSocket`, `SocketFamily := sfIPv4`, cabeçalho `AnsiString`, `AllocateHWnd` do `System.Classes`; sem migrar para `TIcsWndControl`)
+- [x] `CBroker.pas` (`FUserData: NativeInt`)
+- [x] Golden de fio do console (proxy de captura + normalizador em `tools\golden\console`): `GET_SERVER_TIME`, `LOGIN` (versão 239), `GET_PROJECT_INFORMATION`, `GET_LOCKED_MODULES`, `GET_CHECKOUT_MODULE` (blobs), `CHECKOUT_ONLY_MODULE`, `CHECKIN_MODULE` (blobs, comentário acentuado em cp1252) idênticos ao original — evidências em `doc\client\golden-console`
 - [ ] `src\common\client\JVCSTransport.pas` (interface `IJVCSTransport` + `TJVCSMidwareTransport` + fábrica)
 - [ ] Pacote design-time `src\packages\JVCSMidwareD.dpk` (`TAppSrvClient`, `TMWBuffer`)
 - [ ] Suíte golden: ida e volta do `RFormat`, roteiro contra o servidor de teste, comparador que ignora hora, TransactionID e senha cifrada; rodar em ACP 1252 e 65001, pt-BR e en-US
 
-**Depende de:** F0 (servidor de teste e capturas). Estado: apenas as cópias do Midware V3 em `src\comp\midware` (não compilam no D13).
+**Estado:** Midware em `src\comp\midware` compila no D13 Win32 (Debug com `$R+ $Q+` e Release) e é usado pelo console validado.
 
 ## F2: Núcleo do cliente e console
 
-- [ ] `Checksum.pas` recriada e validada contra `BLOBS.ORIGCRC` (bloqueante se divergir)
+- [x] **Console `jvcs.exe` compilando (Win32 Debug/Release) e validado**: `listprojects`, `listproject`, `listlocks`, `getmodule` (inclusive `rev=`), `checkout`/`checkin` com comentário acentuado; saída e fio idênticos ao 2.5.0.1030; leitura cruzada (o original lê as revisões gravadas pelo novo e vice-versa). Detalhes: [Port-Console.md](../client/Port-Console.md)
+- [x] `Checksum.pas` recriada; validada contra o CRC gravado pelo original (`ORIGCRC` do `.dfm` igual nos dois consoles), contra o CRC do ZIP e os vetores de teste (`123456789` → `$CBF43926`, arquivo vazio → `'OK'`, 100 000 bytes = CRC do ZIP). Falta a varredura ampla do banco (0.7)
+- [x] Blob ZIP do check-in com a data do arquivo (correção para o Abbrevia 2026 em `TJVCSAbZipper`)
+- [x] `jvcs.dpr` sem `FastMM4`; `CRCInt` no check-in; versão `2.5 Beta 2026` no recurso; LOGIN continua 239
 - [ ] `JVCSZipUtils.pas` sobre `System.Zip` (ZIP de 1 item, nome sem path, data do arquivo, `IsZipBlob`)
 - [ ] `BFCrypt.pas` (Base64 nativo; Blowfish conforme a varredura)
 - [ ] `JVCSClientObjBase.pas`, `JVCSClientObj.pas`, `JVCSConnect.pas`, `JVCSClientDispatcher.pas`, `JVCSClientFunctions.pas`, `JVCSCrypt.pas`, `VCSCommon.pas`
 - [ ] Helpers `JVCSTrace`, `JVCSStrUtils`, `JVCSFileUtils` em `src\common`
-- [ ] `jvcs.dpr` sem `FastMM4`, sem JCL/JVCL
+- [ ] `jvcs.dpr` sem JCL (ainda usa `JclFileUtils`, `JclStrings`, `JclDebug` do GetIt) e sem Abbrevia; sem JVCL já está
+- [ ] Confirmar com o usuário: `BRANCHING` ligado no console (necessário para saída idêntica ao original)
 - [ ] Critério: login, lista de projetos, sync por CRC, check-in/checkout cruzado com o cliente 2.5 Beta 3
 
 ## F3: GUI comum e JEDIVCSDiff (piloto)
