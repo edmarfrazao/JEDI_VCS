@@ -486,7 +486,7 @@ var
 begin
   SetString ( Result
             , ModName
-            , Windows.GetModuleFileName(HInstance, ModName, SizeOf(ModName))
+            , Windows.GetModuleFileName(HInstance, ModName, Length(ModName)) // v2026: era SizeOf (bytes) - estouro com Char = WideChar
             );
 end;
 

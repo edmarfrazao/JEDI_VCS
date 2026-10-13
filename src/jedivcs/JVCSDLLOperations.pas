@@ -45,7 +45,8 @@ uses
   {$ENDIF DEBUG}
   SysUtils, VCSBase, DBModule, JVCSClientObj, JVCSIDEInterfaceCommon, ChkInSingle,
   ChkOutSingle, Forms, JVCSClasses, History, TextComp, VCSProcBase, ModuleInfo,
-  ProjAdmin, ProjectHist, Syncronice, JVCSCompressedDiffDialog;
+  ProjAdmin, ProjectHist, Syncronice, JVCSCompressedDiffDialog,
+  JVCSDLLAnsi; // v2026: ABI ANSI (PAnsiChar)
 
 function JediVCSDLLOperationsInit(AExternalVCSOperationFunctionRec: PExternalVCSOperationFunctionRec): Boolean; stdcall;
 
@@ -60,7 +61,7 @@ begin
     ProjectNameToIDList := TModuleNameToIDList.Create;
 end;
 
-function GetProjectID(AProjectName: PChar): Integer; stdcall;
+function GetProjectID(AProjectName: PAnsiChar): Integer; stdcall;
 var
   GetProjectId: TJVCSGetProjectId;
   Idx: Integer;
@@ -72,17 +73,17 @@ begin
     CurrentProjectState := SaveProjectState;
     try
       CreateProjectNameToIDList;
-      Idx := ProjectNameToIDList.IndexOf(StrPas(AProjectName));
+      Idx := ProjectNameToIDList.IndexOf(JvcsFromAnsi(AProjectName));
       if Idx = -1 then
       begin
         GetProjectId := TJVCSGetProjectId.Create(nil);
         try
-          GetProjectId.ProjectName := ExtractFileName(StrPas(AProjectName));
+          GetProjectId.ProjectName := ExtractFileName(JvcsFromAnsi(AProjectName));
           DataModule1.ClientObjectSendRequest(GetProjectId);
           TransactionNr := GetProjectId.TransactionID;
           ServerProjectID := GetProjectId.ProjectID;
           Result := GetProjectId.ProjectID;
-          ProjectNameToIDList.AddOrReplace(StrPas(AProjectName), Result);
+          ProjectNameToIDList.AddOrReplace(JvcsFromAnsi(AProjectName), Result);
         finally
           GetProjectId.Free;
         end;
@@ -94,7 +95,7 @@ begin
     end;
   end;
   {$IFDEF DEBUG}
-  JclDebug.TraceFmt(' GetProjectID(%s)=%d', [StrPas(AProjectName), Result]);
+  JclDebug.TraceFmt(' GetProjectID(%s)=%d', [JvcsFromAnsi(AProjectName), Result]);
   {$ENDIF DEBUG}
 end;
 
@@ -143,7 +144,7 @@ begin
   end;
 end;
 
-function CheckInModule(AProjectID: Integer; AModuleName: PChar): Boolean; stdcall;
+function CheckInModule(AProjectID: Integer; AModuleName: PAnsiChar): Boolean; stdcall;
 var
   CurrentProjectState: TGUIClientProjectState;
 begin
@@ -154,7 +155,7 @@ begin
     begin
       VCSChkInSingle := TVCSChkInSingle.Create(Application);
       try
-        VCSChkInSingle.SelectModuleList.AddObject(StrPas(AModuleName), TObject(AProjectID));
+        VCSChkInSingle.SelectModuleList.AddObject(JvcsFromAnsi(AModuleName), TObject(AProjectID));
         VCSChkInSingle.AsChild := True;
         VCSChkInSingle.ShowModal;
   //    NeedRefresh := VCSChkInSingle.ArchiveChanged;
@@ -167,7 +168,7 @@ begin
   end;
 end;
 
-function CheckOutModule(AProjectID: Integer; AModuleName: PChar): Boolean; stdcall;
+function CheckOutModule(AProjectID: Integer; AModuleName: PAnsiChar): Boolean; stdcall;
 var
   CurrentProjectState: TGUIClientProjectState;
 begin
@@ -178,7 +179,7 @@ begin
     begin
       VCSChkOutSingle := TVCSChkOutSingle.Create(Application);
       try
-        VCSChkOutSingle.SelectModuleList.AddObject(StrPas(AModuleName), TObject(AProjectID));
+        VCSChkOutSingle.SelectModuleList.AddObject(JvcsFromAnsi(AModuleName), TObject(AProjectID));
         VCSChkOutSingle.AsChild := True;
         VCSChkOutSingle.ShowModal;
   //    NeedRefresh := VCSChkOutSingle.ArchiveChanged;
@@ -192,7 +193,7 @@ begin
   end;
 end;
 
-function GetModule(AProjectID: Integer; AModuleName: PChar): Boolean; stdcall;
+function GetModule(AProjectID: Integer; AModuleName: PAnsiChar): Boolean; stdcall;
 var
   CurrentProjectState: TGUIClientProjectState;
 begin
@@ -204,7 +205,7 @@ begin
       VCSInfo := TVCSInfo.Create(Application);
       try
         VCSInfo.ModuleID := 0;
-        VCSInfo.ModuleName := StrPas(AModuleName);
+        VCSInfo.ModuleName := JvcsFromAnsi(AModuleName);
         VCSInfo.GetEnabled := True;
         VCSInfo.ShowModal;
       finally
@@ -216,7 +217,7 @@ begin
   end;
 end;
 
-function CompareModule(AProjectID: Integer; AModuleName, AModuleMember: PChar): Boolean; stdcall;
+function CompareModule(AProjectID: Integer; AModuleName, AModuleMember: PAnsiChar): Boolean; stdcall;
 var
   CurrentProjectState: TGUIClientProjectState;
 begin
@@ -224,13 +225,13 @@ begin
   CurrentProjectState := SaveProjectState;
   try
     if OpenProjectByID(AProjectID, 1) then
-      DoModuleCompare(StrPas(AModuleName), StrPas(AModuleMember), 0);
+      DoModuleCompare(JvcsFromAnsi(AModuleName), JvcsFromAnsi(AModuleMember), 0);
   finally
     RestoreProjectState(CurrentProjectState);
   end;
 end;
 
-function ShowModuleHistory(AProjectID: Integer; AModuleName: PChar): Boolean; stdcall;
+function ShowModuleHistory(AProjectID: Integer; AModuleName: PAnsiChar): Boolean; stdcall;
 var
   CurrentProjectState: TGUIClientProjectState;
 begin
@@ -242,7 +243,7 @@ begin
       VCSHistory := TVCSHistory.Create(Application);
       try
         VCSHistory.ProjectID := AProjectID;
-        VCSHistory.ModuleName := StrPas(AModuleName);
+        VCSHistory.ModuleName := JvcsFromAnsi(AModuleName);
         VCSHistory.ShowModal;
       finally
         VCSHistory.Free;
@@ -330,7 +331,7 @@ begin
   end;
 end;
 
-function DiffModule(AProjectID: Integer; AModuleName, AModuleMember: PChar): Boolean; stdcall;
+function DiffModule(AProjectID: Integer; AModuleName, AModuleMember: PAnsiChar): Boolean; stdcall;
 var
   CurrentProjectState: TGUIClientProjectState;
   GetModuleId: TJVCSGetModuleId;
@@ -343,14 +344,14 @@ begin
     begin
       GetModuleId := TJVCSGetModuleId.Create(nil);
       try
-        GetModuleId.ModuleName := StrPas(AModuleName);
+        GetModuleId.ModuleName := JvcsFromAnsi(AModuleName);
         DataModule1.ClientObjectSendRequest(GetModuleId);
         ModuleID := GetModuleId.ModuleID;
       finally
         GetModuleId.Free;
       end;
       if ModuleID > 0 then
-        ShowCompressDiffDialogLocalToLatest(ChangeFileExt(StrPas(AModuleName), StrPas(AModuleMember)), StrPas(AModuleMember), ModuleID);
+        ShowCompressDiffDialogLocalToLatest(ChangeFileExt(JvcsFromAnsi(AModuleName), JvcsFromAnsi(AModuleMember)), JvcsFromAnsi(AModuleMember), ModuleID);
     end;
   finally
     RestoreProjectState(CurrentProjectState);

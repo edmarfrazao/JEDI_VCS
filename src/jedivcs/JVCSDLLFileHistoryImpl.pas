@@ -45,7 +45,8 @@ uses
   {$ENDIF DEBUG}
   Windows,
   SysUtils, Classes, VCSBase, DBModule, JVCSClientObj, JVCSClasses, JVCSDataClasses,
-  JVCSTypes, Contnrs, VCSProcBase, JVCSIDEInterfaceCommon, JVCSClientObjBase;
+  JVCSTypes, Contnrs, VCSProcBase, JVCSIDEInterfaceCommon, JVCSClientObjBase,
+  JVCSDLLAnsi; // v2026: ABI ANSI
 
 function JediVCSDLLHistoryInit(AExternalVCSModuleHistoryFunctionRec: PExternalVCSModuleHistoryFunctionRec): Boolean; stdcall;
 procedure FinalizeHistory;
@@ -726,7 +727,7 @@ begin
     ModuleHistoryDataList := TModuleHistoryDataList.Create;
 end;
 
-function GetModuleHistoryIndex(AModuleName: PChar; var AIndex: Integer): Boolean;
+function GetModuleHistoryIndex(AModuleName: PAnsiChar; var AIndex: Integer): Boolean;
 var
   MN: string;
 begin
@@ -734,11 +735,11 @@ begin
   if ServerUserID > 0 then
   begin
     CreateModuleHistoryDataList;
-    AIndex := ModuleHistoryDataList.IndexOf(StrPas(AModuleName));
+    AIndex := ModuleHistoryDataList.IndexOf(JvcsFromAnsi(AModuleName));
     if AIndex = -1 then
     begin
       bProjectOpen := True;//todo
-      MN := StrPas(AModuleName);
+      MN := JvcsFromAnsi(AModuleName);
       if ResolveFileFamilies(MN) then
         AIndex := ModuleHistoryDataList.IndexOf(MN);
     end;
@@ -758,7 +759,7 @@ begin
   ModuleHistoryDataList.Unlock;
 end;
 
-function GetModuleHistoryCount(AModuleName: PChar): Integer; stdcall;
+function GetModuleHistoryCount(AModuleName: PAnsiChar): Integer; stdcall;
 var
   Idx: Integer;
 begin
@@ -772,7 +773,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryAuthor(AModuleName: PChar; AIndex: Integer; AnAuthor: PChar): Boolean; stdcall;
+function GetModuleHistoryAuthor(AModuleName: PAnsiChar; AIndex: Integer; AnAuthor: PAnsiChar): Boolean; stdcall;
 var
   Idx: Integer;
 begin
@@ -781,7 +782,7 @@ begin
     Result := False;
     if GetModuleHistoryIndex(AModuleName, Idx) then
     begin
-      StrPCopy(AnAuthor, TModuleHistoryRevision(ModuleHistoryDataList[Idx].Items[AIndex]).UserName);
+      JvcsAnsiCopy(AnAuthor, TModuleHistoryRevision(ModuleHistoryDataList[Idx].Items[AIndex]).UserName);
       Result := True;
     end;
   finally
@@ -789,7 +790,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryVersionRevisionStr(AModuleName: PChar; AIndex: Integer; AVersionStr: PChar): Boolean; stdcall;
+function GetModuleHistoryVersionRevisionStr(AModuleName: PAnsiChar; AIndex: Integer; AVersionStr: PAnsiChar): Boolean; stdcall;
 var
   Idx: Integer;
 begin
@@ -799,7 +800,7 @@ begin
     if GetModuleHistoryIndex(AModuleName, Idx) then
     begin
       with TModuleHistoryRevision(ModuleHistoryDataList[Idx].Items[AIndex]) do
-        StrPCopy(AVersionStr, Format('%d.%.3d', [Version, Revision]));
+        JvcsAnsiCopy(AVersionStr, Format('%d.%.3d', [Version, Revision]));
       Result := True;
     end;
   finally
@@ -807,7 +808,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryLabelCount(AModuleName: PChar; AIndex: Integer): Integer; stdcall;
+function GetModuleHistoryLabelCount(AModuleName: PAnsiChar; AIndex: Integer): Integer; stdcall;
 var
   Idx, IdxRevision: Integer;
 begin
@@ -825,7 +826,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryLabel(AModuleName: PChar; AIndex: Integer; ALabelIndex: Integer; ALabelStr: PChar): Boolean; stdcall;
+function GetModuleHistoryLabel(AModuleName: PAnsiChar; AIndex: Integer; ALabelIndex: Integer; ALabelStr: PAnsiChar): Boolean; stdcall;
 var
   Idx, IdxRevision: Integer;
 begin
@@ -838,7 +839,7 @@ begin
       if IdxRevision <> -1 then
       begin
         Result := True;
-        StrPCopy(ALabelStr, ModuleHistoryDataList.ModuleRevisionLabelsList[IdxRevision].LabelList[ALabelIndex]);
+        JvcsAnsiCopy(ALabelStr, ModuleHistoryDataList.ModuleRevisionLabelsList[IdxRevision].LabelList[ALabelIndex]);
       end;
     end;
   finally
@@ -846,7 +847,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryDate(AModuleName: PChar; AIndex: Integer; var ADate: TDateTime): Boolean; stdcall;
+function GetModuleHistoryDate(AModuleName: PAnsiChar; AIndex: Integer; var ADate: TDateTime): Boolean; stdcall;
 var
   I, Idx: Integer;
   S: string;
@@ -858,7 +859,7 @@ begin
     begin
       with TModuleHistoryRevision(ModuleHistoryDataList[Idx].Items[AIndex]) do
       begin
-        S := ExtractFileExt(StrPas(AModuleName));
+        S := ExtractFileExt(JvcsFromAnsi(AModuleName));
         for I := 0 to Pred(Count) do
           if SameText(Items[I].Extension, S) then
           begin
@@ -873,7 +874,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryComment(AModuleName: PChar; AIndex: Integer; AComment: PChar; AMaxCommentSize: Integer): Boolean; stdcall;
+function GetModuleHistoryComment(AModuleName: PAnsiChar; AIndex: Integer; AComment: PAnsiChar; AMaxCommentSize: Integer): Boolean; stdcall;
 var
   Idx: Integer;
 begin
@@ -883,7 +884,7 @@ begin
     if GetModuleHistoryIndex(AModuleName, Idx) then
     begin
       with TModuleHistoryRevision(ModuleHistoryDataList[Idx].Items[AIndex]) do
-        StrPCopy(AComment, Copy(CheckinComment, 1, AMaxCommentSize));
+        JvcsAnsiCopy(AComment, CheckinComment, AMaxCommentSize);
       Result := True;
     end;
   finally
@@ -891,7 +892,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryContentSize(AModuleName: PChar; AIndex: Integer): Integer; stdcall;
+function GetModuleHistoryContentSize(AModuleName: PAnsiChar; AIndex: Integer): Integer; stdcall;
 var
   I, Idx, ExtIdx: Integer;
   MS: TMemoryStream;
@@ -906,7 +907,7 @@ begin
       try
         with TModuleHistoryRevision(ModuleHistoryDataList[Idx].Items[AIndex]) do
         begin
-          S := ExtractFileExt(StrPas(AModuleName));
+          S := ExtractFileExt(JvcsFromAnsi(AModuleName));
           ExtIdx := -1;
           for I := 0 to Pred(Count) do
             if SameText(Items[I].Extension, S) then
@@ -927,7 +928,7 @@ begin
   end;
 end;
 
-function GetModuleHistoryContent(AModuleName: PChar; AIndex: Integer; AContentPtr: Pointer): Boolean; stdcall;
+function GetModuleHistoryContent(AModuleName: PAnsiChar; AIndex: Integer; AContentPtr: Pointer): Boolean; stdcall;
 var
   I, Idx, ExtIdx: Integer;
   MS: TMemoryStream;
@@ -942,7 +943,7 @@ begin
       try
         with TModuleHistoryRevision(ModuleHistoryDataList[Idx].Items[AIndex]) do
         begin
-          S := ExtractFileExt(StrPas(AModuleName));
+          S := ExtractFileExt(JvcsFromAnsi(AModuleName));
           ExtIdx := -1;
           for I := 0 to Pred(Count) do
             if SameText(Items[I].Extension, S) then

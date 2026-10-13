@@ -92,7 +92,7 @@ type
 implementation
 
 uses
-  {$ifdef WINDOWS}
+  {$ifdef MSWINDOWS} // v2026: era WINDOWS (nao definido no Delphi 13)
   JclRegistry
   {$else}
   {$endif}

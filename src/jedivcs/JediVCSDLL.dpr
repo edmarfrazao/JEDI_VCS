@@ -210,7 +210,8 @@ library JediVCSDLL;
 {%File 'v:\projects\jedivcs\doc\common\credits.txt'}
 
 uses
-  ShareMem,
+  // v2026: sem ShareMem (nada gerenciado atravessa a ABI; a 2.5.0.1030 nao
+  // importava borlndmm.dll) e sem FastMM4 (gerenciador embutido do Delphi)
   Windows,
   Messages,
   Registry,
@@ -247,9 +248,11 @@ uses
   JclSecurity,
   JclWin32,
   JclStrings,
+  JvDynControlEngineVCL, // v2026: registra o DefaultDynControlEngine (dialogos DSA da JVCL)
   ConfigStorage,
   JVCSIDEInterfaceCommon in '..\common\JVCSIDEInterfaceCommon.pas',
   JVCSIDEInterface in 'JVCSIDEInterface.pas',
+  JVCSDLLAnsi in 'JVCSDLLAnsi.pas',
   About in 'About.pas' {VCSAbout},
   Options in 'Options.pas' {VCSOptions},
   Create in 'Create.pas' {VCSLoad},
@@ -520,7 +523,7 @@ type
   {$IFDEF EXT_IDE_INTF}
   {$R menuimages.res} // for external IDE Versions which supports menuimages
   {$ENDIF EXT_IDE_INTF}
-  {$R \Projects\Jedivcs\src\comp\soft-gems\thememanager\Resources\winxp.res}   // Include Themingresource for WindowsXP
+  // v2026: sem winxp.res - a DLL roda no contexto de ativacao da IDE (comctl32 v6)
 
 var
   JVCSClient: TJVCSClient = nil; // the client
@@ -1184,7 +1187,7 @@ begin
   if bCheckDeleted and bProjectDeleted then
   begin
     MessageBox( Application.Handle
-              , PChar(Format(JVCSRES_Project_37s_is_deleted_in_VCS33,[ExtractFileName(sProjectName)]) +AnsiCrLf +
+              , PChar(Format(JVCSRES_Project_37s_is_deleted_in_VCS33,[ExtractFileName(sProjectName)]) + sLineBreak + // v2026: era AnsiCrLf
                 JVCSRES_Selected_action_is_not_permitted_for_deleted_projects46)
               , cJediVCS
               , MB_OK + MB_ICONERROR
@@ -1835,6 +1838,12 @@ var
   VerInfo, DLLServer, DLLPort: string;
   {$ENDIF REPORTDLL}
 begin
+  {$IFDEF JVCS_NOREPORTS}
+  // v2026: relatorios desligados (sem jedivcsreport.dll nem unit Report; o
+  // verbo fica desabilitado em GetVerbState). Nada a fazer.
+  if Self <> nil then
+    Exit;
+  {$ENDIF JVCS_NOREPORTS}
   try
     // Check server connection and project ID
     if not CanExecuteVerbOnProject(True) then
@@ -1921,12 +1930,14 @@ begin
     end; // else if FuncPtr <> nil then begin
     FreeLibrary(ReportDLLHandle);
     {$ELSE}
+    {$IFNDEF JVCS_NOREPORTS}
     VCSReport := TVCSReport.Create(Application);
     try
       VCSReport.ShowModal;
     finally
       VCSReport.Free;
     end;
+    {$ENDIF ~JVCS_NOREPORTS}
     {$ENDIF REPORTDLL}
 
     // Temporäre Files von QRPreview
@@ -3034,13 +3045,14 @@ end;
 function MapVerbIndex(AIndex: Integer): Integer;
 begin
   Result := AIndex;
-  {$IFDEF BRANCHING}
+  // v2026: JVCS_NOBRANCHUI esconde "Select Branch" (27 verbos, HEAD fixo)
+  {$IF Defined(BRANCHING) and not Defined(JVCS_NOBRANCHUI)}
   if Result in [1, 2] then
     Result := Result + 26
   else
   if (Result >= 3) and (Result <= 28) then
     Result := Result - 2;
-  {$ENDIF BRANCHING}
+  {$IFEND}
 end;
 
 
@@ -3326,11 +3338,11 @@ end;
 
 function TJVCSClient.GetVerbCount: Integer;
 begin
-  {$IFDEF BRANCHING}
+  {$IF Defined(BRANCHING) and not Defined(JVCS_NOBRANCHUI)}
   Result := 29;
   {$ELSE}
   Result := 27;
-  {$ENDIF BRANCHING}
+  {$IFEND}
 end;
 
 //==============================================================================
@@ -3423,8 +3435,11 @@ begin
           Result := ivsEnabled;
         // Reports & Printing
       16:
+        {$IFNDEF JVCS_NOREPORTS} // v2026: relatorios desligados -> desabilitado
         if (bProjectOpen and (ServerUserID > 0)) then
-          Result := ivsEnabled;
+          Result := ivsEnabled
+        {$ENDIF ~JVCS_NOREPORTS}
+        ;
         // Properties
       17:
         Result := ivsEnabled;
@@ -3475,7 +3490,7 @@ end;
 //------------------------------------------------------------------------------
 
 {$IFDEF EXT_IDE_INTF}
-procedure GetIDString(AIDString: PChar); stdcall;
+procedure GetIDString(AIDString: PAnsiChar); stdcall;
 var
   S: string;
 begin
@@ -3483,7 +3498,7 @@ begin
     S := JVCSClient.GetIDString
   else
     S := '';
-  StrPCopy(AIDString, S);
+  JvcsAnsiCopy(AIDString, S);
 end;
 
 procedure ExecuteVerb(const AIndex: Integer); stdcall;
@@ -3492,7 +3507,7 @@ begin
     JVCSClient.ExecuteVerb(AIndex);
 end;
 
-procedure GetMenuName(AMenuName: PChar); stdcall;
+procedure GetMenuName(AMenuName: PAnsiChar); stdcall;
 var
   S: string;
 begin
@@ -3500,10 +3515,10 @@ begin
     S := JVCSClient.GetMenuName
   else
     S := '';
-  StrPCopy(AMenuName, S);
+  JvcsAnsiCopy(AMenuName, S);
 end;
 
-procedure GetVerb(const AIndex: Integer; AVerb: PChar); stdcall;
+procedure GetVerb(const AIndex: Integer; AVerb: PAnsiChar); stdcall;
 var
   S: string;
 begin
@@ -3511,7 +3526,7 @@ begin
     S := JVCSClient.GetVerb(AIndex)
   else
     S := '';
-  StrPCopy(AVerb, S);
+  JvcsAnsiCopy(AVerb, S);
 end;
 
 function GetVerbCount: Integer; stdcall;
@@ -3619,10 +3634,10 @@ begin
 end;
 
 procedure FileNotification(const ANotifyCode: TIDEFileNotification;
-  const AFileName: PChar; var ACancel: Boolean); stdcall;
+  const AFileName: PAnsiChar; var ACancel: Boolean); stdcall;
 begin
   if Assigned(JVCSNotifier) then
-    JVCSNotifier.IDEFileNotification(ANotifyCode, StrPas(AFileName), ACancel);
+    JVCSNotifier.IDEFileNotification(ANotifyCode, JvcsFromAnsi(AFileName), ACancel);
 end;
 
 procedure EventNotification(const ANotifyCode: TIDEEventNotification;
