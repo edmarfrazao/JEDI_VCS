@@ -6,7 +6,8 @@ perguntar coisas que não consegue perguntar com a entrada redirecionada, e a fo
 a senha na linha de comando.
 
 Programa: `jvcs.exe` 2.5.0.1030 (original, `C:\Program Files (x86)\JEDI\JVCS`) ou 2.5.0.20xx (2.5.0.2050 = beta 5) (novo,
-`C:\Program Files (x86)\JEDI\JVCS 2026`), com `fvcscrypt.dll` ao lado. Os comandos são os mesmos.
+`C:\Program Files (x86)\JEDI\JVCS 2026`), com `fvcscrypt.dll` ao lado. O 2026 tem os mesmos comandos do
+original e mais os da seção "Comandos novos do console 2026".
 
 ## Sintaxe
 
@@ -43,9 +44,50 @@ jvcs servidor:porta -user Usuario -password Senha -comando argumentos...
 | `input <arquivo>` | executa comandos de um arquivo | |
 | `help [<comando>]`, `exit` | ajuda, sair | |
 
-Não existem no console original: `add` (módulo novo), `diff`, `log`, `whoami`. O console 2026 acrescenta
-`addproject`, `addmodule`, `setmodulepath` e `history <módulo>` (revisões com comentários); use-os pelo
-`jvcs-ai.ps1` (`add`, `addproject`, `history`), que também oferece `diff`, `show` e `sync`.
+Não existem em nenhum dos dois: `diff`, `log`, `whoami` (o `jvcs-ai.ps1` oferece `diff`, `show`, `sync`,
+`history`, `changes` e `identity`).
+
+## Comandos novos do console 2026
+
+Só no `jvcs.exe` 2026 (`jvcs help <comando>` mostra a sintaxe completa). Os de administração **não pedem
+confirmação** (os de projeto exigem só a palavra `confirm`): pela IA, use sempre o comando do wrapper indicado,
+que faz a prévia, o backup e pede a aprovação.
+
+| Comando | Faz | Efeito | No wrapper |
+|---|---|---|---|
+| `addproject <projeto> [<descrição>]` | cria o projeto | servidor | `addproject` |
+| `addmodule <arquivo> [<descrição>]` | cadastra o arquivo (com a pasta) no projeto aberto | servidor | `add` |
+| `setmodulepath <módulo\|id> <pasta>` | grava a pasta local do módulo no servidor | servidor | — |
+| `history <módulo\|id>` | revisões: data do arquivo, usuário, família, comentário | leitura | `history`, `blame` |
+| `projectlog <projeto\|id> [since=] [user=] [max=] [norev]` | check-ins do projeto pelo log do servidor (hora real) | leitura | `changes` |
+| `searchmodules <máscara>` | módulos por nome/máscara em todos os projetos | leitura | `search` |
+| `searchcomments <texto> <projeto\|id> [maxmodules=]` | texto nos comentários de check-in/check-out | leitura | `search -InComments` |
+| `listlabels [<projeto\|id>]` | labels do servidor / usados no projeto | leitura | `labels` |
+| `labelrevs <projeto\|id> <label>\|#id` | revisão de cada módulo no label | leitura | `labels -Label`, `sync -Label` |
+| `modulelabels <módulo\|id>` | labels de cada revisão do módulo | leitura | `labels <arq>`, `history` |
+| `projectrevs <projeto\|id> latest\|label=\|version=\|date= [includehidden]` | revisão de cada módulo num estado (como as abas do Synchronize/Restore) | leitura | `sync -Date`, `sync -Dest` |
+| `sharedby <módulo\|id>`, `sharedmodules <projeto\|id>` | projetos que têm o módulo / módulos compartilhados do projeto | leitura | `shared` |
+| `listtodo [project=] [user=] [category=] [priority=] [due=] [includedone]` | itens de ToDo | leitura | `todo` |
+| `addtodo <projeto\|id> "<descrição>" [...]`, `donetodo <id> [reopen]` | cria / conclui ou reabre ToDo | servidor | `todo-add`, `todo-done` |
+| `listmilestones [<projeto\|id>\|all]` | milestones definidos e atingidos | leitura | `milestones` |
+| `listbugs [module ...\|project ...\|bug <id>]`, `bugsummary modules\|projects` | bugs e o mais grave por módulo/projeto | leitura | `bugs` |
+| `addbug`, `updatebug <id>`, `assignbug <id> module\|project ...` | cria, altera, liga/desliga bug | servidor | `bug-add`, `bug-update`, `bug-link` |
+| `listmodules [<projeto\|id>]`, `listdeserted` | todos os módulos do projeto (flags `H` `B` `N` `P`) / abandonados (`D`) | leitura | `modules`, `cleanup` |
+| `removemodule <módulo\|id> [archive]` | tira do projeto / com `archive`, **apaga do arquivo** (irreversível) | servidor | `rm-module`, `cleanup` |
+| `renamemodule <módulo\|id> <novo>`, `hidemodule <módulo\|id> [unhide]` | renomeia (todos os projetos) / oculta no projeto | servidor | `rename-module`, `hide` |
+| `getcomment <revision_id>`, `setcomment <módulo\|id> <revision_id> in\|out "<texto>"` | lê / troca o comentário de uma revisão | leitura / servidor | `comment` |
+| `projectinfo <projeto\|id>` | projeto e vínculos (também de projeto removido) | leitura | prévia de `rm-project`/`rename-project` |
+| `removeproject`, `restoreproject`, `renameproject ... [renamefiles]` (+ `confirm`) | remove / restaura / renomeia o projeto | servidor | `rm-project`, `restore-project`, `rename-project` |
+| `linkmodule <id> <caminho\nome> [hidden]`, `projectgroups`, `setprojectgroup <projeto> <grupo> add\|remove` | religa módulo / grupos de projeto | servidor | `restore-project -Relink` |
+
+Mudanças em comandos que já existiam:
+- `checkin <módulo|id> [comentário] [keep]`: com `keep` é o **Put** (revisão nova, o lock continua e os
+  arquivos ficam graváveis; wrapper `checkin -Keep`). Check-in recusado pelo servidor agora vira erro com o
+  motivo (`refused by server: ...`) em vez de passar em silêncio.
+- `labelproject`: última coluna `added` ou `kept x.y` (o servidor não move label que já está noutra revisão).
+- `getmodule`: aceita `rev=` + `dest=` + `noprompt` juntos.
+- Servidor 2.5 com ramos (Firebird): `removemodule ... archive` só apaga módulo **sem revisão**; com revisão
+  o servidor responde 400 e nada muda (limitação do servidor).
 
 ## Exemplo seguro (senha pelo stdin, sem /password)
 

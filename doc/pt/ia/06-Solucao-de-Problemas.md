@@ -29,7 +29,7 @@ visível). Quando não encontra, devolve `unknown`/`pathTruncated`.
 | `[ERRO 2] informe -Project <nome.dpr> (não há um único .dpr/.dpk na pasta atual)` | a pasta tem mais de um `.dpr`/`.dpk` com nome próprio (ex.: `Exemplo01.dpr` e `Exemplo01 - Copia.dpr`) ou nenhum | `-Project Exemplo01.dpr`, ou remova as cópias da pasta do projeto |
 | `projeto '<nome>' não existe no servidor` (5) | o projeto não foi criado no JEDI VCS, ou o nome difere | crie pelo cliente (Project Manager); confira com `projects` |
 | arquivo em dois projetos no mesmo nível (5) | ambiguidade | `-Project` |
-| `notVersioned` | o arquivo não é módulo do projeto | adicione pelo cliente, se for o caso (a IA não adiciona módulos) |
+| `notVersioned` | o arquivo não é módulo do projeto | se for o caso, `add <arq> -Comment "..."` (console 2026, modo de check-in) ou pelo cliente |
 
 ## Nomes padrão (`Project1`, `Unit1`) recusados
 

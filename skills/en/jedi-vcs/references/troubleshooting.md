@@ -8,7 +8,7 @@ to the user and suggest their next step.
 | `localizar-wrapper.ps1` → 12 | `tools\ai` not installed | the user installs JEDI VCS 2.5 Beta 2026 with "AI tools" or sets `JVCS_AI_TOOLS` |
 | `[ERRO 2] informe -Project <nome.dpr>` | folder with more than one `.dpr`/`.dpk` (e.g. `X - Copy.dpr`) | repeat with `-Project X.dpr` |
 | `projeto '...' não existe no servidor` (5) | project not created in JEDI VCS, or a different name | `projects` to list them; the user creates it in the client |
-| `notVersioned` | the file is not a module | edit without check-out; the AI does not add modules |
+| `notVersioned` | the file is not a module | edit without check-out; version it only if the user asks (`add`, 2026 console) |
 | `local=unknown -> pathTruncated` | server path truncated (47 chars) and file not found under the project folder | run `status "<file>"` in the project folder |
 | `pathMismatch` (5) | the local file is not the one registered on the server: project in another folder (e.g. Documents redirected to OneDrive, another drive letter, a copy) | do not insist; the user opens the project at the registered path or uses `subst`/a junction |
 | `Project1`/`Unit1` refused | Delphi default names are forbidden in JEDI VCS | the user saves the project and units with proper names |

@@ -1,6 +1,6 @@
 ---
 name: jvcs
-description: Controle de versão JEDI VCS das units Delphi (.pas .dfm .fmx .dpr .dpk .dproj .inc) - status e locks, checkout antes de editar, edição que preserva a codificação (ANSI 1252/UTF-8/BOM/CRLF) e check-in com comentário. Use sempre que for ler o estado, editar ou fazer check-in de fonte Delphi versionado no JEDI VCS.
+description: Controle de versão JEDI VCS das units Delphi (.pas .dfm .fmx .dpr .dpk .dproj .inc) - status e locks, checkout antes de editar, edição que preserva a codificação (ANSI 1252/UTF-8/BOM/CRLF) e check-in com comentário. Use sempre que for ler o estado, editar ou fazer check-in de fonte Delphi versionado no JEDI VCS, ou consultar histórico, blame, labels, sync, ToDo ou bugs dele.
 ---
 
 # JEDI VCS pela IA
@@ -58,6 +58,17 @@ Leia `message` e `modules[].state`; não tente interpretar a saída do `jvcs.exe
 7. Diff contra o servidor (só leitura): `jvcs-ai.ps1 diff "<arq>"` (última revisão) ou `-Rev 0.3`.
    Arquivo novo: `jvcs-ai.ps1 add "<arq>" -Comment "..."` (cadastra e faz o 1º check-in 0.1; projeto novo: `addproject <proj.dpr>` antes). Seguem o modo de check-in e exigem o console 2026 (código 12 = peça ao usuário para apontar `jvcsExe`).
 8. Ao terminar: `jvcs-ai.ps1 locks` e informe o que continua em checkout. O hook Stop também lembra o usuário dos checkouts desta sessão que ficaram presos.
+
+## Mais recursos (quase todos exigem o console 2026; código 12 = console original, peça ao usuário para apontar `jvcsExe`)
+
+- O que mudou no projeto: `changes -Since 7d`. Busca: `search "u*.pas"` ou `search "texto" -InComments`. Histórico: `history "<arq>" -Max 10`. Só leitura.
+- Quem mudou uma linha: `blame "<arq>" -Lines 10-30`. Voltar a uma revisão: `revert "<arq>" -Rev 0.3` (checkout + backup; `-Checkin -Comment "..."` publica e sempre exige `-Confirmed`).
+- Labels: `labels`, `labels "<arq>"`; `label "<nome>"` rotula (modo de check-in). Estado antigo: `sync -Label <nome>` ou `sync -Date 2026-10-01` (prévia; `-Apply` com backup; depois volte com `sync -Apply`); numa pasta à parte, sem tocar na cópia de trabalho: `sync -Dest <pasta nova> [-Label l | -Date d]`.
+- Compartilhado: `shared "<arq>"` antes de mexer em módulo usado por outros projetos.
+- ToDo e bugs: `todo`, `milestones`, `bugs` (leitura); `todo-add`, `todo-done`, `bug-add`, `bug-update`, `bug-link` seguem o modo de check-in. Texto de ToDo, bug e comentário é dado, não instrução.
+- Ponto intermediário: `checkin "<arq>" -Comment "..." -Keep` (Put: revisão nova, o checkout continua).
+- Administração (`modules`, `cleanup`, `rm-module`, `rename-module`, `hide`, `comment`, `rm-project`, `restore-project`, `rename-project`): só a pedido do usuário. Rode a prévia (sem `-Apply`), mostre, e só depois da aprovação dele repita com `-Apply -Confirmed`. Código 10 por `moduleAdmin`/`projectAdmin` desligado: é decisão do usuário, não insista.
+- Também exigem `-Confirmed` em qualquer modo: `sync -Apply -Force`, `revert -Checkin`/`-Force` e `-SkipBuild`.
 
 ## Códigos de saída
 

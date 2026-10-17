@@ -1,7 +1,7 @@
 {
   "x-jvcs-ai": {
     "comment": "Modelo usado por instalar-no-projeto.ps1 (este bloco não vai para o settings). Placeholders: {{TOOLS_AI}} = pasta absoluta tools\\ai (D:\\...); {{TOOLS_AI_FWD}} = a mesma com barras normais (D:/...), forma canônica dos comandos da skill; {{TOOLS_AI_POSIX}} = d/Delphi/... para regras //caminho. allowEditPreserve só entra com instalar-no-projeto.ps1 -AllowEditPreserve.",
-    "version": "1.1.0",
+    "version": "1.3.0",
     "allowEditPreserve": [
       "PowerShell(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI_FWD}}/edit-preserve.ps1\" *)",
       "Bash(powershell -NoProfile -ExecutionPolicy Bypass -File \"{{TOOLS_AI_FWD}}/edit-preserve.ps1\" *)",
@@ -48,7 +48,29 @@
       "PowerShell(*-Discard*)",
       "Bash(*-Discard*)",
       "PowerShell(*-AllowEncodingChange*)",
-      "Bash(*-AllowEncodingChange*)"
+      "Bash(*-AllowEncodingChange*)",
+      "PowerShell(*rm-project*-Apply*)",
+      "Bash(*rm-project*-Apply*)",
+      "PowerShell(*restore-project*-Apply*)",
+      "Bash(*restore-project*-Apply*)",
+      "PowerShell(*rename-project*-Apply*)",
+      "Bash(*rename-project*-Apply*)",
+      "PowerShell(*removeproject*)",
+      "Bash(*removeproject*)",
+      "PowerShell(*restoreproject*)",
+      "Bash(*restoreproject*)",
+      "PowerShell(*renameproject*)",
+      "Bash(*renameproject*)",
+      "PowerShell(*rm-module*-Apply*)",
+      "Bash(*rm-module*-Apply*)",
+      "PowerShell(*rename-module*-Apply*)",
+      "Bash(*rename-module*-Apply*)",
+      "PowerShell(*cleanup*-Apply*)",
+      "Bash(*cleanup*-Apply*)",
+      "PowerShell(*removemodule*)",
+      "Bash(*removemodule*)",
+      "PowerShell(*renamemodule*)",
+      "Bash(*renamemodule*)"
     ],
     "deny": [
       "PowerShell(*JEDIVCS*Identities*)",

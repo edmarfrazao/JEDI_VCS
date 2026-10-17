@@ -16,7 +16,7 @@ Como uma alteração feita pela IA passa pelo JEDI VCS, do pedido ao check-in.
    - `lockedBy` com outro usuário → não editar, avisar.
    - `localState=modified` sem checkout → alguém alterou fora do VCS; perguntar antes de
      `checkout -Force -Confirmed`.
-   - `notVersioned` → o arquivo não está no JEDI VCS; edite normalmente (a IA não adiciona módulos).
+   - `notVersioned` → o arquivo não está no JEDI VCS; edite normalmente; para versioná-lo, `add` (só se você pedir; console 2026).
 2. **Checkout.**
    - `checkout=auto`: o hook faz sozinho quando a IA usa o `Edit` (ou o `edit-preserve` faz).
    - `checkout=confirm`: `jvcs-ai.ps1 checkout "<arq>" -Confirmed`; você aprova no Claude Code.

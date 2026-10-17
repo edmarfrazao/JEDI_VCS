@@ -21,6 +21,43 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
   `diff -Rev x.y -Rev2 y.z` (entre duas revisões) e `sync` (prévia; `-Apply` baixa e atualiza a cópia local
   com backup, nunca mexe no checkout do usuário e não sobrescreve alteração local sem `-Force`). Ver
   `tools/ai/LEIAME.md` §12.
+- Wrapper da IA 1.4.0, grupo B (recursos do servidor; console 2026): `changes` (check-ins do projeto desde uma
+  data, com a hora real, pelo log do servidor), `search` (módulos por máscara em todos os projetos, ou texto nos
+  comentários com `-InComments`), `labels`/`label`/`sync -Label`/`shared`, `todo`/`todo-add`/`todo-done`/
+  `milestones` e `bugs`/`bug-add`/`bug-update`/`bug-link`. Console: `projectlog`, `searchmodules`,
+  `searchcomments`, `listlabels`, `labelrevs`, `modulelabels`, `sharedby`, `sharedmodules`, `listtodo`, `addtodo`,
+  `donetodo`, `listmilestones`, `listbugs`, `bugsummary`, `addbug`, `updatebug`, `assignbug`. Ver
+  `tools/ai/LEIAME.md` §13.
+- Grupo D, administração de módulos: `modules`, `rm-module`, `rename-module`, `hide`, `comment` (trocar o
+  comentário de uma revisão) e `cleanup` (lixo de teste e módulos quebrados), sempre com prévia, backup e
+  aprovação; o `-Apply` exige `moduleAdmin=on|archive` no `config.ini`. Console: `listmodules`, `listdeserted`,
+  `removemodule`, `renamemodule`, `hidemodule`, `getcomment`, `setcomment`. Ver §14.
+- Grupo D, administração de projetos: `rm-project`, `restore-project [-Relink]` (religa módulos e grupos pelo
+  registro gravado antes da remoção) e `rename-project [-RenameFiles]`; o `-Apply` exige `projectAdmin=on`.
+  Console: `projectinfo`, `removeproject`, `restoreproject`, `renameproject` (com a palavra `confirm`),
+  `linkmodule`, `projectgroups`, `setprojectgroup`. Ver §15.
+- Grupo A: `blame` (revisão, usuário e comentário de cada linha, como o Line History), `revert -Rev x.y
+  [-Checkin]` (volta a uma revisão com checkout e backup) e compilação antes do check-in (`buildCheck`
+  `off|warn|block`, só com o script registrado pelo usuário em `buildCommand`, conferido por SHA-256). Ver §16.
+- Grupo E: `sync -Date` (rollback ao estado de uma data, como a aba Rollback), `sync -Dest` (exporta o estado
+  para uma pasta nova, como cópia de leitura) e `checkin -Keep` (Put: revisão nova mantendo o checkout).
+  Console: `projectrevs` e `checkin ... keep`. Ver §17.
+- Skills pt/en (bloco "Mais recursos"), referências do console e guias `doc/pt/ia` atualizados; modelo de
+  settings 1.3.0 com regras `ask` para a administração.
+
+### Alterado
+- Console: check-in recusado pelo servidor deixa de passar em silêncio e vira erro com o motivo
+  (`refused by server: ...`); `labelproject` mostra `added` ou `kept x.y` por módulo.
+
+### Problemas conhecidos (servidor 2.5)
+- Com ramos (Firebird), `REMOVE_MODULE` com `archive` só apaga módulo **sem revisão**: com revisão responde 400 e
+  desfaz (o standalone tem a mesma limitação). Tirar do projeto, renomear, ocultar e trocar comentário funcionam.
+- `RENAME_PROJECT` responde "renamed" mas não renomeia os módulos (o console usa `RENAME_MODULE` módulo a módulo).
+- A recusa por checkout de `REMOVE_PROJECT`/`RENAME_PROJECT` olha uma coluna antiga; quem protege é a checagem
+  do console. `REMOVE_MODULE` não confere lock e, em módulo compartilhado, apaga o vínculo mesmo respondendo
+  `False` (o console confere antes).
+- O servidor não move label que já está em outra revisão; `ADD_UPDATE_TODO_ENTRIES` regrava todos os campos do
+  item; `CHANGE_REVISION_COMMENT` não grava log. Lista completa: `doc/pt/ia/08-Plano-de-Recursos.md` §7.
 
 ### Corrigido
 - Console: `getmodule` recusava `rev=` + `dest=` + `noprompt` juntos (bug do original).

@@ -9,7 +9,7 @@
 #
 # Nada aqui lê ou imprime a senha da identidade; isso fica só em jvcs-ai.ps1.
 
-$script:JaVersion = '1.3.0'
+$script:JaVersion = '1.4.0'
 
 # Extensões de fonte Delphi protegidas pelo hook e pelo edit-preserve.
 $script:JaDelphiExtensions = @('.pas', '.dfm', '.fmx', '.dpr', '.dpk', '.dproj', '.inc')
@@ -31,6 +31,16 @@ $script:JaConfigDefaults = [ordered]@{
     lockWaitSec   = '120'
     identity      = ''
     asciiAs       = 'ansi'
+    moduleAdmin   = 'off'
+    projectAdmin  = 'off'
+    blameMaxRevisions  = '200'
+    cacheMaxMB         = '500'
+    buildCheck         = 'off'
+    buildCommand       = ''
+    buildConfig        = 'Debug'
+    buildPlatform      = 'Win32'
+    buildTimeoutSec    = '600'
+    buildCommandSha256 = ''
 }
 
 # Codificações. 1252 estrita (exceção em caractere não representável) para gravar;
@@ -412,10 +422,25 @@ function Read-JaConfig {
     }
     $cfg['asciiAs'] = ([string]$cfg['asciiAs']).ToLowerInvariant()
     if (@('ansi', 'utf8') -notcontains $cfg['asciiAs']) { $cfg['asciiAs'] = 'ansi' }
+    # rm-project/restore-project/rename-project: desligados salvo projectAdmin=on (só o usuário liga)
+    $cfg['projectAdmin'] = ([string]$cfg['projectAdmin']).ToLowerInvariant()
+    if (@('on', 'off') -notcontains $cfg['projectAdmin']) { $cfg['projectAdmin'] = 'off'; $src['projectAdmin'] = 'padrão (valor inválido no config.ini)' }
+    # administração de módulos (rm-module/rename-module/hide/comment/cleanup): off | on | archive
+    $ma = ([string]$cfg['moduleAdmin']).ToLowerInvariant()
+    if (@('off', 'on', 'archive') -notcontains $ma) { $ma = 'off'; $src['moduleAdmin'] = 'padrão (valor inválido no config.ini)' }
+    $cfg['moduleAdmin'] = $ma
     foreach ($k in @('timeoutSec', 'lockWaitSec')) {
         $n = 0
         if (-not [int]::TryParse([string]$cfg[$k], [ref]$n) -or $n -lt 5 -or $n -gt 3600) { $n = [int]$script:JaConfigDefaults[$k] }
         $cfg[$k] = $n
+    }
+    $bc = ([string]$cfg['buildCheck']).ToLowerInvariant()
+    if (@('off', 'warn', 'block') -notcontains $bc) { $bc = 'off'; $src['buildCheck'] = 'padrão (valor inválido no config.ini)' }
+    $cfg['buildCheck'] = $bc
+    foreach ($spec in @(@('blameMaxRevisions', 1, 5000), @('cacheMaxMB', 10, 100000), @('buildTimeoutSec', 30, 7200))) {
+        $n = 0
+        if (-not [int]::TryParse([string]$cfg[$spec[0]], [ref]$n) -or $n -lt $spec[1] -or $n -gt $spec[2]) { $n = [int]$script:JaConfigDefaults[$spec[0]] }
+        $cfg[$spec[0]] = $n
     }
     return [pscustomobject]@{ Values = $cfg; Sources = $src; Path = $path }
 }
@@ -432,11 +457,30 @@ function Test-JaConfigValue {
         'checkout' { if (@('auto', 'confirm', 'manual') -notcontains $Value.ToLowerInvariant()) { return 'use auto, confirm ou manual' } }
         'checkin' { if (@('auto', 'confirm', 'manual') -notcontains $Value.ToLowerInvariant()) { return 'use auto, confirm ou manual' } }
         'asciiAs' { if (@('ansi', 'utf8') -notcontains $Value.ToLowerInvariant()) { return 'use ansi ou utf8' } }
+        'projectAdmin' { if (@('on', 'off') -notcontains $Value.ToLowerInvariant()) { return 'use on ou off' } }
+        'moduleAdmin' { if (@('off', 'on', 'archive') -notcontains $Value.ToLowerInvariant()) { return 'use off, on ou archive' } }
         'timeoutSec' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 5 -or $n -gt 3600) { return 'inteiro entre 5 e 3600' } }
         'lockWaitSec' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 5 -or $n -gt 3600) { return 'inteiro entre 5 e 3600' } }
         'commentPrefix' { if ($Value.Length -gt 20 -or $Value -match '["\x00-\x1f]' -or -not (Test-JaAnsiText $Value)) { return 'até 20 caracteres, sem aspas e representável em CP1252' } }
         'jvcsExe' { if ([string]::IsNullOrWhiteSpace($Value)) { return 'caminho do jvcs.exe obrigatório' } }
         'identity' { if ($Value -match '[\\/"]') { return 'nome de identidade inválido' } }
+        'buildCheck' { if (@('off', 'warn', 'block') -notcontains $Value.ToLowerInvariant()) { return 'use off, warn ou block' } }
+        'buildCommand' {
+            # só um script do usuário (nunca um comando vindo do servidor); "none" desliga
+            if ($Value -ine 'none') {
+                if (-not [IO.Path]::IsPathRooted($Value) -or -not (Test-Path -LiteralPath $Value -PathType Leaf) -or
+                    @('.bat', '.cmd', '.ps1') -notcontains [IO.Path]::GetExtension($Value).ToLowerInvariant()) {
+                    return 'none ou o caminho absoluto de um .bat/.cmd/.ps1 existente'
+                }
+                if ($Value -match '[%&^|<>"!\x00-\x1f]') { return 'caminho com caractere especial para o cmd.exe (% & ^ | < > " !)' }
+            }
+        }
+        'buildConfig' { if ($Value -notmatch '^[A-Za-z0-9_]{1,30}$') { return 'nome da configuração (ex.: Debug, Release)' } }
+        'buildPlatform' { if (@('Win32', 'Win64') -notcontains $Value) { return 'use Win32 ou Win64' } }
+        'buildTimeoutSec' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 30 -or $n -gt 7200) { return 'inteiro entre 30 e 7200' } }
+        'blameMaxRevisions' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 1 -or $n -gt 5000) { return 'inteiro entre 1 e 5000' } }
+        'cacheMaxMB' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 10 -or $n -gt 100000) { return 'inteiro entre 10 e 100000' } }
+        'buildCommandSha256' { return 'gravado automaticamente por config set buildCommand' }
     }
     return ''
 }
@@ -445,12 +489,16 @@ function Test-JaConfigValue {
 # Arquivo em UTF-8 com BOM e CRLF; a primeira linha é comentário (assim o BOM não
 # atrapalha leitores ANSI como GetPrivateProfileString).
 function Set-JaConfigValue {
-    param([string]$Key, [string]$Value)
+    param([string]$Key, [string]$Value, [switch]$Internal)
     $name = Get-JaConfigKeyName $Key
     if (-not $name) { throw (New-JaError 2 "chave de configuração desconhecida: '$Key'. Válidas: $(@($script:JaConfigDefaults.Keys) -join ', ')") }
-    $why = Test-JaConfigValue -Key $name -Value $Value
-    if ($why) { throw (New-JaError 2 "valor inválido para ${name}: $why") }
-    if (@('checkout', 'checkin', 'asciiAs') -contains $name) { $Value = $Value.ToLowerInvariant() }
+    # o valor vira uma linha "chave=valor": CR/LF acrescentaria outra chave (ex.: moduleAdmin=archive)
+    if ([string]$Value -match '[\x00-\x1f\x7f]') { throw (New-JaError 2 "valor inválido para ${name}: sem quebra de linha nem caractere de controle") }
+    if (-not $Internal) {
+        $why = Test-JaConfigValue -Key $name -Value $Value
+        if ($why) { throw (New-JaError 2 "valor inválido para ${name}: $why") }
+    }
+    if (@('checkout', 'checkin', 'asciiAs', 'projectAdmin', 'moduleAdmin', 'buildCheck') -contains $name) { $Value = $Value.ToLowerInvariant() }
     $path = Get-JaConfigPath
     $dir = Split-Path -Parent $path
     if (-not (Test-Path -LiteralPath $dir)) { [void](New-Item -ItemType Directory -Path $dir -Force) }
@@ -461,6 +509,8 @@ function Set-JaConfigValue {
         $lines.Add('; JEDI VCS - automação por IA (Claude Code). Sem segredos: a senha fica na identidade salva.')
         $lines.Add('; Edite pela interface (futura aba "IA / Automação" em VCS Properties) ou com: jvcs-ai.ps1 config set <chave> <valor>')
         $lines.Add('; checkout/checkin = auto | confirm | manual   (padrão: confirm)')
+        $lines.Add('; moduleAdmin = off | on | archive   (padrão: off; rm-module/rename-module/hide/comment/cleanup)')
+        $lines.Add('; projectAdmin = on | off   (padrão: off; rm-project/restore-project/rename-project)')
     }
     $secStart = -1; $secEnd = $lines.Count; $keyLine = -1
     for ($i = 0; $i -lt $lines.Count; $i++) {
@@ -575,4 +625,46 @@ function Remove-JaTempDir {
         Get-ChildItem -LiteralPath $Path -Recurse -File -Force -ErrorAction SilentlyContinue | ForEach-Object { try { $_.IsReadOnly = $false } catch { } }
         Remove-Item -LiteralPath $Path -Recurse -Force -ErrorAction SilentlyContinue
     }
+}
+
+# ---------------------------------------------------------------- codificação para gravar
+# Mesma regra do edit-preserve (Get-Encoder/Get-Preamble/ConvertTo-Bytes), aqui para o revert.
+# Escritas estritas: caractere não representável vira erro com o código pedido (o revert usa 8).
+
+function Get-JaTextEncoder {
+    param([string]$Kind)
+    switch ($Kind) {
+        'ansi' { return $script:JaEnc1252Strict }
+        'utf8' { return (New-Object Text.UTF8Encoding($false, $true)) }
+        'utf8bom' { return (New-Object Text.UTF8Encoding($false, $true)) }
+        'utf16le' { return (New-Object Text.UnicodeEncoding($false, $false, $true)) }
+        'utf16be' { return (New-Object Text.UnicodeEncoding($true, $false, $true)) }
+    }
+    throw (New-JaError 8 "codificação não suportada: $Kind")
+}
+
+function ConvertTo-JaTextBytes {
+    param([string]$Text, [string]$Kind, [int]$ErrorCode = 6)
+    $enc = Get-JaTextEncoder $Kind
+    try { $body = $enc.GetBytes($Text) }
+    catch {
+        $bad = @()
+        $lineNo = 1
+        foreach ($ch in $Text.ToCharArray()) {
+            if ($ch -eq "`n") { $lineNo++; continue }
+            if (-not (Test-JaAnsiText ([string]$ch))) { $bad += ('U+{0:X4} (linha {1})' -f [int]$ch, $lineNo); if ($bad.Count -ge 5) { break } }
+        }
+        throw (New-JaError $ErrorCode ("caractere(s) não representável(is) na codificação do arquivo ($Kind): " + ($bad -join ', ')))
+    }
+    $pre = [byte[]]@()
+    switch ($Kind) {
+        'utf8bom' { $pre = [byte[]](0xEF, 0xBB, 0xBF) }
+        'utf16le' { $pre = [byte[]](0xFF, 0xFE) }
+        'utf16be' { $pre = [byte[]](0xFE, 0xFF) }
+    }
+    if ($pre.Length -eq 0) { return , $body }
+    $all = New-Object byte[] ($pre.Length + $body.Length)
+    [Array]::Copy($pre, 0, $all, 0, $pre.Length)
+    [Array]::Copy($body, 0, $all, $pre.Length, $body.Length)
+    return , $all
 }

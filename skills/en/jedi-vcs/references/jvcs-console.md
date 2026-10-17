@@ -6,7 +6,8 @@ questions it cannot ask with redirected input, and its documented form takes the
 line.
 
 Program: `jvcs.exe` 2.5.0.1030 (original, `C:\Program Files (x86)\JEDI\JVCS`) or 2.5.0.20xx (2.5.0.2050 = beta 5) (new,
-`C:\Program Files (x86)\JEDI\JVCS 2026`), with `fvcscrypt.dll` next to it. The commands are the same.
+`C:\Program Files (x86)\JEDI\JVCS 2026`), with `fvcscrypt.dll` next to it. The 2026 console has the same
+commands as the original plus the ones in "New commands of the 2026 console".
 
 ## Syntax
 
@@ -43,9 +44,50 @@ jvcs server:port -user User -password Password -command arguments...
 | `input <file>` | runs commands from a file | |
 | `help [<command>]`, `exit` | help, leave | |
 
-Not available in the original console: `add` (new module), `diff`, `log`, `whoami`. The 2026 console
-adds `addproject`, `addmodule`, `setmodulepath` and `history <module>` (revisions with comments); use them
-through `jvcs-ai.ps1` (`add`, `addproject`, `history`), which also offers `diff`, `show` and `sync`.
+Not available in either console: `diff`, `log`, `whoami` (`jvcs-ai.ps1` offers `diff`, `show`, `sync`,
+`history`, `changes` and `identity`).
+
+## New commands of the 2026 console
+
+Only in the 2026 `jvcs.exe` (`jvcs help <command>` shows the full syntax). The administration commands **do
+not ask for confirmation** (the project ones only require the literal word `confirm`): through AI, always use
+the wrapper command listed, which runs the preview, makes the backup and asks for approval.
+
+| Command | Does | Effect | In the wrapper |
+|---|---|---|---|
+| `addproject <project> [<description>]` | creates the project | server | `addproject` |
+| `addmodule <file> [<description>]` | registers the file (with its folder) in the open project | server | `add` |
+| `setmodulepath <module\|id> <folder>` | stores the module's local folder on the server | server | — |
+| `history <module\|id>` | revisions: file date, user, family, comment | read | `history`, `blame` |
+| `projectlog <project\|id> [since=] [user=] [max=] [norev]` | check-ins of the project from the server log (real time) | read | `changes` |
+| `searchmodules <mask>` | modules by name/mask in all projects | read | `search` |
+| `searchcomments <text> <project\|id> [maxmodules=]` | text in the check-in/check-out comments | read | `search -InComments` |
+| `listlabels [<project\|id>]` | labels of the server / used in the project | read | `labels` |
+| `labelrevs <project\|id> <label>\|#id` | revision of each module in the label | read | `labels -Label`, `sync -Label` |
+| `modulelabels <module\|id>` | labels of each revision of the module | read | `labels <file>`, `history` |
+| `projectrevs <project\|id> latest\|label=\|version=\|date= [includehidden]` | revision of each module in a state (as the Synchronize/Restore tabs) | read | `sync -Date`, `sync -Dest` |
+| `sharedby <module\|id>`, `sharedmodules <project\|id>` | projects that have the module / shared modules of the project | read | `shared` |
+| `listtodo [project=] [user=] [category=] [priority=] [due=] [includedone]` | ToDo items | read | `todo` |
+| `addtodo <project\|id> "<description>" [...]`, `donetodo <id> [reopen]` | creates / completes or reopens a ToDo | server | `todo-add`, `todo-done` |
+| `listmilestones [<project\|id>\|all]` | defined and reached milestones | read | `milestones` |
+| `listbugs [module ...\|project ...\|bug <id>]`, `bugsummary modules\|projects` | bugs and the most severe per module/project | read | `bugs` |
+| `addbug`, `updatebug <id>`, `assignbug <id> module\|project ...` | creates, changes, links/unlinks a bug | server | `bug-add`, `bug-update`, `bug-link` |
+| `listmodules [<project\|id>]`, `listdeserted` | every module of the project (flags `H` `B` `N` `P`) / deserted (`D`) | read | `modules`, `cleanup` |
+| `removemodule <module\|id> [archive]` | removes from the project / with `archive`, **deletes from the archive** (irreversible) | server | `rm-module`, `cleanup` |
+| `renamemodule <module\|id> <new>`, `hidemodule <module\|id> [unhide]` | renames (all projects) / hides in the project | server | `rename-module`, `hide` |
+| `getcomment <revision_id>`, `setcomment <module\|id> <revision_id> in\|out "<text>"` | reads / changes the comment of a revision | read / server | `comment` |
+| `projectinfo <project\|id>` | project and its links (also of a removed project) | read | preview of `rm-project`/`rename-project` |
+| `removeproject`, `restoreproject`, `renameproject ... [renamefiles]` (+ `confirm`) | removes / restores / renames the project | server | `rm-project`, `restore-project`, `rename-project` |
+| `linkmodule <id> <path\name> [hidden]`, `projectgroups`, `setprojectgroup <project> <group> add\|remove` | links a module again / project groups | server | `restore-project -Relink` |
+
+Changes in existing commands:
+- `checkin <module|id> [comment] [keep]`: with `keep` it is a **Put** (new revision, the lock stays and the
+  files stay writable; wrapper `checkin -Keep`). A check-in refused by the server is now an error with the
+  reason (`refused by server: ...`) instead of passing silently.
+- `labelproject`: last column `added` or `kept x.y` (the server does not move a label already on another revision).
+- `getmodule`: accepts `rev=` + `dest=` + `noprompt` together.
+- 2.5 server with branches (Firebird): `removemodule ... archive` only deletes a module **without revisions**;
+  with revisions the server answers 400 and nothing changes (a server limitation).
 
 ## Safe example (password through stdin, no /password)
 

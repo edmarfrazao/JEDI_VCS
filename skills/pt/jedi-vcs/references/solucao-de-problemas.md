@@ -8,7 +8,7 @@ ao usuário e sugira o passo dele.
 | `localizar-wrapper.ps1` → 12 | `tools\ai` não instalado | usuário instala o JEDI VCS 2.5 Beta 2026 com "Ferramentas da IA" ou define `JVCS_AI_TOOLS` |
 | `[ERRO 2] informe -Project <nome.dpr>` | pasta com mais de um `.dpr`/`.dpk` (ex.: `X - Copia.dpr`) | repetir com `-Project X.dpr` |
 | `projeto '...' não existe no servidor` (5) | projeto não criado no JEDI VCS ou nome diferente | `projects` para listar; usuário cria pelo cliente |
-| `notVersioned` | arquivo não é módulo | editar sem checkout; a IA não adiciona módulos |
+| `notVersioned` | arquivo não é módulo | editar sem checkout; versionar só se o usuário pedir (`add`, console 2026) |
 | `local=unknown -> pathTruncated` | caminho do servidor truncado (47 car.) e arquivo não achado sob a pasta do projeto | rodar `status "<arquivo>"` na pasta do projeto |
 | `pathMismatch` (5) | o arquivo local não é o registrado no servidor: projeto em outra pasta (ex.: Documentos redirecionados para o OneDrive, outra letra de unidade, cópia) | não insistir; usuário abre o projeto no caminho registrado ou usa `subst`/junction |
 | `Project1`/`Unit1` recusados | nomes padrão do Delphi são proibidos no JEDI VCS | usuário salva projeto e units com nomes próprios |

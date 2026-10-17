@@ -19,12 +19,25 @@ codificação e faz check-in com comentário marcado `[IA]`. Os modos e as aprov
 | Ver o diff contra o servidor | `jvcs-ai.ps1 diff <arq> [-Rev x.y]` | diff unificado contra a última revisão (ou a pedida); só leitura |
 | Criar projeto | `jvcs-ai.ps1 addproject <proj.dpr>` | segue o modo de check-in; exige o console 2026 |
 | Adicionar arquivo novo | `jvcs-ai.ps1 add <arq> -Comment "..."` | cadastra e faz o 1º check-in 0.1 (com o `.dfm`); segue o modo de check-in; exige o console 2026 |
+| Histórico e revisões antigas | `history <arq>`, `show <arq> -Rev x.y`, `diff <arq> -Rev x.y -Rev2 y.z` | só leitura; `show` grava fora do projeto |
+| O que mudou no projeto | `changes [-Since 7d] [-User u]` | check-ins com a hora real, pelo log do servidor; só leitura |
+| Buscar | `search <máscara>` (módulos em todos os projetos), `search "texto" -InComments` | só leitura |
+| Quem mudou cada linha | `blame <arq> [-Lines a-b]` | revisão, usuário, data e comentário por linha; só leitura |
+| Voltar a uma revisão | `revert <arq> -Rev x.y [-Checkin -Comment "..."]` | checkout + backup; publicar (`-Checkin`) sempre pede aprovação |
+| Sincronizar a cópia local | `sync` (prévia) e `sync -Apply`; `sync -Label`, `sync -Date` (estado antigo); `sync -Dest <pasta>` (cópia de leitura em outra pasta) | segue o modo de checkout; backup de tudo que substitui; `-Force` pede aprovação |
+| Labels e compartilhamento | `labels`, `label <nome>`, `shared` | `label` segue o modo de check-in |
+| ToDo, milestones e bugs | `todo`, `todo-add`, `todo-done`, `milestones`, `bugs`, `bug-add`, `bug-update`, `bug-link` | os que gravam seguem o modo de check-in |
+| Ponto intermediário (Put) | `checkin -Keep` | revisão nova sem soltar o checkout |
+| Compilar antes do check-in | `buildCheck=warn\|block` no `config.ini` (você liga) | roda só o script que **você** registrou (`buildCommand`) |
+| Administrar módulos | `modules`, `cleanup`, `rm-module`, `rename-module`, `hide`, `comment` | prévia por padrão; `-Apply` exige `moduleAdmin` (você liga) e sempre a sua aprovação |
+| Administrar projetos | `rm-project`, `restore-project`, `rename-project` | prévia por padrão; `-Apply` exige `projectAdmin=on` (você liga) e sempre a sua aprovação |
 
-`addproject` e `add` precisam do console `jvcs.exe` **2026** (o original não cria projeto nem módulo):
-`jvcs-ai.ps1 config set jvcsExe <caminho do jvcs.exe 2026>` no seu terminal.
+Os comandos novos, exceto `diff`, `show`, `sync`/`sync -Apply` e `revert`, precisam do console `jvcs.exe`
+**2026** (com o original, código 12): `jvcs-ai.ps1 config set jvcsExe <caminho do
+jvcs.exe 2026>` no seu terminal. Lista completa: [03 - Comandos do wrapper](03-Comandos-do-Wrapper.md).
 
-Fora isso, a IA **não** faz sync, label
-nem administra usuários.
+A IA **não** administra usuários nem direitos, não muda opções do servidor, não faz backup nem purge do
+banco, e não muda os modos nem as chaves `moduleAdmin`/`projectAdmin`/`buildCheck` (`config set` é só seu).
 
 ## Arquitetura em camadas
 
@@ -73,6 +86,7 @@ nem administra usuários.
 | [05 - Segurança](05-Seguranca.md) | senha, regras, hooks, codificação, auditoria, limites |
 | [06 - Solução de problemas](06-Solucao-de-Problemas.md) | erros comuns e como resolver |
 | [07 - Outros agentes](07-Outros-Agentes.md) | usar com outras IAs/CLIs: contrato JSON e regras mínimas |
+| [08 - Plano de recursos](08-Plano-de-Recursos.md) | plano e situação dos recursos novos (log do projeto, busca, bugs, ToDo, labels, administração, blame, rollback) e o que falta |
 
 ## Skill distribuível
 

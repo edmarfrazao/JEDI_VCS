@@ -272,6 +272,31 @@ function CmdProcAddProject(const Line: string; var ExtExitCode: Integer): Boolea
 function CmdProcAddModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcSetModulePath(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcHistory(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcListLabels(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcLabelRevs(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcProjectRevs(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcModuleLabels(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcSharedBy(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcSharedModules(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcProjectLog(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcSearchModules(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcSearchComments(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcListTodo(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcAddTodo(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcDoneTodo(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcListMilestones(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcListBugs(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcBugSummary(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcAddBug(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcUpdateBug(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcAssignBug(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcListModules(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcListDeserted(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcRemoveModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcRenameModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcHideModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcGetComment(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcSetComment(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcHelp(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcInput(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 {$IFDEF BRANCHING}
@@ -285,6 +310,13 @@ function CmdProcSyncProjectGroup(const Line: string; var ExtExitCode: Integer): 
 function CmdProcUndoCheckout(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcLabelProject(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcGetModule(const Line: string; var ExtExitCode: Integer): Boolean; forward; //thu05.07.05
+function CmdProcProjectInfo(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcRemoveProject(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcRestoreProject(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcRenameProject(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcLinkModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcProjectGroups(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcSetProjectGroup(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 
 function FmtStamp(DateTime: TDateTime): string; forward;
 function GetParamStr(P: PChar; var Param: string): PChar; forward;
@@ -330,7 +362,7 @@ const
   sLineBreak = #13#10;
   {$ENDIF ~DELPHI6_UP}
 
-  Commands: array [0.. {$IFDEF BRANCHING} 19 {$ELSE} 18 {$ENDIF}] of TCommand = (
+  Commands: array [0.. {$IFDEF BRANCHING} 51 {$ELSE} 50 {$ENDIF}] of TCommand = (
 
     (
       Name: 'openproject';
@@ -339,8 +371,11 @@ const
       Proc: @CmdProcOpenProject),
     (
       Name: 'checkin';
-      Syntax: 'checkin <module_name> | <module_id> [<comment>]';
-      HelpText: 'Check in the specified module. A project containing the module is assumed to be already open.';
+      Syntax: 'checkin <module_name> | <module_id> [<comment>] [keep]';
+      HelpText: 'Check in the specified module. A project containing the module is assumed to be already open.' + sLineBreak +
+        'With keep as the last parameter the module stays checked out (Put, CHECKIN_MODULE with PutOnly, as the standalone Put):' + sLineBreak +
+        'new revision on the server, lock and writable files kept; only for a module checked out by the current user.' + sLineBreak +
+        'A check-in refused by the server raises an error with its reason (locked by, not checked out, revision already checked in).';
       Proc: @CmdProcCheckinModule),
 
     (
@@ -470,12 +505,283 @@ const
         'The comment is printed on one line: backslash as \\, line breaks as \n.';
       Proc: @CmdProcHistory),
 
+    // Project administration. The wrapper (tools\ai\jvcs-ai.ps1, Assert-Console2026) looks for these
+    // phrases in the executable: keep each one inside a single literal of the help texts below:
+    // 'projectinfo <project_name>', 'REMOVE_PROJECT, same as', 'RESTORE_PROJECT, same as',
+    // 'RENAME_PROJECT, same as' and 'ADD_NEW_MODULE with the stored path'.
+    (
+      Name: 'projectinfo';
+      Syntax: 'projectinfo <project_name> | <project_id>';
+      HelpText: 'Prints a project and its links, one value per line (also for deleted projects): Project, ProjectID, Deleted (0/1),' + sLineBreak +
+        'Module: id|hidden(0/1)|other_project_ids|path|name, Locked: id|owner|version|path_and_name,' + sLineBreak +
+        'Reference: id|name, ReferencedBy: id|name, Group: id|name, Right: user_id|level, Bug: id|name and Summary.' + sLineBreak +
+        'Read only (rebinds the session rights to that project: use openproject again before other commands);' + sLineBreak +
+        'used as preview and record before removeproject/renameproject.';
+      Proc: @CmdProcProjectInfo),
+
+    (
+      Name: 'removeproject';
+      Syntax: 'removeproject <project_name> | <project_id> confirm';
+      HelpText: 'Removes a project (REMOVE_PROJECT, same as the standalone Remove project; needs the Archive Admin level' + sLineBreak +
+        'for that project: its project right, else the global level).' + sLineBreak +
+        'Only the project is flagged as deleted, but the server also deletes its module links, project rights,' + sLineBreak +
+        'references (also the references from other projects), group links and bug links;' + sLineBreak +
+        'modules and revisions stay in the archive.' + sLineBreak +
+        'Refused while any module of the project is checked out (by any user). The literal confirm is required.';
+      Proc: @CmdProcRemoveProject),
+
+    (
+      Name: 'restoreproject';
+      Syntax: 'restoreproject <project_name> | <project_id> confirm';
+      HelpText: 'Restores a deleted project (RESTORE_PROJECT, same as the standalone Restore project; needs Archive Admin).' + sLineBreak +
+        'Only clears the deleted flag: module links, rights, references and groups removed by removeproject' + sLineBreak +
+        'are not restored (use linkmodule and setprojectgroup). The literal confirm is required.';
+      Proc: @CmdProcRestoreProject),
+
+    (
+      Name: 'renameproject';
+      Syntax: 'renameproject <project_name> | <project_id> <new_name> [renamefiles] confirm';
+      HelpText: 'Renames a project (RENAME_PROJECT, same as the standalone Rename project; needs read-write).' + sLineBreak +
+        'The new name must be unused (also by deleted projects) and keep the file extension.' + sLineBreak +
+        'With renamefiles the project modules (.dpr .dpk .dproj .res .dof .cfg .dsk with the old name) are renamed' + sLineBreak +
+        'on the server too (RENAME_MODULE), except modules shared with other projects; every module is read back' + sLineBreak +
+        '(Module renamed: / Module not renamed: id|old|new[|reason]). Local files are never renamed.' + sLineBreak +
+        'Refused while any module of the project is checked out. The literal confirm is required.';
+      Proc: @CmdProcRenameProject),
+
+    (
+      Name: 'linkmodule';
+      Syntax: 'linkmodule <module_id> <module_path_and_name> [hidden]';
+      HelpText: 'Links an existing module to the open project again (ADD_NEW_MODULE with the stored path and name),' + sLineBreak +
+        'e.g. after restoreproject. Refused when path and name do not resolve to <module_id> (the server would' + sLineBreak +
+        'create a new, empty module). hidden hides the link afterwards (HIDE_UNHIDE_MODULE). Open the project first.';
+      Proc: @CmdProcLinkModule),
+
+    (
+      Name: 'projectgroups';
+      Syntax: 'projectgroups';
+      HelpText: 'Lists project groups (Group: id|parent_id|level|name) and their members (Member: group_id|project_id).';
+      Proc: @CmdProcProjectGroups),
+
+    (
+      Name: 'setprojectgroup';
+      Syntax: 'setprojectgroup <project_name> | <project_id> <group_id> add | remove';
+      HelpText: 'Adds the project to an existing project group or removes it from the group (ADD_REMOVE_PROJECT_TO_GROUP).';
+      Proc: @CmdProcSetProjectGroup),
+
+    (
+      Name: 'projectlog';
+      Syntax: 'projectlog <project_name> | <project_id> [since=yyyy-mm-dd[Thh:nn[:ss]]] [user=<user_name>] [max=<n>] [norev]';
+      HelpText: 'Lists the check-ins of the modules of a project (GET_LOG_ENTRIES, check-ins of the server log; ' + sLineBreak +
+        'shared modules included even when checked in from another project), oldest first.' + sLineBreak +
+        'since is local time; max=n keeps the n most recent (0 = all); norev skips the version lookup.' + sLineBreak +
+        'Without since/max it reads the whole server log (slow on big archives).' + sLineBreak +
+        'Columns: log ID, check-in time (local), user, version, revision ID, module ID, op (ci or put), then' + sLineBreak +
+        'module | via project | comment, escaped as in history (backslash as \\, line breaks as \n).' + sLineBreak +
+        'Header line "Server log: on|off|unknown" tells whether the server writes this log (WriteVCSLog).';
+      Proc: @CmdProcProjectLog),
+
+    (
+      Name: 'searchmodules';
+      Syntax: 'searchmodules <mask>';
+      HelpText: 'Finds modules by name or mask in all projects of the archive (SEARCH_MODULES, all projects, same request as the standalone Search modules).' + sLineBreak +
+        'Wildcards * and ? (case-insensitive). A mask with a folder (c:\src\*.pas) also filters the module path.' + sLineBreak +
+        'One row per module and project: module ID, project name and path|name on the rest of the line.';
+      Proc: @CmdProcSearchModules),
+
+    (
+      Name: 'searchcomments';
+      Syntax: 'searchcomments <text> <project_name> | <project_id> [maxmodules=<n>]';
+      HelpText: 'Searches <text> (case-insensitive) in the check-in and check-out comments of a project:' + sLineBreak +
+        'scans GET_MODULE_HISTORY of each module (one request per module, at most maxmodules, default 300).' + sLineBreak +
+        'Hit: I = check-in comment, O = check-out comment (IO prints the check-in comment). Time as in history (local).' + sLineBreak +
+        'The comment is printed on one line: backslash as \\, line breaks as \n.';
+      Proc: @CmdProcSearchComments),
+
+    (
+      Name: 'listlabels';
+      Syntax: 'listlabels [<project_name> | <project_id>]';
+      HelpText: 'Lists the labels of the archive (GET_LABELS), or only the labels used in a project' + sLineBreak +
+        'with the number of its modules carrying each one, hidden modules included (GET_LABELS_BY_PROJECT).' + sLineBreak +
+        'Columns: label ID, label, [modules,] description. Label and description escaped on one line (backslash as \\, line breaks as \n).';
+      Proc: @CmdProcListLabels),
+
+    (
+      Name: 'labelrevs';
+      Syntax: 'labelrevs <project_name> | <project_id> <label_name> | #<label_id>';
+      HelpText: 'Lists the revision of each module of the project that carries the label' + sLineBreak +
+        '(GET_LATEST_REVISIONS filtered by label, hidden modules excluded): module ID, version, revision ID,' + sLineBreak +
+        'family extensions and module name. If the label contains spaces, enclose with double quotes.';
+      Proc: @CmdProcLabelRevs),
+
+    (
+      Name: 'projectrevs';
+      Syntax: 'projectrevs <project_name> | <project_id> latest | label=<label_name>|#<label_id> | version=<n>[.<m>] | date=yyyy-mm-dd[Thh:nn[:ss]] [includehidden]';
+      HelpText: 'Lists the revision of each module of the project in one state, as the standalone Synchronize/Restore tabs:' + sLineBreak +
+        'latest (GET_LATEST_REVISIONS); label= (the labeled revision); version=n (newest revision of version n of each' + sLineBreak +
+        'module) or version=n.m (exactly n.m, GET_VERSION_REVISION, tab Restore version number); date= in local time' + sLineBreak +
+        '(GET_ROLLBACK_REVISIONS, same as the standalone Rollback: per module the newest revision whose files all have' + sLineBreak +
+        'a file date not after that time; the file date is the one history shows, not the check-in time).' + sLineBreak +
+        'Hidden modules are excluded unless includehidden is given; modules without a revision in that state are not listed.' + sLineBreak +
+        'Columns: module ID, version, revision ID, file date (local, newest member), family extensions, then path|name' + sLineBreak +
+        '(escaped as in history: backslash as \\). Read only: nothing is written to disk.';
+      Proc: @CmdProcProjectRevs),
+
+    (
+      Name: 'modulelabels';
+      Syntax: 'modulelabels <module_name> | <module_id>';
+      HelpText: 'Lists the labels of each revision of a module (GET_LABELS_BY_MODULE, or GET_LABELS_BY_REVISION' + sLineBreak +
+        'on older servers): version, revision ID, label ID, label and description (escaped on one line, as in history).';
+      Proc: @CmdProcModuleLabels),
+
+    (
+      Name: 'sharedby';
+      Syntax: 'sharedby <module_name> | <module_id>';
+      HelpText: 'Lists the projects that share a module (GET_SHARED_BY), the current one included.' + sLineBreak +
+        'One project: the module is not shared.';
+      Proc: @CmdProcSharedBy),
+
+    (
+      Name: 'sharedmodules';
+      Syntax: 'sharedmodules <project_name> | <project_id>';
+      HelpText: 'Lists the modules of a project that are shared with other projects, one line per module and project' + sLineBreak +
+        '(GET_SHARED_MODULES + GET_SHARED_BY): module ID, project ID, project, module name.';
+      Proc: @CmdProcSharedModules),
+
+    (
+      Name: 'listmodules';
+      Syntax: 'listmodules [<project_name> | <project_id>]';
+      HelpText: 'Lists every module linked to the project (GET_PROJECT_MODULE_LIST), also modules without revisions or ' +
+        'without folder that listproject does not show.' + sLineBreak +
+        'One row per module: ID, flags and path|name. Flags: H hidden, B no revisions (GET_BLANK_MODULE_LIST), ' +
+        'N no folder, P name contains a path.';
+      Proc: @CmdProcListModules),
+
+    (
+      Name: 'listdeserted';
+      Syntax: 'listdeserted';
+      HelpText: 'Lists modules not linked to any project (GET_DESERTED_MODULES, same as the standalone Show deserted modules): ID, flags (D) and path|name.';
+      Proc: @CmdProcListDeserted),
+
+    (
+      Name: 'removemodule';
+      Syntax: 'removemodule <module_name> | <module_id> [archive]';
+      HelpText: 'Removes the module from the open project (REMOVE_MODULE, same request as the standalone Remove module).' + sLineBreak +
+        'Without archive only the project link is removed: module and revisions stay in the archive (listdeserted).' + sLineBreak +
+        'With archive the module and ALL its revisions are deleted from the archive (not reversible); refused for shared modules.' + sLineBreak +
+        'A deserted module (listdeserted) can be given with archive. A 2.5 server with branches refuses archive for a' + sLineBreak +
+        'module with revisions (status 400, nothing changed): there only modules without revisions are deleted.' + sLineBreak +
+        'Refused while the module is checked out by anybody. No prompt: callers must confirm before.';
+      Proc: @CmdProcRemoveModule),
+
+    (
+      Name: 'renamemodule';
+      Syntax: 'renamemodule <module_name> | <module_id> <new_name>';
+      HelpText: 'Renames the module in the archive (RENAME_MODULE): file name only, same extension, lower case.' + sLineBreak +
+        'Affects every project sharing the module; local files are not renamed. Refused while checked out.';
+      Proc: @CmdProcRenameModule),
+
+    (
+      Name: 'hidemodule';
+      Syntax: 'hidemodule <module_name> | <module_id> [unhide]';
+      HelpText: 'Hides (or with unhide shows again) the module in the open project (HIDE_UNHIDE_MODULE). Refused while checked out.';
+      Proc: @CmdProcHideModule),
+
+    (
+      Name: 'getcomment';
+      Syntax: 'getcomment <revision_id>';
+      HelpText: 'Shows the check-in and check-out comments of a revision (GET_REVISION_COMMENT), on one line each (\\ and \n escaped).';
+      Proc: @CmdProcGetComment),
+
+    (
+      Name: 'setcomment';
+      Syntax: 'setcomment <module_name> | <module_id> <revision_id> in|out <"comment">';
+      HelpText: 'Changes the check-in (in) or check-out (out) comment of a revision of the module (CHANGE_REVISION_COMMENT).' + sLineBreak +
+        'The module must belong to the open project and the revision to the module. In the text \n is a line break and \\ a backslash.' + sLineBreak +
+        'The old comment is printed first. The server keeps no log of this change.';
+      Proc: @CmdProcSetComment),
+
     (
       Name: 'labelproject';
       Syntax: 'labelproject <project_name> | <project_id> <"label"> [crossref]';
       HelpText: 'Stamp project with given label.' + sLineBreak +
-        'Label will be created, if not existing, if label contains spaces, enclose with double quotes.';
+        'Label will be created, if not existing, if label contains spaces, enclose with double quotes.' + sLineBreak +
+        'Last column: added, or kept x.y when the label already was on revision x.y of the module (the server does not move labels).';
       Proc: @CmdProcLabelProject),
+
+    (
+      Name: 'listtodo';
+      Syntax: 'listtodo [project=<project_name>|<project_id>|all] [user=<login>|me|all] [category=<text>] [priority=<1-9>] [due=<yyyy-mm-dd>] [includedone]';
+      HelpText: 'Lists ToDo items (GET_TODO_ENTRIES, same data as the standalone ToDo list): id, priority, status, ' + sLineBreak +
+        'last change, target and done dates (local), responsible, project, category and description.' + sLineBreak +
+        'Default: the open project (or all), all users, open items only. user= filters the responsible (me = current user);' + sLineBreak +
+        'due= lists items with a target date up to that day.' + sLineBreak +
+        'The description is printed on one line: backslash as \\, line breaks as \n.';
+      Proc: @CmdProcListTodo),
+
+    (
+      Name: 'addtodo';
+      Syntax: 'addtodo <project_name> | <project_id> <"description"> [priority=<1-9>] [category=<text>] [user=<login>|me] [due=<yyyy-mm-dd>]';
+      HelpText: 'Creates a ToDo item in the project (ADD_UPDATE_TODO_ENTRIES, new item, same as the standalone ToDo list).' + sLineBreak +
+        'Defaults: priority=3 (1 = highest), user=me (responsible), no category, no target date (due is a local date).';
+      Proc: @CmdProcAddTodo),
+
+    (
+      Name: 'donetodo';
+      Syntax: 'donetodo <todo_id> [reopen]';
+      HelpText: 'Marks a ToDo item as done now, or open again with reopen (ADD_UPDATE_TODO_ENTRIES, rewrites the item' + sLineBreak +
+        'with the values read from the server, as the standalone does; the server also resets its timestamp).';
+      Proc: @CmdProcDoneTodo),
+
+    (
+      Name: 'listmilestones';
+      Syntax: 'listmilestones [<project_name> | <project_id> | all]';
+      HelpText: 'Lists the milestones (GET_MILESTONES and GET_PROJECT_MILESTONES): the defined milestones and those' + sLineBreak +
+        'reached by the project (default: the open project, or all), with reach time (local), confirmed by and description.';
+      Proc: @CmdProcListMilestones),
+
+    (
+      Name: 'listbugs';
+      Syntax: 'listbugs [module <module_name> | <module_id>] | [project <project_name> | <project_id>] | [bug <bug_id>]';
+      HelpText: 'Lists bugs (GET_BUGS, GET_BUGS_BY_MODULE/GET_BUGS_BY_PROJECT, same data as the standalone Bugs windows): ' + sLineBreak +
+        'all bugs of the archive, the bugs assigned to a module or project (Done = yes/no for that assignment), ' + sLineBreak +
+        'or one bug with the modules and projects it is assigned to (BUGS_USED_BY, lines "  link: m|p <id> <name>").' + sLineBreak +
+        'Columns: BugID, severity (0 Minor, 1 Awkward, 2 Significant, 3 Serious, 4 Fatal), status (0 Unknown, 1 Open, ' + sLineBreak +
+        '2 Scheduled, 3 Fixed, 4 Ignored), Done, creation time (local), creator, flags and the bug name; then the lines ' + sLineBreak +
+        '"  keywords:", "  reportedby:", "  description:" and "  workaround:". Texts on one line: backslash as \\, line breaks as \n.';
+      Proc: @CmdProcListBugs),
+
+    (
+      Name: 'bugsummary';
+      Syntax: 'bugsummary <modules | projects>';
+      HelpText: 'For each module (or project) with open bug assignments (Done = no), the bug with the highest severity ' + sLineBreak +
+        '(GET_MOST_SEVERE_BUGS, as the bug icons of the standalone). Columns: ItemID, BugID, severity.';
+      Proc: @CmdProcBugSummary),
+
+    (
+      Name: 'addbug';
+      Syntax: 'addbug <bug_name> [severity=<0-4>] [status=<0-4>] [keywords="<text>"] [reportedby="<text>"] [description="<text>" | descriptionfile="<file>"] [workaround="<text>" | workaroundfile="<file>"]';
+      HelpText: 'Creates a bug in the archive (ADD_UPDATE_BUG, same request as the standalone Maintain bugs, Add). ' + sLineBreak +
+        'Defaults: severity 0 (Minor), status 1 (Open). The bug name must be unique (compared without case). ' + sLineBreak +
+        'descriptionfile and workaroundfile read a text file in code page 1252 (line breaks kept), for texts with quotes ' + sLineBreak +
+        'or several lines. Limits: name and keywords 250 characters, the other texts 2000.';
+      Proc: @CmdProcAddBug),
+
+    (
+      Name: 'updatebug';
+      Syntax: 'updatebug <bug_id> [name="<bug_name>"] [severity=<0-4>] [status=<0-4>] [keywords="<text>"] [reportedby="<text>"] [description="<text>" | descriptionfile="<file>"] [workaround="<text>" | workaroundfile="<file>"]';
+      HelpText: 'Changes the given fields of a bug (ADD_UPDATE_BUG). The server overwrites every field, so the bug is read ' + sLineBreak +
+        'first (GET_BUGS) and the fields not given are sent unchanged; flags are kept; key= with no value clears a text. ' + sLineBreak +
+        'The bug is read again to confirm the change. Example: updatebug 12 status=3 (Fixed).';
+      Proc: @CmdProcUpdateBug),
+
+    (
+      Name: 'assignbug';
+      Syntax: 'assignbug <bug_id> module <module_name> | <module_id> | project <project_name> | <project_id> [add | remove | done | open]';
+      HelpText: 'Assigns a bug to a module or project, removes the assignment, or marks the assignment done/open ' + sLineBreak +
+        '(ASSIGN_REMOVE_BUG and ENABLE_MODULE_PROJECT_BUG, same requests as the standalone Assign bugs). Default: add. ' + sLineBreak +
+        'Prints "Bug <result>: bug <bug_id> module|project <id> <name>".';
+      Proc: @CmdProcAssignBug),
 
     (
       Name: 'undocheckout';
@@ -948,11 +1254,17 @@ var
   ModuleOriginalSize, ModuleOriginalCRC, ModuleCompressedSize: Integer;
   ModuleFileStream: TFileStream;
   CrcErr: string;
+  KeepCheckout: Boolean;
+  RefuseReason: string;
 begin
   Result := False;
   ModuleID := -1;
   ModuleName := '';
   Count := LineParamCount(Line);
+  // JVCS 2026: "keep" as the last parameter = Put (check in and keep the checkout)
+  KeepCheckout := (Count >= 3) and (AnsiCompareText(LineParamStr(Line, Count), 'keep') = 0);
+  if KeepCheckout then
+    Dec(Count); // the comment, when given, is still parameter 3
   if (Count in [2, 3]) then
   begin
     S := LineParamStr(Line, 2);
@@ -980,6 +1292,9 @@ begin
         // therefore always sends a description.
         if GetRevisionListById.OutputItemCount = 0 then
         begin
+          if KeepCheckout then
+            raise Exception.CreateFmt('Module %d ''%s'' has no revisions yet: keep is not possible on the first check-in',
+              [ModuleID, ModuleName]);
           // module without revisions (just added): first check-in, version 0.1
           Result := internCheckinFirstRevision(CheckinComment);
           Exit;
@@ -1016,6 +1331,15 @@ begin
       if (LatestRevision.UserID <> Connection.UserID) or (LatestRevision.Owner <> Connection.UserName) then
         raise Exception.CreateFmt(SModuleLocked, [ModuleID, ModuleName, LatestRevision.Owner]);
        }
+      // JVCS 2026: Put only on a module checked out by the current user. With CasuallyCheckin the
+      // server accepts a Put on a free module and locks it for this user (CHECKIN_MODULE, readonly = '1')
+      if KeepCheckout then
+      begin
+        if not LatestRevision.CheckedOut then
+          raise Exception.CreateFmt(SModuleNotCheckedOut, [ModuleID, ModuleName]);
+        if LatestRevision.UserID <> Connection.UserID then
+          raise Exception.CreateFmt(SModuleLocked, [ModuleID, ModuleName, string(LatestRevision.Owner)]);
+      end;
       // check if any of the module files has been modified; nothing to do otherwise
       ModuleFilesDirty := False;
       GetRevisionStatus := TJVCSGetRevisionStatus.Create(nil);
@@ -1070,7 +1394,7 @@ begin
             end;
           CheckinModule := TJVCSCheckinModule.Create(nil);
           try
-            CheckinModule.PutOnly := False;
+            CheckinModule.PutOnly := KeepCheckout;
             for I := 0 to GetRevisionStatus.OutputItemCount - 1 do
               with GetRevisionStatus.OutputItems[I] do
               begin
@@ -1112,13 +1436,24 @@ begin
                 end;
               end;
             Connection.SendRequest(CheckinModule);
-            if CheckinModule.ErrorMessage = '' then
+            ShowLog(CheckinModule);
+            // JVCS 2026: the server answers CheckinAllowed = False with the reason; before, the
+            // console only skipped the read-only flag and printed nothing
+            if not CheckinModule.CheckinAllowed then
             begin
+              RefuseReason := Trim(string(CheckinModule.ErrorMessage));
+              if RefuseReason = '' then
+                RefuseReason := 'no reason given by the server';
+              raise Exception.CreateFmt('Check-in of module %d ''%s'' refused by server: %s',
+                [ModuleID, ModuleName, RefuseReason]);
+            end;
+            if KeepCheckout then
+              // Put keeps the lock and the files writable (standalone: no read-only flag with cbPut)
+              Writeln(Format('Put: module %d ''%s'' checked in as %d.%d and still checked out',
+                [ModuleID, ModuleName, LatestRevision.Version, LatestRevision.Revision + 1]))
+            else
               // now set file readonly
               SetVCSReadOnlyFile(ModuleName, FamilyExtensions);
-            end;
-
-            ShowLog(CheckinModule);
           finally
             CheckinModule.Free;
           end;
@@ -1303,7 +1638,16 @@ begin
           begin
             // Get to different path?
             if bDestPath then
-              S := ChangeFileExt(PathAddSeparator(sDestPath) + WantedRevision.ModuleName, ModuleExtension)
+            begin
+              // 2026: dest= must keep the file inside the destination folder; a module
+              // name from the server with a drive, a leading backslash or '..' is refused
+              if (ExtractFileDrive(WantedRevision.ModuleName) <> '') or
+                (Copy(WantedRevision.ModuleName, 1, 1) = '\') or
+                (Pos('..', WantedRevision.ModuleName) > 0) then
+                raise Exception.CreateFmt('Module name ''%s'' leaves the dest folder: nothing written',
+                  [WantedRevision.ModuleName]);
+              S := ChangeFileExt(PathAddSeparator(sDestPath) + WantedRevision.ModuleName, ModuleExtension);
+            end
             else
               S := ChangeFileExt(PathAddSeparator(WantedRevision.ModulePath) + WantedRevision.ModuleName, ModuleExtension);
               
@@ -1842,6 +2186,4083 @@ begin
     ModuleID := -1;
     ModuleName := '';
   end;
+end;
+
+// ---------------------------------------------------------------- module administration
+// listmodules, listdeserted, sharedby, removemodule, renamemodule, hidemodule, getcomment,
+// setcomment. No Prompt here (Prompt fails with redirected stdin): callers confirm before.
+
+// Inverse of EscapeHistoryComment: '\n' -> CRLF, '\\' -> '\'.
+function UnescapeHistoryComment(const S: string): string;
+var
+  I: Integer;
+begin
+  Result := '';
+  I := 1;
+  while I <= Length(S) do
+  begin
+    if (S[I] = '\') and (I < Length(S)) then
+      case S[I + 1] of
+        'n':
+          begin
+            Result := Result + #13#10;
+            Inc(I, 2);
+            Continue;
+          end;
+        '\':
+          begin
+            Result := Result + '\';
+            Inc(I, 2);
+            Continue;
+          end;
+      end;
+    Result := Result + S[I];
+    Inc(I);
+  end;
+end;
+
+function ModuleFlags(const APath, AName: string; AHidden, ABlank: Boolean): string;
+begin
+  Result := '';
+  if AHidden then
+    Result := Result + 'H';
+  if ABlank then
+    Result := Result + 'B';
+  if Trim(APath) = '' then
+    Result := Result + 'N';
+  if (Pos('\', AName) > 0) or (Pos('/', AName) > 0) or (Pos(':', AName) > 0) then
+    Result := Result + 'P';
+end;
+
+// One row: ID(8) Flags(6) path|name - path and name complete (parsers split at the first '|').
+procedure WriteModuleRow(AID: Integer; const AFlags, APath, AName: string);
+begin
+  Write(StrAlign(IntToStr(AID), 8), ' ');
+  Write(StrAlign(AFlags, 6), ' ');
+  Writeln(APath, '|', AName);
+end;
+
+procedure WriteModuleHeader;
+begin
+  Write(StrAlign('ID', 8), ' ');
+  Write(StrAlign('Flags', 6), ' ');
+  Writeln('Path|Name');
+  Write(StringOfChar('=', 8), ' ');
+  Write(StringOfChar('=', 6), ' ');
+  Writeln(StringOfChar('=', 20));
+end;
+
+function internProjectHasModule(AProjectID, AModuleID: Integer): Boolean;
+var
+  GetProjectModuleList: TJVCSGetProjectModuleList;
+  I: Integer;
+begin
+  Result := False;
+  GetProjectModuleList := TJVCSGetProjectModuleList.Create(nil);
+  try
+    GetProjectModuleList.ProjectID := AProjectID;
+    GetProjectModuleList.ExcludeHiddenModules := False;
+    Connection.SendRequest(GetProjectModuleList);
+    ShowLog(GetProjectModuleList);
+    for I := 0 to GetProjectModuleList.OutputItemCount - 1 do
+      if GetProjectModuleList.OutputItems[I].ModuleID = AModuleID then
+      begin
+        Result := True;
+        Break;
+      end;
+  finally
+    GetProjectModuleList.Free;
+  end;
+end;
+
+function internIsDesertedModule(AModuleID: Integer): Boolean;
+var
+  GetDesertedModules: TJVCSGetDesertedModules;
+  I: Integer;
+begin
+  Result := False;
+  GetDesertedModules := TJVCSGetDesertedModules.Create(nil);
+  try
+    Connection.SendRequest(GetDesertedModules);
+    ShowLog(GetDesertedModules);
+    for I := 0 to GetDesertedModules.OutputItemCount - 1 do
+      if GetDesertedModules.OutputItems[I].ModuleID = AModuleID then
+      begin
+        Result := True;
+        Break;
+      end;
+  finally
+    GetDesertedModules.Free;
+  end;
+end;
+
+// Owner of the lock, '' if not checked out.
+// GET_LOCKED_MODULES joins pjmodule and revision (SrvOBJProjects.pas:853-866): a deserted
+// module that is checked out is not listed there. GET_MODULE_HISTORY returns modules.readonly
+// in every row (CheckedOut) without pjmodule, so it is checked as well ('?' = owner unknown).
+function internModuleLockOwner(AModuleID: Integer): string;
+var
+  GetLockedModules: TJVCSGetLockedModules;
+  GetModuleHistory: TJVCSGetModuleHistory;
+  I: Integer;
+begin
+  Result := '';
+  GetLockedModules := TJVCSGetLockedModules.Create(nil);
+  try
+    GetLockedModules.ProjectID := 0;
+    GetLockedModules.UserID := 0;
+    Connection.SendRequest(GetLockedModules);
+    ShowLog(GetLockedModules);
+    for I := 0 to GetLockedModules.OutputItemCount - 1 do
+      if GetLockedModules.OutputItems[I].ModuleID = AModuleID then
+      begin
+        Result := string(GetLockedModules.OutputItems[I].Owner);
+        if Result = '' then
+          Result := '?';
+        Break;
+      end;
+  finally
+    GetLockedModules.Free;
+  end;
+  if Result <> '' then
+    Exit;
+  GetModuleHistory := TJVCSGetModuleHistory.Create(nil);
+  try
+    GetModuleHistory.ModuleID := AModuleID;
+    Connection.SendRequest(GetModuleHistory);
+    ShowLog(GetModuleHistory);
+    for I := 0 to GetModuleHistory.OutputItemCount - 1 do
+      if GetModuleHistory.OutputItems[I].CheckedOut then
+      begin
+        Result := '?';
+        Break;
+      end;
+  finally
+    GetModuleHistory.Free;
+  end;
+end;
+
+// Other (not deleted) projects containing the module, as 'id name, id name'.
+function internSharedBy(AModuleID, AExceptProjectID: Integer): string;
+var
+  GetSharedBy: TJVCSGetSharedBy;
+  I: Integer;
+begin
+  Result := '';
+  GetSharedBy := TJVCSGetSharedBy.Create(nil);
+  try
+    GetSharedBy.ModuleID := AModuleID;
+    Connection.SendRequest(GetSharedBy);
+    ShowLog(GetSharedBy);
+    for I := 0 to GetSharedBy.OutputItemCount - 1 do
+      if GetSharedBy.OutputItems[I].ProjectID <> AExceptProjectID then
+      begin
+        if Result <> '' then
+          Result := Result + ', ';
+        Result := Result + IntToStr(GetSharedBy.OutputItems[I].ProjectID) + ' ' +
+          string(GetSharedBy.OutputItems[I].ProjectName);
+      end;
+  finally
+    GetSharedBy.Free;
+  end;
+end;
+
+// Number of revisions with files (GET_MODULE_HISTORY has one item per family member and
+// joins blobs: revisions without files are not listed).
+function internRevisionCount(AModuleID: Integer): Integer;
+var
+  GetModuleHistory: TJVCSGetModuleHistory;
+  I, LastID: Integer;
+begin
+  Result := 0;
+  LastID := -1;
+  GetModuleHistory := TJVCSGetModuleHistory.Create(nil);
+  try
+    GetModuleHistory.ModuleID := AModuleID;
+    Connection.SendRequest(GetModuleHistory);
+    ShowLog(GetModuleHistory);
+    for I := 0 to GetModuleHistory.OutputItemCount - 1 do
+      if GetModuleHistory.OutputItems[I].RevisionID <> LastID then
+      begin
+        LastID := GetModuleHistory.OutputItems[I].RevisionID;
+        Inc(Result);
+      end;
+  finally
+    GetModuleHistory.Free;
+  end;
+end;
+
+function internModuleHasRevision(AModuleID, ARevisionID: Integer): Boolean;
+var
+  GetModuleHistory: TJVCSGetModuleHistory;
+  I: Integer;
+begin
+  Result := False;
+  GetModuleHistory := TJVCSGetModuleHistory.Create(nil);
+  try
+    GetModuleHistory.ModuleID := AModuleID;
+    Connection.SendRequest(GetModuleHistory);
+    ShowLog(GetModuleHistory);
+    for I := 0 to GetModuleHistory.OutputItemCount - 1 do
+      if GetModuleHistory.OutputItems[I].RevisionID = ARevisionID then
+      begin
+        Result := True;
+        Break;
+      end;
+  finally
+    GetModuleHistory.Free;
+  end;
+end;
+
+function CmdProcListModules(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I, J: Integer;
+  S, sPath, sName: string;
+  bHidden, bBlank: Boolean;
+  AllModules, VisibleModules: TJVCSGetProjectModuleList;
+  BlankModules: TJVCSGetBlankModuleList;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [1, 2]) then
+    Exit;
+  if Count = 2 then
+  begin
+    S := LineParamStr(Line, 2);
+    ProjectName := '';
+    ProjectID := StrToIntDef(S, -1);
+    if ProjectID = -1 then
+      ProjectName := S;
+  end;
+  CheckOpenProject;
+  AllModules := TJVCSGetProjectModuleList.Create(nil);
+  VisibleModules := TJVCSGetProjectModuleList.Create(nil);
+  BlankModules := TJVCSGetBlankModuleList.Create(nil);
+  try
+    AllModules.ProjectID := ProjectID;
+    AllModules.ExcludeHiddenModules := False;
+    Connection.SendRequest(AllModules);
+    ShowLog(AllModules);
+    VisibleModules.ProjectID := ProjectID;
+    VisibleModules.ExcludeHiddenModules := True;
+    Connection.SendRequest(VisibleModules);
+    ShowLog(VisibleModules);
+    BlankModules.ProjectID := ProjectID;
+    BlankModules.ExcludeHiddenModules := False;
+    Connection.SendRequest(BlankModules);
+    ShowLog(BlankModules);
+    Writeln('Project: ', ProjectName, ' (ID ', ProjectID, ')');
+    Writeln;
+    WriteModuleHeader;
+    for I := 0 to AllModules.OutputItemCount - 1 do
+    begin
+      bHidden := True;
+      for J := 0 to VisibleModules.OutputItemCount - 1 do
+        if VisibleModules.OutputItems[J].ModuleID = AllModules.OutputItems[I].ModuleID then
+        begin
+          bHidden := False;
+          Break;
+        end;
+      bBlank := False;
+      for J := 0 to BlankModules.OutputItemCount - 1 do
+        if BlankModules.OutputItems[J].ModuleID = AllModules.OutputItems[I].ModuleID then
+        begin
+          bBlank := True;
+          Break;
+        end;
+      sPath := string(AllModules.OutputItems[I].ModulePath);
+      sName := string(AllModules.OutputItems[I].ModuleName);
+      WriteModuleRow(AllModules.OutputItems[I].ModuleID, ModuleFlags(sPath, sName, bHidden, bBlank), sPath, sName);
+    end;
+    Writeln;
+    Writeln(AllModules.OutputItemCount, ' module(s)');
+    Result := True;
+  finally
+    BlankModules.Free;
+    VisibleModules.Free;
+    AllModules.Free;
+  end;
+end;
+
+function CmdProcListDeserted(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  I: Integer;
+  sPath, sName: string;
+  GetDesertedModules: TJVCSGetDesertedModules;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 1 then
+    Exit;
+  GetDesertedModules := TJVCSGetDesertedModules.Create(nil);
+  try
+    Connection.SendRequest(GetDesertedModules);
+    ShowLog(GetDesertedModules);
+    Writeln;
+    WriteModuleHeader;
+    for I := 0 to GetDesertedModules.OutputItemCount - 1 do
+    begin
+      sPath := string(GetDesertedModules.OutputItems[I].ModulePath);
+      sName := string(GetDesertedModules.OutputItems[I].ModuleName);
+      WriteModuleRow(GetDesertedModules.OutputItems[I].ModuleID, 'D' + ModuleFlags(sPath, sName, False, False), sPath, sName);
+    end;
+    Writeln;
+    Writeln(GetDesertedModules.OutputItemCount, ' module(s)');
+    Result := True;
+  finally
+    GetDesertedModules.Free;
+  end;
+end;
+
+// sharedby: the labels/shared command (CmdProcSharedBy, further below) also serves the module
+// administration (same request and columns; names escaped on one line).
+
+// REMOVE_MODULE does not check locks and, for a shared module, removes the link of this
+// project and answers False (SrvOBJModules.pas:659-806): the checks are done here first.
+function CmdProcRemoveModule(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I, RevCount: Integer;
+  S, Owner, Shared: string;
+  bArchive: Boolean;
+  RemoveModule: TJVCSRemoveModule;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [2, 3]) then
+    Exit;
+  bArchive := False;
+  if Count = 3 then
+  begin
+    if AnsiCompareText(LineParamStr(Line, 3), 'archive') <> 0 then
+      Exit;
+    bArchive := True;
+  end;
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  try
+    CheckOpenProject;
+    CheckModuleOrLocalFile;
+    if not internProjectHasModule(ProjectID, ModuleID) then
+      if not (bArchive and internIsDesertedModule(ModuleID)) then
+        raise Exception.CreateFmt('Module %d ''%s'' is not a member of project %d ''%s''',
+          [ModuleID, ModuleName, ProjectID, ProjectName]);
+    Owner := internModuleLockOwner(ModuleID);
+    if Owner <> '' then
+      raise Exception.CreateFmt(SModuleLocked, [ModuleID, ModuleName, Owner]);
+    Shared := internSharedBy(ModuleID, ProjectID);
+    if bArchive and (Shared <> '') then
+      raise Exception.CreateFmt('Module %d ''%s'' is shared by project(s) %s: not removed (archive deletes only unshared modules)',
+        [ModuleID, ModuleName, Shared]);
+    RevCount := internRevisionCount(ModuleID);
+    Writeln('Module: ', ModuleName, ' (ID ', ModuleID, ')');
+    Writeln('Revisions: ', RevCount, ' (with files; revisions without files are not counted)');
+    if Shared <> '' then
+      Writeln('Shared by: ', Shared)
+    else
+      Writeln('Shared by: -');
+    RemoveModule := TJVCSRemoveModule.Create(nil);
+    try
+      RemoveModule.ProjectID := ProjectID;
+      RemoveModule.UserID := Connection.UserID;
+      RemoveModule.ModuleID := ModuleID;
+      RemoveModule.RemoveFromArchive := bArchive;
+      RemoveModule.ModuleName := ShortString(ModuleName); // only for the server log, as the standalone sends path+name
+      // 2.5 server with branches (Firebird): with archive, a module WITH revisions is refused with
+      // status 400 and the transaction is rolled back (nothing changes): BRANCH_REMOVE_MODULE does
+      // not delete revision/rvbranch (//todo) and LATESTREVISION references revision and modules.
+      // REMOVE_REVISION fails the same way (LATESTREVISION). Only modules without revisions go.
+      Connection.SendRequest(RemoveModule);
+      ShowLog(RemoveModule);
+      if RemoveModule.ModuleRemoved then
+      begin
+        if bArchive then
+        begin
+          // the server answers the deleted revision rows in the 2nd record (read as ProjectID);
+          // the branch server answers nothing there (RevCount stays the history count)
+          if RemoveModule.OutputItemCount > 0 then
+            RevCount := RemoveModule.OutputItems[0].ProjectID;
+          Writeln('Module removed from archive: ', ModuleName, ' (ID ', ModuleID, '), ', RevCount, ' revision(s) deleted');
+        end
+        else
+          Writeln('Module removed from project: ', ModuleName, ' (ID ', ModuleID, ')');
+      end
+      else
+      begin
+        S := '';
+        for I := 0 to RemoveModule.OutputItemCount - 1 do
+        begin
+          if S <> '' then
+            S := S + ',';
+          S := S + IntToStr(RemoveModule.OutputItems[I].ProjectID);
+        end;
+        Writeln('Shared module: project link removed, module kept for project(s) ', S, ' (ID ', ModuleID, ')');
+      end;
+      Result := True;
+    finally
+      RemoveModule.Free;
+    end;
+  finally
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+function CmdProcRenameModule(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  S, NewName, Owner, Shared: string;
+  RenameModule: TJVCSRenameModule;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 3 then
+    Exit;
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  NewName := Trim(LineParamStr(Line, 3));
+  try
+    if (NewName = '') or (ExtractFileName(NewName) <> NewName) or (Pos(':', NewName) > 0) or (Pos('/', NewName) > 0) then
+      raise Exception.CreateFmt('Invalid new module name ''%s'': file name only, without folder', [NewName]);
+    CheckOpenProject;
+    CheckModuleOrLocalFile;
+    if not internProjectHasModule(ProjectID, ModuleID) then
+      raise Exception.CreateFmt('Module %d ''%s'' is not a member of project %d ''%s''',
+        [ModuleID, ModuleName, ProjectID, ProjectName]);
+    if AnsiCompareText(ExtractFileExt(NewName), ExtractFileExt(ModuleName)) <> 0 then
+      raise Exception.CreateFmt('Module %d ''%s'': the extension cannot be changed (%s)', [ModuleID, ModuleName, NewName]);
+    Owner := internModuleLockOwner(ModuleID);
+    if Owner <> '' then
+      raise Exception.CreateFmt(SModuleLocked, [ModuleID, ModuleName, Owner]);
+    Shared := internSharedBy(ModuleID, ProjectID);
+    if Shared <> '' then
+      Writeln('Shared by: ', Shared, ' (renamed there too)');
+    RenameModule := TJVCSRenameModule.Create(nil);
+    try
+      RenameModule.ModuleID := ModuleID;
+      RenameModule.NewModuleName := AnsiLowerCase(NewName);
+      RenameModule.ProjectID := ProjectID;
+      Connection.SendRequest(RenameModule);
+      ShowLog(RenameModule);
+      if not RenameModule.Success then
+        raise Exception.CreateFmt('Module %d ''%s'' not renamed: %s', [ModuleID, ModuleName, RenameModule.ErrorMessage]);
+      Writeln('Module renamed: ', ModuleName, ' -> ', AnsiLowerCase(NewName), ' (ID ', ModuleID, ')');
+      Result := True;
+    finally
+      RenameModule.Free;
+    end;
+  finally
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+function CmdProcHideModule(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count: Integer;
+  S: string;
+  bHide: Boolean;
+  HideUnhideModule: TJVCSHideUnhideModule;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [2, 3]) then
+    Exit;
+  bHide := True;
+  if Count = 3 then
+  begin
+    if AnsiCompareText(LineParamStr(Line, 3), 'unhide') <> 0 then
+      Exit;
+    bHide := False;
+  end;
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  try
+    CheckOpenProject; // ProjectID > 0: ProjectID 0 would hide the module in ALL projects
+    CheckModuleOrLocalFile;
+    if not internProjectHasModule(ProjectID, ModuleID) then
+      raise Exception.CreateFmt('Module %d ''%s'' is not a member of project %d ''%s''',
+        [ModuleID, ModuleName, ProjectID, ProjectName]);
+    HideUnhideModule := TJVCSHideUnhideModule.Create(nil);
+    try
+      HideUnhideModule.ProjectID := ProjectID;
+      HideUnhideModule.ModuleID := ModuleID;
+      HideUnhideModule.UserID := Connection.UserID;
+      HideUnhideModule.Hide := bHide;
+      Connection.SendRequest(HideUnhideModule);
+      ShowLog(HideUnhideModule);
+      if not HideUnhideModule.Success then
+        raise Exception.CreateFmt('Module %d ''%s'' is checked out: hidden state not changed', [ModuleID, ModuleName]);
+      if bHide then
+        Writeln('Module hidden: ', ModuleName, ' (ID ', ModuleID, ')')
+      else
+        Writeln('Module unhidden: ', ModuleName, ' (ID ', ModuleID, ')');
+      Result := True;
+    finally
+      HideUnhideModule.Free;
+    end;
+  finally
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+function CmdProcGetComment(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  RevisionID: Integer;
+  GetRevisionComment: TJVCSGetRevisionComment;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 2 then
+    Exit;
+  RevisionID := StrToIntDef(LineParamStr(Line, 2), -1);
+  if RevisionID <= 0 then
+    Exit;
+  GetRevisionComment := TJVCSGetRevisionComment.Create(nil);
+  try
+    GetRevisionComment.RevisionID := RevisionID;
+    Connection.SendRequest(GetRevisionComment);
+    ShowLog(GetRevisionComment);
+    Writeln('Revision: ', RevisionID);
+    Writeln('Checkin comment: ', EscapeHistoryComment(GetRevisionComment.CheckinComment));
+    Writeln('Checkout comment: ', EscapeHistoryComment(GetRevisionComment.CheckoutComment));
+    Writeln('Version state: ', GetRevisionComment.VersionState);
+    Result := True;
+  finally
+    GetRevisionComment.Free;
+  end;
+end;
+
+function CmdProcSetComment(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  RevisionID: Integer;
+  S, Kind, NewText, OldText: string;
+  GetRevisionComment: TJVCSGetRevisionComment;
+  ChangeRevisionComment: TJVCSChangeRevisionComment;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 5 then
+    Exit;
+  RevisionID := StrToIntDef(LineParamStr(Line, 3), -1);
+  Kind := LowerCase(LineParamStr(Line, 4));
+  if (RevisionID <= 0) or ((Kind <> 'in') and (Kind <> 'out')) then
+    Exit;
+  NewText := UnescapeHistoryComment(LineParamStr(Line, 5));
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  try
+    CheckOpenProject;
+    CheckModuleOrLocalFile;
+    if not internProjectHasModule(ProjectID, ModuleID) then
+      raise Exception.CreateFmt('Module %d ''%s'' is not a member of project %d ''%s''',
+        [ModuleID, ModuleName, ProjectID, ProjectName]);
+    if not internModuleHasRevision(ModuleID, RevisionID) then
+      raise Exception.CreateFmt('Revision %d is not a revision of module %d ''%s''', [RevisionID, ModuleID, ModuleName]);
+    GetRevisionComment := TJVCSGetRevisionComment.Create(nil);
+    try
+      GetRevisionComment.RevisionID := RevisionID;
+      Connection.SendRequest(GetRevisionComment);
+      ShowLog(GetRevisionComment);
+      if Kind = 'in' then
+        OldText := GetRevisionComment.CheckinComment
+      else
+        OldText := GetRevisionComment.CheckoutComment;
+    finally
+      GetRevisionComment.Free;
+    end;
+    Writeln('Module: ', ModuleName, ' (ID ', ModuleID, ')');
+    Writeln('Old comment: ', EscapeHistoryComment(OldText));
+    ChangeRevisionComment := TJVCSChangeRevisionComment.Create(nil);
+    try
+      ChangeRevisionComment.RevisionID := RevisionID;
+      if Kind = 'in' then
+        ChangeRevisionComment.CommentType := 'i'
+      else
+        ChangeRevisionComment.CommentType := 'o';
+      ChangeRevisionComment.CommentValue := NewText;
+      Connection.SendRequest(ChangeRevisionComment);
+      ShowLog(ChangeRevisionComment);
+    finally
+      ChangeRevisionComment.Free;
+    end;
+    // read back: CHANGE_REVISION_COMMENT answers nothing
+    GetRevisionComment := TJVCSGetRevisionComment.Create(nil);
+    try
+      GetRevisionComment.RevisionID := RevisionID;
+      Connection.SendRequest(GetRevisionComment);
+      ShowLog(GetRevisionComment);
+      if Kind = 'in' then
+        S := GetRevisionComment.CheckinComment
+      else
+        S := GetRevisionComment.CheckoutComment;
+    finally
+      GetRevisionComment.Free;
+    end;
+    if AdjustLineBreaks(TrimRight(S)) <> AdjustLineBreaks(TrimRight(NewText)) then
+      raise Exception.CreateFmt('Revision %d: comment not changed on the server', [RevisionID]);
+    Writeln('Comment changed: revision ', RevisionID, ' (', Kind, ')');
+    Result := True;
+  finally
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+//=== project administration (projectinfo, removeproject, restoreproject, renameproject,
+//    linkmodule, projectgroups, setprojectgroup) ==========================================
+
+// Resolves <project_name> | <project_id> also for deleted projects (CheckOpenProject refuses them).
+// Always ends with GET_PROJECT_ID by name: the server rebinds this session's rights (transact.rights)
+// to the project related level of THIS project (its project right, else the global level), like
+// openproject does. Without it REMOVE/RESTORE/RENAME would run with the rights of the last opened project.
+procedure internResolveProject(const S: string; out AID: Integer; out AName: string; out ADeleted: Boolean);
+var
+  GetProjectInformation: TJVCSGetProjectInformation;
+  GetProjectId: TJVCSGetProjectId;
+  N: Integer;
+begin
+  AID := 0;
+  AName := '';
+  ADeleted := False;
+  N := StrToIntDef(S, -1);
+  if N > 0 then
+  begin
+    GetProjectInformation := TJVCSGetProjectInformation.Create(nil);
+    try
+      GetProjectInformation.ProjectID := N;
+      Connection.SendRequest(GetProjectInformation);
+      ShowLog(GetProjectInformation);
+      if (GetProjectInformation.OutputItemCount = 0) or (GetProjectInformation.OutputItems[0].ProjectID = 0) then
+        raise Exception.CreateFmt(SProjectIDNotFound, [N]);
+      AName := string(GetProjectInformation.OutputItems[0].ProjectName);
+    finally
+      GetProjectInformation.Free;
+    end;
+  end
+  else
+    AName := AnsiLowerCase(S);
+
+  GetProjectId := TJVCSGetProjectId.Create(nil);
+  try
+    GetProjectId.ProjectName := AName;
+    Connection.SendRequest(GetProjectId);
+    ShowLog(GetProjectId);
+    if GetProjectId.ProjectID = 0 then
+      raise Exception.CreateFmt(SProjectNotFound, [AName]);
+    if (N > 0) and (GetProjectId.ProjectID <> N) then
+      raise Exception.CreateFmt('Project %d ''%s'': the name resolves to ID %d', [N, AName, GetProjectId.ProjectID]);
+    AID := GetProjectId.ProjectID;
+    ADeleted := GetProjectId.ProjectDeleted;
+  finally
+    GetProjectId.Free;
+  end;
+end;
+
+// Prints 'Locked: id|owner|version|path_and_name' for every checked out module of the project
+// (all users, GET_LOCKED_MODULES) and returns how many there are. The server query joins revisions
+// and users, so a lock without revision or user is not listed here; REMOVE/RENAME check again.
+function internListProjectLocks(AProjectID: Integer): Integer;
+var
+  GetLockedModules: TJVCSGetLockedModules;
+  I: Integer;
+begin
+  GetLockedModules := TJVCSGetLockedModules.Create(nil);
+  try
+    GetLockedModules.ProjectID := AProjectID;
+    GetLockedModules.UserID := 0; // all users
+    Connection.SendRequest(GetLockedModules);
+    ShowLog(GetLockedModules);
+    Result := GetLockedModules.OutputItemCount;
+    for I := 0 to GetLockedModules.OutputItemCount - 1 do
+      Writeln('Locked: ', GetLockedModules.OutputItems[I].ModuleID, '|', GetLockedModules.OutputItems[I].Owner, '|',
+        GetLockedModules.OutputItems[I].Version, '.', GetLockedModules.OutputItems[I].Revision, '|',
+        GetLockedModules.OutputItems[I].ModulePath, GetLockedModules.OutputItems[I].ModuleName);
+  finally
+    GetLockedModules.Free;
+  end;
+end;
+
+// Same rules as the standalone IsValidProjectName (VCSProcBase.pas:590) plus the 50 char limit.
+procedure internCheckProjectName(const AName: string);
+const
+  Reserved: array [0..7] of string = ('project1.dpr', 'project1.bdsproj', 'project1.cbproj', 'project1.dproj',
+    'package1.dpk', 'projectgroup1.bpg', 'unit1.pas', 'unit1.dfm');
+  InvalidChars: TSysCharSet = ['"', '/', '\', '<', '>', '[', ']', ':', ';', '|', '{', '}', '*', '%', '?', #9];
+var
+  I: Integer;
+begin
+  if AName = '' then
+    raise Exception.Create('Project names cannot be blank');
+  if Length(AName) > 50 then
+    raise Exception.Create('Project names are limited to 50 characters');
+  for I := Low(Reserved) to High(Reserved) do
+    if AnsiLowerCase(AName) = Reserved[I] then
+      raise Exception.CreateFmt('''%s'' is a reserved project name', [AName]);
+  for I := 1 to Length(AName) do
+    if CharInSet(AName[I], InvalidChars) then
+      raise Exception.CreateFmt('Project names cannot contain the character ''%s''', [AName[I]]);
+end;
+
+function CmdProcProjectInfo(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  PrjID, I, J, HiddenCount, SharedCount, LockCount, RefCount, RefByCount, GroupCount, RightCount, BugCount: Integer;
+  PrjName, Shared, GroupName: string;
+  PrjDeleted, IsHidden: Boolean;
+  AllModules, VisibleModules: TJVCSGetProjectModuleList;
+  VisibleIDs: TStringList;
+  GetSharedBy: TJVCSGetSharedBy;
+  GetProjectReferences, GetOtherRefs: TJVCSGetProjectReferences;
+  GetAllProjects: TJVCSGetProjectInformation;
+  GetGroupInfo: TJVCSGetProjectGroupInformation;
+  GetProjectRights: TJVCSGetProjectRights;
+  GetBugs: TJVCSGetBugsByProject;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 2 then
+    Exit;
+  Result := True;
+  internResolveProject(LineParamStr(Line, 2), PrjID, PrjName, PrjDeleted);
+  Writeln('Project: ', PrjName);
+  Writeln('ProjectID: ', PrjID);
+  Writeln('Deleted: ', Ord(PrjDeleted));
+  HiddenCount := 0;
+  SharedCount := 0;
+  RefCount := 0;
+  RefByCount := 0;
+  GroupCount := 0;
+  RightCount := 0;
+  BugCount := 0;
+  AllModules := nil;
+  VisibleModules := nil;
+  VisibleIDs := nil;
+  GetProjectReferences := nil;
+  GetAllProjects := nil;
+  GetGroupInfo := nil;
+  GetProjectRights := nil;
+  GetBugs := nil;
+  try
+    AllModules := TJVCSGetProjectModuleList.Create(nil);
+    AllModules.ProjectID := PrjID;
+    AllModules.ExcludeHiddenModules := False;
+    Connection.SendRequest(AllModules);
+    ShowLog(AllModules);
+    VisibleModules := TJVCSGetProjectModuleList.Create(nil);
+    VisibleModules.ProjectID := PrjID;
+    VisibleModules.ExcludeHiddenModules := True;
+    Connection.SendRequest(VisibleModules);
+    ShowLog(VisibleModules);
+    VisibleIDs := TStringList.Create;
+    for I := 0 to VisibleModules.OutputItemCount - 1 do
+      VisibleIDs.Add(IntToStr(VisibleModules.OutputItems[I].ModuleID));
+
+    for I := 0 to AllModules.OutputItemCount - 1 do
+    begin
+      Shared := '';
+      GetSharedBy := TJVCSGetSharedBy.Create(nil);
+      try
+        GetSharedBy.ModuleID := AllModules.OutputItems[I].ModuleID;
+        Connection.SendRequest(GetSharedBy);
+        ShowLog(GetSharedBy);
+        for J := 0 to GetSharedBy.OutputItemCount - 1 do
+          if GetSharedBy.OutputItems[J].ProjectID <> PrjID then
+          begin
+            if Shared <> '' then
+              Shared := Shared + ',';
+            Shared := Shared + IntToStr(GetSharedBy.OutputItems[J].ProjectID);
+          end;
+      finally
+        GetSharedBy.Free;
+      end;
+      IsHidden := VisibleIDs.IndexOf(IntToStr(AllModules.OutputItems[I].ModuleID)) < 0;
+      if IsHidden then
+        Inc(HiddenCount);
+      if Shared <> '' then
+        Inc(SharedCount);
+      Writeln('Module: ', AllModules.OutputItems[I].ModuleID, '|', Ord(IsHidden), '|', Shared, '|',
+        AllModules.OutputItems[I].ModulePath, '|', AllModules.OutputItems[I].ModuleName);
+    end;
+
+    LockCount := internListProjectLocks(PrjID);
+
+    GetProjectReferences := TJVCSGetProjectReferences.Create(nil);
+    GetProjectReferences.ProjectID := PrjID;
+    Connection.SendRequest(GetProjectReferences);
+    ShowLog(GetProjectReferences);
+    for I := 0 to GetProjectReferences.OutputItemCount - 1 do
+    begin
+      Writeln('Reference: ', GetProjectReferences.OutputItems[I].ProjectID, '|', GetProjectReferences.OutputItems[I].ProjectName);
+      Inc(RefCount);
+    end;
+
+    // REMOVE_PROJECT also deletes the references OTHER projects have to this one (pjref.reference)
+    GetAllProjects := TJVCSGetProjectInformation.Create(nil);
+    GetAllProjects.ProjectID := 0;
+    Connection.SendRequest(GetAllProjects);
+    ShowLog(GetAllProjects);
+    for I := 0 to GetAllProjects.OutputItemCount - 1 do
+      if (GetAllProjects.OutputItems[I].ProjectID <> PrjID) and not GetAllProjects.OutputItems[I].Deleted then
+      begin
+        GetOtherRefs := TJVCSGetProjectReferences.Create(nil);
+        try
+          GetOtherRefs.ProjectID := GetAllProjects.OutputItems[I].ProjectID;
+          Connection.SendRequest(GetOtherRefs);
+          ShowLog(GetOtherRefs);
+          for J := 0 to GetOtherRefs.OutputItemCount - 1 do
+            if GetOtherRefs.OutputItems[J].ProjectID = PrjID then
+            begin
+              Writeln('ReferencedBy: ', GetAllProjects.OutputItems[I].ProjectID, '|', GetAllProjects.OutputItems[I].ProjectName);
+              Inc(RefByCount);
+              Break;
+            end;
+        finally
+          GetOtherRefs.Free;
+        end;
+      end;
+
+    GetGroupInfo := TJVCSGetProjectGroupInformation.Create(nil);
+    Connection.SendRequest(GetGroupInfo);
+    ShowLog(GetGroupInfo);
+    for I := 0 to GetGroupInfo.OutputItemCount - 1 do
+      if (GetGroupInfo.OutputItems[I].RecordType = 'p') and (GetGroupInfo.OutputItems[I].ParentID = PrjID) then
+      begin
+        GroupName := '';
+        for J := 0 to GetGroupInfo.OutputItemCount - 1 do
+          if (GetGroupInfo.OutputItems[J].RecordType = 'g') and
+            (GetGroupInfo.OutputItems[J].GroupID = GetGroupInfo.OutputItems[I].GroupID) then
+          begin
+            GroupName := string(GetGroupInfo.OutputItems[J].GroupName);
+            Break;
+          end;
+        Writeln('Group: ', GetGroupInfo.OutputItems[I].GroupID, '|', GroupName);
+        Inc(GroupCount);
+      end;
+
+    GetProjectRights := TJVCSGetProjectRights.Create(nil);
+    Connection.SendRequest(GetProjectRights);
+    ShowLog(GetProjectRights);
+    for I := 0 to GetProjectRights.OutputItemCount - 1 do
+      if GetProjectRights.OutputItems[I].ProjectID = PrjID then
+      begin
+        Writeln('Right: ', GetProjectRights.OutputItems[I].UserID, '|', GetProjectRights.OutputItems[I].AccessLevel);
+        Inc(RightCount);
+      end;
+
+    // REMOVE_PROJECT deletes pjbugs too
+    GetBugs := TJVCSGetBugsByProject.Create(nil);
+    GetBugs.ProjectID := PrjID;
+    Connection.SendRequest(GetBugs);
+    ShowLog(GetBugs);
+    for I := 0 to GetBugs.OutputItemCount - 1 do
+    begin
+      Writeln('Bug: ', GetBugs.OutputItems[I].BugID, '|', GetBugs.OutputItems[I].BugName);
+      Inc(BugCount);
+    end;
+
+    Writeln(Format('Summary: modules=%d;hidden=%d;shared=%d;locked=%d;references=%d;referencedby=%d;groups=%d;rights=%d;bugs=%d',
+      [AllModules.OutputItemCount, HiddenCount, SharedCount, LockCount, RefCount, RefByCount, GroupCount, RightCount, BugCount]));
+  finally
+    GetBugs.Free;
+    GetProjectRights.Free;
+    GetGroupInfo.Free;
+    GetAllProjects.Free;
+    GetProjectReferences.Free;
+    VisibleIDs.Free;
+    VisibleModules.Free;
+    AllModules.Free;
+  end;
+end;
+
+function CmdProcRemoveProject(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  PrjID, I: Integer;
+  PrjName: string;
+  PrjDeleted: Boolean;
+  RemoveProject: TJVCSRemoveProject;
+begin
+  Result := False;
+  if (LineParamCount(Line) <> 3) or (AnsiCompareText(LineParamStr(Line, 3), 'confirm') <> 0) then
+    Exit;
+  Result := True;
+  internResolveProject(LineParamStr(Line, 2), PrjID, PrjName, PrjDeleted); // binds the rights to this project
+  if PrjDeleted then
+    raise Exception.CreateFmt('Project %d ''%s'' is already deleted', [PrjID, PrjName]);
+  if internListProjectLocks(PrjID) > 0 then
+    raise Exception.CreateFmt('Project %d ''%s'' not removed: it contains checked out modules (Locked: lines above). ' +
+      'Check them in or undo the checkouts first.', [PrjID, PrjName]);
+
+  RemoveProject := TJVCSRemoveProject.Create(nil);
+  try
+    RemoveProject.ProjectID := PrjID;
+    Connection.SendRequest(RemoveProject);
+    ShowLog(RemoveProject);
+    if not RemoveProject.Removed then
+    begin
+      // the server checks again (a checkout may have happened after our check)
+      for I := 0 to RemoveProject.OutputItemCount - 1 do
+        Writeln('Locked: ', RemoveProject.OutputItems[I].ModuleID, '|||', RemoveProject.OutputItems[I].ModuleName);
+      raise Exception.CreateFmt('Project %d ''%s'' not removed: %s', [PrjID, PrjName, RemoveProject.ErrorMessage]);
+    end;
+    Writeln('Project removed: ', PrjName, ' (ID ', PrjID, ')');
+    if ProjectID = PrjID then
+    begin
+      ProjectID := 0;
+      ProjectName := '';
+    end;
+  finally
+    RemoveProject.Free;
+  end;
+end;
+
+function CmdProcRestoreProject(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  PrjID, CheckID: Integer;
+  PrjName, CheckName: string;
+  PrjDeleted, CheckDeleted: Boolean;
+  RestoreProject: TJVCSRestoreProject;
+begin
+  Result := False;
+  if (LineParamCount(Line) <> 3) or (AnsiCompareText(LineParamStr(Line, 3), 'confirm') <> 0) then
+    Exit;
+  Result := True;
+  internResolveProject(LineParamStr(Line, 2), PrjID, PrjName, PrjDeleted); // binds the rights to this project
+  if not PrjDeleted then
+    raise Exception.CreateFmt('Project %d ''%s'' is not deleted', [PrjID, PrjName]);
+  RestoreProject := TJVCSRestoreProject.Create(nil);
+  try
+    RestoreProject.ProjectID := PrjID;
+    Connection.SendRequest(RestoreProject);
+    ShowLog(RestoreProject);
+  finally
+    RestoreProject.Free;
+  end;
+  // RESTORE_PROJECT has no answer and does not check the ID: read the flag again
+  internResolveProject(IntToStr(PrjID), CheckID, CheckName, CheckDeleted);
+  if CheckDeleted then
+    raise Exception.CreateFmt('Project %d ''%s'' is still deleted after RESTORE_PROJECT', [PrjID, PrjName]);
+  Writeln('Project restored: ', PrjName, ' (ID ', PrjID, ') - module links, rights, references and groups ' +
+    'removed by removeproject are not restored');
+end;
+
+// RENAME_PROJECT only renames the project. The module names it gets are written to the old column
+// modules.name, which the 2.5 server (branches: name, path and lock live in brmodule) no longer reads:
+// the server answers "renamed", but nothing changes. So the project modules are renamed with
+// RENAME_MODULE (the branch aware request of the standalone Rename module), one by one, and the
+// result is read back with GET_PROJECT_MODULE_LIST.
+function CmdProcRenameProject(const Line: string; var ExtExitCode: Integer): Boolean;
+const
+  ProjectFileExts: array [0..6] of string = ('.dpr', '.dpk', '.dproj', '.res', '.dof', '.cfg', '.dsk');
+var
+  Count, PrjID, I, J, K, ClashID, PlanCount: Integer;
+  PrjName, NewName, S, ModName, NewModName, ErrText: string;
+  PrjDeleted, RenameFiles, Confirmed, ClashDeleted, IsShared, Found: Boolean;
+  PlanIDs: array of Integer;
+  PlanOld, PlanNew: array of string;
+  PlanOk: array of Boolean;
+  PlanErr: array of string;
+  GetProjectId: TJVCSGetProjectId;
+  GetModuleId: TJVCSGetModuleId;
+  GetSharedBy: TJVCSGetSharedBy;
+  ModuleList: TJVCSGetProjectModuleList;
+  RenameProject: TJVCSRenameProject;
+  RenameModule: TJVCSRenameModule;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [4, 5]) then
+    Exit;
+  RenameFiles := False;
+  Confirmed := False;
+  for I := 4 to Count do
+  begin
+    S := LineParamStr(Line, I);
+    if AnsiCompareText(S, 'renamefiles') = 0 then
+      RenameFiles := True
+    else
+    if AnsiCompareText(S, 'confirm') = 0 then
+      Confirmed := True
+    else
+      Exit;
+  end;
+  if not Confirmed then
+    Exit;
+  Result := True;
+
+  NewName := AnsiLowerCase(Trim(LineParamStr(Line, 3)));
+  internCheckProjectName(NewName);
+  internResolveProject(LineParamStr(Line, 2), PrjID, PrjName, PrjDeleted); // binds the rights to this project
+  if PrjDeleted then
+    raise Exception.CreateFmt(SProjectDeleted, [PrjID, PrjName]);
+  if SameText(PrjName, NewName) then
+    raise Exception.Create('The new project name is the current one');
+  if not SameText(ExtractFileExt(PrjName), ExtractFileExt(NewName)) then
+    raise Exception.CreateFmt('The new project name must have the same file extension as the old one (%s)',
+      [ExtractFileExt(PrjName)]);
+
+  // the server does not check it; names stay reserved by deleted projects too.
+  // An unknown name (ID 0) does not change the session rights.
+  GetProjectId := TJVCSGetProjectId.Create(nil);
+  try
+    GetProjectId.ProjectName := NewName;
+    Connection.SendRequest(GetProjectId);
+    ShowLog(GetProjectId);
+    ClashID := GetProjectId.ProjectID;
+    ClashDeleted := GetProjectId.ProjectDeleted;
+  finally
+    GetProjectId.Free;
+  end;
+  if ClashID <> 0 then
+  begin
+    if ClashDeleted then
+      raise Exception.CreateFmt('Project name ''%s'' is already in use (ID %d, deleted)', [NewName, ClashID])
+    else
+      raise Exception.CreateFmt('Project name ''%s'' is already in use (ID %d)', [NewName, ClashID]);
+  end;
+
+  if internListProjectLocks(PrjID) > 0 then
+    raise Exception.CreateFmt('Project %d ''%s'' not renamed: it contains checked out modules (Locked: lines above)',
+      [PrjID, PrjName]);
+
+  // plan (and every check) before anything changes: ONLY modules of this project, from its own module
+  // list (RENAME_MODULE renames any module ID it gets), never shared ones, never onto an existing module
+  PlanCount := 0;
+  if RenameFiles then
+  begin
+    ModuleList := TJVCSGetProjectModuleList.Create(nil);
+    try
+      ModuleList.ProjectID := PrjID;
+      ModuleList.ExcludeHiddenModules := False;
+      Connection.SendRequest(ModuleList);
+      ShowLog(ModuleList);
+      for I := 0 to ModuleList.OutputItemCount - 1 do
+      begin
+        ModName := string(ModuleList.OutputItems[I].ModuleName);
+        for J := Low(ProjectFileExts) to High(ProjectFileExts) do
+          if SameText(ModName, ChangeFileExt(ExtractFileName(PrjName), ProjectFileExts[J])) then
+          begin
+            // a shared module keeps its name (it is also a module of the other projects)
+            IsShared := False;
+            GetSharedBy := TJVCSGetSharedBy.Create(nil);
+            try
+              GetSharedBy.ModuleID := ModuleList.OutputItems[I].ModuleID;
+              Connection.SendRequest(GetSharedBy);
+              ShowLog(GetSharedBy);
+              for K := 0 to GetSharedBy.OutputItemCount - 1 do
+                if GetSharedBy.OutputItems[K].ProjectID <> PrjID then
+                  IsShared := True;
+            finally
+              GetSharedBy.Free;
+            end;
+            if IsShared then
+            begin
+              Writeln('Module kept (shared): ', ModuleList.OutputItems[I].ModuleID, '|', ModName);
+              Break;
+            end;
+            NewModName := AnsiLowerCase(ChangeFileExt(ExtractFileName(NewName), ExtractFileExt(ModName)));
+            GetModuleId := TJVCSGetModuleId.Create(nil);
+            try
+              GetModuleId.ModuleName := string(ModuleList.OutputItems[I].ModulePath) + NewModName;
+              Connection.SendRequest(GetModuleId);
+              ShowLog(GetModuleId);
+              if GetModuleId.ModuleID <> 0 then
+                raise Exception.CreateFmt('Module ''%s%s'' already exists (ID %d): nothing renamed',
+                  [string(ModuleList.OutputItems[I].ModulePath), NewModName, GetModuleId.ModuleID]);
+            finally
+              GetModuleId.Free;
+            end;
+            Inc(PlanCount);
+            SetLength(PlanIDs, PlanCount);
+            SetLength(PlanOld, PlanCount);
+            SetLength(PlanNew, PlanCount);
+            SetLength(PlanOk, PlanCount);
+            SetLength(PlanErr, PlanCount);
+            PlanIDs[PlanCount - 1] := ModuleList.OutputItems[I].ModuleID;
+            PlanOld[PlanCount - 1] := ModName;
+            PlanNew[PlanCount - 1] := NewModName;
+            PlanOk[PlanCount - 1] := False;
+            PlanErr[PlanCount - 1] := '';
+            Writeln('Module to rename: ', ModuleList.OutputItems[I].ModuleID, '|', ModName);
+            Break;
+          end;
+      end;
+    finally
+      ModuleList.Free;
+    end;
+  end;
+
+  RenameProject := TJVCSRenameProject.Create(nil);
+  try
+    RenameProject.UserID := Connection.UserID;
+    RenameProject.ProjectID := PrjID;
+    RenameProject.NewProjectName := JVCSString50(NewName); // internCheckProjectName: at most 50 characters
+    Connection.SendRequest(RenameProject);
+    ShowLog(RenameProject);
+    if not RenameProject.Renamed then
+    begin
+      // not renamed: the server sends [module id, name]; the client object keeps field 0 (the ID) in ModuleName
+      for I := 0 to RenameProject.OutputItemCount - 1 do
+        Writeln('Locked: ', RenameProject.OutputItems[I].ModuleName, '|||');
+      raise Exception.CreateFmt('Project %d ''%s'' not renamed: it contains checked out modules', [PrjID, PrjName]);
+    end;
+  finally
+    RenameProject.Free;
+  end;
+  Writeln('Project renamed: ', PrjName, ' -> ', NewName, ' (ID ', PrjID, ')');
+  if ProjectID = PrjID then
+    ProjectName := NewName;
+
+  for I := 0 to PlanCount - 1 do
+  begin
+    ErrText := '';
+    RenameModule := TJVCSRenameModule.Create(nil);
+    try
+      RenameModule.ModuleID := PlanIDs[I];
+      RenameModule.NewModuleName := PlanNew[I];
+      RenameModule.ProjectID := PrjID;
+      try
+        Connection.SendRequest(RenameModule);
+        ShowLog(RenameModule);
+        if not RenameModule.Success then
+          ErrText := RenameModule.ErrorMessage;
+      except
+        on E: Exception do
+          ErrText := E.Message;
+      end;
+    finally
+      RenameModule.Free;
+    end;
+    PlanErr[I] := StringReplace(StringReplace(ErrText, #13, ' ', [rfReplaceAll]), #10, ' ', [rfReplaceAll]);
+  end;
+
+  // read the names back: only a module whose name really changed counts as renamed
+  if PlanCount > 0 then
+  begin
+    ModuleList := TJVCSGetProjectModuleList.Create(nil);
+    try
+      ModuleList.ProjectID := PrjID;
+      ModuleList.ExcludeHiddenModules := False;
+      Connection.SendRequest(ModuleList);
+      ShowLog(ModuleList);
+      for I := 0 to PlanCount - 1 do
+      begin
+        Found := False;
+        for J := 0 to ModuleList.OutputItemCount - 1 do
+          if ModuleList.OutputItems[J].ModuleID = PlanIDs[I] then
+          begin
+            Found := True;
+            PlanOk[I] := SameText(string(ModuleList.OutputItems[J].ModuleName), PlanNew[I]);
+            Break;
+          end;
+        if PlanOk[I] then
+          Writeln('Module renamed: ', PlanIDs[I], '|', PlanOld[I], '|', PlanNew[I])
+        else
+        begin
+          ErrText := PlanErr[I];
+          if ErrText = '' then
+            if Found then
+              ErrText := 'name unchanged on the server'
+            else
+              ErrText := 'no longer in the project';
+          Writeln('Module not renamed: ', PlanIDs[I], '|', PlanOld[I], '|', PlanNew[I], '|', ErrText);
+        end;
+      end;
+    finally
+      ModuleList.Free;
+    end;
+  end;
+end;
+
+function CmdProcLinkModule(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, WantedID: Integer;
+  FullName: string;
+  MakeHidden: Boolean;
+  GetModuleId: TJVCSGetModuleId;
+  AddNewModule: TJVCSAddNewModule;
+  HideUnhideModule: TJVCSHideUnhideModule;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [3, 4]) then
+    Exit;
+  WantedID := StrToIntDef(LineParamStr(Line, 2), -1);
+  if WantedID <= 0 then
+    Exit;
+  FullName := AnsiLowerCase(LineParamStr(Line, 3));
+  MakeHidden := False;
+  if Count = 4 then
+  begin
+    if AnsiCompareText(LineParamStr(Line, 4), 'hidden') <> 0 then
+      Exit;
+    MakeHidden := True;
+  end;
+  if (FullName = '') or (ExtractFilePath(FullName) = '') then
+    Exit;
+  Result := True;
+  CheckOpenProject;
+
+  // same lookup as ADD_NEW_MODULE (name + path, lower case): if it does not give this ID,
+  // the server would create a new, empty module instead of linking the old one
+  GetModuleId := TJVCSGetModuleId.Create(nil);
+  try
+    GetModuleId.ModuleName := FullName;
+    Connection.SendRequest(GetModuleId);
+    ShowLog(GetModuleId);
+    if GetModuleId.ModuleID <> WantedID then
+      raise Exception.CreateFmt('Module ''%s'' resolves to ID %d, not %d: nothing linked',
+        [FullName, GetModuleId.ModuleID, WantedID]);
+  finally
+    GetModuleId.Free;
+  end;
+
+  AddNewModule := TJVCSAddNewModule.Create(nil);
+  try
+    AddNewModule.ProjectID := ProjectID;
+    AddNewModule.UserID := Connection.UserID;
+    AddNewModule.ModuleFullName := FullName;
+    AddNewModule.Flags := 4096; // ignored for an existing module
+    AddNewModule.Description := ExtractFileName(FullName);
+    Connection.SendRequest(AddNewModule);
+    ShowLog(AddNewModule);
+    if AddNewModule.IsNewModule or (AddNewModule.ModuleID <> WantedID) then
+      raise Exception.CreateFmt('ADD_NEW_MODULE returned module %d (new: %s) instead of linking %d; ' +
+        'that module may now be linked to the project: check with projectinfo',
+        [AddNewModule.ModuleID, BoolToStr(AddNewModule.IsNewModule, True), WantedID]);
+  finally
+    AddNewModule.Free;
+  end;
+  Writeln('Module linked: ', FullName, ' (ID ', WantedID, ')');
+
+  if MakeHidden then
+  begin
+    HideUnhideModule := TJVCSHideUnhideModule.Create(nil);
+    try
+      HideUnhideModule.ProjectID := ProjectID;
+      HideUnhideModule.ModuleID := WantedID;
+      HideUnhideModule.UserID := Connection.UserID;
+      HideUnhideModule.Hide := True;
+      Connection.SendRequest(HideUnhideModule);
+      ShowLog(HideUnhideModule);
+      if not HideUnhideModule.Success then
+        raise Exception.CreateFmt('Module %d linked, but not hidden', [WantedID]);
+      Writeln('Module hidden: ', FullName, ' (ID ', WantedID, ')');
+    finally
+      HideUnhideModule.Free;
+    end;
+  end;
+end;
+
+function CmdProcProjectGroups(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  GetGroupInfo: TJVCSGetProjectGroupInformation;
+  I: Integer;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 1 then
+    Exit;
+  GetGroupInfo := TJVCSGetProjectGroupInformation.Create(nil);
+  try
+    Connection.SendRequest(GetGroupInfo);
+    ShowLog(GetGroupInfo);
+    for I := 0 to GetGroupInfo.OutputItemCount - 1 do
+      if GetGroupInfo.OutputItems[I].RecordType = 'g' then
+        Writeln('Group: ', GetGroupInfo.OutputItems[I].GroupID, '|', GetGroupInfo.OutputItems[I].ParentID, '|',
+          GetGroupInfo.OutputItems[I].GroupLevel, '|', GetGroupInfo.OutputItems[I].GroupName)
+      else
+      if GetGroupInfo.OutputItems[I].RecordType = 'p' then
+        Writeln('Member: ', GetGroupInfo.OutputItems[I].GroupID, '|', GetGroupInfo.OutputItems[I].ParentID);
+    Result := True;
+  finally
+    GetGroupInfo.Free;
+  end;
+end;
+
+function CmdProcSetProjectGroup(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  PrjID, GroupID, I: Integer;
+  PrjName, Mode: string;
+  PrjDeleted, GroupFound: Boolean;
+  GetGroupInfo: TJVCSGetProjectGroupInformation;
+  AddRemove: TJVCSAddRemoveProjectToGroup;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 4 then
+    Exit;
+  GroupID := StrToIntDef(LineParamStr(Line, 3), 0);
+  Mode := LowerCase(LineParamStr(Line, 4));
+  if (GroupID <= 0) or ((Mode <> 'add') and (Mode <> 'remove')) then
+    Exit;
+  Result := True;
+  internResolveProject(LineParamStr(Line, 2), PrjID, PrjName, PrjDeleted); // binds the rights to this project
+  if PrjDeleted then
+    raise Exception.CreateFmt(SProjectDeleted, [PrjID, PrjName]);
+
+  GroupFound := False;
+  GetGroupInfo := TJVCSGetProjectGroupInformation.Create(nil);
+  try
+    Connection.SendRequest(GetGroupInfo);
+    ShowLog(GetGroupInfo);
+    for I := 0 to GetGroupInfo.OutputItemCount - 1 do
+      if (GetGroupInfo.OutputItems[I].RecordType = 'g') and (GetGroupInfo.OutputItems[I].GroupID = GroupID) then
+      begin
+        GroupFound := True;
+        Break;
+      end;
+  finally
+    GetGroupInfo.Free;
+  end;
+  if not GroupFound then
+    raise Exception.CreateFmt(SProjectGroupIDNotFound, [GroupID]);
+
+  AddRemove := TJVCSAddRemoveProjectToGroup.Create(nil);
+  try
+    AddRemove.ProjectID := PrjID;
+    AddRemove.GroupID := GroupID;
+    AddRemove.Add := Mode = 'add';
+    Connection.SendRequest(AddRemove);
+    ShowLog(AddRemove);
+    if Mode = 'remove' then
+      Writeln('Project group removed: ', PrjName, ' (ID ', PrjID, ') from group ', GroupID)
+    else
+    if AddRemove.Added then
+      Writeln('Project group added: ', PrjName, ' (ID ', PrjID, ') to group ', GroupID)
+    else
+      Writeln('Project group already set: ', PrjName, ' (ID ', PrjID, ') in group ', GroupID);
+  finally
+    AddRemove.Free;
+  end;
+end;
+
+// Label given as '#<label_id>' or by name (case-insensitive with the locale, like labelproject's
+// AnsiCompareText, so both resolve the same label). Returns the ID and the name stored on the server.
+function ResolveLabel(const S: string; out ALabelName: string): Integer;
+var
+  GetLabels: TJVCSGetLabels;
+  I, WantID: Integer;
+begin
+  Result := 0;
+  ALabelName := '';
+  WantID := 0;
+  if (Length(S) > 1) and (S[1] = '#') then
+    WantID := StrToIntDef(Copy(S, 2, MaxInt), 0);
+  GetLabels := TJVCSGetLabels.Create(nil);
+  try
+    GetLabels.IncludeDescription := False;
+    Connection.SendRequest(GetLabels);
+    ShowLog(GetLabels);
+    for I := 0 to GetLabels.OutputItemCount - 1 do
+      if ((WantID > 0) and (GetLabels.OutputItems[I].LabelID = WantID)) or
+        ((WantID = 0) and AnsiSameText(string(GetLabels.OutputItems[I].LabelName), S)) then
+      begin
+        Result := GetLabels.OutputItems[I].LabelID;
+        ALabelName := string(GetLabels.OutputItems[I].LabelName);
+        Break;
+      end;
+  finally
+    GetLabels.Free;
+  end;
+  if Result = 0 then
+    raise Exception.CreateFmt(SLabelNotFound, [S]);
+end;
+
+function CmdProcListLabels(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I, J, N, Shown: Integer;
+  S: string;
+  GetLabels: TJVCSGetLabels;
+  GetLabelsByProject: TJVCSGetLabelsByProject;
+  Item: TGetLabelsOutputItem;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [1, 2]) then
+    Exit;
+  GetLabelsByProject := nil;
+  GetLabels := TJVCSGetLabels.Create(nil);
+  try
+    if Count = 2 then
+    begin
+      S := LineParamStr(Line, 2);
+      ProjectID := StrToIntDef(S, -1);
+      if ProjectID = -1 then
+        ProjectName := S
+      else
+        ProjectName := '';
+      CheckOpenProject;
+      GetLabelsByProject := TJVCSGetLabelsByProject.Create(nil);
+      GetLabelsByProject.ProjectID := ProjectID;
+      Connection.SendRequest(GetLabelsByProject);
+      ShowLog(GetLabelsByProject);
+      Writeln('Project: ', EscapeHistoryComment(ProjectName), ' (ID ', ProjectID, ')');
+      Writeln;
+    end;
+    GetLabels.IncludeDescription := True;
+    Connection.SendRequest(GetLabels);
+    ShowLog(GetLabels);
+    Write(StrAlign('ID', 8), ' ');
+    Write(StrAlign('Label', 50), ' ');
+    if Assigned(GetLabelsByProject) then
+      Write(StrAlign('Modules', 7), ' ');
+    Writeln('Description');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 50), ' ');
+    if Assigned(GetLabelsByProject) then
+      Write(StringOfChar('=', 7), ' ');
+    Writeln(StringOfChar('=', 11));
+    Shown := 0;
+    for I := 0 to GetLabels.OutputItemCount - 1 do
+    begin
+      Item := GetLabels.OutputItems[I];
+      N := 0;
+      if Assigned(GetLabelsByProject) then
+      begin
+        // one row per (module, revision, label), hidden modules included; the server keeps a
+        // label on one revision per module (ADD_REMOVE_REVISION_LABEL)
+        for J := 0 to GetLabelsByProject.OutputItemCount - 1 do
+          if GetLabelsByProject.OutputItems[J].LabelID = Item.LabelID then
+            Inc(N);
+        if N = 0 then
+          Continue;
+      end;
+      Write(StrAlign(IntToStr(Item.LabelID), 8), ' ');
+      // server text: escaped so that it never breaks the fixed columns
+      Write(StrAlign(EscapeHistoryComment(string(Item.LabelName)), 50), ' ');
+      if Assigned(GetLabelsByProject) then
+        Write(StrAlign(IntToStr(N), 7), ' ');
+      Writeln(EscapeHistoryComment(Item.Description));
+      Inc(Shown);
+    end;
+    Writeln;
+    Writeln(Shown, ' label(s)');
+    Result := True;
+  finally
+    GetLabelsByProject.Free;
+    GetLabels.Free;
+  end;
+end;
+
+function CmdProcLabelRevs(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  I, J, LabelID, Modules: Integer;
+  S, LabelName, Exts: string;
+  GetLatestRevisions: TJVCSGetLatestRevisions;
+  Item: TGetLatestRevisionsOutputItem;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 3 then
+    Exit;
+  if Trim(LineParamStr(Line, 3)) = '' then
+    Exit;
+  S := LineParamStr(Line, 2);
+  ProjectID := StrToIntDef(S, -1);
+  if ProjectID = -1 then
+    ProjectName := S
+  else
+    ProjectName := '';
+  CheckOpenProject;
+  LabelID := ResolveLabel(LineParamStr(Line, 3), LabelName);
+  GetLatestRevisions := TJVCSGetLatestRevisions.Create(nil);
+  try
+    GetLatestRevisions.ProjectID := ProjectID;
+    GetLatestRevisions.ExcludeHiddenModules := True; // same set as labelproject
+    GetLatestRevisions.LabelID := LabelID;
+    Connection.SendRequest(GetLatestRevisions);
+    ShowLog(GetLatestRevisions);
+    Writeln('Project: ', EscapeHistoryComment(ProjectName), ' (ID ', ProjectID, ')');
+    Writeln('Label: ', EscapeHistoryComment(LabelName), ' (ID ', LabelID, ')');
+    Writeln;
+    Write(StrAlign('ID', 8), ' ');
+    Write(StrAlign('Version', 7), ' ');
+    Write(StrAlign('RevID', 8), ' ');
+    Write(StrAlign('Files', 30), ' ');
+    Writeln('Module');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 7), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 30), ' ');
+    Writeln(StringOfChar('=', 6));
+    // one output item per family member; only the first member of a revision carries
+    // the module name and path (server GET_LATEST_REVISIONS)
+    Modules := 0;
+    I := 0;
+    while I < GetLatestRevisions.OutputItemCount do
+    begin
+      Item := GetLatestRevisions.OutputItems[I];
+      Exts := string(Item.RevisionExtension);
+      J := I + 1;
+      while (J < GetLatestRevisions.OutputItemCount) and
+        (GetLatestRevisions.OutputItems[J].ModuleID = Item.ModuleID) and
+        (GetLatestRevisions.OutputItems[J].RevisionID = Item.RevisionID) do
+      begin
+        Exts := Exts + ',' + string(GetLatestRevisions.OutputItems[J].RevisionExtension);
+        Inc(J);
+      end;
+      Write(StrAlign(IntToStr(Item.ModuleID), 8), ' ');
+      Write(StrAlign(Format('%d.%d', [Item.Version, Item.Revision]), 7), ' ');
+      Write(StrAlign(IntToStr(Item.RevisionID), 8), ' ');
+      Write(StrAlign(Exts, 30), ' ');
+      Writeln(EscapeHistoryComment(string(Item.ModuleName)));
+      Inc(Modules);
+      I := J;
+    end;
+    Writeln;
+    Writeln(Modules, ' module(s)');
+    Result := True;
+  finally
+    GetLatestRevisions.Free;
+  end;
+end;
+
+function CmdProcModuleLabels(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  I, J, Rows, RevID: Integer;
+  S: string;
+  Versions: TStringList; // 'RevisionID=version.revision', history order
+  GetModuleHistory: TJVCSGetModuleHistory;
+  GetLabelsByModule: TJVCSGetLabelsByModule;
+  GetLabelsByRevision: TJVCSGetLabelsByRevision;
+  H: TGetModuleHistoryOutputItem;
+
+  procedure WriteRow(ARevisionID, ALabelID: Integer; const ALabelName, ADescription: string);
+  var
+    V: string;
+  begin
+    V := Versions.Values[IntToStr(ARevisionID)];
+    if V = '' then
+      V := '?';
+    Write(StrAlign(V, 7), ' ');
+    Write(StrAlign(IntToStr(ARevisionID), 8), ' ');
+    Write(StrAlign(IntToStr(ALabelID), 8), ' ');
+    // server text: escaped so that it never breaks the fixed columns
+    Write(StrAlign(EscapeHistoryComment(ALabelName), 50), ' ');
+    Writeln(EscapeHistoryComment(ADescription));
+    Inc(Rows);
+  end;
+
+begin
+  Result := False;
+  if LineParamCount(Line) <> 2 then
+    Exit;
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  Rows := 0;
+  Versions := TStringList.Create;
+  try
+    CheckModuleOrLocalFile;
+    GetModuleHistory := TJVCSGetModuleHistory.Create(nil);
+    try
+      GetModuleHistory.ModuleID := ModuleID;
+      Connection.SendRequest(GetModuleHistory);
+      ShowLog(GetModuleHistory);
+      // one item per family member: keep one entry per revision
+      for I := 0 to GetModuleHistory.OutputItemCount - 1 do
+      begin
+        H := GetModuleHistory.OutputItems[I];
+        if Versions.IndexOfName(IntToStr(H.RevisionID)) < 0 then
+          Versions.Add(Format('%d=%d.%d', [H.RevisionID, H.Version, H.Revision]));
+      end;
+    finally
+      GetModuleHistory.Free;
+    end;
+    Writeln('Module: ', EscapeHistoryComment(ModuleName), ' (ID ', ModuleID, ')');
+    Writeln;
+    Write(StrAlign('Version', 7), ' ');
+    Write(StrAlign('RevID', 8), ' ');
+    Write(StrAlign('LabelID', 8), ' ');
+    Write(StrAlign('Label', 50), ' ');
+    Writeln('Description');
+    Write(StringOfChar('=', 7), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 50), ' ');
+    Writeln(StringOfChar('=', 11));
+    if Connection.SupportsFunction(TJVCSGetLabelsByModule) then
+    begin
+      GetLabelsByModule := TJVCSGetLabelsByModule.Create(nil);
+      try
+        GetLabelsByModule.ModuleID := ModuleID;
+        Connection.SendRequest(GetLabelsByModule);
+        ShowLog(GetLabelsByModule);
+        for I := 0 to GetLabelsByModule.OutputItemCount - 1 do
+          WriteRow(GetLabelsByModule.OutputItems[I].RevisionID, GetLabelsByModule.OutputItems[I].LabelID,
+            string(GetLabelsByModule.OutputItems[I].LabelName), GetLabelsByModule.OutputItems[I].Description);
+      finally
+        GetLabelsByModule.Free;
+      end;
+    end
+    else
+      // older servers: one GET_LABELS_BY_REVISION per revision (as History.pas)
+      for I := 0 to Versions.Count - 1 do
+      begin
+        RevID := StrToInt(Versions.Names[I]);
+        GetLabelsByRevision := TJVCSGetLabelsByRevision.Create(nil);
+        try
+          GetLabelsByRevision.RevisionID := RevID;
+          Connection.SendRequest(GetLabelsByRevision);
+          ShowLog(GetLabelsByRevision);
+          for J := 0 to GetLabelsByRevision.OutputItemCount - 1 do
+            WriteRow(RevID, GetLabelsByRevision.OutputItems[J].LabelID,
+              string(GetLabelsByRevision.OutputItems[J].LabelName), GetLabelsByRevision.OutputItems[J].Description);
+        finally
+          GetLabelsByRevision.Free;
+        end;
+      end;
+    Writeln;
+    Writeln(Rows, ' label(s)');
+    Result := True;
+  finally
+    Versions.Free;
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+function CmdProcSharedBy(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  I: Integer;
+  S: string;
+  GetSharedBy: TJVCSGetSharedBy;
+  Prj: TGetSharedByOutputItem;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 2 then
+    Exit;
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  try
+    CheckModuleOrLocalFile;
+    GetSharedBy := TJVCSGetSharedBy.Create(nil);
+    try
+      GetSharedBy.ModuleID := ModuleID;
+      Connection.SendRequest(GetSharedBy);
+      ShowLog(GetSharedBy);
+      Writeln('Module: ', EscapeHistoryComment(ModuleName), ' (ID ', ModuleID, ')');
+      Writeln;
+      Write(StrAlign('PrjID', 8), ' ');
+      Writeln('Project');
+      Write(StringOfChar('=', 8), ' ');
+      Writeln(StringOfChar('=', 7));
+      for I := 0 to GetSharedBy.OutputItemCount - 1 do
+      begin
+        Prj := GetSharedBy.OutputItems[I];
+        Write(StrAlign(IntToStr(Prj.ProjectID), 8), ' ');
+        Writeln(EscapeHistoryComment(string(Prj.ProjectName)));
+      end;
+      Writeln;
+      Writeln(GetSharedBy.OutputItemCount, ' project(s)');
+      Result := True;
+    finally
+      GetSharedBy.Free;
+    end;
+  finally
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+function CmdProcSharedModules(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  I, J, Rows, Modules: Integer;
+  S: string;
+  SharedIDs, Done: TStringList;
+  GetSharedModules: TJVCSGetSharedModules;
+  GetLatestRevisions: TJVCSGetLatestRevisions;
+  GetSharedBy: TJVCSGetSharedBy;
+  Rev: TGetLatestRevisionsOutputItem;
+  Prj: TGetSharedByOutputItem;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 2 then
+    Exit;
+  S := LineParamStr(Line, 2);
+  ProjectID := StrToIntDef(S, -1);
+  if ProjectID = -1 then
+    ProjectName := S
+  else
+    ProjectName := '';
+  CheckOpenProject;
+  SharedIDs := TStringList.Create;
+  Done := TStringList.Create;
+  GetSharedModules := nil;
+  GetLatestRevisions := nil;
+  try
+    SharedIDs.Sorted := True;
+    SharedIDs.Duplicates := dupIgnore;
+    Done.Sorted := True;
+    Done.Duplicates := dupIgnore;
+    // GET_SHARED_MODULES has no input: every module of the archive that is in more than one project
+    GetSharedModules := TJVCSGetSharedModules.Create(nil);
+    Connection.SendRequest(GetSharedModules);
+    ShowLog(GetSharedModules);
+    for I := 0 to GetSharedModules.OutputItemCount - 1 do
+      SharedIDs.Add(IntToStr(GetSharedModules.OutputItems[I].ModuleID));
+    // module names of the project (hidden ones too: sharing does not depend on it)
+    GetLatestRevisions := TJVCSGetLatestRevisions.Create(nil);
+    GetLatestRevisions.ProjectID := ProjectID;
+    GetLatestRevisions.ExcludeHiddenModules := False;
+    GetLatestRevisions.LabelID := 0;
+    Connection.SendRequest(GetLatestRevisions);
+    ShowLog(GetLatestRevisions);
+    Writeln('Project: ', EscapeHistoryComment(ProjectName), ' (ID ', ProjectID, ')');
+    Writeln;
+    Write(StrAlign('ID', 8), ' ');
+    Write(StrAlign('PrjID', 8), ' ');
+    Write(StrAlign('Project', 50), ' ');
+    Writeln('Module');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 50), ' ');
+    Writeln(StringOfChar('=', 6));
+    Rows := 0;
+    Modules := 0;
+    for I := 0 to GetLatestRevisions.OutputItemCount - 1 do
+    begin
+      Rev := GetLatestRevisions.OutputItems[I];
+      // only the first member of a revision carries the module name (server GET_LATEST_REVISIONS)
+      if (Rev.ModuleName = '') or (SharedIDs.IndexOf(IntToStr(Rev.ModuleID)) < 0) or
+        (Done.IndexOf(IntToStr(Rev.ModuleID)) >= 0) then
+        Continue;
+      Done.Add(IntToStr(Rev.ModuleID));
+      Inc(Modules);
+      GetSharedBy := TJVCSGetSharedBy.Create(nil);
+      try
+        GetSharedBy.ModuleID := Rev.ModuleID;
+        Connection.SendRequest(GetSharedBy);
+        ShowLog(GetSharedBy);
+        for J := 0 to GetSharedBy.OutputItemCount - 1 do
+        begin
+          Prj := GetSharedBy.OutputItems[J];
+          Write(StrAlign(IntToStr(Rev.ModuleID), 8), ' ');
+          Write(StrAlign(IntToStr(Prj.ProjectID), 8), ' ');
+          // server text: escaped so that it never breaks the fixed columns
+          Write(StrAlign(EscapeHistoryComment(string(Prj.ProjectName)), 50), ' ');
+          Writeln(EscapeHistoryComment(string(Rev.ModuleName)));
+          Inc(Rows);
+        end;
+      finally
+        GetSharedBy.Free;
+      end;
+    end;
+    Writeln;
+    Writeln(Modules, ' shared module(s), ', Rows, ' row(s)');
+    Result := True;
+  finally
+    GetLatestRevisions.Free;
+    GetSharedModules.Free;
+    Done.Free;
+    SharedIDs.Free;
+  end;
+end;
+
+// since=yyyy-mm-dd[Thh:nn[:ss]] in local time (a space instead of the T is accepted, within quotes).
+function ParseProjectLogSince(const S: string; out DT: TDateTime): Boolean;
+var
+  Y, Mo, D, H, Mi, Se: Integer;
+  T: TDateTime;
+begin
+  Result := False;
+  DT := 0;
+  if not ((Length(S) = 10) or (Length(S) = 16) or (Length(S) = 19)) then
+    Exit;
+  if (S[5] <> '-') or (S[8] <> '-') then
+    Exit;
+  Y := StrToIntDef(Copy(S, 1, 4), -1);
+  Mo := StrToIntDef(Copy(S, 6, 2), -1);
+  D := StrToIntDef(Copy(S, 9, 2), -1);
+  H := 0;
+  Mi := 0;
+  Se := 0;
+  if Length(S) > 10 then
+  begin
+    if not CharInSet(S[11], ['T', 't', ' ']) or (S[14] <> ':') then
+      Exit;
+    H := StrToIntDef(Copy(S, 12, 2), -1);
+    Mi := StrToIntDef(Copy(S, 15, 2), -1);
+    if Length(S) = 19 then
+    begin
+      if S[17] <> ':' then
+        Exit;
+      Se := StrToIntDef(Copy(S, 18, 2), -1);
+    end;
+  end;
+  if (Y < 1990) or (Mo < 1) or (D < 1) or (H < 0) or (Mi < 0) or (Se < 0) then
+    Exit;
+  if not TryEncodeDate(Y, Mo, D, DT) then
+    Exit;
+  if not TryEncodeTime(H, Mi, Se, 0, T) then
+    Exit;
+  DT := DT + T;
+  Result := True;
+end;
+
+// Check-ins (vcslog type 'i') of the modules of a project. The log is the only source of the real
+// check-in time (table revision has no date; the Timestamp of GET_MODULE_HISTORY is the file date).
+// Reads all projects (ProjectID = 0) and filters by the modules of the project: shared modules
+// get check-ins from other projects. The version comes from GET_MODULE_HISTORY, matching user and
+// exact comment (GET_LOG_COMMENT reads the comment of the revision linked to the log entry).
+function CmdProcProjectLog(const Line: string; var ExtExitCode: Integer): Boolean;
+type
+  TPLogRow = record
+    LogID, ModuleID, ModIdx, RevisionID, Version, Revision: Integer;
+    Stamp: TDateTime;
+    UserName, ViaProject, Kind, Comment: string;
+    Linked: Boolean;
+  end;
+  TPLogRev = record
+    RevisionID, Version, Revision: Integer;
+    UserName, Comment: string;
+  end;
+var
+  Count, I, J, K, N, RevPtr, MaxCount, FilterUserID, First, OldProjectID: Integer;
+  S, UserText, LogState, OldProjectName, NoRevMark: string;
+  HasSince, NoRev: Boolean;
+  SinceLocal: TDateTime;
+  ModIDs: array of Integer;
+  ModNames: array of string;
+  ModDone: array of Boolean;
+  Rows: array of TPLogRow;
+  Revs: array of TPLogRev;
+  Tmp: TPLogRev;
+  GetServerOptions: TJVCSGetServerOptions;
+  GetUsers: TJVCSGetUsers;
+  GetModuleList: TJVCSGetProjectModuleList;
+  GetLogEntries: TJVCSGetLogEntries;
+  GetLogComment: TJVCSGetLogComment;
+  GetModuleHistory: TJVCSGetModuleHistory;
+  MItem: TGetProjectModuleListOutputItem;
+  LItem: TGetLogEntriesOutputItem;
+  HItem: TGetModuleHistoryOutputItem;
+
+  function ModuleIndex(AModuleID: Integer): Integer;
+  var
+    X: Integer;
+  begin
+    Result := -1;
+    for X := 0 to High(ModIDs) do
+      if ModIDs[X] = AModuleID then
+      begin
+        Result := X;
+        Break;
+      end;
+  end;
+
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if Count < 2 then
+    Exit;
+  HasSince := False;
+  SinceLocal := 0;
+  UserText := '';
+  MaxCount := 0;
+  NoRev := False;
+  for I := 3 to Count do
+  begin
+    S := LineParamStr(Line, I);
+    if Pos('since=', AnsiLowerCase(S)) = 1 then
+    begin
+      if not ParseProjectLogSince(Copy(S, 7, MaxInt), SinceLocal) then
+        raise Exception.CreateFmt('Invalid date in ''%s'' (use since=yyyy-mm-dd or since=yyyy-mm-ddThh:nn[:ss], local time)', [S]);
+      HasSince := True;
+    end
+    else
+    if Pos('user=', AnsiLowerCase(S)) = 1 then
+    begin
+      UserText := Trim(Copy(S, 6, MaxInt));
+      if UserText = '' then
+        Exit;
+    end
+    else
+    if Pos('max=', AnsiLowerCase(S)) = 1 then
+    begin
+      MaxCount := StrToIntDef(Copy(S, 5, MaxInt), -1);
+      if MaxCount < 0 then
+        Exit;
+    end
+    else
+    if AnsiCompareText(S, 'norev') = 0 then
+      NoRev := True
+    else
+      Exit;
+  end;
+  if NoRev then
+    NoRevMark := '-'
+  else
+    NoRevMark := '?';
+
+  // the project of this command must not stay "open" for the next lines of /input
+  OldProjectID := ProjectID;
+  OldProjectName := ProjectName;
+  try
+    S := LineParamStr(Line, 2);
+    ProjectID := StrToIntDef(S, -1);
+    if ProjectID = -1 then
+    begin
+      ProjectID := 0;
+      ProjectName := S;
+    end
+    else
+      ProjectName := '';
+    CheckOpenProject;
+
+    // the log exists only if the server writes it (WriteVCSLog); no right to read the options (403): unknown
+    LogState := 'unknown';
+    GetServerOptions := TJVCSGetServerOptions.Create(nil);
+    try
+      try
+        Connection.SendRequest(GetServerOptions);
+        ShowLog(GetServerOptions);
+        if GetServerOptions.WriteVCSLog then
+          LogState := 'on'
+        else
+          LogState := 'off';
+      except
+        on E: EJVCSClientRequestError do
+          if E.StatusCode = 403 then
+            LogState := 'unknown'
+          else
+            raise;
+      end;
+    finally
+      GetServerOptions.Free;
+    end;
+
+    FilterUserID := 0;
+    if UserText <> '' then
+    begin
+      FilterUserID := -1;
+      GetUsers := TJVCSGetUsers.Create(nil);
+      try
+        Connection.SendRequest(GetUsers);
+        ShowLog(GetUsers);
+        for I := 0 to GetUsers.OutputItemCount - 1 do
+          if AnsiCompareText(UserText, string(GetUsers.OutputItems[I].UserName)) = 0 then
+          begin
+            FilterUserID := GetUsers.OutputItems[I].UserID;
+            Break;
+          end;
+      finally
+        GetUsers.Free;
+      end;
+      if FilterUserID = -1 then
+        raise Exception.CreateFmt(SUserNotFound, [UserText]);
+    end;
+
+    // modules of the project (hidden ones too): log filter and full name to show
+    GetModuleList := TJVCSGetProjectModuleList.Create(nil);
+    try
+      GetModuleList.ProjectID := ProjectID;
+      GetModuleList.ExcludeHiddenModules := False;
+      Connection.SendRequest(GetModuleList);
+      ShowLog(GetModuleList);
+      SetLength(ModIDs, GetModuleList.OutputItemCount);
+      SetLength(ModNames, GetModuleList.OutputItemCount);
+      for I := 0 to GetModuleList.OutputItemCount - 1 do
+      begin
+        MItem := GetModuleList.OutputItems[I];
+        ModIDs[I] := MItem.ModuleID;
+        S := string(MItem.ModuleName);
+        if (Pos('\', S) = 0) and (string(MItem.ModulePath) <> '') then
+          S := IncludeTrailingPathDelimiter(string(MItem.ModulePath)) + S;
+        ModNames[I] := S;
+      end;
+    finally
+      GetModuleList.Free;
+    end;
+
+    GetLogEntries := TJVCSGetLogEntries.Create(nil);
+    try
+      GetLogEntries.ProjectID := 0; // all: a shared module may get check-ins from another project
+      GetLogEntries.ModuleID := 0;
+      GetLogEntries.UserID := FilterUserID;
+      if HasSince then
+        GetLogEntries.StartDate := LocalDT2GMTDT(SinceLocal)
+      else
+        GetLogEntries.StartDate := 0;
+      GetLogEntries.EndDate := 0;
+      GetLogEntries.EntryType := 'i;'; // server format: one char and ';' per type
+      Connection.SendRequest(GetLogEntries);
+      ShowLog(GetLogEntries);
+      SetLength(Rows, GetLogEntries.OutputItemCount);
+      N := 0;
+      for I := 0 to GetLogEntries.OutputItemCount - 1 do
+      begin
+        LItem := GetLogEntries.OutputItems[I];
+        K := ModuleIndex(LItem.ModuleID);
+        if K < 0 then
+          Continue;
+        Rows[N].LogID := LItem.LogID;
+        Rows[N].ModuleID := LItem.ModuleID;
+        Rows[N].ModIdx := K;
+        Rows[N].RevisionID := 0;
+        Rows[N].Version := -1;
+        Rows[N].Revision := -1;
+        Rows[N].Stamp := LItem.Timestamp; // GMT
+        Rows[N].UserName := string(LItem.UserName);
+        Rows[N].ViaProject := string(LItem.ProjectName);
+        if Pos('Update (Put)', LItem.Description) = 1 then
+          Rows[N].Kind := 'put'
+        else
+          Rows[N].Kind := 'ci';
+        Rows[N].Comment := '';
+        Rows[N].Linked := False;
+        Inc(N);
+      end;
+      SetLength(Rows, N);
+    finally
+      GetLogEntries.Free;
+    end;
+
+    // the server sorts by date: max=n keeps the n most recent (the end of the list)
+    First := 0;
+    if (MaxCount > 0) and (Length(Rows) > MaxCount) then
+      First := Length(Rows) - MaxCount;
+
+    for I := First to High(Rows) do
+    begin
+      GetLogComment := TJVCSGetLogComment.Create(nil);
+      try
+        GetLogComment.LogID := Rows[I].LogID;
+        Connection.SendRequest(GetLogComment);
+        ShowLog(GetLogComment);
+        // without a linked revision (logcomm) the server answers the literal word 'blank'
+        Rows[I].Linked := GetLogComment.CheckinComment <> 'blank';
+        if Rows[I].Linked then
+          Rows[I].Comment := GetLogComment.CheckinComment;
+      finally
+        GetLogComment.Free;
+      end;
+    end;
+
+    if not NoRev then
+    begin
+      SetLength(ModDone, Length(ModIDs));
+      for I := 0 to High(ModDone) do
+        ModDone[I] := False;
+      for I := High(Rows) downto First do
+      begin
+        if ModDone[Rows[I].ModIdx] then
+          Continue;
+        ModDone[Rows[I].ModIdx] := True;
+        // one entry per revision: user and comment come only with the first member of the family
+        SetLength(Revs, 0);
+        GetModuleHistory := TJVCSGetModuleHistory.Create(nil);
+        try
+          GetModuleHistory.ModuleID := Rows[I].ModuleID;
+          Connection.SendRequest(GetModuleHistory);
+          ShowLog(GetModuleHistory);
+          for J := 0 to GetModuleHistory.OutputItemCount - 1 do
+          begin
+            HItem := GetModuleHistory.OutputItems[J];
+            K := Length(Revs);
+            if (K > 0) and (Revs[K - 1].RevisionID = HItem.RevisionID) then
+              Continue;
+            SetLength(Revs, K + 1);
+            Revs[K].RevisionID := HItem.RevisionID;
+            Revs[K].Version := HItem.Version;
+            Revs[K].Revision := HItem.Revision;
+            Revs[K].UserName := string(HItem.UserName);
+            Revs[K].Comment := HItem.CheckinComment;
+          end;
+        finally
+          GetModuleHistory.Free;
+        end;
+        // newest first (RevisionID comes from a generator, it grows with each check-in)
+        for J := 1 to High(Revs) do
+        begin
+          Tmp := Revs[J];
+          K := J - 1;
+          while (K >= 0) and (Revs[K].RevisionID < Tmp.RevisionID) do
+          begin
+            Revs[K + 1] := Revs[K];
+            Dec(K);
+          end;
+          Revs[K + 1] := Tmp;
+        end;
+        // from the newest check-in to the oldest: each one takes the next older revision of the
+        // same user with the same comment (revisions without a log entry are skipped)
+        RevPtr := 0;
+        for J := High(Rows) downto First do
+        begin
+          if (Rows[J].ModIdx <> Rows[I].ModIdx) or not Rows[J].Linked then
+            Continue;
+          for K := RevPtr to High(Revs) do
+            if (AnsiCompareText(Revs[K].UserName, Rows[J].UserName) = 0) and
+              (Revs[K].Comment = Rows[J].Comment) then
+            begin
+              Rows[J].RevisionID := Revs[K].RevisionID;
+              Rows[J].Version := Revs[K].Version;
+              Rows[J].Revision := Revs[K].Revision;
+              RevPtr := K + 1;
+              Break;
+            end;
+        end;
+      end;
+    end;
+
+    Writeln('Project: ', EscapeHistoryComment(ProjectName), ' (ID ', ProjectID, ')');
+    if HasSince then
+      Writeln('Since: ', FormatDateTime('yyyy-mm-dd hh:nn:ss', SinceLocal))
+    else
+      Writeln('Since: all');
+    if UserText <> '' then
+      Writeln('User: ', EscapeHistoryComment(UserText))
+    else
+      Writeln('User: all');
+    Writeln('Server log: ', LogState);
+    Writeln;
+    Write(StrAlign('LogID', 8), ' ');
+    Write(StrAlign('Checked in', 19), ' ');
+    Write(StrAlign('User', 20), ' ');
+    Write(StrAlign('Version', 7), ' ');
+    Write(StrAlign('RevID', 8), ' ');
+    Write(StrAlign('ModID', 8), ' ');
+    Write(StrAlign('Op', 3), ' ');
+    Writeln('Module | Via project | Comment');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 19), ' ');
+    Write(StringOfChar('=', 20), ' ');
+    Write(StringOfChar('=', 7), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 3), ' ');
+    Writeln(StringOfChar('=', 31));
+    for I := First to High(Rows) do
+    begin
+      Write(StrAlign(IntToStr(Rows[I].LogID), 8), ' ');
+      Write(StrAlign(FormatDateTime('yyyy-mm-dd hh:nn:ss', GMTDT2LocalDT(Rows[I].Stamp)), 19), ' ');
+      Write(StrAlign(Rows[I].UserName, 20), ' ');
+      if Rows[I].RevisionID > 0 then
+      begin
+        Write(StrAlign(Format('%d.%d', [Rows[I].Version, Rows[I].Revision]), 7), ' ');
+        Write(StrAlign(IntToStr(Rows[I].RevisionID), 8), ' ');
+      end
+      else
+      begin
+        Write(StrAlign(NoRevMark, 7), ' ');
+        Write(StrAlign(NoRevMark, 8), ' ');
+      end;
+      Write(StrAlign(IntToStr(Rows[I].ModuleID), 8), ' ');
+      Write(StrAlign(Rows[I].Kind, 3), ' ');
+      Writeln(EscapeHistoryComment(ModNames[Rows[I].ModIdx]), ' | ',
+        EscapeHistoryComment(Rows[I].ViaProject), ' | ',
+        EscapeHistoryComment(Rows[I].Comment));
+    end;
+    Writeln;
+    Writeln(Length(Rows) - First, ' check-in(s) shown of ', Length(Rows));
+    Result := True;
+  finally
+    ProjectID := OldProjectID;
+    ProjectName := OldProjectName;
+  end;
+end;
+
+// projectrevs: revision of each module of a project in one state, as the tabs of the standalone
+// Synchronize/Restore (Syncronice.pas Reload_Project, Reload_Labeled, Reload_Version, Reload_Rollback):
+//   latest   GET_LATEST_REVISIONS, label 0
+//   label=   GET_LATEST_REVISIONS filtered by the label
+//   version= GET_VERSION_REVISION: n -> revision -1 (newest revision of version n of each module);
+//            n.m -> exactly n.m (the standalone tab always sends both)
+//   date=    GET_ROLLBACK_REVISIONS, local time -> GMT (as Reload_Rollback). Per module the server returns
+//            the newest revision (by revision ID) whose members ALL have blobs.origtime <= date: the file
+//            date sent at check-in, not the check-in time (table revision has no date).
+// One answer item per family member; name and path only with the first member. GET_VERSION_REVISION
+// sorts by module NAME, not ID: modules with the same name in different folders can interleave and come
+// twice. Rows are grouped by module ID over the whole answer, keeping the first revision seen of each
+// module (the newest) and only its members. Project membership and hidden flag are the current ones.
+function CmdProcProjectRevs(const Line: string; var ExtExitCode: Integer): Boolean;
+type
+  TPRevKind = (prkLatest, prkLabel, prkVersion, prkDate);
+  TPRevRow = record
+    ModuleID, RevisionID, Version, Revision: Integer;
+    Stamp: TDateTime;
+    Exts, Name, Path: string;
+  end;
+var
+  Count, I, P, LabelID, WantVer, WantRev, Ignored: Integer;
+  S, Sel, LabelName, StateText: string;
+  Kind: TPRevKind;
+  InclHidden: Boolean;
+  RollbackLocal: TDateTime;
+  Rows: array of TPRevRow;
+  GetLatestRevisions: TJVCSGetLatestRevisions;
+  GetVersionRevision: TJVCSGetVersionRevision;
+  GetRollbackRevisions: TJVCSGetRollbackRevisions;
+  LItem: TGetLatestRevisionsOutputItem;
+  VItem: TGetVersionRevisionOutputItem;
+  RItem: TGetRollbackRevisionsOutputItem;
+
+  procedure AddMember(AModuleID, ARevisionID, AVersion, ARevision: Integer; AStamp: TDateTime;
+    const AExt, AName, APath: string);
+  var
+    X, K: Integer;
+  begin
+    K := -1;
+    for X := 0 to High(Rows) do
+      if Rows[X].ModuleID = AModuleID then
+      begin
+        K := X;
+        Break;
+      end;
+    if K < 0 then
+    begin
+      K := Length(Rows);
+      SetLength(Rows, K + 1);
+      Rows[K].ModuleID := AModuleID;
+      Rows[K].RevisionID := ARevisionID;
+      Rows[K].Version := AVersion;
+      Rows[K].Revision := ARevision;
+      Rows[K].Stamp := AStamp;
+      Rows[K].Exts := AExt;
+      Rows[K].Name := AName;
+      Rows[K].Path := APath;
+    end
+    else
+    if Rows[K].RevisionID <> ARevisionID then
+      Inc(Ignored) // older revision of a module interleaved with another one of the same name
+    else
+    begin
+      if Pos(',' + AnsiLowerCase(AExt) + ',', ',' + AnsiLowerCase(Rows[K].Exts) + ',') = 0 then
+        Rows[K].Exts := Rows[K].Exts + ',' + AExt;
+      if AStamp > Rows[K].Stamp then
+        Rows[K].Stamp := AStamp;
+      if (Rows[K].Name = '') and (AName <> '') then
+      begin
+        Rows[K].Name := AName;
+        Rows[K].Path := APath;
+      end;
+    end;
+  end;
+
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [3, 4]) then
+    Exit;
+  InclHidden := False;
+  if Count = 4 then
+  begin
+    if AnsiCompareText(LineParamStr(Line, 4), 'includehidden') <> 0 then
+      Exit;
+    InclHidden := True;
+  end;
+  Sel := LineParamStr(Line, 3);
+  LabelID := 0;
+  LabelName := '';
+  WantVer := -1;
+  WantRev := -1;
+  RollbackLocal := 0;
+  if AnsiCompareText(Sel, 'latest') = 0 then
+    Kind := prkLatest
+  else
+  if Pos('label=', AnsiLowerCase(Sel)) = 1 then
+  begin
+    if Trim(Copy(Sel, 7, MaxInt)) = '' then
+      Exit;
+    Kind := prkLabel;
+  end
+  else
+  if Pos('version=', AnsiLowerCase(Sel)) = 1 then
+  begin
+    Kind := prkVersion;
+    S := Copy(Sel, 9, MaxInt);
+    P := Pos('.', S);
+    if P = 0 then
+      WantVer := StrToIntDef(S, -1)
+    else
+    begin
+      WantVer := StrToIntDef(Copy(S, 1, P - 1), -1);
+      WantRev := StrToIntDef(Copy(S, P + 1, MaxInt), -1);
+      if WantRev < 0 then
+        WantVer := -1;
+    end;
+    if WantVer < 0 then
+      raise Exception.CreateFmt('Invalid version in ''%s'' (use version=n or version=n.m)', [Sel]);
+  end
+  else
+  if Pos('date=', AnsiLowerCase(Sel)) = 1 then
+  begin
+    Kind := prkDate;
+    if not ParseProjectLogSince(Copy(Sel, 6, MaxInt), RollbackLocal) then
+      raise Exception.CreateFmt('Invalid date in ''%s'' (use date=yyyy-mm-dd or date=yyyy-mm-ddThh:nn[:ss], local time)', [Sel]);
+  end
+  else
+    Exit;
+
+  S := LineParamStr(Line, 2);
+  ProjectID := StrToIntDef(S, -1);
+  if ProjectID = -1 then
+    ProjectName := S
+  else
+    ProjectName := '';
+  CheckOpenProject;
+  if Kind = prkLabel then
+    LabelID := ResolveLabel(Copy(Sel, 7, MaxInt), LabelName);
+
+  SetLength(Rows, 0);
+  Ignored := 0;
+  case Kind of
+    prkLatest, prkLabel:
+      begin
+        GetLatestRevisions := TJVCSGetLatestRevisions.Create(nil);
+        try
+          GetLatestRevisions.ProjectID := ProjectID;
+          GetLatestRevisions.ExcludeHiddenModules := not InclHidden;
+          GetLatestRevisions.LabelID := LabelID;
+          Connection.SendRequest(GetLatestRevisions);
+          ShowLog(GetLatestRevisions);
+          for I := 0 to GetLatestRevisions.OutputItemCount - 1 do
+          begin
+            LItem := GetLatestRevisions.OutputItems[I];
+            AddMember(LItem.ModuleID, LItem.RevisionID, LItem.Version, LItem.Revision, LItem.RevisionTimestamp,
+              string(LItem.RevisionExtension), string(LItem.ModuleName), string(LItem.ModulePath));
+          end;
+        finally
+          GetLatestRevisions.Free;
+        end;
+      end;
+    prkVersion:
+      begin
+        GetVersionRevision := TJVCSGetVersionRevision.Create(nil);
+        try
+          GetVersionRevision.ProjectID := ProjectID;
+          GetVersionRevision.ExcludeHiddenModules := not InclHidden;
+          GetVersionRevision.Version := WantVer;
+          GetVersionRevision.Revision := WantRev; // -1: newest revision of the version
+          Connection.SendRequest(GetVersionRevision);
+          ShowLog(GetVersionRevision);
+          for I := 0 to GetVersionRevision.OutputItemCount - 1 do
+          begin
+            VItem := GetVersionRevision.OutputItems[I];
+            AddMember(VItem.ModuleID, VItem.RevisionID, VItem.Version, VItem.Revision, VItem.RevisionTimestamp,
+              string(VItem.RevisionExtension), string(VItem.ModuleName), string(VItem.ModulePath));
+          end;
+        finally
+          GetVersionRevision.Free;
+        end;
+      end;
+    prkDate:
+      begin
+        GetRollbackRevisions := TJVCSGetRollbackRevisions.Create(nil);
+        try
+          GetRollbackRevisions.ProjectID := ProjectID;
+          GetRollbackRevisions.ExcludeHiddenModules := not InclHidden;
+          GetRollbackRevisions.RollbackDate := LocalDT2GMTDT(RollbackLocal);
+          Connection.SendRequest(GetRollbackRevisions);
+          ShowLog(GetRollbackRevisions);
+          for I := 0 to GetRollbackRevisions.OutputItemCount - 1 do
+          begin
+            RItem := GetRollbackRevisions.OutputItems[I];
+            AddMember(RItem.ModuleID, RItem.RevisionID, RItem.Version, RItem.Revision, RItem.RevisionTimestamp,
+              string(RItem.RevisionExtension), string(RItem.ModuleName), string(RItem.ModulePath));
+          end;
+        finally
+          GetRollbackRevisions.Free;
+        end;
+      end;
+  end;
+
+  case Kind of
+    prkLatest:
+      StateText := 'latest';
+    prkLabel:
+      StateText := Format('label %s (ID %d)', [EscapeHistoryComment(LabelName), LabelID]);
+    prkVersion:
+      begin
+        if WantRev < 0 then
+          StateText := Format('version %d', [WantVer])
+        else
+          StateText := Format('version %d.%d', [WantVer, WantRev]);
+      end;
+  else
+    StateText := 'date ' + FormatDateTime('yyyy-mm-dd hh:nn:ss', RollbackLocal);
+  end;
+  Writeln('Project: ', EscapeHistoryComment(ProjectName), ' (ID ', ProjectID, ')');
+  Writeln('State: ', StateText);
+  if InclHidden then
+    Writeln('Hidden modules: included')
+  else
+    Writeln('Hidden modules: excluded');
+  Writeln;
+  Write(StrAlign('ID', 8), ' ');
+  Write(StrAlign('Version', 7), ' ');
+  Write(StrAlign('RevID', 8), ' ');
+  Write(StrAlign('File date', 19), ' ');
+  Write(StrAlign('Files', 30), ' ');
+  Writeln('Path|Name');
+  Write(StringOfChar('=', 8), ' ');
+  Write(StringOfChar('=', 7), ' ');
+  Write(StringOfChar('=', 8), ' ');
+  Write(StringOfChar('=', 19), ' ');
+  Write(StringOfChar('=', 30), ' ');
+  Writeln(StringOfChar('=', 9));
+  for I := 0 to High(Rows) do
+  begin
+    Write(StrAlign(IntToStr(Rows[I].ModuleID), 8), ' ');
+    Write(StrAlign(Format('%d.%d', [Rows[I].Version, Rows[I].Revision]), 7), ' ');
+    Write(StrAlign(IntToStr(Rows[I].RevisionID), 8), ' ');
+    if Rows[I].Stamp > 0 then
+      Write(StrAlign(FormatDateTime('yyyy-mm-dd hh:nn:ss', GMTDT2LocalDT(Rows[I].Stamp)), 19), ' ')
+    else
+      Write(StrAlign('', 19), ' ');
+    Write(StrAlign(Rows[I].Exts, 30), ' ');
+    // server text: escaped so that it never breaks the line (backslash as \\, line breaks as \n)
+    Writeln(EscapeHistoryComment(Trim(Rows[I].Path) + '|' + Trim(Rows[I].Name)));
+  end;
+  Writeln;
+  if Ignored > 0 then
+    Writeln('Ignored: ', Ignored, ' answer row(s) of older revisions (modules with the same name)');
+  Writeln(Length(Rows), ' module(s)');
+  Result := True;
+end;
+
+// SEARCH_MODULES: one row per module x project. The server returns the name in
+// lower case and only modules assigned to some project (join with pjmodule).
+function CmdProcSearchModules(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  I: Integer;
+  Mask: string;
+  SearchModules: TJVCSSearchModules;
+  Item: TSearchModulesOutputItem;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 2 then
+    Exit;
+  Mask := Trim(LineParamStr(Line, 2));
+  if Mask = '' then
+    Exit;
+  if Length(Mask) > 255 then
+    raise Exception.Create('Mask longer than 255 characters');
+  SearchModules := TJVCSSearchModules.Create(nil);
+  try
+    SearchModules.MaskString := JVCSString255(AnsiString(Mask));
+    Connection.SendRequest(SearchModules);
+    ShowLog(SearchModules);
+    Writeln('Mask: ', Mask);
+    Writeln;
+    Write(StrAlign('ID', 8), ' ');
+    Write(StrAlign('Project', 50), ' ');
+    Writeln('Path|Name');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 50), ' ');
+    Writeln(StringOfChar('=', 9));
+    for I := 0 to SearchModules.OutputItemCount - 1 do
+    begin
+      Item := SearchModules.OutputItems[I];
+      Write(StrAlign(IntToStr(Item.ModuleID), 8), ' ');
+      Write(StrAlign(string(Item.AssignedToProject), 50), ' ');
+      // file names cannot contain '|' or control chars: printed as is
+      Writeln(string(Item.Path), '|', string(Item.ModuleName));
+    end;
+    Writeln;
+    Writeln(SearchModules.OutputItemCount, ' item(s)');
+    Result := True;
+  finally
+    SearchModules.Free;
+  end;
+end;
+
+// Comment search over GET_MODULE_HISTORY of each module of a project (the 2.5
+// server has no project-scoped comment search; SEARCH_REVISIONS_BY_COMMENT is
+// optional (NEWOBJECTS), case-sensitive and returns no date/user).
+// The project of this command does not stay "open" for the next lines of /input
+// (as projectlog). Hidden modules included. The time is the one history shows.
+function CmdProcSearchComments(const Line: string; var ExtExitCode: Integer): Boolean;
+const
+  DefaultMaxModules = 300;
+var
+  Count, I, J, MaxModules, Scanned, Hits, ModuleHits, LastRevID, OldProjectID: Integer;
+  S, SearchText, Needle, OldProjectName: string;
+  GetProjectModuleList: TJVCSGetProjectModuleList;
+  GetModuleHistory: TJVCSGetModuleHistory;
+  Item: TGetModuleHistoryOutputItem;
+  ModItem: TGetProjectModuleListOutputItem;
+
+  procedure CheckRevision(const Row: TGetModuleHistoryOutputItem);
+  var
+    Hit, Shown: string;
+  begin
+    Hit := '';
+    if (Row.CheckinComment <> '') and (AnsiPos(Needle, AnsiUpperCase(Row.CheckinComment)) > 0) then
+      Hit := 'I';
+    if (Row.CheckoutComment <> '') and (AnsiPos(Needle, AnsiUpperCase(Row.CheckoutComment)) > 0) then
+      Hit := Hit + 'O';
+    if Hit = '' then
+      Exit;
+    if ModuleHits = 0 then
+      Writeln('Module: ', ModItem.ModuleID, ' ', string(ModItem.ModulePath), string(ModItem.ModuleName));
+    Inc(ModuleHits);
+    Inc(Hits);
+    if Hit[1] = 'I' then
+      Shown := Row.CheckinComment
+    else
+      Shown := Row.CheckoutComment;
+    Write(StrAlign(IntToStr(ModItem.ModuleID), 8), ' ');
+    Write(StrAlign(Format('%d.%d', [Row.Version, Row.Revision]), 7), ' ');
+    Write(StrAlign(IntToStr(Row.RevisionID), 8), ' ');
+    Write(StrAlign(FormatDateTime('yyyy-mm-dd hh:nn:ss', GMTDT2LocalDT(Row.Timestamp)), 19), ' ');
+    Write(StrAlign(string(Row.UserName), 20), ' ');
+    Write(StrAlign(Hit, 3), ' ');
+    Writeln(EscapeHistoryComment(Shown));
+  end;
+
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [3, 4]) then
+    Exit;
+  SearchText := Trim(LineParamStr(Line, 2));
+  if Length(SearchText) < 2 then
+    Exit;
+  MaxModules := DefaultMaxModules;
+  if Count = 4 then
+  begin
+    S := LineParamStr(Line, 4);
+    if AnsiCompareText(Copy(S, 1, 11), 'maxmodules=') <> 0 then
+      Exit;
+    MaxModules := StrToIntDef(Copy(S, 12, MaxInt), -1);
+    if MaxModules < 1 then
+      Exit;
+  end;
+  OldProjectID := ProjectID;
+  OldProjectName := ProjectName;
+  try
+    // an ID clears a stale name (as listproject/openproject)
+    S := LineParamStr(Line, 3);
+    ProjectID := StrToIntDef(S, -1);
+    if ProjectID = -1 then
+    begin
+      ProjectID := 0;
+      ProjectName := S;
+    end
+    else
+      ProjectName := '';
+    CheckOpenProject;
+    Needle := AnsiUpperCase(SearchText);
+    GetProjectModuleList := TJVCSGetProjectModuleList.Create(nil);
+    try
+      GetProjectModuleList.ProjectID := ProjectID;
+      GetProjectModuleList.ExcludeHiddenModules := False;
+      Connection.SendRequest(GetProjectModuleList);
+      ShowLog(GetProjectModuleList);
+      Writeln('Project: ', ProjectName, ' (ID ', ProjectID, ')');
+      Writeln('Text: ', EscapeHistoryComment(SearchText));
+      Writeln;
+      Write(StrAlign('ModID', 8), ' ');
+      Write(StrAlign('Version', 7), ' ');
+      Write(StrAlign('RevID', 8), ' ');
+      Write(StrAlign('Checked in', 19), ' ');
+      Write(StrAlign('User', 20), ' ');
+      Write(StrAlign('Hit', 3), ' ');
+      Writeln('Comment');
+      Write(StringOfChar('=', 8), ' ');
+      Write(StringOfChar('=', 7), ' ');
+      Write(StringOfChar('=', 8), ' ');
+      Write(StringOfChar('=', 19), ' ');
+      Write(StringOfChar('=', 20), ' ');
+      Write(StringOfChar('=', 3), ' ');
+      Writeln(StringOfChar('=', 7));
+      Hits := 0;
+      Scanned := 0;
+      for I := 0 to GetProjectModuleList.OutputItemCount - 1 do
+      begin
+        if Scanned >= MaxModules then
+          Break;
+        ModItem := GetProjectModuleList.OutputItems[I];
+        Inc(Scanned);
+        ModuleHits := 0;
+        GetModuleHistory := TJVCSGetModuleHistory.Create(nil);
+        try
+          GetModuleHistory.ModuleID := ModItem.ModuleID;
+          Connection.SendRequest(GetModuleHistory);
+          ShowLog(GetModuleHistory);
+          // one item per family member; user and comments only on the first
+          // member of each revision (as History.pas / CmdProcHistory read)
+          LastRevID := -1;
+          for J := 0 to GetModuleHistory.OutputItemCount - 1 do
+          begin
+            Item := GetModuleHistory.OutputItems[J];
+            if Item.RevisionID <> LastRevID then
+            begin
+              LastRevID := Item.RevisionID;
+              CheckRevision(Item);
+            end;
+          end;
+        finally
+          GetModuleHistory.Free;
+        end;
+      end;
+      Writeln;
+      Writeln(Format('Scanned %d of %d module(s), %d revision(s) found',
+        [Scanned, GetProjectModuleList.OutputItemCount, Hits]));
+      Result := True;
+    finally
+      GetProjectModuleList.Free;
+    end;
+  finally
+    ProjectID := OldProjectID;
+    ProjectName := OldProjectName;
+  end;
+end;
+
+// ----- ToDo and milestones (listtodo, addtodo, donetodo, listmilestones) -----
+
+// Server text printed in a fixed column: control characters -> space (one line per row,
+// so no value can start a fake 'jvcs> ' or '[Exception]' line).
+function internOneLine(const S: string): string;
+var
+  I: Integer;
+begin
+  Result := S;
+  for I := 1 to Length(Result) do
+    if (Result[I] < ' ') or (Result[I] = #127) then
+      Result[I] := ' ';
+end;
+
+// 'key=value' (key case-insensitive). True and Value when S starts with Key + '='.
+function internKeyValue(const S, Key: string; var Value: string): Boolean;
+begin
+  Result := SameText(Copy(S, 1, Length(Key) + 1), Key + '=');
+  if Result then
+    Value := Copy(S, Length(Key) + 2, MaxInt);
+end;
+
+// yyyy-mm-dd (local date, 00:00) -> TDateTime. False if invalid.
+function internParseDate(const S: string; var ADate: TDateTime): Boolean;
+var
+  Y, M, D: Integer;
+begin
+  Result := (Length(S) = 10) and (S[5] = '-') and (S[8] = '-') and
+    TryStrToInt(Copy(S, 1, 4), Y) and TryStrToInt(Copy(S, 6, 2), M) and
+    TryStrToInt(Copy(S, 9, 2), D) and (Y >= 1900) and (Y <= 9999) and
+    (M >= 1) and (M <= 12) and (D >= 1) and (D <= 31) and
+    TryEncodeDate(Y, M, D, ADate);
+end;
+
+// GMT TDateTime from the server -> 'yyyy-mm-dd hh:nn:ss' local; '' when not set (0).
+function internFmtGMTDate(DT: TDateTime): string;
+begin
+  if DT > 1 then
+    Result := FormatDateTime('yyyy-mm-dd hh:nn:ss', GMTDT2LocalDT(DT))
+  else
+    Result := '';
+end;
+
+// Login -> user ID ('me' = connected user). Exact match first; a case-insensitive
+// match only when it is unique. Raises SUserNotFound / ambiguous.
+function internFindUserID(const AName: string; AllowDeleted: Boolean): Integer;
+var
+  GetUsers: TJVCSGetUsers;
+  I, CIMatches, CIID: Integer;
+begin
+  if SameText(AName, 'me') then
+  begin
+    Result := Connection.UserID;
+    Exit;
+  end;
+  Result := -1;
+  CIMatches := 0;
+  CIID := -1;
+  GetUsers := TJVCSGetUsers.Create(nil);
+  try
+    Connection.SendRequest(GetUsers);
+    ShowLog(GetUsers);
+    for I := 0 to GetUsers.OutputItemCount - 1 do
+      if AllowDeleted or not GetUsers.OutputItems[I].UserDeleted then
+      begin
+        if AnsiCompareStr(AName, string(GetUsers.OutputItems[I].UserName)) = 0 then
+        begin
+          Result := GetUsers.OutputItems[I].UserID;
+          Break;
+        end;
+        if AnsiCompareText(AName, string(GetUsers.OutputItems[I].UserName)) = 0 then
+        begin
+          Inc(CIMatches);
+          CIID := GetUsers.OutputItems[I].UserID;
+        end;
+      end;
+  finally
+    GetUsers.Free;
+  end;
+  if Result = -1 then
+  begin
+    if CIMatches > 1 then
+      raise Exception.CreateFmt('User ''%s'' is ambiguous (differs only in case); use the exact login', [AName]);
+    if CIMatches = 1 then
+      Result := CIID;
+  end;
+  if Result = -1 then
+    raise Exception.CreateFmt(SUserNotFound, [AName]);
+end;
+
+// <project_name> | <project_id>: opens it like openproject (globals ProjectID/ProjectName).
+procedure internOpenProjectArg(const S: string);
+var
+  N: Integer;
+begin
+  N := StrToIntDef(S, -1);
+  if N > 0 then
+  begin
+    ProjectID := N;
+    ProjectName := '';
+  end
+  else
+  begin
+    ProjectID := 0;
+    ProjectName := S;
+  end;
+  CheckOpenProject;
+end;
+
+procedure internWriteTodoHeader;
+begin
+  Write(StrAlign('ID', 8), ' ');
+  Write(StrAlign('Pri', 3), ' ');
+  Write(StrAlign('Stat', 4), ' ');
+  Write(StrAlign('Changed', 19), ' ');
+  Write(StrAlign('Target', 19), ' ');
+  Write(StrAlign('Done', 19), ' ');
+  Write(StrAlign('Responsible', 20), ' ');
+  Write(StrAlign('Project', 50), ' ');
+  Write(StrAlign('Category', 50), ' ');
+  Writeln('Description');
+  Write(StringOfChar('=', 8), ' ');
+  Write(StringOfChar('=', 3), ' ');
+  Write(StringOfChar('=', 4), ' ');
+  Write(StringOfChar('=', 19), ' ');
+  Write(StringOfChar('=', 19), ' ');
+  Write(StringOfChar('=', 19), ' ');
+  Write(StringOfChar('=', 20), ' ');
+  Write(StringOfChar('=', 50), ' ');
+  Write(StringOfChar('=', 50), ' ');
+  Writeln(StringOfChar('=', 11));
+end;
+
+// ID(8)@0 Pri(3)@9 Stat(4)@13 Changed(19)@18 Target(19)@38 Done(19)@58 Responsible(20)@78
+// Project(50)@99 Category(50)@150 Description@201
+procedure internWriteTodoRow(const Row: TGetTodoEntriesOutputItem);
+const
+  StatText: array [Boolean] of string = ('open', 'done');
+begin
+  Write(StrAlign(IntToStr(Row.TodoID), 8), ' ');
+  Write(StrAlign(IntToStr(Row.Priority), 3), ' ');
+  Write(StrAlign(StatText[Row.DoneDate > 1], 4), ' ');
+  Write(StrAlign(internFmtGMTDate(Row.Timestamp), 19), ' ');
+  Write(StrAlign(internFmtGMTDate(Row.TargetDate), 19), ' ');
+  Write(StrAlign(internFmtGMTDate(Row.DoneDate), 19), ' ');
+  Write(StrAlign(internOneLine(string(Row.UserName)), 20), ' ');
+  Write(StrAlign(internOneLine(string(Row.ProjectName)), 50), ' ');
+  Write(StrAlign(internOneLine(string(Row.Category)), 50), ' ');
+  Writeln(EscapeHistoryComment(Row.Description));
+end;
+
+// One ToDo item (all users, all projects, done or not). False if not found
+// (items of deleted projects never come: the server joins projects.deleted = '0').
+function internFindTodo(ATodoID: Integer; var ARow: TGetTodoEntriesOutputItem): Boolean;
+var
+  GetTodoEntries: TJVCSGetTodoEntries;
+  I: Integer;
+begin
+  Result := False;
+  GetTodoEntries := TJVCSGetTodoEntries.Create(nil);
+  try
+    GetTodoEntries.UserID := 0;
+    GetTodoEntries.ProjectID := 0;
+    GetTodoEntries.Category := '';
+    GetTodoEntries.Priority := 0;
+    GetTodoEntries.NotDoneOnly := False;
+    GetTodoEntries.TargetDate := 0;
+    Connection.SendRequest(GetTodoEntries);
+    ShowLog(GetTodoEntries);
+    for I := 0 to GetTodoEntries.OutputItemCount - 1 do
+      if GetTodoEntries.OutputItems[I].TodoID = ATodoID then
+      begin
+        ARow := GetTodoEntries.OutputItems[I];
+        Result := True;
+        Break;
+      end;
+  finally
+    GetTodoEntries.Free;
+  end;
+end;
+
+function CmdProcListTodo(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I, FilterProjectID, FilterUserID, FilterPriority: Integer;
+  S, V, FilterCategory: string;
+  IncludeDone: Boolean;
+  DueDate: TDateTime;
+  GetTodoEntries: TJVCSGetTodoEntries;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  FilterProjectID := -1; // not given
+  FilterUserID := 0;
+  FilterPriority := 0;
+  FilterCategory := '';
+  IncludeDone := False;
+  DueDate := 0;
+  for I := 2 to Count do
+  begin
+    S := LineParamStr(Line, I);
+    if SameText(S, 'includedone') then
+      IncludeDone := True
+    else
+    if internKeyValue(S, 'project', V) then
+    begin
+      if SameText(V, 'all') then
+        FilterProjectID := 0
+      else
+      begin
+        internOpenProjectArg(V);
+        FilterProjectID := ProjectID;
+      end;
+    end
+    else
+    if internKeyValue(S, 'user', V) then
+    begin
+      if SameText(V, 'all') then
+        FilterUserID := 0
+      else
+        FilterUserID := internFindUserID(V, True);
+    end
+    else
+    if internKeyValue(S, 'category', V) then
+      FilterCategory := V
+    else
+    if internKeyValue(S, 'priority', V) then
+    begin
+      FilterPriority := StrToIntDef(V, -1);
+      if (FilterPriority < 1) or (FilterPriority > 9) then
+        Exit;
+    end
+    else
+    if internKeyValue(S, 'due', V) then
+    begin
+      if not internParseDate(V, DueDate) then
+        Exit;
+    end
+    else
+      Exit;
+  end;
+  if Length(FilterCategory) > 50 then
+    raise Exception.Create('Category too long (max. 50 characters)');
+  if FilterProjectID = -1 then
+  begin
+    if (ProjectID <> 0) or (ProjectName <> '') then
+    begin
+      CheckOpenProject;
+      FilterProjectID := ProjectID;
+    end
+    else
+      FilterProjectID := 0;
+  end;
+  GetTodoEntries := TJVCSGetTodoEntries.Create(nil);
+  try
+    GetTodoEntries.UserID := FilterUserID;
+    GetTodoEntries.ProjectID := FilterProjectID;
+    GetTodoEntries.Category := JVCSString50(AnsiString(FilterCategory));
+    GetTodoEntries.Priority := FilterPriority;
+    GetTodoEntries.NotDoneOnly := not IncludeDone;
+    // server: targetdate > 0 and targetdate < TargetDate (GMT) -> up to the end of that local day
+    if DueDate > 0 then
+      GetTodoEntries.TargetDate := LocalDT2GMTDT(DueDate + 1)
+    else
+      GetTodoEntries.TargetDate := 0;
+    Connection.SendRequest(GetTodoEntries);
+    ShowLog(GetTodoEntries);
+    if FilterProjectID > 0 then
+      Writeln('Project: ', internOneLine(ProjectName), ' (ID ', ProjectID, ')')
+    else
+      Writeln('Project: all');
+    Writeln;
+    internWriteTodoHeader;
+    for I := 0 to GetTodoEntries.OutputItemCount - 1 do
+      internWriteTodoRow(GetTodoEntries.OutputItems[I]);
+    Writeln;
+    Writeln(GetTodoEntries.OutputItemCount, ' item(s)');
+    Result := True;
+  finally
+    GetTodoEntries.Free;
+  end;
+end;
+
+function CmdProcAddTodo(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I, RespID, Priority, NewID: Integer;
+  S, V, Desc, Category: string;
+  DueDate: TDateTime;
+  NewRow: TGetTodoEntriesOutputItem;
+  AddUpdateTodo: TJVCSAddUpdateTodoEntries;
+  GetTodoEntries: TJVCSGetTodoEntries;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if Count < 3 then
+    Exit;
+  Desc := Trim(LineParamStr(Line, 3));
+  RespID := -1;
+  Priority := 3;
+  Category := '';
+  DueDate := 0;
+  for I := 4 to Count do
+  begin
+    S := LineParamStr(Line, I);
+    if internKeyValue(S, 'priority', V) then
+    begin
+      Priority := StrToIntDef(V, -1);
+      if (Priority < 1) or (Priority > 9) then
+        Exit;
+    end
+    else
+    if internKeyValue(S, 'category', V) then
+      Category := Trim(V)
+    else
+    if internKeyValue(S, 'user', V) then
+      RespID := internFindUserID(V, False)
+    else
+    if internKeyValue(S, 'due', V) then
+    begin
+      if not internParseDate(V, DueDate) then
+        Exit;
+    end
+    else
+      Exit;
+  end;
+  if Desc = '' then
+    Exit;
+  if Length(Desc) > 2000 then
+    raise Exception.Create('Description too long (max. 2000 characters)');
+  if Length(Category) > 50 then
+    raise Exception.Create('Category too long (max. 50 characters)');
+  if RespID = -1 then
+    RespID := Connection.UserID;
+  internOpenProjectArg(LineParamStr(Line, 2));
+  if DueDate > 0 then
+    DueDate := LocalDT2GMTDT(DueDate); // stored in GMT, like the standalone (ToDo.pas SaveChanges)
+  AddUpdateTodo := TJVCSAddUpdateTodoEntries.Create(nil);
+  try
+    AddUpdateTodo.AddInputItem(0, Connection.UserID, ProjectID, RespID, Priority, '',
+      Category, Desc, DueDate, 0);
+    Connection.SendRequest(AddUpdateTodo);
+    ShowLog(AddUpdateTodo);
+  finally
+    AddUpdateTodo.Free;
+  end;
+  // the server does not return the new ID: read it back (highest ID with this text)
+  NewID := 0;
+  GetTodoEntries := TJVCSGetTodoEntries.Create(nil);
+  try
+    GetTodoEntries.UserID := RespID;
+    GetTodoEntries.ProjectID := ProjectID;
+    GetTodoEntries.Category := JVCSString50(AnsiString(Category));
+    GetTodoEntries.Priority := Priority;
+    GetTodoEntries.NotDoneOnly := True;
+    GetTodoEntries.TargetDate := 0;
+    Connection.SendRequest(GetTodoEntries);
+    ShowLog(GetTodoEntries);
+    for I := 0 to GetTodoEntries.OutputItemCount - 1 do
+      if (Trim(GetTodoEntries.OutputItems[I].Description) = Desc) and
+        (GetTodoEntries.OutputItems[I].TodoID > NewID) then
+      begin
+        NewID := GetTodoEntries.OutputItems[I].TodoID;
+        NewRow := GetTodoEntries.OutputItems[I];
+      end;
+  finally
+    GetTodoEntries.Free;
+  end;
+  if NewID > 0 then
+  begin
+    Writeln('ToDo created: ', NewID, ' in project ', internOneLine(ProjectName), ' (ID ', ProjectID, ')');
+    Writeln;
+    internWriteTodoHeader;
+    internWriteTodoRow(NewRow);
+  end
+  else
+    Writeln('ToDo created, ID not confirmed (project ', internOneLine(ProjectName), ', ID ', ProjectID, ')');
+  Writeln;
+  Result := True;
+end;
+
+function CmdProcDoneTodo(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, TodoID, RespID: Integer;
+  Reopen: Boolean;
+  DoneDT: TDateTime;
+  Item: TGetTodoEntriesOutputItem;
+  AddUpdateTodo: TJVCSAddUpdateTodoEntries;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [2, 3]) then
+    Exit;
+  TodoID := StrToIntDef(LineParamStr(Line, 2), 0);
+  if TodoID <= 0 then
+    Exit;
+  Reopen := False;
+  if Count = 3 then
+  begin
+    if not SameText(LineParamStr(Line, 3), 'reopen') then
+      Exit;
+    Reopen := True;
+  end;
+  if not internFindTodo(TodoID, Item) then
+    raise Exception.CreateFmt('ToDo %d not found', [TodoID]);
+  if (Item.DoneDate > 1) <> Reopen then
+  begin
+    if Reopen then
+      Writeln('ToDo already open: ', TodoID)
+    else
+      Writeln('ToDo already done: ', TodoID);
+    Writeln;
+    internWriteTodoHeader;
+    internWriteTodoRow(Item);
+    Writeln;
+    Result := True;
+    Exit;
+  end;
+  // the update rewrites every field: never write back an invalid priority
+  // (NULL comes as -1; the standalone would then fail saving this item)
+  if (Item.Priority < 1) or (Item.Priority > 9) then
+    raise Exception.CreateFmt('ToDo %d has an invalid priority (%d); fix it in the standalone ToDo list', [TodoID, Item.Priority]);
+  // send back what was read (IDs from the names); opening the project also
+  // selects the transaction whose rights the server checks
+  ProjectID := 0;
+  ProjectName := string(Item.ProjectName);
+  CheckOpenProject;
+  RespID := internFindUserID(string(Item.UserName), True);
+  if Reopen then
+    DoneDT := 0
+  else
+    DoneDT := LocalDT2GMTDT(Now);
+  AddUpdateTodo := TJVCSAddUpdateTodoEntries.Create(nil);
+  try
+    // UserID = responsible, as the standalone sends (ToDo.pas SaveChanges)
+    AddUpdateTodo.AddInputItem(TodoID, RespID, ProjectID, RespID, Item.Priority, '',
+      string(Item.Category), Item.Description, Item.TargetDate, DoneDT);
+    Connection.SendRequest(AddUpdateTodo);
+    ShowLog(AddUpdateTodo);
+  finally
+    AddUpdateTodo.Free;
+  end;
+  // an UPDATE of a vanished ID still answers 200: always confirm by reading again
+  if not internFindTodo(TodoID, Item) then
+    raise Exception.CreateFmt('ToDo %d not found after update', [TodoID]);
+  if (Item.DoneDate > 1) = Reopen then
+    raise Exception.CreateFmt('ToDo %d was not updated by the server', [TodoID]);
+  if Reopen then
+    Writeln('ToDo reopened: ', TodoID)
+  else
+    Writeln('ToDo done: ', TodoID);
+  Writeln;
+  internWriteTodoHeader;
+  internWriteTodoRow(Item);
+  Writeln;
+  Result := True;
+end;
+
+function CmdProcListMilestones(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I, FilterProjectID: Integer;
+  S: string;
+  GetMilestones: TJVCSGetMilestones;
+  GetProjectMilestones: TJVCSGetProjectMilestones;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [1, 2]) then
+    Exit;
+  FilterProjectID := 0;
+  if Count = 2 then
+  begin
+    S := LineParamStr(Line, 2);
+    if not SameText(S, 'all') then
+    begin
+      internOpenProjectArg(S);
+      FilterProjectID := ProjectID;
+    end;
+  end
+  else
+  if (ProjectID <> 0) or (ProjectName <> '') then
+  begin
+    CheckOpenProject;
+    FilterProjectID := ProjectID;
+  end;
+  GetMilestones := TJVCSGetMilestones.Create(nil);
+  GetProjectMilestones := TJVCSGetProjectMilestones.Create(nil);
+  try
+    Connection.SendRequest(GetMilestones);
+    ShowLog(GetMilestones);
+    GetProjectMilestones.ProjectID := FilterProjectID;
+    Connection.SendRequest(GetProjectMilestones);
+    ShowLog(GetProjectMilestones);
+    if FilterProjectID > 0 then
+      Writeln('Project: ', internOneLine(ProjectName), ' (ID ', ProjectID, ')')
+    else
+      Writeln('Project: all');
+    Writeln;
+    // ID(8)@0 Order(5)@9 Name(50)@15 Description@66
+    Writeln('Defined milestones:');
+    Write(StrAlign('ID', 8), ' ');
+    Write(StrAlign('Order', 5), ' ');
+    Write(StrAlign('Name', 50), ' ');
+    Writeln('Description');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 5), ' ');
+    Write(StringOfChar('=', 50), ' ');
+    Writeln(StringOfChar('=', 11));
+    for I := 0 to GetMilestones.OutputItemCount - 1 do
+      with GetMilestones.OutputItems[I] do
+      begin
+        Write(StrAlign(IntToStr(MilestoneID), 8), ' ');
+        Write(StrAlign(IntToStr(Milestone), 5), ' ');
+        Write(StrAlign(internOneLine(string(MilestoneName)), 50), ' ');
+        Writeln(EscapeHistoryComment(Description));
+      end;
+    Writeln;
+    // Project(8)@0 MstoneID(8)@9 Order(5)@18 Reached(19)@24 Confirmed by(20)@44 Name(50)@65 Description@116
+    Writeln('Reached milestones:');
+    Write(StrAlign('Project', 8), ' ');
+    Write(StrAlign('MstoneID', 8), ' ');
+    Write(StrAlign('Order', 5), ' ');
+    Write(StrAlign('Reached', 19), ' ');
+    Write(StrAlign('Confirmed by', 20), ' ');
+    Write(StrAlign('Name', 50), ' ');
+    Writeln('Description');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 5), ' ');
+    Write(StringOfChar('=', 19), ' ');
+    Write(StringOfChar('=', 20), ' ');
+    Write(StringOfChar('=', 50), ' ');
+    Writeln(StringOfChar('=', 11));
+    // inside the 'with', ProjectID is the record field (it wins over the global), as intended
+    for I := 0 to GetProjectMilestones.OutputItemCount - 1 do
+      with GetProjectMilestones.OutputItems[I] do
+      begin
+        Write(StrAlign(IntToStr(ProjectID), 8), ' ');
+        Write(StrAlign(IntToStr(MilestoneID), 8), ' ');
+        Write(StrAlign(IntToStr(Milestone), 5), ' ');
+        Write(StrAlign(internFmtGMTDate(ReachedTime), 19), ' ');
+        Write(StrAlign(internOneLine(string(ConfirmedBy)), 20), ' ');
+        Write(StrAlign(internOneLine(string(MilestoneName)), 50), ' ');
+        Writeln(EscapeHistoryComment(Description));
+      end;
+    Writeln;
+    Writeln(GetMilestones.OutputItemCount, ' milestone(s), ', GetProjectMilestones.OutputItemCount, ' reached');
+    Result := True;
+  finally
+    GetProjectMilestones.Free;
+    GetMilestones.Free;
+  end;
+end;
+
+//=== Bugs (console 2026) =====================================================
+
+type
+  TBugEdit = record
+    HasName, HasSeverity, HasStatus, HasKeywords, HasReportedBy,
+    HasDescription, HasWorkaround: Boolean;
+    Name, Keywords, ReportedBy, Description, Workaround: string;
+    Severity, Status: Integer;
+  end;
+
+const
+  BugNameMax = 250;
+  BugKeywordsMax = 250;
+  BugTextMax = 2000;
+  BugTextFileMaxBytes = 16384;
+  BugOptionKeys: array [0..8] of string = ('name', 'severity', 'status', 'keywords', 'reportedby',
+    'description', 'descriptionfile', 'workaround', 'workaroundfile');
+
+function internIsBugOptionKey(const S: string): Boolean;
+var
+  I: Integer;
+begin
+  Result := False;
+  for I := Low(BugOptionKeys) to High(BugOptionKeys) do
+    if SameText(S, BugOptionKeys[I]) then
+    begin
+      Result := True;
+      Break;
+    end;
+end;
+
+function internBugCode(const Value, What: string): Integer;
+begin
+  Result := StrToIntDef(Trim(Value), -1);
+  if (Result < 0) or (Result > 4) then
+    raise Exception.CreateFmt('Invalid %s ''%s'' (use 0..4)', [What, Value]);
+end;
+
+// Texts compared after a round trip through the server (line breaks and trailing blanks ignored).
+function internSameBugText(const A, B: string): Boolean;
+begin
+  Result := TrimRight(AdjustLineBreaks(A, tlbsCRLF)) = TrimRight(AdjustLineBreaks(B, tlbsCRLF));
+end;
+
+// Text for description/workaround from a file in code page 1252 (texts with quotes or line
+// breaks cannot go on a command line). No BOM, no control characters except TAB/CR/LF.
+function internReadBugTextFile(const FileName: string): string;
+var
+  FullName: string;
+  FS: TFileStream;
+  Bytes: TBytes;
+  Enc: TEncoding;
+  I: Integer;
+begin
+  FullName := ExpandFileName(FileName);
+  if not FileExists(FullName) then
+    raise Exception.CreateFmt('Text file not found: %s', [FullName]);
+  FS := TFileStream.Create(FullName, fmOpenRead or fmShareDenyWrite);
+  try
+    if FS.Size > BugTextFileMaxBytes then
+      raise Exception.CreateFmt('Text file too big (max. %d bytes): %s', [BugTextFileMaxBytes, FullName]);
+    SetLength(Bytes, FS.Size);
+    if FS.Size > 0 then
+      FS.ReadBuffer(Bytes[0], FS.Size);
+  finally
+    FS.Free;
+  end;
+  if (Length(Bytes) >= 3) and (Bytes[0] = $EF) and (Bytes[1] = $BB) and (Bytes[2] = $BF) then
+    raise Exception.CreateFmt('Text file must be code page 1252, not UTF-8: %s', [FullName]);
+  Enc := TEncoding.GetEncoding(1252);
+  try
+    Result := Enc.GetString(Bytes);
+  finally
+    Enc.Free;
+  end;
+  // C0 controls (except TAB/CR/LF), DEL and C1 (bytes undefined in code page 1252 decode to U+0081..U+009D).
+  // Compared by Ord: with HIGHCHARUNICODE off, the literal #$9F would be the ANSI char (U+0178).
+  for I := 1 to Length(Result) do
+    if ((Result[I] < ' ') and not CharInSet(Result[I], [#9, #10, #13])) or
+      ((Ord(Result[I]) >= $7F) and (Ord(Result[I]) <= $9F)) then
+      raise Exception.CreateFmt('Text file with control character #%d: %s', [Ord(Result[I]), FullName]);
+  Result := AdjustLineBreaks(Result, tlbsCRLF);
+  while (Result <> '') and CharInSet(Result[Length(Result)], [#10, #13]) do
+    SetLength(Result, Length(Result) - 1);
+end;
+
+procedure internParseBugOptions(const Line: string; FirstIndex: Integer; var E: TBugEdit);
+var
+  I, P: Integer;
+  S, Key, Value: string;
+  procedure CheckTwice(AlreadySet: Boolean);
+  begin
+    if AlreadySet then
+      raise Exception.CreateFmt('Option ''%s'' given twice', [Key]);
+  end;
+begin
+  for I := FirstIndex to LineParamCount(Line) do
+  begin
+    S := LineParamStr(Line, I);
+    P := Pos('=', S);
+    if P < 2 then
+      raise Exception.CreateFmt('Invalid option ''%s'' (use key=value)', [S]);
+    Key := LowerCase(Copy(S, 1, P - 1));
+    Value := Copy(S, P + 1, MaxInt);
+    if Key = 'name' then
+    begin
+      CheckTwice(E.HasName);
+      E.HasName := True;
+      E.Name := Trim(Value);
+    end
+    else
+    if Key = 'severity' then
+    begin
+      CheckTwice(E.HasSeverity);
+      E.HasSeverity := True;
+      E.Severity := internBugCode(Value, 'severity');
+    end
+    else
+    if Key = 'status' then
+    begin
+      CheckTwice(E.HasStatus);
+      E.HasStatus := True;
+      E.Status := internBugCode(Value, 'status');
+    end
+    else
+    if Key = 'keywords' then
+    begin
+      CheckTwice(E.HasKeywords);
+      E.HasKeywords := True;
+      E.Keywords := Trim(Value);
+    end
+    else
+    if Key = 'reportedby' then
+    begin
+      CheckTwice(E.HasReportedBy);
+      E.HasReportedBy := True;
+      E.ReportedBy := Trim(Value);
+    end
+    else
+    if (Key = 'description') or (Key = 'descriptionfile') then
+    begin
+      CheckTwice(E.HasDescription);
+      E.HasDescription := True;
+      if Key = 'description' then
+        E.Description := Value
+      else
+        E.Description := internReadBugTextFile(Value);
+    end
+    else
+    if (Key = 'workaround') or (Key = 'workaroundfile') then
+    begin
+      CheckTwice(E.HasWorkaround);
+      E.HasWorkaround := True;
+      if Key = 'workaround' then
+        E.Workaround := Value
+      else
+        E.Workaround := internReadBugTextFile(Value);
+    end
+    else
+      raise Exception.CreateFmt('Unknown option ''%s''', [Key]);
+  end;
+end;
+
+// Limits of the server columns (SrvOBJBugTrack.pas: bug 250, keywords 250, texts 2000).
+// BugName/Keywords are string[250] in JVCSClientObj and would be cut silently.
+procedure internCheckBugTexts(const AName, AKeywords, AReportedBy, ADescription, AWorkaround: string);
+begin
+  if AName = '' then
+    raise Exception.Create('Bug name is empty');
+  if Length(AName) > BugNameMax then
+    raise Exception.CreateFmt('Bug name too long (max. %d characters)', [BugNameMax]);
+  if Length(AKeywords) > BugKeywordsMax then
+    raise Exception.CreateFmt('Keywords too long (max. %d characters)', [BugKeywordsMax]);
+  if Length(AReportedBy) > BugTextMax then
+    raise Exception.CreateFmt('Reported by too long (max. %d characters)', [BugTextMax]);
+  if Length(ADescription) > BugTextMax then
+    raise Exception.CreateFmt('Description too long (max. %d characters)', [BugTextMax]);
+  if Length(AWorkaround) > BugTextMax then
+    raise Exception.CreateFmt('Workaround too long (max. %d characters)', [BugTextMax]);
+end;
+
+// Module by name or ID without leaving the globals set (as CmdProcHistory).
+function internResolveBugModule(const S: string; out AName: string): Integer;
+begin
+  ModuleID := StrToIntDef(S, -1);
+  ModuleName := '';
+  if ModuleID = -1 then
+    ModuleName := S;
+  try
+    CheckModuleOrLocalFile;
+    Result := ModuleID;
+    AName := ModuleName;
+  finally
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+// Project by name or ID; the open project (globals) is kept.
+function internResolveBugProject(const S: string; out AName: string): Integer;
+var
+  SaveID: Integer;
+  SaveName: string;
+begin
+  SaveID := ProjectID;
+  SaveName := ProjectName;
+  try
+    ProjectID := StrToIntDef(S, 0);
+    ProjectName := '';
+    if ProjectID = 0 then
+      ProjectName := S;
+    CheckOpenProject;
+    Result := ProjectID;
+    AName := ProjectName;
+  finally
+    ProjectID := SaveID;
+    ProjectName := SaveName;
+  end;
+end;
+
+function internGetAllBugs: TJVCSGetBugs;
+begin
+  Result := TJVCSGetBugs.Create(nil);
+  try
+    Result.IncludeDescription := True;
+    Connection.SendRequest(Result);
+    ShowLog(Result);
+  except
+    Result.Free;
+    raise;
+  end;
+end;
+
+function internFindBug(GetBugs: TJVCSGetBugs; ABugID: Integer): Integer;
+var
+  I: Integer;
+begin
+  Result := -1;
+  for I := 0 to GetBugs.OutputItemCount - 1 do
+    if GetBugs.OutputItems[I].BugID = ABugID then
+    begin
+      Result := I;
+      Break;
+    end;
+end;
+
+// The server compares names with '=' (case sensitive in Firebird); the standalone treats
+// BUG1 and bug1 as equal, so the console refuses both (also for accented letters).
+function internFindBugByName(GetBugs: TJVCSGetBugs; const AName: string; AExceptID: Integer): Integer;
+var
+  I: Integer;
+begin
+  Result := -1;
+  for I := 0 to GetBugs.OutputItemCount - 1 do
+    if (GetBugs.OutputItems[I].BugID <> AExceptID) and
+      AnsiSameText(Trim(string(GetBugs.OutputItems[I].BugName)), AName) then
+    begin
+      Result := I;
+      Break;
+    end;
+end;
+
+// User list only to show names; without it the creator is shown as #<user_id>.
+function internGetUsersSafe: TJVCSGetUsers;
+begin
+  Result := TJVCSGetUsers.Create(nil);
+  try
+    Connection.SendRequest(Result);
+    ShowLog(Result);
+  except
+    FreeAndNil(Result);
+  end;
+end;
+
+// GET_BUGS returns in CreatedBy the user ID (the server stores createdby = AccessID).
+function internBugCreator(GetUsers: TJVCSGetUsers; const CreatedBy: string): string;
+var
+  I, UID: Integer;
+begin
+  Result := Trim(CreatedBy);
+  UID := StrToIntDef(Result, -1);
+  if UID < 0 then
+    Exit;
+  Result := '#' + IntToStr(UID);
+  if Assigned(GetUsers) then
+    for I := 0 to GetUsers.OutputItemCount - 1 do
+      if GetUsers.OutputItems[I].UserID = UID then
+      begin
+        Result := string(GetUsers.OutputItems[I].UserName);
+        Break;
+      end;
+end;
+
+procedure internWriteBugHeader;
+begin
+  Write(StrAlign('BugID', 8), ' ');
+  Write(StrAlign('Sev', 3), ' ');
+  Write(StrAlign('Sta', 3), ' ');
+  Write(StrAlign('Done', 4), ' ');
+  Write(StrAlign('Created', 19), ' ');
+  Write(StrAlign('Created by', 20), ' ');
+  Write(StrAlign('Flags', 10), ' ');
+  Writeln('Bug');
+  Write(StringOfChar('=', 8), ' ');
+  Write(StringOfChar('=', 3), ' ');
+  Write(StringOfChar('=', 3), ' ');
+  Write(StringOfChar('=', 4), ' ');
+  Write(StringOfChar('=', 19), ' ');
+  Write(StringOfChar('=', 20), ' ');
+  Write(StringOfChar('=', 10), ' ');
+  Writeln(StringOfChar('=', 7));
+end;
+
+// One bug: fixed columns + name (from column 74), then the four text lines, always in this order.
+procedure internWriteBug(const B: TGetBugsOutputItem; const DoneText, Creator: string);
+var
+  Created: string;
+begin
+  Created := '';
+  if B.CreatedTime > 1 then
+    Created := FormatDateTime('yyyy-mm-dd hh:nn:ss', GMTDT2LocalDT(B.CreatedTime));
+  Write(StrAlign(IntToStr(B.BugID), 8), ' ');
+  Write(StrAlign(IntToStr(B.Severity), 3), ' ');
+  Write(StrAlign(IntToStr(B.Status), 3), ' ');
+  Write(StrAlign(DoneText, 4), ' ');
+  Write(StrAlign(Created, 19), ' ');
+  Write(StrAlign(Creator, 20), ' ');
+  Write(StrAlign(IntToStr(B.Flags), 10), ' ');
+  Writeln(EscapeHistoryComment(string(B.BugName)));
+  Writeln('  keywords: ', EscapeHistoryComment(string(B.Keywords)));
+  Writeln('  reportedby: ', EscapeHistoryComment(B.ReportedBy));
+  Writeln('  description: ', EscapeHistoryComment(B.Description));
+  Writeln('  workaround: ', EscapeHistoryComment(B.Workaround));
+end;
+
+// Assignment of a bug to a module/project: Result = assigned, ADone = done flag of it.
+function internBugLinkState(IsProject: Boolean; AItemID, ABugID: Integer; out ADone: Boolean): Boolean;
+var
+  ByProject: TJVCSGetBugsByProject;
+  ByModule: TJVCSGetBugsByModule;
+  I: Integer;
+begin
+  Result := False;
+  ADone := False;
+  if IsProject then
+  begin
+    ByProject := TJVCSGetBugsByProject.Create(nil);
+    try
+      ByProject.ProjectID := AItemID;
+      Connection.SendRequest(ByProject);
+      ShowLog(ByProject);
+      for I := 0 to ByProject.OutputItemCount - 1 do
+        if ByProject.OutputItems[I].BugID = ABugID then
+        begin
+          Result := True;
+          ADone := ByProject.OutputItems[I].Done;
+          Break;
+        end;
+    finally
+      ByProject.Free;
+    end;
+  end
+  else
+  begin
+    ByModule := TJVCSGetBugsByModule.Create(nil);
+    try
+      ByModule.ModuleID := AItemID;
+      Connection.SendRequest(ByModule);
+      ShowLog(ByModule);
+      for I := 0 to ByModule.OutputItemCount - 1 do
+        if ByModule.OutputItems[I].BugID = ABugID then
+        begin
+          Result := True;
+          ADone := ByModule.OutputItems[I].Done;
+          Break;
+        end;
+    finally
+      ByModule.Free;
+    end;
+  end;
+end;
+
+function CmdProcListBugs(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I, Idx, ItemID, Shown: Integer;
+  Mode, S, ItemName, DoneText: string;
+  GetBugs: TJVCSGetBugs;
+  GetUsers: TJVCSGetUsers;
+  ByModule: TJVCSGetBugsByModule;
+  ByProject: TJVCSGetBugsByProject;
+  UsedBy: TJVCSBugsUsedBy;
+  B: TGetBugsOutputItem;
+  BM: TGetBugsByModuleOutputItem;
+  BP: TGetBugsByProjectOutputItem;
+  procedure WriteAssigned(ABugID: Integer; const AName, ADescription: string; ASeverity: Integer; ADone: Boolean);
+  var
+    Row: TGetBugsOutputItem;
+    K: Integer;
+  begin
+    K := internFindBug(GetBugs, ABugID);
+    if K >= 0 then
+      Row := GetBugs.OutputItems[K]
+    else
+    begin
+      // assignment to a bug missing from GET_BUGS: only the data of the assignment
+      Row := Default(TGetBugsOutputItem);
+      Row.BugID := ABugID;
+      Row.BugName := JVCSString250(AnsiString(AName));
+      Row.Description := ADescription;
+      Row.Severity := ASeverity;
+      Row.Status := -1;
+    end;
+    if ADone then
+      DoneText := 'yes'
+    else
+      DoneText := 'no';
+    internWriteBug(Row, DoneText, internBugCreator(GetUsers, string(Row.CreatedBy)));
+    Inc(Shown);
+  end;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [1, 3]) then
+    Exit;
+  Mode := 'all';
+  S := '';
+  if Count = 3 then
+  begin
+    Mode := LowerCase(LineParamStr(Line, 2));
+    S := LineParamStr(Line, 3);
+    if (Mode <> 'module') and (Mode <> 'project') and (Mode <> 'bug') then
+      Exit;
+  end;
+  ItemID := 0;
+  ItemName := '';
+  Shown := 0;
+  GetBugs := nil;
+  GetUsers := nil;
+  ByModule := nil;
+  ByProject := nil;
+  UsedBy := nil;
+  try
+    if Mode = 'module' then
+      ItemID := internResolveBugModule(S, ItemName)
+    else
+    if Mode = 'project' then
+      ItemID := internResolveBugProject(S, ItemName)
+    else
+    if Mode = 'bug' then
+    begin
+      ItemID := StrToIntDef(S, 0);
+      if ItemID <= 0 then
+        Exit;
+    end;
+    GetBugs := internGetAllBugs;
+    GetUsers := internGetUsersSafe;
+    if Mode = 'module' then
+      Writeln('Module: ', ItemName, ' (ID ', ItemID, ')')
+    else
+    if Mode = 'project' then
+      Writeln('Project: ', ItemName, ' (ID ', ItemID, ')')
+    else
+    if Mode = 'bug' then
+      Writeln('Bug: ', ItemID)
+    else
+      Writeln('Bugs: all');
+    Writeln;
+    internWriteBugHeader;
+    if Mode = 'all' then
+    begin
+      for I := 0 to GetBugs.OutputItemCount - 1 do
+      begin
+        B := GetBugs.OutputItems[I];
+        internWriteBug(B, '', internBugCreator(GetUsers, string(B.CreatedBy)));
+        Inc(Shown);
+      end;
+    end
+    else
+    if Mode = 'bug' then
+    begin
+      Idx := internFindBug(GetBugs, ItemID);
+      if Idx < 0 then
+        raise Exception.CreateFmt('Bug %d not found', [ItemID]);
+      B := GetBugs.OutputItems[Idx];
+      internWriteBug(B, '', internBugCreator(GetUsers, string(B.CreatedBy)));
+      Inc(Shown);
+      UsedBy := TJVCSBugsUsedBy.Create(nil);
+      UsedBy.BugID := ItemID;
+      Connection.SendRequest(UsedBy);
+      ShowLog(UsedBy);
+      for I := 0 to UsedBy.OutputItemCount - 1 do
+        Writeln('  link: ', string(UsedBy.OutputItems[I].ItemType), ' ', UsedBy.OutputItems[I].ItemID, ' ',
+          EscapeHistoryComment(string(UsedBy.OutputItems[I].ItemName)));
+    end
+    else
+    if Mode = 'module' then
+    begin
+      ByModule := TJVCSGetBugsByModule.Create(nil);
+      ByModule.ModuleID := ItemID;
+      Connection.SendRequest(ByModule);
+      ShowLog(ByModule);
+      for I := 0 to ByModule.OutputItemCount - 1 do
+      begin
+        BM := ByModule.OutputItems[I];
+        WriteAssigned(BM.BugID, string(BM.BugName), BM.Description, BM.Severity, BM.Done);
+      end;
+    end
+    else
+    begin
+      ByProject := TJVCSGetBugsByProject.Create(nil);
+      ByProject.ProjectID := ItemID;
+      Connection.SendRequest(ByProject);
+      ShowLog(ByProject);
+      for I := 0 to ByProject.OutputItemCount - 1 do
+      begin
+        BP := ByProject.OutputItems[I];
+        WriteAssigned(BP.BugID, string(BP.BugName), BP.Description, BP.Severity, BP.Done);
+      end;
+    end;
+    Writeln;
+    Writeln(Shown, ' bug(s)');
+    Result := True;
+  finally
+    UsedBy.Free;
+    ByProject.Free;
+    ByModule.Free;
+    GetUsers.Free;
+    GetBugs.Free;
+  end;
+end;
+
+function CmdProcBugSummary(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Mode: string;
+  I: Integer;
+  GetMostSevere: TJVCSGetMostSevereBugs;
+  Row: TGetMostSevereBugsOutputItem;
+begin
+  Result := False;
+  if LineParamCount(Line) <> 2 then
+    Exit;
+  Mode := LowerCase(LineParamStr(Line, 2));
+  if (Mode <> 'modules') and (Mode <> 'projects') then
+    Exit;
+  GetMostSevere := TJVCSGetMostSevereBugs.Create(nil);
+  try
+    GetMostSevere.ModuleBased := Mode = 'modules';
+    Connection.SendRequest(GetMostSevere);
+    ShowLog(GetMostSevere);
+    Writeln('Most severe open bug per ', Copy(Mode, 1, Length(Mode) - 1));
+    Writeln;
+    Write(StrAlign('ItemID', 8), ' ');
+    Write(StrAlign('BugID', 8), ' ');
+    Writeln('Sev');
+    Write(StringOfChar('=', 8), ' ');
+    Write(StringOfChar('=', 8), ' ');
+    Writeln(StringOfChar('=', 3));
+    for I := 0 to GetMostSevere.OutputItemCount - 1 do
+    begin
+      Row := GetMostSevere.OutputItems[I];
+      Write(StrAlign(IntToStr(Row.ItemID), 8), ' ');
+      Write(StrAlign(IntToStr(Row.BugID), 8), ' ');
+      Writeln(IntToStr(Row.Severity));
+    end;
+    Writeln;
+    Writeln(GetMostSevere.OutputItemCount, ' item(s)');
+    Result := True;
+  finally
+    GetMostSevere.Free;
+  end;
+end;
+
+function CmdProcAddBug(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, P, Idx: Integer;
+  E: TBugEdit;
+  GetBugs: TJVCSGetBugs;
+  AddUpdateBug: TJVCSAddUpdateBug;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if Count < 2 then
+    Exit;
+  E := Default(TBugEdit);
+  E.Name := Trim(LineParamStr(Line, 2));
+  P := Pos('=', E.Name);
+  if (P > 1) and internIsBugOptionKey(Copy(E.Name, 1, P - 1)) then
+    Exit; // the positional <bug_name> is missing
+  internParseBugOptions(Line, 3, E);
+  if E.HasName then
+    raise Exception.Create('addbug takes the bug name as the first parameter, not name=');
+  if not E.HasSeverity then
+    E.Severity := 0;
+  if not E.HasStatus then
+    E.Status := 1;
+  internCheckBugTexts(E.Name, E.Keywords, E.ReportedBy, E.Description, E.Workaround);
+
+  GetBugs := internGetAllBugs;
+  try
+    Idx := internFindBugByName(GetBugs, E.Name, 0);
+    if Idx >= 0 then
+    begin
+      Writeln('Bug already exists: ', EscapeHistoryComment(string(GetBugs.OutputItems[Idx].BugName)),
+        ' (ID ', GetBugs.OutputItems[Idx].BugID, ')');
+      Result := True;
+      Exit;
+    end;
+  finally
+    GetBugs.Free;
+  end;
+
+  AddUpdateBug := TJVCSAddUpdateBug.Create(nil);
+  try
+    AddUpdateBug.BugID := 0;
+    AddUpdateBug.BugName := JVCSString250(AnsiString(E.Name));
+    AddUpdateBug.Severity := E.Severity;
+    AddUpdateBug.Flags := 0; // as the standalone (MaintainBugs.pas:526)
+    AddUpdateBug.Description := E.Description;
+    AddUpdateBug.Keywords := JVCSString250(AnsiString(E.Keywords));
+    AddUpdateBug.ReportedBy := E.ReportedBy;
+    AddUpdateBug.Workaround := E.Workaround;
+    AddUpdateBug.Status := E.Status;
+    Connection.SendRequest(AddUpdateBug);
+    ShowLog(AddUpdateBug);
+    if AddUpdateBug.NewBug then
+    begin
+      // the server reads the new ID back by name; without it the caller cannot use the bug
+      if AddUpdateBug.NewBugID <= 0 then
+        raise Exception.CreateFmt('Bug created but the server returned no ID; check with listbugs: %s', [E.Name]);
+      Writeln('Bug created: ', E.Name, ' (ID ', AddUpdateBug.NewBugID, ')');
+    end
+    else
+    begin
+      if AddUpdateBug.NewBugID <= 0 then
+        raise Exception.Create('Bug not created: ' + AddUpdateBug.ErrorMessage);
+      if AddUpdateBug.ErrorMessage <> '' then
+        Writeln(AddUpdateBug.ErrorMessage);
+      Writeln('Bug already exists: ', E.Name, ' (ID ', AddUpdateBug.NewBugID, ')');
+    end;
+    Result := True;
+  finally
+    AddUpdateBug.Free;
+  end;
+end;
+
+function CmdProcUpdateBug(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, BugID, Idx, Flags, NewSeverity, NewStatus: Integer;
+  E: TBugEdit;
+  Cur: TGetBugsOutputItem;
+  NewName, NewKeywords, NewReportedBy, NewDescription, NewWorkaround, Changed: string;
+  GetBugs: TJVCSGetBugs;
+  AddUpdateBug: TJVCSAddUpdateBug;
+  procedure AddChanged(const AField: string);
+  begin
+    if Changed <> '' then
+      Changed := Changed + ', ';
+    Changed := Changed + AField;
+  end;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if Count < 3 then
+    Exit;
+  BugID := StrToIntDef(LineParamStr(Line, 2), 0);
+  if BugID <= 0 then
+    Exit;
+  E := Default(TBugEdit);
+  internParseBugOptions(Line, 3, E);
+
+  Changed := '';
+  GetBugs := internGetAllBugs;
+  try
+    Idx := internFindBug(GetBugs, BugID);
+    if Idx < 0 then
+      raise Exception.CreateFmt('Bug %d not found', [BugID]);
+    Cur := GetBugs.OutputItems[Idx];
+    NewName := string(Cur.BugName);
+    NewSeverity := Cur.Severity;
+    NewStatus := Cur.Status;
+    NewKeywords := string(Cur.Keywords);
+    NewReportedBy := Cur.ReportedBy;
+    NewDescription := Cur.Description;
+    NewWorkaround := Cur.Workaround;
+    if E.HasName and (E.Name <> NewName) then
+    begin
+      Idx := internFindBugByName(GetBugs, E.Name, BugID);
+      if Idx >= 0 then
+        raise Exception.CreateFmt('Another bug already uses the name ''%s'' (ID %d)',
+          [E.Name, GetBugs.OutputItems[Idx].BugID]);
+      NewName := E.Name;
+      AddChanged('name');
+    end;
+    if E.HasSeverity and (E.Severity <> NewSeverity) then
+    begin
+      NewSeverity := E.Severity;
+      AddChanged('severity');
+    end;
+    if E.HasStatus and (E.Status <> NewStatus) then
+    begin
+      NewStatus := E.Status;
+      AddChanged('status');
+    end;
+    if E.HasKeywords and (E.Keywords <> NewKeywords) then
+    begin
+      NewKeywords := E.Keywords;
+      AddChanged('keywords');
+    end;
+    if E.HasReportedBy and (E.ReportedBy <> NewReportedBy) then
+    begin
+      NewReportedBy := E.ReportedBy;
+      AddChanged('reportedby');
+    end;
+    if E.HasDescription and (E.Description <> NewDescription) then
+    begin
+      NewDescription := E.Description;
+      AddChanged('description');
+    end;
+    if E.HasWorkaround and (E.Workaround <> NewWorkaround) then
+    begin
+      NewWorkaround := E.Workaround;
+      AddChanged('workaround');
+    end;
+  finally
+    GetBugs.Free;
+  end;
+  if (NewSeverity < 0) or (NewSeverity > 4) or (NewStatus < 0) or (NewStatus > 4) then
+    raise Exception.CreateFmt('Bug %d has invalid severity/status on the server; give severity= and status=', [BugID]);
+  internCheckBugTexts(NewName, NewKeywords, NewReportedBy, NewDescription, NewWorkaround);
+  if Changed = '' then
+  begin
+    Writeln('Bug not changed: ', EscapeHistoryComment(NewName), ' (ID ', BugID, ')');
+    Result := True;
+    Exit;
+  end;
+
+  Flags := Cur.Flags;
+  if Flags < 0 then
+    Flags := 0;
+  AddUpdateBug := TJVCSAddUpdateBug.Create(nil);
+  try
+    // ADD_UPDATE_BUG with BugID <> 0 overwrites every column: send all of them
+    AddUpdateBug.BugID := BugID;
+    AddUpdateBug.BugName := JVCSString250(AnsiString(NewName));
+    AddUpdateBug.Severity := NewSeverity;
+    AddUpdateBug.Flags := Flags;
+    AddUpdateBug.Description := NewDescription;
+    AddUpdateBug.Keywords := JVCSString250(AnsiString(NewKeywords));
+    AddUpdateBug.ReportedBy := NewReportedBy;
+    AddUpdateBug.Workaround := NewWorkaround;
+    AddUpdateBug.Status := NewStatus;
+    Connection.SendRequest(AddUpdateBug);
+    ShowLog(AddUpdateBug);
+  finally
+    AddUpdateBug.Free;
+  end;
+
+  // the server confirms nothing for an update: read the bug again and compare EVERY field
+  GetBugs := internGetAllBugs;
+  try
+    Idx := internFindBug(GetBugs, BugID);
+    if Idx < 0 then
+      raise Exception.CreateFmt('Update of bug %d not confirmed by the server', [BugID]);
+    Cur := GetBugs.OutputItems[Idx];
+    if (Trim(string(Cur.BugName)) <> Trim(NewName)) or (Cur.Severity <> NewSeverity) or
+      (Cur.Status <> NewStatus) or (Trim(string(Cur.Keywords)) <> Trim(NewKeywords)) or
+      not internSameBugText(Cur.ReportedBy, NewReportedBy) or
+      not internSameBugText(Cur.Description, NewDescription) or
+      not internSameBugText(Cur.Workaround, NewWorkaround) then
+      raise Exception.CreateFmt('Update of bug %d not confirmed by the server', [BugID]);
+  finally
+    GetBugs.Free;
+  end;
+  Writeln('Bug updated: ', EscapeHistoryComment(NewName), ' (ID ', BugID, ')');
+  Writeln('Changed: ', Changed);
+  Result := True;
+end;
+
+function CmdProcAssignBug(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, BugID, ItemID: Integer;
+  Kind, Action, ItemName, Msg: string;
+  IsProject, Linked, LinkDone, DoneNow: Boolean;
+  GetBugs: TJVCSGetBugs;
+  AssignRemoveBug: TJVCSAssignRemoveBug;
+  EnableBug: TJVCSEnableModuleProjectBug;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if not (Count in [4, 5]) then
+    Exit;
+  BugID := StrToIntDef(LineParamStr(Line, 2), 0);
+  Kind := LowerCase(LineParamStr(Line, 3));
+  Action := 'add';
+  if Count = 5 then
+    Action := LowerCase(LineParamStr(Line, 5));
+  if (BugID <= 0) or ((Kind <> 'module') and (Kind <> 'project')) or
+    ((Action <> 'add') and (Action <> 'remove') and (Action <> 'done') and (Action <> 'open')) then
+    Exit;
+  IsProject := Kind = 'project';
+  if IsProject then
+    ItemID := internResolveBugProject(LineParamStr(Line, 4), ItemName)
+  else
+    ItemID := internResolveBugModule(LineParamStr(Line, 4), ItemName);
+
+  // the server does not check the bug ID (ASSIGN_REMOVE_BUG inserts any number)
+  GetBugs := internGetAllBugs;
+  try
+    if internFindBug(GetBugs, BugID) < 0 then
+      raise Exception.CreateFmt('Bug %d not found', [BugID]);
+  finally
+    GetBugs.Free;
+  end;
+
+  Linked := internBugLinkState(IsProject, ItemID, BugID, LinkDone);
+  if Action = 'add' then
+  begin
+    if Linked then
+      Msg := 'Bug already assigned'
+    else
+    begin
+      AssignRemoveBug := TJVCSAssignRemoveBug.Create(nil);
+      try
+        AssignRemoveBug.ItemID := ItemID;
+        AssignRemoveBug.BugID := BugID;
+        AssignRemoveBug.ProjectRelated := IsProject;
+        AssignRemoveBug.AddBug := True;
+        Connection.SendRequest(AssignRemoveBug);
+        ShowLog(AssignRemoveBug);
+      finally
+        AssignRemoveBug.Free;
+      end;
+      if not internBugLinkState(IsProject, ItemID, BugID, DoneNow) then
+        raise Exception.CreateFmt('Assignment of bug %d not confirmed by the server', [BugID]);
+      Msg := 'Bug assigned';
+    end;
+  end
+  else
+  if Action = 'remove' then
+  begin
+    if not Linked then
+      Msg := 'Bug not assigned'
+    else
+    begin
+      AssignRemoveBug := TJVCSAssignRemoveBug.Create(nil);
+      try
+        AssignRemoveBug.ItemID := ItemID;
+        AssignRemoveBug.BugID := BugID;
+        AssignRemoveBug.ProjectRelated := IsProject;
+        AssignRemoveBug.AddBug := False;
+        Connection.SendRequest(AssignRemoveBug);
+        ShowLog(AssignRemoveBug);
+      finally
+        AssignRemoveBug.Free;
+      end;
+      if internBugLinkState(IsProject, ItemID, BugID, DoneNow) then
+        raise Exception.CreateFmt('Removal of bug %d not confirmed by the server', [BugID]);
+      Msg := 'Bug removed';
+    end;
+  end
+  else
+  begin
+    // done/open: ENABLE_MODULE_PROJECT_BUG updates nothing (and says nothing) without the assignment
+    if not Linked then
+      raise Exception.CreateFmt('Bug %d is not assigned to %s %d ''%s''', [BugID, Kind, ItemID, ItemName]);
+    if LinkDone = (Action = 'done') then
+      Msg := 'Bug already ' + Action
+    else
+    begin
+      EnableBug := TJVCSEnableModuleProjectBug.Create(nil);
+      try
+        EnableBug.ItemID := ItemID;
+        EnableBug.BugID := BugID;
+        EnableBug.ProjectRelated := IsProject;
+        EnableBug.Done := Action = 'done';
+        Connection.SendRequest(EnableBug);
+        ShowLog(EnableBug);
+      finally
+        EnableBug.Free;
+      end;
+      if (not internBugLinkState(IsProject, ItemID, BugID, DoneNow)) or (DoneNow <> (Action = 'done')) then
+        raise Exception.CreateFmt('State change of bug %d not confirmed by the server', [BugID]);
+      Msg := 'Bug marked ' + Action;
+    end;
+  end;
+  Writeln(Format('%s: bug %d %s %d %s', [Msg, BugID, Kind, ItemID, EscapeHistoryComment(ItemName)]));
+  Result := True;
 end;
 
 function CmdProcExit(const Line: string; var ExtExitCode: Integer): Boolean;
@@ -3086,15 +7507,15 @@ begin
               Write(StrAlign('Label',         30), ' ');
               Write(StrAlign('Vers./Rev.',    10), ' ');
               Write(StrAlign('Rev.Timestamp', 20), ' ');
-              Write(StrAlign('Rev.CRC',       10));
-              Writeln;
+              Write(StrAlign('Rev.CRC',       10), ' ');
+              Writeln('Result');
               Write(StringOfChar('=', 8), ' ');
               Write(StringOfChar('=', 30), ' ');
               Write(StringOfChar('=', 30), ' ');
               Write(StringOfChar('=', 10), ' ');
               Write(StringOfChar('=', 20), ' ');
-              Write(StringOfChar('=', 10));
-              Writeln;
+              Write(StringOfChar('=', 10), ' ');
+              Writeln(StringOfChar('=', 6));
             end;
 
             with GetLatestRevisions.OutputItems[I] do
@@ -3106,6 +7527,12 @@ begin
               Write(StrAlign(FmtStamp(RevisionTimestamp), 20), ' ');
               Write(StrAlign(Format('$%.8x', [RevisionCRC32]), 10), ' ');
             end;
+            // ADD_REMOVE_REVISION_LABEL never moves a label: when it already is on another revision
+            // of the module the server answers LabelAdded = False with that revision (SrvOBJFeatures).
+            if AddRemoveRevisionLabel.LabelAdded then
+              Write('added')
+            else
+              Write(Format('kept %d.%d', [AddRemoveRevisionLabel.Version, AddRemoveRevisionLabel.Revision]));
             Writeln;
             Inc(Count);
           end;

@@ -32,9 +32,37 @@ Instaladas por `instalar-no-projeto.ps1` no `.claude\settings.json` do projeto. 
 | `allow` | o wrapper pelo caminho exato (`powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.ps1" *`) | consultas e operações sem pedir aprovação; o próprio wrapper aplica os modos |
 | `allow` (opcional) | `edit-preserve.ps1` (com `-AllowEditPreserve`) | edições sem aprovação |
 | `ask` | `*-Confirmed*`, `*-Discard*`, `*-AllowEncodingChange*` (PowerShell e Bash) | você aprova cada uso |
+| `ask` (administração de módulos) | `*rm-module*-Apply*`, `*rename-module*-Apply*`, `*cleanup*-Apply*` e as chamadas diretas ao console `*removemodule*`, `*renamemodule*` (PowerShell e Bash) | você aprova cada remoção/renomeação, mesmo se a detecção de IA falhar; além disso o `-Apply` exige `moduleAdmin=on` (ou `archive`) no `config.ini` |
+| `ask` (administração de projetos) | `*rm-project*-Apply*`, `*restore-project*-Apply*`, `*rename-project*-Apply*` e as chamadas diretas `*removeproject*`, `*restoreproject*`, `*renameproject*` (PowerShell e Bash) | idem; o `-Apply` exige `projectAdmin=on` no `config.ini` |
 | `deny` | leitura de `JEDIVCS*Identities`; `jvcs* /password`/`-password`; `config set`; `*JVCS*config.ini*`; o instalador; `edit-preserve ... -NoCheckout`; `CLAUDECODE`/`AI_AGENT`; `settings.local.json`; `disableAllHooks`; `attrib`, `IsReadOnly`, `SetAttributes`, `Attributes =`, `chmod`; `Edit` em `.claude/settings*.json`, `.claude/skills/jvcs/**`, `%APPDATA%\JEDI\JVCS\**`, `%LOCALAPPDATA%\JEDI\JVCS\**` e `tools\ai\**` | a IA não muda modo, não lê a senha, não desliga hooks nem tira o somente leitura |
 
 As regras `allow` só valem depois de você aceitar a **confiança da pasta**; `deny` e `ask` valem sempre.
+As regras `ask` de administração vêm no modelo de settings 1.3.0: projetos instalados antes precisam rodar
+o `instalar-no-projeto.ps1` de novo para recebê-las.
+
+`hide -Apply` e `comment -Apply` não têm regra `ask` própria: como todo `-Apply` de administração, pela IA
+eles exigem `-Confirmed`, e a regra `*-Confirmed*` pergunta. O mesmo vale para `sync -Apply -Force`,
+`revert -Checkin`/`-Force`/`-AllowEncodingChange` e `-SkipBuild`, que exigem `-Confirmed` em qualquer modo.
+
+## Chaves do config.ini que liberam recursos de risco
+
+Ficam em `%APPDATA%\JEDI\JVCS\config.ini`, seção `[ai]`. Só **você** muda, no seu terminal
+(`jvcs-ai.ps1 config set <chave> <valor>`): o `config set` é recusado à IA (código 10) e as regras `deny`
+protegem o arquivo. Valor inválido no arquivo vale como o padrão (desligado).
+
+| Chave | Valores (padrão) | O que libera |
+|---|---|---|
+| `moduleAdmin` | `off` \| `on` \| `archive` (`off`) | `on`: o `-Apply` de `rm-module` (tirar do projeto), `rename-module`, `hide`, `comment` e `cleanup`; `archive`: também `-Archive` (apagar módulo e revisões do arquivo, irreversível, com backup antes) |
+| `projectAdmin` | `off` \| `on` (`off`) | o `-Apply` de `rm-project`, `restore-project` e `rename-project` (com registro antes de alterar). Pela IA, `checkin=manual` continua bloqueando |
+| `buildCheck` | `off` \| `warn` \| `block` (`off`) | compilar antes de cada `checkin` (e do `revert -Checkin`): `warn` só avisa; `block` recusa o check-in (7 `buildFailed`) se a compilação falhar |
+| `buildCommand` | caminho absoluto de um `.bat`/`.cmd`/`.ps1` seu, ou `none` | o **único** comando que o wrapper roda para compilar. Ao registrar, o SHA-256 do script vai para `buildCommandSha256`; se o arquivo mudar depois (inclusive pela IA), a compilação é recusada (12) até você registrar de novo. Nunca roda um `.dproj` vindo do servidor |
+| `buildConfig`, `buildPlatform`, `buildTimeoutSec` | `Debug`, `Win32`/`Win64`, 30 a 7200 s (600) | parâmetros passados ao script |
+
+Mesmo com a chave ligada, cada `-Apply` de administração feito pela IA exige `-Confirmed` (você aprova). As
+chaves são defesa em profundidade: o servidor só exige direito de escrita no projeto (Archive Admin para
+remover/restaurar projeto), e o standalone e o console continuam podendo fazer o mesmo sem elas. Por isso a
+identidade da IA **não** deve ser Archive Admin. Guarde o script de compilação fora das pastas de projeto
+(por exemplo em `%APPDATA%\JEDI\JVCS\`, que as regras protegem).
 
 ## Hooks
 
@@ -65,7 +93,10 @@ linhas **não editadas** por U+FFFD); o `Write` grava UTF-8 sem BOM e LF.
 
 - **Nada de lock órfão:** checkout com erro ou timeout é conferido no servidor e desfeito.
 - **Nada de perder alteração local:** o checkout recusa (8) quando o local difere do servidor;
-  `-Force` e `-Discard` fazem backup em `%LOCALAPPDATA%\JEDI\JVCS\backup`.
+  `-Force` e `-Discard` fazem backup em `%LOCALAPPDATA%\JEDI\JVCS\backup`, assim como `sync -Apply` (de todo
+  arquivo substituído), `revert` e a administração (histórico, comentários e revisões antes de apagar).
+- **Prévia antes de mudar:** `sync`, `rm-module`, `rename-module`, `hide`, `comment`, `cleanup`, `rm-project`,
+  `restore-project` e `rename-project` só mostram o que fariam; nada muda sem `-Apply`.
 - **Prova do caminho:** o console lê e grava no caminho registrado no servidor. Antes de mudar o
   servidor, o wrapper prova que o arquivo local é aquele (sonda de data); senão, 5 `pathMismatch`.
 - **Mutex por identidade:** chamadas paralelas (IA, hook, você) são serializadas.
@@ -80,6 +111,9 @@ linhas **não editadas** por U+FFFD); o `Write` grava UTF-8 sem BOM e LF.
 `config get/list`). Registra data UTC, usuário do Windows, identidade, usuário JEDI VCS, servidor,
 comando, argumentos, projeto, módulos e versões, código de saída, se era contexto de agente,
 `AI_AGENT`, `CLAUDE_CODE_SESSION_ID`, se houve `-Confirmed`, os modos e o comentário. **Sem senha.**
+Os comandos novos acrescentam o que é preciso para reconstituir a operação: o caminho do backup ou do
+registro (`backup`, `record`) na administração, o comentário antigo no `comment`, `build` e `buildCheck` no
+check-in, `target`/`dest` no `sync`, `keep` no Put.
 
 ```powershell
 Get-Content "$env:LOCALAPPDATA\JEDI\JVCS\ai-audit.log" -Tail 20 | ForEach-Object { $_ | ConvertFrom-Json } |

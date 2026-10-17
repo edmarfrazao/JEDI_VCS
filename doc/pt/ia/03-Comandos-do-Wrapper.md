@@ -27,9 +27,44 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.ps1" <co
 | `status <arq...>` / `status [-Project p]` | estado **exato**: baixa a última revisão numa pasta temporária e compara bytes | não |
 | `checkout <arq...> [-Force]` | checkout seguro | sim |
 | `ensure-checkout <arq> [-CheckOnly]` | para hooks: idempotente. `-CheckOnly` só informa | sim (sem `-CheckOnly`) |
-| `checkin <arq...> -Comment "texto" [-AllowEncodingChange]` | check-in; sem mudança desfaz o checkout | sim |
+| `checkin <arq...> -Comment "texto" [-AllowEncodingChange] [-SkipBuild]` | check-in; sem mudança desfaz o checkout; com `buildCheck` compila antes | sim |
+| `checkin <arq...> -Comment "texto" -Keep` | **Put**: revisão nova e o checkout continua (console 2026) | sim |
 | `undocheckout <arq...> [-Discard]` | desfaz o checkout (só com local igual ao servidor, ou `-Discard`) | sim |
+| `diff <arq> [-Rev x.y]` | diff do arquivo local contra a revisão do servidor (padrão: a última) | não |
+| `diff <arq> -Rev x.y -Rev2 y.z` | diff entre duas revisões do servidor | não |
+| `history <arq> [-Max n]` | revisões com data, usuário, família, comentário e labels (console 2026) | não |
+| `show <arq> -Rev x.y [-Dest pasta]` | grava a revisão numa pasta de consulta fora do projeto | não |
+| `changes [-Project p] [-Since d] [-User u] [-Max n]` | check-ins do projeto desde a data (padrão `7d`), com a hora real (console 2026) | não |
+| `search <padrão> [-Project p] [-Max n]` | módulos por nome/máscara em todos os projetos (console 2026) | não |
+| `search "<texto>" -InComments [-Project p] [-Max n] [-MaxModules n]` | texto nos comentários das revisões do projeto (console 2026) | não |
+| `blame <arq> [-Lines a-b] [-Max n] [-Rev x.y] [-IgnoreWhitespace]` | revisão, usuário, data e comentário de cada linha (console 2026) | não |
+| `sync [-Project p] [-Apply [-Force]]` | prévia / atualiza a cópia local pelas últimas revisões, com backup | não (só a pasta local) |
+| `sync -Label <nome> \| -Date <data> [-Project p] [-Apply [-Force]]` | prévia / volta a cópia local ao label ou ao estado da data, com backup (console 2026) | não (só a pasta local) |
+| `sync -Dest <pasta> [-Label l \| -Date d] [-Project p] [-Apply]` | grava o estado numa pasta nova ou vazia, como cópia de leitura (console 2026) | não |
+| `revert <arq> -Rev x.y [-Force] [-AllowEncodingChange]` | grava a revisão (família) na cópia local, em checkout, com backup | sim (checkout) |
+| `revert <arq> -Rev x.y -Checkin -Comment "motivo" [-SkipBuild]` | e publica `[IA] revert para x.y: motivo` (pela IA sempre com `-Confirmed`) | sim |
+| `labels [-Project p]` / `labels -All` / `labels <arq>` / `labels -Label <nome>\|#id` | labels do projeto, do servidor, das revisões do módulo, ou a revisão de cada módulo num label (console 2026) | não |
+| `label <nome> [-Project p]` | rotula a última revisão do servidor de cada módulo (console 2026) | sim |
+| `shared <arq>` / `shared [-Project p]` | compartilhamento do módulo / módulos compartilhados do projeto (console 2026) | não |
+| `todo [-Project p \| -All] [-User login\|me\|all] [-Category c] [-Priority 1-9] [-Due aaaa-mm-dd] [-IncludeDone]` | itens de ToDo (console 2026) | não |
+| `todo-add "texto" [...]` / `todo-done <id> [-Reopen]` | cria / conclui ou reabre item de ToDo (console 2026) | sim |
+| `milestones [-Project p \| -All]` | milestones definidos e atingidos (console 2026) | não |
+| `bugs [<arq>] \| -Project p \| -All \| -Bug n \| -Summary [-OpenOnly]` | bugs do módulo/projeto/servidor (console 2026) | não |
+| `bug-add -Title "..." [...]` / `bug-update -Bug n [...]` / `bug-link -Bug n <arq...> \| -Project p [-Remove \| -Done \| -Reopen]` | cria e liga / altera / liga, desliga ou marca bug (console 2026) | sim |
+| `addproject <proj.dpr> [-Comment "descrição"]` | cria o projeto no servidor (console 2026) | sim |
+| `add <arq...> -Comment "texto"` | cadastra e faz o 1º check-in 0.1 com a família (console 2026) | sim |
+| `modules -Project p [-Deserted]` | todos os módulos ligados ao projeto, com flags; `-Deserted`: abandonados (console 2026) | não |
+| `rm-module`, `rename-module`, `hide`, `comment`, `cleanup` | administração de módulos: prévia; `-Apply` exige `moduleAdmin` (console 2026) | só com `-Apply` |
+| `rm-project`, `restore-project`, `rename-project` | administração de projetos: prévia; `-Apply` exige `projectAdmin=on` (console 2026) | só com `-Apply` |
 | `config list \| get <chave> \| set <chave> <valor>` | configuração (`set` só por humano) | não |
+
+Os modos valem para o que muda alguma coisa: `label`, `todo-add`/`todo-done`, `bug-*`, `addproject`, `add` e
+`checkin -Keep` seguem o modo de **check-in** (a administração de projetos também: `checkin=manual` → 10);
+`sync -Apply` (todas as formas) e `revert` seguem o modo de **checkout** (o `revert -Checkin`, os dois). A
+administração depende ainda da chave `moduleAdmin`/`projectAdmin`, que só você liga. Pela IA, exigem `-Confirmed` em
+**qualquer** modo: `checkout -Force`, `checkin -AllowEncodingChange`, `undocheckout -Discard`,
+`sync -Apply -Force`, `revert -Checkin`/`-Force`/`-AllowEncodingChange`, `-SkipBuild` e todo `-Apply` de
+administração. Detalhes de cada comando novo: `tools/ai/LEIAME.md`, seções 11 a 17.
 
 ### Opções
 
@@ -43,6 +78,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.ps1" <co
 | `-TimeoutSec <n>` | limite por execução do `jvcs.exe` |
 | `-LockWaitSec <n>` | espera máxima pelo mutex da identidade |
 | `-Raw` | inclui a saída bruta do console (não contém senha) |
+| `-Rev`, `-Rev2`, `-Max`, `-Since`, `-User`, `-Date`, `-Label`, `-Dest`, `-Apply`, `-Force`, `-Keep`, `-All` | revisões, datas, sync e check-in |
+| `-InComments`, `-MaxModules` | busca nos comentários |
+| `-Priority`, `-Category`, `-Due`, `-IncludeDone`, `-Reopen` | ToDo |
+| `-Bug`, `-Title`, `-Severity`, `-Status`, `-Keywords`, `-ReportedBy`, `-Description`, `-DescriptionFile`, `-Workaround`, `-WorkaroundFile`, `-Summary`, `-OpenOnly`, `-Remove`, `-Done` | bugs |
+| `-Lines`, `-IgnoreWhitespace`, `-Checkin`, `-SkipBuild` | blame, revert e compilação |
+| `-Relink`, `-RenameFiles`, `-Archive`, `-Unhide`, `-OutComment`, `-Deserted` | administração |
+
+Escreva as opções **por extenso**: `-Pr`, `-De` e `-Ti` são ambíguas.
 
 **Contexto de agente** = `-Agent`, variável `CLAUDECODE=1`, variável `AI_AGENT` não vazia, **ou entrada
 padrão redirecionada** (as ferramentas de shell das IAs rodam assim; um humano no terminal, não). Nesse
@@ -123,7 +166,10 @@ Uma linha, ASCII (acentos como `\uXXXX`). Campos fixos:
 | `message` | string | resumo legível |
 | `exitCode` | int | o mesmo código de saída do processo |
 
-Campos extras conforme o comando: `identity`, `projects`, `config`, `configPath`, `comment`, `warnings`, `raw`.
+Campos extras conforme o comando: `identity`, `projects`, `config`, `configPath`, `comment`, `warnings`, `raw`
+e, nos comandos novos, `changes`, `labels`/`label`, `todos`/`todo`, `milestones`, `bugs`/`bug`, `backup`,
+`build`, `target`, `dest`, `keep`, `next` (comando para aplicar uma prévia), entre outros (ver
+`skills/pt/jedi-vcs/references/comandos.md` e o `tools/ai/LEIAME.md`).
 
 Cada item de `modules`: `id`, `name`, `path`, `version`, `lockedBy`, `localState`, `state`, `exitCode`,
 `message`, `pathCheck` e `files[]` (`name`, `localState`, `readOnly`).
@@ -151,6 +197,12 @@ caminhos, servidor e usuário trocados por marcadores):
 | informativo | `needsCheckout`, `pathTruncated` |
 | impedimento | `lockedByOther`, `localModified`, `needsConfirmation`, `pathMismatch`, `notCheckedOut`, `localMissing`, `encodingChanged`, `refused` |
 | falha | `releasedButDirty`, `failedCompensated`, `failed`, `timeout`, `error` |
+| Put, revert e compilação | `checkedInKept`, `unchangedKept`, `reverted`, `revertedCheckedIn`, `revertedNotCheckedIn`, `alreadyAtRevision`, `memberNotInRevision`, `encodingConflict`, `checkoutFailed`, `readOnly`, `buildFailed`, `lockLost`, `changedDuringBuild` |
+| labels, sync e ToDo/bugs | `labeled`, `notInLabel`, `hidden`, `keptOld`, `notLabeled`, `mismatch`, `shared`, `notInTarget`, `export`, `exported`, `noPath`, `badPath`, `created`, `done`, `reopened`, `linked`, `alreadyLinked`, `unlinked`, `notLinked`, `open` |
+| administração de módulos | `listed`, `candidate`, `notCandidate`, `preview`, `locked`, `backupFailed`, `removedFromProject`, `removedFromArchive`, `archiveRefused`, `linkRemoved`, `renamed`, `conflict`, `unhidden`, `changed`, `unchanged`, `refused` |
+| administração de projetos | `preview`, `removed`, `restored`, `relinked`, `renamed`, `alreadyDeleted`, `notDeleted`, `nameInUse`, `noRecord`, `partial` |
+
+A tabela traz os estados principais; os de cada comando novo estão no `tools/ai/LEIAME.md` (seções 13 a 17).
 
 ## Códigos de saída (estáveis)
 
