@@ -7,7 +7,7 @@ O cliente de console serve para automatizar sincronização e build e para consu
 | Programa | `C:\Program Files (x86)\JEDI\JVCS\jvcs.exe` (versão 2.5.0.1030; cópia de referência em `D:\Delphi\JediVCS\v2026\3rdparty\referencia-2.5.0.1030\jvcs.exe`) |
 | Referência dos parâmetros | [jvcs_params.txt](../client/jvcs_params.txt) e o tópico "command line client" da ajuda |
 | Compatibilidade | O `jvcs.exe` **não confere a versão do servidor**: a responsabilidade é sua |
-| Código-fonte | `D:\Delphi\JediVCS\v2026\src\jvcs\jvcs.dpr` (o port ainda não compila, ver [Status](../common/Status.md)) |
+| Código-fonte | `D:\Delphi\JediVCS\v2026\src\jvcs\jvcs.dpr` (compila e foi validado; ver [Port-Console](../client/Port-Console.md)) |
 
 ## 1. Sintaxe
 

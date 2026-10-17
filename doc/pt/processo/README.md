@@ -1,7 +1,7 @@
 # Processo do port
 
 História, decisões, testes e release do port do cliente JEDI VCS 2.5 para o Delphi 11/12/13
-(**JEDI VCS 2.5 Beta 2026**). Para o estado detalhado por fase, veja [Status](../common/Status.md); para os
+(**JEDI VCS 2.5 Beta 2026**). Para as fases, veja o [Plano de Port](../common/Plano-de-Port.md); para os
 fontes, [doc/pt/fontes](../fontes/README.md).
 
 | Página | Conteúdo |

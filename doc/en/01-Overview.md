@@ -91,7 +91,7 @@ Still open:
   server) replacing today's PowerShell wrapper;
 - a few remaining forms (Compare Folders, Load Module, SMTP send) and translations.
 
-The full, prioritized list (Portuguese) is in [Status](../pt/common/Status.md#pendências-lista-consolidada).
+Phases and plan (Portuguese): [port plan](../pt/common/Plano-de-Port.md); changes per release: [CHANGELOG](../../CHANGELOG.md).
 
 More (Portuguese): [history and motivation](../pt/processo/01-Historia-e-Motivacao.md),
 [architecture decisions](../pt/processo/03-Decisoes-de-Arquitetura.md).

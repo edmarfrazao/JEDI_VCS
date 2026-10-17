@@ -89,4 +89,4 @@ Convenção de tags: `v2.5.0.2026-beta1` a `v2.5.0.2026-beta4` (as betas 1 a 4 t
 - [ ] Notas da release: novidades, correções, problemas conhecidos, aviso do MidWare (uso não comercial).
 - [ ] Nada sensível no pacote nem nas notas (senhas, IPs internos, caminhos pessoais).
 - [ ] Tag criada, push autorizado, `gh release create --prerelease` com o setup anexado.
-- [ ] [Status](../common/Status.md) e esta documentação atualizados.
+- [ ] CHANGELOG, novidades e esta documentação atualizados.

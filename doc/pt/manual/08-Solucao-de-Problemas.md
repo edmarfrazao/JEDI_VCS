@@ -88,7 +88,7 @@ Primeiro, três conferências que resolvem boa parte dos casos:
 | Unit ou projeto "invisível" para o JEDI VCS | Caminho com mais de 255 bytes | Pastas mais curtas |
 | Diálogo de login aparece sobre o splash | Comportamento do expert original com "Auto connect" ligado | O expert atual adia o login até a IDE aparecer; se algo travar, `JVCS_EXPERT_DEFERINIT=off` volta ao comportamento do original |
 | **AndroidSDK**: `Java JDK not found` na instalação do Delphi 13 (12/10/2026) | Falta um JDK compatível | Instale o **JDK 21 (Temurin)** e repita a instalação do recurso em **Tools > Manage Features** |
-| `EnvOptions.proj` volta ao Library Path antigo (builds por MSBuild) | A IDE regrava o arquivo ao abrir/fechar, ainda considerando o Virtual Treeview 8.3 do GetIt | Só afeta builds por MSBuild fora da IDE; o `tools\compilar.bat` usa caminhos próprios. Pendência em [Status.md](../common/Status.md) |
+| `EnvOptions.proj` volta ao Library Path antigo (builds por MSBuild) | A IDE regrava o arquivo ao abrir/fechar, ainda considerando o Virtual Treeview 8.3 do GetIt | Só afeta builds por MSBuild fora da IDE; o `tools\compilar.bat` usa caminhos próprios. Em 13/10/2026 o arquivo já não citava o VTV 8.3 |
 | Não consigo recompilar o expert | A `JvcsExpertBDS37.dll` está travada pela IDE aberta | Feche o Delphi e rode `tools\compilar-expert.bat` |
 
 ## 6. Aparência, fonte e desempenho

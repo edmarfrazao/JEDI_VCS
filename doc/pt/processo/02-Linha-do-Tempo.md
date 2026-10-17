@@ -1,7 +1,7 @@
 # 02. Linha do tempo
 
 Fases do [Plano de Port](../common/Plano-de-Port.md) (F0–F6) com datas e commits-chave, a partir do
-`git log` e do [Status](../common/Status.md). Todas as datas são de 2026. Anterior:
+`git log` e do [CHANGELOG](../../../CHANGELOG.md). Todas as datas são de 2026. Anterior:
 [01 História](01-Historia-e-Motivacao.md). Próximo: [03 Decisões](03-Decisoes-de-Arquitetura.md).
 
 ## Resumo
@@ -52,7 +52,7 @@ Releases: `v2.5.0.2026-beta1` (commit `5a31446`, 13/10) e `v2.5.0.2026-beta2` (c
 
 ## O que ainda falta (resumo)
 
-Detalhes em [Status](../common/Status.md) e nas seções "Pendências" de cada `doc/pt/client/Port-*.md`.
+Detalhes no [CHANGELOG](../../../CHANGELOG.md) e nas seções "Pendências" de cada `doc/pt/client/Port-*.md`.
 
 - `JVCSTransport.pas` (isolar o MidWare) e suíte golden automatizada em várias code pages.
 - Restante da JVCL visual (~66 objetos, principalmente `TJvSpinEdit`) e da JCL.

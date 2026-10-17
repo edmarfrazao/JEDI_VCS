@@ -35,7 +35,7 @@ Estado verificado em **12/10/2026** (leitura do registro da IDE, do `CatalogRepo
 | Nome | Versão | Origem | Situação | Observação |
 |---|---|---|---|---|
 | SynEdit TurboPack | 2025.03 | GetIt `SynEdit-13` | **removido** | Pasta `SynEdit-13` não existe mais no `CatalogRepository`. BPL antigos em backup (ver [Ambiente.md](Ambiente.md)) |
-| Virtual Treeview (JAM) | 8.3 | GetIt `VirtualTreeview_by_JamSoftware-13` | **removido da IDE** | Os pacotes não estão mais em `Known Packages`, mas a pasta `CatalogRepository\VirtualTreeview_by_JamSoftware-13\8.3` ainda existe e o `EnvOptions.proj` ainda a cita no Library Path. Pendência registrada em [Status.md](Status.md) |
+| Virtual Treeview (JAM) | 8.3 | GetIt `VirtualTreeview_by_JamSoftware-13` | **removido da IDE** | Os pacotes não estão mais em `Known Packages`, mas a pasta `CatalogRepository\VirtualTreeview_by_JamSoftware-13\8.3` ainda existe e o `EnvOptions.proj` ainda a cita no Library Path. Em 13/10/2026 o `EnvOptions.proj` já não citava a pasta |
 
 ---
 

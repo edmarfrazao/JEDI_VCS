@@ -15,7 +15,7 @@ protocolo. Visão geral do projeto, download e licenças: [README.pt-BR.md](../.
 | Usar com um assistente de IA | [IA](ia/README.md) e a skill [skills/pt/jedi-vcs](../../skills/pt/jedi-vcs/) |
 | Entender o código ou compilar | [Fontes](fontes/README.md) |
 | Saber por que e como o port foi feito | [Processo](processo/README.md) |
-| Saber onde o projeto está | [Status](common/Status.md) e [Decisões](common/Decisoes.md) |
+| Saber onde o projeto está | [CHANGELOG](../../CHANGELOG.md), [novidades](../../news/pt/README.md) e [Decisões](common/Decisoes.md) |
 
 ## Manual de uso (`manual`)
 
@@ -69,7 +69,7 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 
 | Documento | O que contém |
 |---|---|
-| [Status](common/Status.md) | Situação por fase (F0–F6), checklist e próximos passos |
+| [CHANGELOG](../../CHANGELOG.md) | Mudanças por versão |
 | [Plano-de-Port](common/Plano-de-Port.md) | Plano em fases, critérios de pronto, riscos, checklist de compatibilidade com o servidor |
 | [Decisoes](common/Decisoes.md) | Registro datado das decisões |
 | [ADR-001](common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md) | IA fazendo check-in/check-out e núcleo único para todos os Delphi |
@@ -127,6 +127,6 @@ idioma, porque o instalador, o `LICENSE` e os fontes apontam para eles): [licens
 
 1. [Processo: história](processo/01-Historia-e-Motivacao.md) e [decisões](processo/03-Decisoes-de-Arquitetura.md).
 2. [Fontes: arquitetura](fontes/Arquitetura.md) e [compilação](fontes/Compilacao.md).
-3. [Status](common/Status.md), para saber o que falta.
+3. [CHANGELOG](../../CHANGELOG.md), para saber o que mudou em cada versão.
 4. O `client/Port-*.md` da área em que for mexer.
 5. [Convenções](fontes/Convencoes.md), antes do primeiro commit.

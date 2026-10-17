@@ -65,5 +65,5 @@ Registrada em 12/10/2026 ([Decisoes](../common/Decisoes.md)):
 O port foi feito em dois dias intensos (12 e 13/10/2026) por **Edmar Frazão** com o **Claude Code**
 (Anthropic) como par de programação: análise estática dos binários, port das units, scripts de build,
 testes contra um servidor 2.5 Beta 3 local e documentação em português. Cada decisão relevante foi
-registrada em [Decisoes](../common/Decisoes.md) e cada fase em [Status](../common/Status.md) e nos
+registrada em [Decisoes](../common/Decisoes.md) e cada fase no [Plano de Port](../common/Plano-de-Port.md) e nos
 documentos `doc/pt/client/Port-*.md`.

@@ -38,7 +38,7 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 | Delphi | testado em **Delphi 11, 12 e 13** (IDE de 32 bits) |
 | Plataforma | Win32 (roda em Windows x64 e ARM64 por emulação) |
 | Servidor | JEDI VCS **2.5 Beta 3** (Firebird) — não portado, sem alteração |
-| Fases | console, Diff, EXE, DLL da IDE, expert e instalador prontos; ver [Status](doc/pt/common/Status.md) |
+| Fases | console, Diff, EXE, DLL da IDE, expert e instalador prontos; ver [CHANGELOG](CHANGELOG.md) |
 
 É uma **beta**: use com um servidor de teste ou com backup do banco antes de adotar em produção.
 
@@ -132,7 +132,7 @@ Mapa detalhado: [doc/pt/fontes](doc/pt/fontes/README.md).
 | Usar com IA | [doc/pt/ia](doc/pt/ia/README.md) e a skill [skills/pt/jedi-vcs](skills/pt/jedi-vcs/) |
 | Entender o código | [doc/pt/fontes](doc/pt/fontes/README.md) — arquitetura, units, compilação, convenções |
 | História, decisões, testes e release | [doc/pt/processo](doc/pt/processo/README.md) |
-| Situação atual e decisões datadas | [Status](doc/pt/common/Status.md), [Decisões](doc/pt/common/Decisoes.md) |
+| Decisões datadas e mudanças por versão | [Decisões](doc/pt/common/Decisoes.md), [CHANGELOG](CHANGELOG.md) |
 | O que mudou em cada versão | [Novidades](news/pt/README.md) e [CHANGELOG](CHANGELOG.md) |
 | Índice completo | [doc/pt/README.md](doc/pt/README.md) |
 

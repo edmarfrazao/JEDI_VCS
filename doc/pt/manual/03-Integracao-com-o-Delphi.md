@@ -97,7 +97,7 @@ Abra `C:\Program Files (x86)\Embarcadero\Studio\37.0\bin\bds.exe` (32 bits).
 5. Se o menu mostrar **"JvcsExternalDll.dll not loaded - details…"**, o expert carregou mas a DLL do cliente não: clique no item e veja os caminhos tentados. Causa comum: a `JvcsExternalDll.dll` não está na mesma pasta do expert.
 6. Se **nada** aparece (nem splash nem menu): o valor `JVCSIDEClient` não está no registro, aponta para um caminho errado, ou você abriu a IDE de 64 bits. Veja o [capítulo 08](08-Solucao-de-Problemas.md).
 
-Estado do port: o expert foi **carregado** na IDE de 32 bits em 12/10/2026 (splash e menu confirmados). Os testes funcionais (Connect Server, Project Manager, check-in/out, History, menu do Project Manager) ainda estão pendentes ([Status.md](../common/Status.md)).
+Estado do port: o expert foi **carregado** na IDE de 32 bits em 12/10/2026 (splash e menu confirmados). Os testes funcionais (Connect Server, Project Manager, check-in/out, History, menu do Project Manager) foram concluídos em 13/10/2026 (Delphi 11, 12, 13 e XE3; ver [novidades](../../../news/pt/README.md)).
 
 ## 6. Primeiro uso na IDE
 
