@@ -43,7 +43,9 @@ jvcs servidor:porta -user Usuario -password Senha -comando argumentos...
 | `input <arquivo>` | executa comandos de um arquivo | |
 | `help [<comando>]`, `exit` | ajuda, sair | |
 
-Não existem no console: `add` (módulo novo), `diff`, `log`, `whoami`.
+Não existem no console original: `add` (módulo novo), `diff`, `log`, `whoami`. O console 2026 acrescenta
+`addproject`, `addmodule`, `setmodulepath` e `history <módulo>` (revisões com comentários); use-os pelo
+`jvcs-ai.ps1` (`add`, `addproject`, `history`), que também oferece `diff`, `show` e `sync`.
 
 ## Exemplo seguro (senha pelo stdin, sem /password)
 

@@ -9,7 +9,7 @@
 #
 # Nada aqui lê ou imprime a senha da identidade; isso fica só em jvcs-ai.ps1.
 
-$script:JaVersion = '1.2.0'
+$script:JaVersion = '1.3.0'
 
 # Extensões de fonte Delphi protegidas pelo hook e pelo edit-preserve.
 $script:JaDelphiExtensions = @('.pas', '.dfm', '.fmx', '.dpr', '.dpk', '.dproj', '.inc')

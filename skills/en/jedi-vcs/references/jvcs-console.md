@@ -43,7 +43,9 @@ jvcs server:port -user User -password Password -command arguments...
 | `input <file>` | runs commands from a file | |
 | `help [<command>]`, `exit` | help, leave | |
 
-Not available in the console: `add` (new module), `diff`, `log`, `whoami`.
+Not available in the original console: `add` (new module), `diff`, `log`, `whoami`. The 2026 console
+adds `addproject`, `addmodule`, `setmodulepath` and `history <module>` (revisions with comments); use them
+through `jvcs-ai.ps1` (`add`, `addproject`, `history`), which also offers `diff`, `show` and `sync`.
 
 ## Safe example (password through stdin, no /password)
 

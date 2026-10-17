@@ -1,6 +1,6 @@
 # tools\ai — JEDI VCS para a IA (Claude Code)
 
-Versão **1.2.0** (13/10/2026). Camada 0 do ADR-001 (`doc\pt\common\ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`):
+Versão **1.3.0** (17/10/2026). Camada 0 do ADR-001 (`doc\pt\common\ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md`):
 a IA faz checkout e check-in das units Delphi usando o console **original** `jvcs.exe` 2.5.0.1030
 (Delphi 2007), sempre por trás de um wrapper PowerShell que torna o console seguro para automação.
 
@@ -504,3 +504,32 @@ nunca bloqueia nem faz o Claude continuar, e não desfaz nada sozinho.
   `uTeste4.dfm`); `add` de novo → 3; checkout → `edit-preserve` no `.dfm` → `diff` (só a linha do Caption) →
   check-in 0.1 → 0.2 → `diff` idêntico; modo confirm → `add`/`addproject` com 10 e nada criado; console
   original → `add` com 12; `diff -Rev 0.1` e revisão inexistente (5) com o console original.
+
+## 12. Versão 1.3.0 — history, show, diff entre revisões e sync
+
+- `history <arq> [-Max n]`: revisões do módulo (mais recente primeiro) com revisão, `revisionId`, data local
+  do check-in, usuário, tamanho, membros da família e comentário. Usa o comando novo `history` do console
+  **2026** (`GET_MODULE_HISTORY`, os mesmos dados da janela History do standalone); com o console original → 12.
+  O servidor manda usuário e comentário só no 1º membro da família de cada revisão; o console junta os membros
+  numa linha e escreve o comentário numa linha só (`\` = barra, `\n` = quebra).
+- `show <arq> -Rev x.y [-Dest pasta]`: grava a revisão (com a família) para leitura; sem `-Dest`, em
+  `%LOCALAPPDATA%\JEDI\JVCS\show\<data>-<id>-<rev>`. Recusa a pasta do próprio arquivo, pastas protegidas e
+  sobrescrever arquivo existente (8). Funciona com o console original.
+- `diff <arq> -Rev x.y -Rev2 y.z`: diff entre duas revisões do servidor (o arquivo local não precisa existir).
+- `sync [-Project p]`: prévia (padrão, só leitura). Compara byte a byte cada membro com a última revisão e
+  usa a coluna Stamp do `listproject` para a direção: ausente → `create`; local mais antigo (`O`) → `update`;
+  local diferente e mais novo ou com a mesma data → `conflict`; módulo em checkout por mim → `keep` (nunca
+  mexe). Caminho truncado e não localizado → `unknown`.
+- `sync -Apply [-Force]`: segue o modo de **checkout** (`manual` → 10; `confirm` → `-Confirmed`). Baixa a
+  revisão para uma pasta temporária e copia para o caminho do servidor, com backup de todo arquivo substituído
+  em `%LOCALAPPDATA%\JEDI\JVCS\backup\<data>-sync\<id>\`; data do arquivo = data da revisão; somente leitura
+  como o JEDI VCS (exceto os "Writeable Files"). Conflito só com `-Force` (pela IA, sempre com `-Confirmed`).
+  Recusa pastas protegidas. Códigos: 0 atualizado; 3 nada mudou; 8 só conflitos; 7 caminho desconhecido;
+  11 parcial. Não usa o `syncproject` do console, que com `noprompt crc` sobrescreve alteração local sem aviso.
+- Testado (17/10/2026, servidor de teste local, console 2026 e console original 2.5.0.1030 instalado):
+  `history uPrincipal.pas -Max 4` (15 revisões, usuário e comentários `[IA] ...`); `diff uTeste4.dfm -Rev 0.1
+  -Rev2 0.2` (só a linha do Caption); `show -Rev 0.1`; `sync` em `ex1` e `ex4` (tudo igual); em `ex4`, `.dfm`
+  apagado + `.dpr` alterado com data antiga → prévia `create`/`update` → `-Apply` → arquivos idênticos ao
+  servidor, backup gravado, `.dfm` somente leitura e `.dpr` gravável; `.pas` alterado sem checkout →
+  `-Apply` com 8 e arquivo preservado; `-Force` sem `-Confirmed` pela IA → 10; `-Apply` sem mudança → 3;
+  console original: `history` → 12, `sync`, `diff -Rev2` e `show` funcionam.

@@ -62,7 +62,17 @@ Abaixo, `jvcs-ai.ps1 X` = `<wrapperCommand> X`. Um comando por chamada (sem `;`,
 
 Desistiu ou não mudou nada? `jvcs-ai.ps1 undocheckout "<arq>"`.
 
-Diff contra o servidor (só leitura): `jvcs-ai.ps1 diff "<arq>"` (última revisão) ou `-Rev 0.3`.
+Diff contra o servidor (só leitura): `jvcs-ai.ps1 diff "<arq>"` (última revisão) ou `-Rev 0.3`;
+entre duas revisões: `diff "<arq>" -Rev 0.2 -Rev2 0.5`.
+
+Histórico (só leitura): `jvcs-ai.ps1 history "<arq>" -Max 10` mostra revisão, data, usuário e comentário
+(console 2026). Antes de mexer num trecho estranho, leia o histórico e, se preciso, a revisão antiga com
+`show "<arq>" -Rev 0.3` (grava fora do projeto; para voltar a uma revisão, faça checkout e edite).
+
+Sincronizar a cópia local: `jvcs-ai.ps1 sync` (prévia, não muda nada) e, se fizer sentido,
+`sync -Apply` (baixa o que falta e atualiza o que está mais antigo, com backup; nunca mexe no seu
+checkout). Conflito (8) = arquivo local alterado sem checkout: mostre o `diff` ao usuário; não use
+`-Force` sem ele pedir.
 
 Arquivo novo (não versionado): `jvcs-ai.ps1 add "<arq>" -Comment "..."` cadastra e faz o 1º check-in
 0.1 (com o `.dfm`). Projeto novo: `jvcs-ai.ps1 addproject <proj.dpr>` antes. Os dois seguem o modo de

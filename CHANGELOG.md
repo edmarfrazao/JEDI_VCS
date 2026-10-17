@@ -15,6 +15,12 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Wrapper da IA `tools/ai/jvcs-ai.ps1` 1.2.0: `diff <arq> [-Rev x.y]` (diff contra a revisão do
   servidor; funciona com o console original), `addproject` e `add` (cadastro + 1º check-in; exigem o
   console 2026 e seguem o modo de check-in). Skills pt/en e guias atualizados.
+- Console `jvcs.exe`: comando `history <módulo>` (revisões com data, usuário, família e comentário de
+  check-in, como a janela History do standalone).
+- Wrapper da IA 1.3.0: `history` (console 2026), `show -Rev` (revisão antiga numa pasta de consulta),
+  `diff -Rev x.y -Rev2 y.z` (entre duas revisões) e `sync` (prévia; `-Apply` baixa e atualiza a cópia local
+  com backup, nunca mexe no checkout do usuário e não sobrescreve alteração local sem `-Force`). Ver
+  `tools/ai/LEIAME.md` §12.
 
 ### Corrigido
 - Console: `getmodule` recusava `rev=` + `dest=` + `noprompt` juntos (bug do original).

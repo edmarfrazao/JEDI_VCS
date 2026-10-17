@@ -63,7 +63,17 @@ Below, `jvcs-ai.ps1 X` = `<wrapperCommand> X`. One command per call (no `;`, `&&
 
 Gave up or changed nothing? `jvcs-ai.ps1 undocheckout "<file>"`.
 
-Diff against the server (read-only): `jvcs-ai.ps1 diff "<file>"` (last revision) or `-Rev 0.3`.
+Diff against the server (read-only): `jvcs-ai.ps1 diff "<file>"` (last revision) or `-Rev 0.3`;
+between two revisions: `diff "<file>" -Rev 0.2 -Rev2 0.5`.
+
+History (read-only): `jvcs-ai.ps1 history "<file>" -Max 10` lists revision, date, user and comment
+(2026 console). Before changing odd code, read the history and, if needed, the old revision with
+`show "<file>" -Rev 0.3` (written outside the project; to go back to a revision, check out and edit).
+
+Synchronize the local copy: `jvcs-ai.ps1 sync` (preview, changes nothing) and, when it makes sense,
+`sync -Apply` (fetches missing files and updates older ones, with a backup; never touches your
+check-outs). Conflict (8) = local file changed without check-out: show the `diff` to the user; do not
+use `-Force` unless they ask.
 
 New file (not versioned): `jvcs-ai.ps1 add "<file>" -Comment "..."` registers it and checks in version
 0.1 (with the `.dfm`). New project: `jvcs-ai.ps1 addproject <proj.dpr>` first. Both follow the check-in

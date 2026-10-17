@@ -16,13 +16,25 @@ Forma: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.
 | `ensure-checkout <arq> [-CheckOnly]` | idempotente (para hooks) | sim |
 | `checkin <arq...> -Comment "..." [-AllowEncodingChange]` | check-in; sem mudança → desfaz checkout (3) | sim |
 | `undocheckout <arq...> [-Discard]` | desfaz se local = base; `-Discard` descarta (backup) | sim |
+| `diff <arq> [-Rev x.y]` | diff unificado do local contra a revisão do servidor (padrão: a última) | não |
+| `diff <arq> -Rev x.y -Rev2 y.z` | diff entre duas revisões do servidor | não |
+| `history <arq> [-Max n]` | revisões com data, usuário, família e comentário; mais recente primeiro (console 2026) | não |
+| `show <arq> -Rev x.y [-Dest pasta]` | grava a revisão (com a família) numa pasta de consulta fora do projeto | não |
+| `sync [-Project p]` | prévia: o que falta, o que está mais antigo e os conflitos | não |
+| `sync [-Project p] -Apply [-Force]` | baixa/atualiza a cópia local com backup; nunca mexe no seu checkout; `-Force` sobrescreve alteração local sem checkout | não (só a pasta local) |
+| `addproject <proj.dpr> [-Comment "..."]` | cria o projeto no servidor (console 2026) | sim |
+| `add <arq...> -Comment "..."` | cadastra e faz o 1º check-in 0.1 com a família (console 2026) | sim |
 | `config list \| get <chave>` | configuração (`set` é só do usuário) | não |
 
-Opções: `-Project <nome.dpr|caminho>`, `-Identity <nome>`, `-Text`, `-Confirmed`, `-Agent`,
+Opções: `-Project <nome.dpr|caminho>`, `-Identity <nome>`, `-Rev`, `-Rev2`, `-Max`, `-Dest`, `-Apply`, `-Text`, `-Confirmed`, `-Agent`,
 `-TimeoutSec <n>`, `-LockWaitSec <n>`, `-Raw`.
 
 Exigem `-Confirmed` (aprovação do usuário): tudo que muda o servidor no modo `confirm`;
-`checkout -Force`, `checkin -AllowEncodingChange` e `undocheckout -Discard` em qualquer modo.
+`checkout -Force`, `checkin -AllowEncodingChange`, `undocheckout -Discard` e `sync -Apply -Force` em
+qualquer modo. `sync -Apply` segue o modo de checkout (`manual` → 10).
+
+`sync -Apply`: código 3 = nada mudou; 8 = só conflitos (nada sobrescrito); 11 = parte atualizada e parte
+não. Os arquivos substituídos ficam em `%LOCALAPPDATA%\JEDI\JVCS\backup\<data>-sync\<id>\` (campo `backup`).
 
 ## JSON
 

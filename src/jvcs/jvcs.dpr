@@ -271,6 +271,7 @@ function CmdProcExit(const Line: string; var ExtExitCode: Integer): Boolean; for
 function CmdProcAddProject(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcAddModule(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcSetModulePath(const Line: string; var ExtExitCode: Integer): Boolean; forward;
+function CmdProcHistory(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcHelp(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 function CmdProcInput(const Line: string; var ExtExitCode: Integer): Boolean; forward;
 {$IFDEF BRANCHING}
@@ -329,7 +330,7 @@ const
   sLineBreak = #13#10;
   {$ENDIF ~DELPHI6_UP}
 
-  Commands: array [0.. {$IFDEF BRANCHING} 18 {$ELSE} 17 {$ENDIF}] of TCommand = (
+  Commands: array [0.. {$IFDEF BRANCHING} 19 {$ELSE} 18 {$ENDIF}] of TCommand = (
 
     (
       Name: 'openproject';
@@ -460,6 +461,14 @@ const
       Syntax: 'setmodulepath <module_name> | <module_id> <folder>';
       HelpText: 'Sets the local folder of a module on the server (MOVE_MODULE, same request as the standalone Move module). Needed for modules created without the IDE.';
       Proc: @CmdProcSetModulePath),
+
+    (
+      Name: 'history';
+      Syntax: 'history <module_name> | <module_id>';
+      HelpText: 'Lists the revisions of a module (GET_MODULE_HISTORY, same data as the standalone History): ' + sLineBreak +
+        'version, check-in time (local), user, size, family extensions and check-in comment.' + sLineBreak +
+        'The comment is printed on one line: backslash as \\, line breaks as \n.';
+      Proc: @CmdProcHistory),
 
     (
       Name: 'labelproject';
@@ -1708,6 +1717,127 @@ begin
       Writeln('Module path set: ', ModuleName, ' -> ', NewPath)
     else
       Writeln('Module path not set: ', ModuleName);
+  finally
+    ModuleID := -1;
+    ModuleName := '';
+  end;
+end;
+
+// Comment on one line for parsers: '\' -> '\\', CR/LF -> '\n', TAB -> ' '.
+function EscapeHistoryComment(const S: string): string;
+var
+  I: Integer;
+begin
+  Result := '';
+  I := 1;
+  while I <= Length(S) do
+  begin
+    case S[I] of
+      '\': Result := Result + '\\';
+      #13:
+        begin
+          Result := Result + '\n';
+          if (I < Length(S)) and (S[I + 1] = #10) then
+            Inc(I);
+        end;
+      #10: Result := Result + '\n';
+      #9: Result := Result + ' ';
+    else
+      if S[I] >= ' ' then
+        Result := Result + S[I];
+    end;
+    Inc(I);
+  end;
+end;
+
+function CmdProcHistory(const Line: string; var ExtExitCode: Integer): Boolean;
+var
+  Count, I: Integer;
+  S, Exts: string;
+  TotalSize: Int64;
+  GetModuleHistory: TJVCSGetModuleHistory;
+  Item: TGetModuleHistoryOutputItem;
+  procedure FlushRow(const Row: TGetModuleHistoryOutputItem);
+  var
+    sOut: string;
+  begin
+    sOut := '';
+    if Row.CheckedOut then
+      sOut := '*';
+    Write(StrAlign(Format('%d.%d', [Row.Version, Row.Revision]), 7), ' ');
+    Write(StrAlign(IntToStr(Row.RevisionID), 8), ' ');
+    Write(StrAlign(FormatDateTime('yyyy-mm-dd hh:nn:ss', GMTDT2LocalDT(Row.Timestamp)), 19), ' ');
+    Write(StrAlign(Row.UserName, 20), ' ');
+    Write(StrAlign(IntToStr(TotalSize), 10), ' ');
+    Write(StrAlign(sOut, 3), ' ');
+    Write(StrAlign(Exts, 30), ' ');
+    Writeln(EscapeHistoryComment(Row.CheckinComment));
+  end;
+begin
+  Result := False;
+  Count := LineParamCount(Line);
+  if Count <> 2 then
+    Exit;
+  ModuleID := -1;
+  ModuleName := '';
+  S := LineParamStr(Line, 2);
+  ModuleID := StrToIntDef(S, -1);
+  if ModuleID = -1 then
+    ModuleName := S;
+  try
+    CheckModuleOrLocalFile;
+    GetModuleHistory := TJVCSGetModuleHistory.Create(nil);
+    try
+      GetModuleHistory.ModuleID := ModuleID;
+      Connection.SendRequest(GetModuleHistory);
+      ShowLog(GetModuleHistory);
+      Writeln('Module: ', ModuleName, ' (ID ', ModuleID, ')');
+      Writeln;
+      Write(StrAlign('Version', 7), ' ');
+      Write(StrAlign('RevID', 8), ' ');
+      Write(StrAlign('Checked in', 19), ' ');
+      Write(StrAlign('User', 20), ' ');
+      Write(StrAlign('Size', 10), ' ');
+      Write(StrAlign('Out', 3), ' ');
+      Write(StrAlign('Files', 30), ' ');
+      Writeln('Comment');
+      Write(StringOfChar('=', 7), ' ');
+      Write(StringOfChar('=', 8), ' ');
+      Write(StringOfChar('=', 19), ' ');
+      Write(StringOfChar('=', 20), ' ');
+      Write(StringOfChar('=', 10), ' ');
+      Write(StringOfChar('=', 3), ' ');
+      Write(StringOfChar('=', 30), ' ');
+      Writeln(StringOfChar('=', 7));
+      // one output item per family member: one row per revision. The server sends
+      // user and comments only on the first member of each revision (as History.pas reads).
+      Exts := '';
+      TotalSize := 0;
+      for I := 0 to GetModuleHistory.OutputItemCount - 1 do
+      begin
+        if (I = 0) or (GetModuleHistory.OutputItems[I].RevisionID <> Item.RevisionID) then
+        begin
+          if I > 0 then
+            FlushRow(Item);
+          Item := GetModuleHistory.OutputItems[I];
+          Exts := '';
+          TotalSize := 0;
+        end;
+        if Exts <> '' then
+          Exts := Exts + ',';
+        Exts := Exts + GetModuleHistory.OutputItems[I].Extension;
+        Inc(TotalSize, GetModuleHistory.OutputItems[I].Size);
+        if GetModuleHistory.OutputItems[I].CheckedOut then
+          Item.CheckedOut := True;
+      end;
+      if GetModuleHistory.OutputItemCount > 0 then
+        FlushRow(Item);
+      Writeln;
+      Writeln(GetModuleHistory.OutputItemCount, ' item(s)');
+      Result := True;
+    finally
+      GetModuleHistory.Free;
+    end;
   finally
     ModuleID := -1;
     ModuleName := '';

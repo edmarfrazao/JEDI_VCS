@@ -14,6 +14,10 @@
       ensure-checkout <arquivo> [-CheckOnly]   para hooks: idempotente
       checkin <arquivo...> -Comment "texto"    check-in (sem mudança -> undocheckout)
       undocheckout <arquivo> [-Discard] desfaz checkout (só com local = base, ou -Discard)
+      diff <arquivo> [-Rev x.y [-Rev2 y.z]]   diff local x servidor, ou entre duas revisões
+      history <arquivo> [-Max n]        revisões do módulo com data, usuário e comentário (console 2026)
+      show <arquivo> -Rev x.y [-Dest pasta]   baixa uma revisão para ler (nunca na pasta do projeto)
+      sync [-Project p] [-Apply [-Force]]     prévia (padrão) ou atualização da cópia local, com backup
       config list | get <chave> | set <chave> <valor>
 
     Opções comuns: -Project <nome.dpr>, -Identity <nome>, -Text (saída legível),
@@ -36,6 +40,10 @@ param(
     [string]$Comment = '',
     [string]$Identity = '',
     [string]$Rev = '',
+    [string]$Rev2 = '',
+    [string]$Dest = '',
+    [int]$Max = 0,
+    [switch]$Apply,
     [switch]$Force,
     [switch]$Discard,
     [switch]$Confirmed,
@@ -1358,16 +1366,16 @@ function Invoke-CmdUndo {
 # addproject/add usam comandos que só o console 2026 tem (src\jvcs: addproject, addmodule,
 # setmodulepath e o 1º check-in); o original 2.5.0.1030 não cria projeto nem módulo.
 function Assert-Console2026 {
-    param([string]$What)
+    param([string]$What, [string]$Needle = 'setmodulepath')
     $exe = [string]$script:Cfg.jvcsExe
     if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw (New-JaError 12 "jvcs.exe não encontrado: $exe") }
     $bytes = [IO.File]::ReadAllBytes($exe)
-    $needle = 'setmodulepath'
+    $needle = $Needle
     $has = [Text.Encoding]::Unicode.GetString($bytes).Contains($needle) -or
         [Text.Encoding]::Unicode.GetString($bytes, 1, $bytes.Length - 1).Contains($needle) -or
         $script:JaLatin1.GetString($bytes).Contains($needle)
     if (-not $has) {
-        throw (New-JaError 12 "$What exige o console jvcs.exe 2026 (com addproject/addmodule); o configurado ($exe) não tem. Ajuste: jvcs-ai.ps1 config set jvcsExe <caminho do jvcs.exe 2026>")
+        throw (New-JaError 12 "$What exige o console jvcs.exe 2026 (com addproject/addmodule/history); o configurado ($exe) não tem. Ajuste: jvcs-ai.ps1 config set jvcsExe <caminho do jvcs.exe 2026>")
     }
 }
 
@@ -1443,10 +1451,68 @@ function Get-JaUnifiedDiff {
     } finally { Remove-JaTempDir $tmp }
 }
 
+function Get-RevArg {
+    param([string]$Value, [string]$Option)
+    $t = ([string]$Value).Trim()
+    if ($t -and $t -notmatch '^\d{1,4}\.\d{1,5}$') { throw (New-JaError 2 "revisão inválida: '$t' (use $Option versão.revisão, ex.: $Option 0.1)") }
+    return $t
+}
+
+# Escolhe, entre os arquivos baixados de uma revisão, o de mesmo nome do arquivo pedido.
+function Select-RevisionFile {
+    param($RevFiles, [string]$Name, [string]$Label)
+    $bf = @($RevFiles | Where-Object { $_.Name -ieq $Name })
+    if ($bf.Count -eq 0) { throw (New-JaError 5 "a revisão $Label não tem o arquivo $Name (tem: $(@($RevFiles | ForEach-Object Name) -join ', '))") }
+    return $bf[0]
+}
+
+# diff <arq> -Rev a -Rev2 b: entre duas revisões do servidor (o arquivo local não precisa existir).
+function Invoke-DiffRevisions {
+    param([string]$File, [string]$RevA, [string]$RevB)
+    if (-not $RevA) { throw (New-JaError 2 'use -Rev junto com -Rev2 (ex.: diff uX.pas -Rev 0.1 -Rev2 0.3)') }
+    Enter-JaLock
+    $ctx = Resolve-FileContext $File
+    if ($ctx.Status -ne 'versioned') { throw (New-JaError 5 ('não versionado: ' + $ctx.Note)) }
+    $script:Res.project = $ctx.Project
+    $item = New-ModuleItem $ctx.ModuleRows $File
+    $item['revision'] = $RevA
+    $item['revision2'] = $RevB
+    $name = [IO.Path]::GetFileName($File)
+    $a = Get-JaRevisionFiles -ProjectName $ctx.Project -Id $item.id -RevText $RevA
+    try {
+        $b = Get-JaRevisionFiles -ProjectName $ctx.Project -Id $item.id -RevText $RevB
+        try {
+            $fa = Select-RevisionFile $a.Files $name $RevA
+            $fb = Select-RevisionFile $b.Files $name $RevB
+            $ba = [IO.File]::ReadAllBytes($fa.FullName)
+            $bb = [IO.File]::ReadAllBytes($fb.FullName)
+            if (Test-JaBytesEqual $ba $bb) {
+                $item.state = 'identical'
+                $item.message = "$name idêntico nas revisões $RevA e $RevB"
+                $script:Res['diff'] = ''
+            } else {
+                $item.state = 'different'
+                foreach ($p in (Compare-JaEncoding $ba $bb)) { Add-JaWarning "$($name): $p" }
+                $d = Get-JaUnifiedDiff -BasePath $fa.FullName -LocalPath $fb.FullName -BaseLabel "$name (revisão $RevA)" -LocalLabel "$name (revisão $RevB)"
+                if ($null -eq $d) {
+                    $item.message = "$name difere entre $RevA e $RevB (arquivo binário ou git ausente: sem diff de texto)"
+                    $script:Res['diff'] = $null
+                } else {
+                    $n = @(($d -split "`n") | Where-Object { $_ -match '^[-+](?![-+]{2} )' }).Count
+                    $item.message = "$name difere entre $RevA e $RevB ($n linha(s) alterada(s))"
+                    $script:Res['diff'] = $d
+                }
+            }
+        } finally { Remove-JaTempDir $b.Root }
+    } finally { Remove-JaTempDir $a.Root }
+    [void]$script:Res.modules.Add($item)
+}
+
 function Invoke-CmdDiff {
     $f = (Get-FileArgs -Max 1)[0]
-    $revText = ([string]$Rev).Trim()
-    if ($revText -and $revText -notmatch '^\d{1,4}\.\d{1,5}$') { throw (New-JaError 2 "revisão inválida: '$revText' (use -Rev versão.revisão, ex.: -Rev 0.1)") }
+    $revText = Get-RevArg $Rev '-Rev'
+    $rev2Text = Get-RevArg $Rev2 '-Rev2'
+    if ($rev2Text) { Invoke-DiffRevisions -File $f -RevA $revText -RevB $rev2Text; return }
     if (-not (Test-Path -LiteralPath $f -PathType Leaf)) { throw (New-JaError 5 "arquivo local não encontrado: $f") }
     Enter-JaLock
     $ctx = Resolve-FileContext $f
@@ -1482,6 +1548,221 @@ function Invoke-CmdDiff {
         }
     } finally { Remove-JaTempDir $rev.Root }
     [void]$script:Res.modules.Add($item)
+}
+
+# history (console 2026): Version(7) RevID(8) Checked in(19) User(20) Size(10) Out(3) Files(30) e o
+# comentário no resto da linha ('\\' = barra, '\n' = quebra de linha).
+function ConvertFrom-History {
+    param($Section)
+    $rows = New-Object System.Collections.ArrayList
+    foreach ($l in $Section.Lines) {
+        if ($l.Length -lt 17 -or $l.Substring(0, 7).Trim() -notmatch '^(\d+)\.(\d+)$') { continue }
+        $ver = [int]$Matches[1]; $rv = [int]$Matches[2]
+        $c = ''
+        if ($l.Length -gt 104) { $c = $l.Substring(104).TrimEnd() }
+        $c = [regex]::Replace($c, '\\(\\|n)', { param($m) if ($m.Groups[1].Value -eq 'n') { "`n" } else { '\' } })
+        $size = 0
+        [void][int]::TryParse((Get-Col $l 58 10), [ref]$size)
+        [void]$rows.Add([ordered]@{
+                revision   = "$ver.$rv"
+                revisionId = [int](Get-Col $l 8 8)
+                checkedIn  = (Get-Col $l 17 19)
+                user       = (Get-Col $l 37 20)
+                size       = $size
+                checkedOut = ((Get-Col $l 69 3) -eq '*')
+                files      = (Get-Col $l 73 30)
+                comment    = $c
+                SortKey    = $ver * 100000 + $rv
+            })
+    }
+    return , $rows
+}
+
+function Invoke-CmdHistory {
+    $f = (Get-FileArgs -Max 1)[0]
+    if ($Max -lt 0) { throw (New-JaError 2 '-Max deve ser 0 (todas) ou mais') }
+    Assert-Console2026 'history' -Needle 'GET_MODULE_HISTORY, same data'
+    Enter-JaLock
+    $ctx = Resolve-FileContext $f
+    if ($ctx.Status -ne 'versioned') { throw (New-JaError 5 ('não versionado: ' + $ctx.Note)) }
+    $script:Res.project = $ctx.Project
+    $item = New-ModuleItem $ctx.ModuleRows $f
+    $r = Invoke-Jvcs @('history ' + $item.id)
+    $e = Get-SectionError $r.Sections[0]
+    if ($e) { throw (New-JaError 9 "history $($item.id): $e") }
+    $parsed = ConvertFrom-History $r.Sections[0]
+    $revs = @($parsed | Sort-Object { $_.SortKey } -Descending)
+    $total = $revs.Count
+    if ($Max -gt 0 -and $revs.Count -gt $Max) { $revs = @($revs | Select-Object -First $Max) }
+    $list = New-Object System.Collections.ArrayList
+    foreach ($x in $revs) { $x.Remove('SortKey'); [void]$list.Add($x) }
+    $item['revisions'] = $list
+    $item.state = 'ok'
+    $item.message = "$total revisão(ões) (mais recente primeiro)"
+    if ($list.Count -lt $total) { $item.message += "; mostrando $($list.Count)" }
+    [void]$script:Res.modules.Add($item)
+}
+
+# show <arq> -Rev x.y [-Dest pasta]: grava a revisão (com a família) numa pasta para leitura.
+# Sem -Dest: %LOCALAPPDATA%\JEDI\JVCS\show\<data>-<id>-<rev>. Nunca sobrescreve arquivo existente.
+function Invoke-CmdShow {
+    $f = (Get-FileArgs -Max 1)[0]
+    $revText = Get-RevArg $Rev '-Rev'
+    if (-not $revText) { throw (New-JaError 2 'informe a revisão: show <arquivo> -Rev x.y') }
+    Enter-JaLock
+    $ctx = Resolve-FileContext $f
+    if ($ctx.Status -ne 'versioned') { throw (New-JaError 5 ('não versionado: ' + $ctx.Note)) }
+    $script:Res.project = $ctx.Project
+    $item = New-ModuleItem $ctx.ModuleRows $f
+    $item['revision'] = $revText
+    if ($Dest) {
+        $target = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Dest)
+    } else {
+        $target = Join-Path (Get-JaLocalDir) ('show\' + (Get-Date).ToString('yyyyMMdd-HHmmss') + '-' + $item.id + '-' + $revText)
+    }
+    $why = Get-JaProtectedPathReason $target
+    if ($Dest -and $why) { throw (New-JaError 7 "destino recusado: $why") }
+    $localDir = [IO.Path]::GetDirectoryName($f).TrimEnd('\')
+    if ($target.TrimEnd('\') -ieq $localDir) { throw (New-JaError 7 'o destino não pode ser a pasta do arquivo (use checkout + edição para restaurar uma revisão)') }
+    $rev = Get-JaRevisionFiles -ProjectName $ctx.Project -Id $item.id -RevText $revText
+    try {
+        [void](New-Item -ItemType Directory -Path $target -Force)
+        foreach ($rf in $rev.Files) {
+            if (Test-Path -LiteralPath (Join-Path $target $rf.Name)) { throw (New-JaError 8 "já existe $($rf.Name) em $target; nada foi sobrescrito") }
+        }
+        $files = New-Object System.Collections.ArrayList
+        foreach ($rf in $rev.Files) {
+            $to = Join-Path $target $rf.Name
+            [IO.File]::Copy($rf.FullName, $to, $false)
+            Set-JaReadOnly -Path $to -ReadOnly $false
+            [void]$files.Add([ordered]@{ name = $rf.Name; path = $to; size = $rf.Length })
+        }
+        $item['files'] = $files
+    } finally { Remove-JaTempDir $rev.Root }
+    $item.state = 'ok'
+    $item.message = "revisão $revText gravada em $target ($($item.files.Count) arquivo(s)); só leitura de consulta, fora do projeto"
+    [void]$script:Res.modules.Add($item)
+}
+
+# sync [-Project p] [-Apply [-Force]]: compara cada módulo do projeto (bytes) com a última revisão
+# e diz o que faria; com -Apply atualiza a cópia local. Regras:
+#  - módulo em checkout por mim: nunca mexe (keep);
+#  - membro ausente: create; local mais antigo (Stamp 'O'): update;
+#  - local diferente e mais novo, ou com a mesma data: conflict (alteração local sem checkout) -
+#    só com -Force (pela IA, também -Confirmed);
+#  - todo arquivo substituído vai antes para %LOCALAPPDATA%\JEDI\JVCS\backup\<data>-sync\<id>\.
+function Invoke-CmdSync {
+    $name = Get-DefaultProjectName
+    $script:Res.project = $name
+    if ($Apply) {
+        Assert-Mode -Kind 'checkout' -What "sync -Project $name -Apply"
+        if ($Force) { Assert-RiskyOption -Option '-Force' -What "sync -Project $name -Apply -Force" }
+    } elseif ($Force) { throw (New-JaError 2 '-Force só vale com -Apply') }
+    Enter-JaLock
+    $listing = Get-ProjectListing -Names @($name)
+    if ($null -eq $listing[$name]) { throw (New-JaError 5 "projeto '$name' não existe no servidor") }
+    $pdir = Get-ProjectDir $name
+    $script:JaProjectName = $name
+    $groups = Get-ModuleGroups $listing[$name]
+    $ids = @($groups.Keys | ForEach-Object { [int]$_ })
+    if ($ids.Count -eq 0) { $script:Res.message = 'projeto sem módulos'; $script:Res.exitCode = 3; return }
+    $filter = Get-JaWritableFilter
+    $backup = $null
+    $count = @{ none = 0; create = 0; update = 0; conflict = 0; keep = 0; unknown = 0; synced = 0 }
+    $base = Get-JvcsBase -ProjectName $name -Ids $ids
+    try {
+        foreach ($k in $groups.Keys) {
+            $rows = $groups[$k]
+            $item = New-ModuleItem $rows
+            $mine = ($item.lockedBy -and (Test-IsMe $item.lockedBy))
+            $localDir = $null
+            foreach ($r in $rows) {
+                $loc = Find-LocalMember -Row $r -ProjectDir $pdir
+                if ($loc.Path) { $localDir = [IO.Path]::GetDirectoryName($loc.Path); $item.path = $loc.Path; break }
+            }
+            if (-not $localDir) {
+                $item.state = 'unknown'; $item['action'] = 'unknown'
+                $item.message = 'caminho do servidor truncado pelo console e arquivo não localizado sob a pasta do projeto'
+                if ($Apply) { $item.exitCode = 7 }
+                $count.unknown++
+                [void]$script:Res.modules.Add($item)
+                continue
+            }
+            $why = Get-JaProtectedPathReason (Join-Path $localDir 'x')
+            if ($why) { throw (New-JaError 7 "o módulo $($item.name) aponta para uma pasta protegida ($why); sync recusado") }
+            $cmp = Compare-WithBase -BaseFiles $base.Map[$k] -LocalDir $localDir
+            $files = New-Object System.Collections.ArrayList
+            $act = 'none'
+            foreach ($m in $cmp.Members) {
+                $a = 'none'
+                if ($m.State -eq 'missing') { $a = 'create' }
+                elseif ($m.State -eq 'modified') {
+                    $row = @($rows | Where-Object { Test-TableMatch -Shown $_.File -Actual $m.Name.ToLowerInvariant() -Width 30 })
+                    $stamp = ''
+                    if ($row.Count -ge 1) { $stamp = $row[0].Stamp }
+                    if ($stamp -eq 'O') { $a = 'update' } else { $a = 'conflict' }
+                }
+                if ($mine -and $a -ne 'none') { $a = 'keep' }
+                [void]$files.Add([ordered]@{ name = $m.Name; localState = $m.State; action = $a; Member = $m })
+                foreach ($rank in @('conflict', 'keep', 'update', 'create')) {
+                    if ($a -eq $rank -or $act -eq $rank) { $act = $rank; break }
+                }
+            }
+            $item.localState = $cmp.State
+            $item['action'] = $act
+            $item.state = $act
+            switch ($act) {
+                'none' { $item.message = 'igual ao servidor' }
+                'keep' { $item.message = 'em checkout por você: não mexe' }
+                'create' { $item.message = 'falta arquivo local: será baixado' }
+                'update' { $item.message = 'cópia local mais antiga: será atualizada' }
+                'conflict' { $item.message = 'arquivo local diferente e não mais antigo que o servidor (alteração sem checkout?): só com -Force; veja diff' }
+            }
+            $count[$act]++
+            if ($Apply) {
+                $doIt = ($act -eq 'create' -or $act -eq 'update' -or ($act -eq 'conflict' -and $Force))
+                if ($act -eq 'conflict' -and -not $Force) { $item.exitCode = 8 }
+                if ($doIt) {
+                    foreach ($x in $files) {
+                        if ($x.action -eq 'none' -or $x.action -eq 'keep') { continue }
+                        $m = $x.Member
+                        if (Test-Path -LiteralPath $m.Local -PathType Leaf) {
+                            if (-not $backup) { $backup = New-BackupDir 'sync' }
+                            $bd = Join-Path $backup ([string]$item.id)
+                            [void](New-Item -ItemType Directory -Path $bd -Force)
+                            [IO.File]::Copy($m.Local, (Join-Path $bd $m.Name), $true)
+                            Set-JaReadOnly -Path $m.Local -ReadOnly $false
+                        } else {
+                            [void](New-Item -ItemType Directory -Path ([IO.Path]::GetDirectoryName($m.Local)) -Force)
+                        }
+                        [IO.File]::Copy($m.Base, $m.Local, $true)
+                        Set-JaReadOnly -Path $m.Local -ReadOnly $false
+                        [IO.File]::SetLastWriteTimeUtc($m.Local, $m.BaseTimeUtc)
+                        Set-JaReadOnly -Path $m.Local -ReadOnly (-not (Test-JaAlwaysWritable -FileName $m.Name -Filter $filter))
+                        $x.action = $x.action + 'd'
+                    }
+                    $count['synced']++
+                    $item.state = 'synced'
+                    $item.message = 'atualizado com a última revisão do servidor'
+                    if ($act -eq 'conflict') { $item.message += ' (alteração local substituída; cópia no backup)' }
+                }
+            }
+            foreach ($x in $files) { $x.Remove('Member') }
+            $item['files'] = $files
+            [void]$script:Res.modules.Add($item)
+        }
+    } finally { Remove-JaTempDir $base.Root }
+    $mode = 'prévia (nada foi alterado; use -Apply)'
+    if ($Apply) { $mode = 'aplicado' }
+    $script:Res.message = "sync $($mode): $($count.none) igual(is), $($count.create) a baixar, $($count.update) a atualizar, $($count.conflict) conflito(s), $($count.keep) em checkout seu, $($count.unknown) sem caminho"
+    if ($backup) { $script:Res['backup'] = $backup; $script:Res.message += "; backup em $backup" }
+    # -Apply: 3 = nada mudou; 8/7 = nada mudou por conflito/caminho; 11 = parte mudou e parte não
+    if ($Apply -and $count.synced -eq 0) {
+        $blocked = @($script:Res.modules | Where-Object { $_.exitCode -ne 0 } | ForEach-Object { [int]$_.exitCode } | Sort-Object -Unique)
+        if ($blocked.Count -eq 0) { $script:Res.exitCode = 3 }
+        elseif ($blocked.Count -eq 1) { $script:Res.exitCode = $blocked[0] }
+        else { $script:Res.exitCode = 11 }
+    }
 }
 
 function Invoke-CmdAddProject {
@@ -1637,10 +1918,15 @@ jvcs-ai.ps1 <comando> [argumentos] [opções]
   checkin <arquivo...> -Comment "..." [-AllowEncodingChange]   (esta opção pela IA exige -Confirmed)
   undocheckout <arquivo...> [-Discard]   (-Discard pela IA exige -Confirmed)
   diff <arquivo> [-Rev x.y]           diff do arquivo local contra a revisão do servidor (padrão: a última)
+  diff <arquivo> -Rev x.y -Rev2 y.z   diff entre duas revisões do servidor
+  history <arquivo> [-Max n]          revisões (data, usuário, comentário), mais recente primeiro (console 2026)
+  show <arquivo> -Rev x.y [-Dest d]   grava a revisão numa pasta de consulta (fora do projeto)
+  sync [-Project p] [-Apply [-Force]] prévia do que muda; -Apply baixa/atualiza com backup (modo checkout;
+                                      -Force sobrescreve alteração local sem checkout e pela IA exige -Confirmed)
   addproject <projeto.dpr> [-Comment "descrição"]   cria o projeto no servidor (console 2026; modo checkin)
   add <arquivo...> -Comment "..."     cadastra no projeto e faz o 1º check-in 0.1 (console 2026; modo checkin)
   config list | get <chave> | set <chave> <valor>   (set: só humano)
-Opções: -Project -Identity -Rev -Text -Agent -Confirmed -TimeoutSec -LockWaitSec -Raw
+Opções: -Project -Identity -Rev -Rev2 -Max -Dest -Apply -Text -Agent -Confirmed -TimeoutSec -LockWaitSec -Raw
 Códigos: 0 ok, 2 uso, 3 nada a fazer, 4 credencial, 5 não encontrado, 6 travado por outro,
          7 pré-condição, 8 conflito local, 9 servidor/console, 10 confirmação, 11 parcial, 12 ambiente
 '@
@@ -1678,6 +1964,17 @@ function Format-Text {
         if ($m.Contains('state') -and $m.state) { $line += " -> $($m.state)" }
         if ($m.Contains('message') -and $m.message -and @($script:Res.modules).Count -gt 1) { $line += " : $($m.message)" }
         [void]$sb.AppendLine($line)
+        if ($m.Contains('revisions')) {
+            foreach ($rv in $m.revisions) {
+                $out = ''
+                if ($rv.checkedOut) { $out = ' [checkout]' }
+                [void]$sb.AppendLine("    $($rv.revision)  $($rv.checkedIn)  $($rv.user)$out  $($rv.files)")
+                if ($rv.comment) { foreach ($cl in ($rv.comment -split "`n")) { [void]$sb.AppendLine("        $cl") } }
+            }
+        }
+        if ($script:Cmd -eq 'sync' -and $m.Contains('files')) {
+            foreach ($fx in $m.files) { if ($fx.action -ne 'none') { [void]$sb.AppendLine("    $($fx.name): $($fx.action) (local=$($fx.localState))") } }
+        }
     }
     if ($script:Res.Contains('identity')) { foreach ($k in $script:Res.identity.Keys) { [void]$sb.AppendLine("  $k = $($script:Res.identity[$k])") } }
     if ($script:Res.Contains('projects')) { foreach ($p in $script:Res.projects) { [void]$sb.AppendLine("  #$($p.id) $($p.name) $($p.description)") } }
@@ -1736,6 +2033,9 @@ try {
         'checkin' { Invoke-CmdCheckin }
         'undocheckout' { Invoke-CmdUndo }
         'diff' { Invoke-CmdDiff }
+        'history' { Invoke-CmdHistory }
+        'show' { Invoke-CmdShow }
+        'sync' { Invoke-CmdSync }
         'addproject' { Invoke-CmdAddProject }
         'add' { Invoke-CmdAdd }
         'config' { Invoke-CmdConfig }

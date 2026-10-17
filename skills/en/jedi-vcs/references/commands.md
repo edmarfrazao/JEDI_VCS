@@ -16,13 +16,25 @@ Form: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.p
 | `ensure-checkout <file> [-CheckOnly]` | idempotent (for hooks) | yes |
 | `checkin <file...> -Comment "..." [-AllowEncodingChange]` | check-in; no change → undoes the check-out (3) | yes |
 | `undocheckout <file...> [-Discard]` | undoes it if local = base; `-Discard` discards (backup) | yes |
+| `diff <file> [-Rev x.y]` | unified diff of the local file against a server revision (default: latest) | no |
+| `diff <file> -Rev x.y -Rev2 y.z` | diff between two server revisions | no |
+| `history <file> [-Max n]` | revisions with date, user, family and check-in comment; newest first (2026 console) | no |
+| `show <file> -Rev x.y [-Dest folder]` | writes that revision (with its family) to a reference folder outside the project | no |
+| `sync [-Project p]` | preview: missing files, older copies and conflicts | no |
+| `sync [-Project p] -Apply [-Force]` | fetches/updates the local copy with a backup; never touches your check-outs; `-Force` overwrites local changes made without check-out | no (local folder only) |
+| `addproject <proj.dpr> [-Comment "..."]` | creates the project on the server (2026 console) | yes |
+| `add <file...> -Comment "..."` | registers the file and does the first check-in 0.1 with its family (2026 console) | yes |
 | `config list \| get <key>` | configuration (`set` is for the user only) | no |
 
-Options: `-Project <name.dpr|path>`, `-Identity <name>`, `-Text`, `-Confirmed`, `-Agent`,
+Options: `-Project <name.dpr|path>`, `-Identity <name>`, `-Rev`, `-Rev2`, `-Max`, `-Dest`, `-Apply`, `-Text`, `-Confirmed`, `-Agent`,
 `-TimeoutSec <n>`, `-LockWaitSec <n>`, `-Raw`.
 
 Require `-Confirmed` (user approval): everything that changes the server in `confirm` mode;
-`checkout -Force`, `checkin -AllowEncodingChange` and `undocheckout -Discard` in any mode.
+`checkout -Force`, `checkin -AllowEncodingChange`, `undocheckout -Discard` and `sync -Apply -Force` in
+any mode. `sync -Apply` follows the check-out mode (`manual` → 10).
+
+`sync -Apply`: exit code 3 = nothing changed; 8 = conflicts only (nothing overwritten); 11 = partly
+updated. Replaced files are kept in `%LOCALAPPDATA%\JEDI\JVCS\backup\<date>-sync\<id>\` (field `backup`).
 
 ## JSON
 
