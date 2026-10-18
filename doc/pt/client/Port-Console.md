@@ -146,6 +146,29 @@ Observações do teste:
 - Floats no fio (`GetNowUTC`, timestamps) saem com `FloatToStrF(ffGeneral,18)` e vírgula decimal
   (locale pt-BR), como no original.
 
+### 3.3 Regressão do beta 6 (17/10/2026)
+
+Refeita depois das mudanças no console desde o beta 5 (comandos novos, `checkin` com `keep` e recusa
+com motivo, `getmodule` com `rev=` + `dest=` + `noprompt`, nome curto) e das correções da revisão de
+17/10. Console Release 2.5.0.2060 × original 2.5.0.1030, com o mesmo `/input` e a senha só pelo stdin.
+O `g.sh` passa a senha na linha de comando e não foi usado; proxy e `norm.pl` como na seção 3.1.
+
+| Teste | Resultado |
+|---|---|
+| `listprojects`, `listproject exemplo01.dpr`, `listlocks all_users`, `openproject` + `getmodule 1..4 dest=… noprompt` | saída (sem o banner), fio normalizado e arquivos **iguais** nas três builds do dia (a do setup intermediário e as duas com as correções), incluindo o `.res` de 154 792 bytes e as datas dos arquivos |
+| Ciclo `checkout 4` → linha acentuada → `checkin 4 "… ação, revisão (ç, ã)"` | novo 0.15 → 0.16 e original 0.16 → 0.17: a mesma sequência de pedidos com o mesmo número de campos (`CHECKIN_MODULE` com 39); comentário em cp1252 (`E7`, `E3`); o original lê a 0.16 igual à enviada e mostra Stamp/CRC vazios; o novo lê a 0.17 igual à local |
+| `/input` em cp1252 e em UTF-8 com BOM | 0.20 e 0.21: nos dois casos o comentário chega ao servidor em cp1252; o original lê a 0.21 igual à local |
+| 1º check-in de arquivo **vazio** e de **binário** (4 KB, 0..255) e Put (`checkin … keep`) | o original lê os três, a 0.2 (Put, com o lock mantido) e a 0.3 byte a byte |
+| `addmodule` com a pasta na forma 8.3 (mista) e de novo na forma longa; depois em outro projeto | `Module already in project` com o mesmo ID, sem módulo novo; `Module linked` no outro projeto; `sharedby` mostra os dois |
+| `removemodule <id> archive` sem e com `confirm` (módulo sem revisão) | sem `confirm`: só a sintaxe, nada muda; com `confirm`: apagado do arquivo |
+| `getmodule a..b.txt dest=… noprompt` | gravado (antes era recusado) |
+
+Não exercitados: 1º check-in recusado pelo servidor e `setmodulepath` que o servidor não grava (não dá
+para provocar no servidor de teste); ACP 65001 (a leitura do `/input` em cp1252 foi testada com ACP 1252).
+Restos no servidor de teste: projetos `zzbeta6*.dpr` e as revisões 0.16 a 0.21 do `uprincipal.pas`, com
+comentários "[teste beta 6]". Na 0.18 e na 0.19 os acentos saíram trocados por causa de um roteiro de teste
+salvo sem BOM; o console não teve culpa.
+
 ## 4. Pendências
 
 - **Revisões de teste no servidor:** o módulo 4 foi de 0.5 para 0.8 (0.6 e 0.7 pelo console novo,
@@ -174,7 +197,7 @@ novo ganhou três comandos, que usam as mesmas requisições do standalone:
 | Comando | Requisição | O que faz |
 |---|---|---|
 | `addproject <projeto.dpr> [<descrição>]` | `ADD_NEW_PROJECT` | cria o projeto (não abre) |
-| `addmodule <arquivo> [<descrição>]` | `ADD_NEW_MODULE` + `MOVE_MODULE` | cadastra o arquivo no projeto aberto **e** grava a pasta local; o arquivo é procurado na pasta atual; descrição padrão = nome do arquivo |
+| `addmodule <arquivo> [<descrição>]` | `ADD_NEW_MODULE` + `MOVE_MODULE` | cadastra o arquivo no projeto aberto **e** grava a pasta local; o arquivo é procurado na pasta atual; descrição padrão = nome do arquivo. Arquivo que já é módulo (mesma pasta, na forma longa, 8.3 ou mista) não é cadastrado de novo: no projeto aberto, avisa `Module already in project`; se o módulo é de outro projeto, liga-o ao aberto (`Module linked`) |
 | `setmodulepath <módulo> <pasta>` | `MOVE_MODULE` | grava ou corrige a pasta local de um módulo |
 
 E mudanças nos comandos existentes:

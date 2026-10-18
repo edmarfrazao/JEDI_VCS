@@ -340,6 +340,7 @@ procedure ShowLog(JVCSClientObject: TJVCSClientObject); forward;
 procedure ShowUsage; forward;
 function StrAlign(const S: string; Width: Integer; PadChar: Char = ' '): string; forward;
 function TrimLines(const Text: string; Chars: Integer): string; forward;
+function internProjectHasModule(AProjectID, AModuleID: Integer): Boolean; forward;
 
 type
   TCommandProc = function (const Line: string; var ExtExitCode: Integer): Boolean;
@@ -665,13 +666,13 @@ const
 
     (
       Name: 'removemodule';
-      Syntax: 'removemodule <module_name> | <module_id> [archive]';
+      Syntax: 'removemodule <module_name> | <module_id> [archive confirm]';
       HelpText: 'Removes the module from the open project (REMOVE_MODULE, same request as the standalone Remove module).' + sLineBreak +
         'Without archive only the project link is removed: module and revisions stay in the archive (listdeserted).' + sLineBreak +
-        'With archive the module and ALL its revisions are deleted from the archive (not reversible); refused for shared modules.' + sLineBreak +
-        'A deserted module (listdeserted) can be given with archive. A 2.5 server with branches refuses archive for a' + sLineBreak +
+        'With archive confirm the module and ALL its revisions are deleted from the archive (not reversible); refused for shared modules.' + sLineBreak +
+        'A deserted module (listdeserted) can be given with archive confirm. A 2.5 server with branches refuses archive for a' + sLineBreak +
         'module with revisions (status 400, nothing changed): there only modules without revisions are deleted.' + sLineBreak +
-        'Refused while the module is checked out by anybody. No prompt: callers must confirm before.';
+        'Refused while the module is checked out by anybody. No prompt: archive needs the word confirm.';
       Proc: @CmdProcRemoveModule),
 
     (
@@ -1153,6 +1154,7 @@ var
   MemberFiles, FamilyList, ZipFiles: TStringList;
   MemberFile: string;
   I: Integer;
+  RefuseReason: string;
 begin
   Result := False;
   ModuleFileName := ExpandFileName(ModuleName);
@@ -1214,14 +1216,19 @@ begin
       end;
       Connection.SendRequest(CheckinModule);
       ShowLog(CheckinModule);
-      Result := CheckinModule.ErrorMessage = '';
-      if Result then
+      // JVCS 2026: a refused first check-in is an error with the reason, as in the normal
+      // check-in (before: 'First check-in failed', the syntax help and exit code 0)
+      if (not CheckinModule.CheckinAllowed) or (CheckinModule.ErrorMessage <> '') then
       begin
-        Writeln('First check-in: ', ModuleFileName, ' (version 0.1, ', MemberFiles.Count, ' file(s))');
-        SetVCSReadOnlyFile(ModuleFileName, FamilyExtensions);
-      end
-      else
-        Writeln('First check-in failed: ', ModuleFileName, ' - ', CheckinModule.ErrorMessage);
+        RefuseReason := Trim(string(CheckinModule.ErrorMessage));
+        if RefuseReason = '' then
+          RefuseReason := 'no reason given by the server';
+        raise Exception.CreateFmt('First check-in of module %d ''%s'' refused by server: %s',
+          [ModuleID, ModuleFileName, RefuseReason]);
+      end;
+      Result := True;
+      Writeln('First check-in: ', ModuleFileName, ' (version 0.1, ', MemberFiles.Count, ' file(s))');
+      SetVCSReadOnlyFile(ModuleFileName, FamilyExtensions);
     finally
       CheckinModule.Free;
     end;
@@ -1640,10 +1647,11 @@ begin
             if bDestPath then
             begin
               // 2026: dest= must keep the file inside the destination folder; a module
-              // name from the server with a drive, a leading backslash or '..' is refused
+              // name from the server with a drive, a leading backslash or a '..' segment is refused
+              // (a name such as a..b.pas is valid)
               if (ExtractFileDrive(WantedRevision.ModuleName) <> '') or
                 (Copy(WantedRevision.ModuleName, 1, 1) = '\') or
-                (Pos('..', WantedRevision.ModuleName) > 0) then
+                (Pos('\..\', '\' + StringReplace(string(WantedRevision.ModuleName), '/', '\', [rfReplaceAll]) + '\') > 0) then
                 raise Exception.CreateFmt('Module name ''%s'' leaves the dest folder: nothing written',
                   [WantedRevision.ModuleName]);
               S := ChangeFileExt(PathAddSeparator(sDestPath) + WantedRevision.ModuleName, ModuleExtension);
@@ -1955,7 +1963,11 @@ begin
       Result := True;
     end
     else
+    begin
+      // JVCS 2026: not a syntax error (before: the syntax help followed this line)
       Writeln('Project already exists: ', ProjName, ' (ID ', ProjectID, ')');
+      Result := True;
+    end;
   finally
     AddNewProject.Free;
   end;
@@ -1982,6 +1994,84 @@ begin
   end;
 end;
 
+// Long form of an existing path (8.3 components expanded); the path itself if that fails.
+function internLongPath(const APath: string): string;
+var
+  Buf: array[0..MAX_PATH] of Char;
+  L: DWORD;
+begin
+  Result := APath;
+  L := GetLongPathName(PChar(APath), Buf, Length(Buf));
+  if (L > 0) and (L < DWORD(Length(Buf))) then
+    SetString(Result, Buf, L);
+end;
+
+// JVCS 2026: the module of a local file. A module stores its folder as it was given, and the
+// same folder can be written in its long form, in its 8.3 short form or mixed (only
+// C:\Users\EDMARF~1 short, as in %TEMP%). First GET_MODULE_ID as given and in the long form;
+// then SEARCH_MODULES by the file name, comparing the long forms of the folders that exist.
+// AFoundName = the stored full name (lower case), to be sent when the module is linked.
+function internFindModuleID(const AFullName: string; var AFoundName: string): Integer;
+var
+  Names: TStringList;
+  S, Wanted: string;
+  I: Integer;
+  GetModuleId: TJVCSGetModuleId;
+  SearchModules: TJVCSSearchModules;
+  Item: TSearchModulesOutputItem;
+begin
+  Result := 0;
+  AFoundName := '';
+  Wanted := AnsiLowerCase(internLongPath(AFullName));
+  Names := TStringList.Create;
+  try
+    Names.Add(AnsiLowerCase(AFullName));
+    if Names.IndexOf(Wanted) < 0 then
+      Names.Add(Wanted);
+    for I := 0 to Names.Count - 1 do
+    begin
+      GetModuleId := TJVCSGetModuleId.Create(nil);
+      try
+        GetModuleId.ModuleName := Names[I];
+        Connection.SendRequest(GetModuleId);
+        ShowLog(GetModuleId);
+        Result := GetModuleId.ModuleID;
+      finally
+        GetModuleId.Free;
+      end;
+      if Result > 0 then
+      begin
+        AFoundName := Names[I];
+        Exit;
+      end;
+    end;
+  finally
+    Names.Free;
+  end;
+
+  SearchModules := TJVCSSearchModules.Create(nil);
+  try
+    SearchModules.MaskString := JVCSString255(AnsiString(ExtractFileName(AFullName)));
+    Connection.SendRequest(SearchModules);
+    ShowLog(SearchModules);
+    for I := 0 to SearchModules.OutputItemCount - 1 do
+    begin
+      Item := SearchModules.OutputItems[I];
+      if (string(Item.Path) = '') or not SameText(string(Item.ModuleName), ExtractFileName(AFullName)) then
+        Continue;
+      S := IncludeTrailingPathDelimiter(string(Item.Path)) + string(Item.ModuleName);
+      if AnsiLowerCase(internLongPath(S)) = Wanted then
+      begin
+        Result := Item.ModuleID;
+        AFoundName := AnsiLowerCase(S);
+        Exit;
+      end;
+    end;
+  finally
+    SearchModules.Free;
+  end;
+end;
+
 // addmodule sends only the file name (a full path would become the module name on
 // the server), always with a description (an empty one leaves a placeholder revision
 // that later refuses the first check-in) and then stores the local folder.
@@ -1990,7 +2080,8 @@ function CmdProcAddModule(const Line: string; var ExtExitCode: Integer): Boolean
 var
   Count: Integer;
   AddNewModule: TJVCSAddNewModule;
-  FullName, ShortName, Descr: string;
+  ExistingID: Integer;
+  FullName, ShortName, Descr, FoundName: string;
 begin
   Result := False;
   Count := LineParamCount(Line);
@@ -2007,6 +2098,39 @@ begin
     Descr := ShortName;
 
   CheckOpenProject;
+  // JVCS 2026: a file that already is a module (same folder and name) is not added again.
+  // ADD_NEW_MODULE gets only the short name (empty path), which never matches the stored
+  // name + path: the server would create a second, empty module. Already in the open
+  // project: nothing to do; in another project: linked (as linkmodule), with its revisions.
+  ExistingID := internFindModuleID(FullName, FoundName);
+  if ExistingID > 0 then
+  begin
+    if internProjectHasModule(ProjectID, ExistingID) then
+      Writeln('Module already in project: ', FullName, ' (ID ', ExistingID, ')')
+    else
+    begin
+      AddNewModule := TJVCSAddNewModule.Create(nil);
+      try
+        AddNewModule.ProjectID := ProjectID;
+        AddNewModule.UserID := Connection.UserID;
+        AddNewModule.ModuleFullName := FoundName; // the stored form, or the server creates a new module
+        AddNewModule.Flags := 4096; // ignored for an existing module
+        AddNewModule.Description := Descr;
+        Connection.SendRequest(AddNewModule);
+        ShowLog(AddNewModule);
+        if AddNewModule.IsNewModule or (AddNewModule.ModuleID <> ExistingID) then
+          raise Exception.CreateFmt('ADD_NEW_MODULE returned module %d (new: %s) instead of linking %d; ' +
+            'that module may now be linked to the project: check with listmodules',
+            [AddNewModule.ModuleID, BoolToStr(AddNewModule.IsNewModule, True), ExistingID]);
+      finally
+        AddNewModule.Free;
+      end;
+      Writeln('Module linked: ', FullName, ' (ID ', ExistingID, ')');
+    end;
+    Result := True;
+    Exit;
+  end;
+
   AddNewModule := TJVCSAddNewModule.Create(nil);
   try
     AddNewModule.ProjectID := ProjectID;
@@ -2021,14 +2145,14 @@ begin
       Writeln('Module added: ', ShortName, ' (ID ', ModuleID, ')')
     else
       Writeln('Module already exists: ', ShortName, ' (ID ', ModuleID, ')');
-    if ModuleID > 0 then
-    begin
-      Result := internSetModulePath(ModuleID, ShortName, ExtractFileDir(FullName));
-      if Result then
-        Writeln('Module path: ', ExtractFileDir(FullName))
-      else
-        Writeln('Module path not set: ', ShortName);
-    end;
+    if ModuleID <= 0 then
+      raise Exception.CreateFmt('Module %s not added (the server answered module ID %d)', [ShortName, ModuleID]);
+    // JVCS 2026: a path the server did not store is an error (before: syntax help, exit code 0)
+    if not internSetModulePath(ModuleID, ShortName, ExtractFileDir(FullName)) then
+      raise Exception.CreateFmt('Module %s (ID %d) added, but its path was not set: run setmodulepath %d "%s"',
+        [ShortName, ModuleID, ModuleID, ExtractFileDir(FullName)]);
+    Writeln('Module path: ', ExtractFileDir(FullName));
+    Result := True;
   finally
     AddNewModule.Free;
     ModuleID := -1;
@@ -2056,11 +2180,11 @@ begin
   try
     CheckOpenProject;
     CheckModuleOrLocalFile;
-    Result := internSetModulePath(ModuleID, ModuleName, NewPath);
-    if Result then
-      Writeln('Module path set: ', ModuleName, ' -> ', NewPath)
-    else
-      Writeln('Module path not set: ', ModuleName);
+    // JVCS 2026: a path the server did not store is an error (before: syntax help, exit code 0)
+    if not internSetModulePath(ModuleID, ModuleName, NewPath) then
+      raise Exception.CreateFmt('Module path not set: %s (ID %d) -> %s', [ModuleName, ModuleID, NewPath]);
+    Writeln('Module path set: ', ModuleName, ' -> ', NewPath);
+    Result := True;
   finally
     ModuleID := -1;
     ModuleName := '';
@@ -2527,12 +2651,15 @@ var
 begin
   Result := False;
   Count := LineParamCount(Line);
-  if not (Count in [2, 3]) then
+  if not (Count in [2, 4]) then
     Exit;
   bArchive := False;
-  if Count = 3 then
+  // JVCS 2026: archive deletes the module and all its revisions (not reversible): it needs
+  // the word confirm after it, as removeproject/renameproject
+  if Count = 4 then
   begin
-    if AnsiCompareText(LineParamStr(Line, 3), 'archive') <> 0 then
+    if (AnsiCompareText(LineParamStr(Line, 3), 'archive') <> 0) or
+      (AnsiCompareText(LineParamStr(Line, 4), 'confirm') <> 0) then
       Exit;
     bArchive := True;
   end;
@@ -2591,6 +2718,11 @@ begin
       end
       else
       begin
+        // False is the answer for a shared module (link removed, project list in the answer);
+        // without the list nothing is known to have changed
+        if RemoveModule.OutputItemCount = 0 then
+          raise Exception.CreateFmt('Module %d ''%s'' not removed: the server answered False without the project list',
+            [ModuleID, ModuleName]);
         S := '';
         for I := 0 to RemoveModule.OutputItemCount - 1 do
         begin
@@ -6310,6 +6442,7 @@ function CmdProcInput(const Line: string; var ExtExitCode: Integer): Boolean;
 var
   Count, I: Integer;
   Lines: TStringList;
+  InputEncoding: TEncoding;
 begin
   Result := False;
   Count := LineParamCount(Line);
@@ -6320,6 +6453,15 @@ begin
       raise Exception.CreateFmt(SInputFileNotFound, [InputFileName]);
     Lines := TStringList.Create;
     try
+      // JVCS 2026: without a BOM the file is read in the wire code page (cp1252), whatever the
+      // ANSI code page of Windows is: the 2.5.0.1030 console passed the bytes as they were, and
+      // with ACP 65001 the default would decode a cp1252 file as UTF-8. A BOM still wins.
+      InputEncoding := TEncoding.GetEncoding(MWCodePage);
+      try
+        Lines.DefaultEncoding := InputEncoding; // TStrings keeps a clone
+      finally
+        InputEncoding.Free;
+      end;
       Lines.LoadFromFile(InputFileName);
       for I := 0 to Lines.Count - 1 do
         try
