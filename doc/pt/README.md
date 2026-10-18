@@ -15,7 +15,7 @@ protocolo. Visão geral do projeto, download e licenças: [README.pt-BR.md](../.
 | Usar com um assistente de IA | [IA](ia/README.md) e a skill [skills/pt/jedi-vcs](../../skills/pt/jedi-vcs/) |
 | Entender o código ou compilar | [Fontes](fontes/README.md) |
 | Saber por que e como o port foi feito | [Processo](processo/README.md) |
-| Saber onde o projeto está | [CHANGELOG](../../CHANGELOG.md), [novidades](../../news/pt/README.md) e [Decisões](common/Decisoes.md) |
+| Saber onde o projeto está | [CHANGELOG](../../CHANGELOG.md), [novidades](../../news/pt/README.md) e [decisões de arquitetura](processo/03-Decisoes-de-Arquitetura.md) |
 
 ## Manual de uso (`manual`)
 
@@ -52,7 +52,7 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 | [02 Linha do tempo](processo/02-Linha-do-Tempo.md) | Fases F0–F6 com datas e commits-chave |
 | [03 Decisões de arquitetura](processo/03-Decisoes-de-Arquitetura.md) | Resumo navegável de Decisões e ADR-001 |
 | [04 Testes e validação](processo/04-Testes-e-Validacao.md) | Golden, harness, varredura de forms, IDEs, canal, `verificar-expert` |
-| [05 Processo de release](processo/05-Processo-de-Release.md) | Gerar, testar aqui e no PC remoto, publicar; checklist |
+| [05 Processo de release](processo/05-Processo-de-Release.md) | Gerar, testar no PC de desenvolvimento e no PC de testes, publicar; checklist |
 | [06 Problemas conhecidos e lições](processo/06-Problemas-Conhecidos-e-Licoes.md) | O que deu errado e o que ficou de lição |
 
 ## Fontes (`fontes`)
@@ -71,13 +71,12 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 |---|---|
 | [CHANGELOG](../../CHANGELOG.md) | Mudanças por versão |
 | [Plano-de-Port](common/Plano-de-Port.md) | Plano em fases, critérios de pronto, riscos, checklist de compatibilidade com o servidor |
-| [Decisoes](common/Decisoes.md) | Registro datado das decisões |
 | [ADR-001](common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md) | IA fazendo check-in/check-out e núcleo único para todos os Delphi |
 | [Versoes](common/Versoes.md) | Versão do produto, do Delphi, das dependências e dos binários de referência |
 | [Componentes](common/Componentes.md) | Componentes, bibliotecas, units ausentes e substitutos nativos |
 | [Inventario-Componentes](common/Inventario-Componentes.md) | Inventário completo (201 units), riscos e evidências |
 | [Licencas](common/Licencas.md) | Licenças e pontos de atenção (MidWare não comercial, DFS, FastMM5) |
-| [Ambiente](common/Ambiente.md) | Como o ambiente de desenvolvimento foi montado e como reverter |
+| [Creditos-e-Direitos](common/Creditos-e-Direitos.md) | Criadores e mantenedores, direitos da licença, exigência da `FVCSCrypt.dll` e por que não há 64 bits |
 | [Credenciais](common/Credenciais.md) | Como o cliente guarda senhas e a proposta para CLI e IA |
 | [LEIAME-Origem](common/LEIAME-Origem.md) e [manifesto-origem.csv](common/manifesto-origem.csv) | De onde veio cada arquivo da árvore |
 
@@ -85,7 +84,7 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 
 | Documento | O que contém |
 |---|---|
-| [Port-Console](client/Port-Console.md) | Port do `jvcs.exe` e o teste golden ([evidências](client/golden-console)) |
+| [Port-Console](client/Port-Console.md) | Port do `jvcs.exe` e o teste golden |
 | [Port-Diff](client/Port-Diff.md) | Port do `JEDIVCSDiff` e a infraestrutura de aparência |
 | [Port-Standalone](client/Port-Standalone.md) | Port do `Jedivcs.exe` (três etapas), varredura de forms, testes funcionais |
 | [Port-DLL-IDE](client/Port-DLL-IDE.md) | Port da `JvcsExternalDll.dll`, harness, comportamento na IDE, expert em todas as atualizações |
@@ -101,7 +100,6 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 | Documento | O que contém |
 |---|---|
 | [server/LEIAME.md](server/LEIAME.md) | O servidor não é portado; o cliente preserva o protocolo dele |
-| [server/Servidor-Teste-Local.md](server/Servidor-Teste-Local.md) | Como o servidor de teste foi montado, problemas encontrados (ODS 11.1/11.2) e atualização do banco para o esquema 2.5 |
 
 ## Build, bibliotecas e binários (fora de `doc`)
 
@@ -109,7 +107,6 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 |---|---|
 | [../tools/LEIAME-compilar.md](../../tools/LEIAME-compilar.md) | Referência completa do `compilar.bat`, `compilar-expert.bat`, `.dproj` e variáveis de ambiente |
 | [../setup/LEIAME.md](../../setup/LEIAME.md) | Instalador Inno Setup: geração, componentes, o que muda na IDE, testes |
-| [../tools/canal/LEIA-PRIMEIRO.md](../../tools/canal/LEIA-PRIMEIRO.md) | Canal assinado entre o PC de desenvolvimento e o PC remoto de testes |
 | [../3rdparty/LEIAME.md](../../3rdparty/LEIAME.md) | Runtime e binários de referência do 2.5.0.1030 |
 | [../src/comp/synedit/LEIAME-v2026.md](../../src/comp/synedit/LEIAME-v2026.md), [../src/comp/virtualtreeview/LEIAME-v2026.md](../../src/comp/virtualtreeview/LEIAME-v2026.md) | SynEdit e VirtualTreeView fixados |
 | [../src/comp/midware/LEIAME.md](../../src/comp/midware/LEIAME.md), [../src/comp/crc/LEIAME.md](../../src/comp/crc/LEIAME.md), [../src/comp/mwtools/LEIAME.md](../../src/comp/mwtools/LEIAME.md) | Notas de port do MidWare, do CRC e do lexer Pascal |

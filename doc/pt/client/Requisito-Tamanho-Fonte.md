@@ -1,6 +1,6 @@
 # Requisito — Aparência: fonte, tamanho e tema claro/escuro
 
-Pedido do usuário (12/10/2026): em monitor de 32" QHD (2560×1440, escala 100%), menus e textos do JEDI VCS ficam pequenos.
+Requisito (12/10/2026): em monitor de 32" QHD (2560×1440, escala 100%), menus e textos do JEDI VCS ficam pequenos.
 Deve existir uma forma de **alterar o tamanho da fonte** no cliente **standalone** e na versão **integrada ao Delphi**.
 
 ## 1. Situação atual (binários originais 2.5.0.1030)
@@ -33,7 +33,7 @@ e opcionalmente `UIFontName` (padrão: fonte do sistema, `Screen.MessageFont`). 
 - DPI: projetos com manifesto **Per-Monitor V2** (já previsto no Plano-de-Port F0); a escala do usuário multiplica a do monitor.
 - Fase do plano: infraestrutura em **F3** (comum de GUI, piloto no Diff), aplicada em **F4** (EXE) e **F5** (DLL + item no expert).
 
-## 2.1 Escolha explícita de fonte e tamanho (pedido do usuário)
+## 2.1 Escolha explícita de fonte e tamanho
 Além da escala em %, a página **VCS Properties → User Interface** terá:
 - **Fonte da interface…** — botão que abre um TFontDialog (família + tamanho em pontos, sem cor/efeitos), com prévia ao lado e botão **Padrão do sistema**. Grava UIFontName e UIFontSize (pt).
 - **Fonte dos editores…** — idem para Diff/Line History/visualizadores (EditorFontName, EditorFontSize; padrão Consolas 10).
@@ -41,7 +41,7 @@ Além da escala em %, a página **VCS Properties → User Interface** terá:
 - Regra: se UIFontSize estiver definido, ele prevalece sobre UIFontScale; a escala em % fica como atalho rápido (menu Exibir → Tamanho da fonte).
 - Aplicação imediata ao clicar **Apply** (todas as janelas abertas, standalone e IDE), sem reiniciar.
 
-## 2.2 Tema claro/escuro seguindo o Delphi (pedido do usuário)
+## 2.2 Tema claro/escuro seguindo o Delphi
 - **Integrado ao Delphi:** o expert lê o tema ativo da IDE via ToolsAPI (`IOTAIDEThemingServices.ActiveTheme`: Light / Dark / Mountain Mist) e registra um notifier (`IOTAIDEThemingServicesNotifier.ChangedTheme`) para acompanhar a troca em tempo real. Ele repassa o tema à DLL (novo valor na ABI v2 ou notificação `ifn*` nova; na DLL original 2007 não é possível).
   Como a DLL portada tem a **própria VCL** (linkada estática, sem runtime packages), o `ApplyTheme` da IDE não estiliza os forms dela; a DLL aplica um **VCL Style equivalente** com o seu `TStyleManager`: Light → padrão/"Windows11 Modern Light", Dark → "Windows11 Modern Dark" (ou o style escuro mais próximo do tema da IDE), Mountain Mist → claro. Os .vsf vêm de `Studio\37.0\Redist\styles\vcl` e são embutidos como recurso.
 - **Standalone:** opção **Tema: Seguir o Windows / Claro / Escuro** (`UITheme`) em VCS Properties → User Interface; "Seguir o Windows" lê `HKCU\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize\AppsUseLightTheme` e reage a `WM_SETTINGCHANGE`. Barra de título escura no Windows 11 via `DwmSetWindowAttribute(DWMWA_USE_IMMERSIVE_DARK_MODE)`.

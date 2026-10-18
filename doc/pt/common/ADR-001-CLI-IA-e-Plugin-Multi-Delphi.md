@@ -26,7 +26,7 @@
 
    Estimativa: 2 a 4 dias.
 2. **O servidor aceita uma só sessão por usuário.** O `LOGIN` apaga a linha do usuário em `transact` (`SrvOBJMain.pas:514-520`). Se a IA e a IDE usarem o mesmo usuário, uma derruba a sessão da outra. O mesmo vale para **duas chamadas paralelas da própria IA**. Por isso a recomendação é:
-   - **uma conta JVCS só para a IA** (ex.: `edmar.ia`), criada desde já;
+   - **uma conta JVCS só para a IA** (ex.: `<usuario>.ia`), criada desde já;
    - **chamadas serializadas** por conta.
 
    A conta deve ter nível global mínimo (Guest ou somente leitura) e RW em `pjusers` só nos projetos liberados. O servidor não deixa rebaixar por projeto (§3.3).
@@ -165,7 +165,7 @@ Com stdin redirecionado, qualquer `Prompt` levanta `EOSError`, porque `Win32Chec
 
 | # | Opção | Esforço | Risco | Segurança | Experiência da IA | Dependências | Prazo |
 |---|---|---|---|---|---|---|---|
-| **Q1-1** | `jvcs.exe` 2.5.0.1030 + wrapper `jvcs-ai.ps1` | 2–4 dias | Médio-alto, mitigado:<br>– o wrapper compara com a base antes de travar ou destravar;<br>– alinha a data;<br>– compensa lock órfão;<br>– serializa;<br>– aplica timeout | Média:<br>– senha DPAPI via stdin;<br>– conta dedicada;<br>– confirmação só pelo `ask`, que precisa cobrir Bash **e** PowerShell | Regular:<br>– JSON do wrapper;<br>– status só do projeto inteiro;<br>– diff via `getmodule` + `git diff --no-index`;<br>– sem log | Só o que já está instalado + conta `edmar.ia` | **Já** |
+| **Q1-1** | `jvcs.exe` 2.5.0.1030 + wrapper `jvcs-ai.ps1` | 2–4 dias | Médio-alto, mitigado:<br>– o wrapper compara com a base antes de travar ou destravar;<br>– alinha a data;<br>– compensa lock órfão;<br>– serializa;<br>– aplica timeout | Média:<br>– senha DPAPI via stdin;<br>– conta dedicada;<br>– confirmação só pelo `ask`, que precisa cobrir Bash **e** PowerShell | Regular:<br>– JSON do wrapper;<br>– status só do projeto inteiro;<br>– diff via `getmodule` + `git diff --no-index`;<br>– sem log | Só o que já está instalado + conta `<usuario>.ia` | **Já** |
 | **Q1-2** | `jvcs.exe` portado com modo moderno (`--json`) | F2 + 2–3 semanas | Médio (o do port: CRC/ZIP R7–R10, golden) | Alta:<br>– Credential Manager;<br>– janela de confirmação;<br>– auditoria;<br>– validação de codificação | Boa:<br>– JSON estável, códigos 0–12;<br>– lote e `--dry-run`;<br>– resolução por caminho ou `.dproj`;<br>– `status`/`diff`/`log` | F1, F2 | Depois de o console compilar |
 | **Q1-3** | MCP: `jvcs.exe mcp` (stdio) | +4–8 dias, com spike de 1–2 dias | Baixo-médio:<br>– o Claude Code 2.1.29x negocia a revisão 2026-07-28 e atende as anteriores;<br>– a GDK suporta 2025-06-18, 2025-11-25 e 2026-07-28 em stdio e Win32;<br>– resta a convivência do laço do Midware com o stdin | Alta:<br>– `checkin` com `_meta["anthropic/requiresUserInteraction"]` (prompt humano em todo modo);<br>– permissão por nome de ferramenta, que não depende do texto do comando | Ótima: ferramentas tipadas, `outputSchema`, serve outros agentes | Q1-2; GDK delphi-mcp-server (MIT, Delphi 11+) | Depois do Q1-2 |
 | Q1-3c | MCP em TS/Python chamando o CLI | 1–2 dias + runtime | Operacional | Igual a Q1-2 | Ótima | Node/Python, **ausentes nesta máquina** | Descartado por enquanto |
@@ -180,13 +180,13 @@ Com stdin redirecionado, qualquer `Prompt` levanta `EOSError`, porque `Win32Chec
 
 **Camada 0: agora, com os binários originais (2 a 4 dias)**
 
-1. **Criar no servidor o usuário `edmar.ia`:**
+1. **Criar no servidor o usuário `<usuario>.ia`:**
    - nível global **Guest (0)**, ou somente leitura (1) se a IA precisar ler outros projetos;
    - **RW (2) em `pjusers`** só nos projetos liberados.
 
    O servidor trata `pjusers.rights = 0` como "sem regra" e usa o nível global (F-I). Por isso o nível global tem que ser o mínimo. O check-in exige `LevelRW` (`SrvOBJModules.pas:1947, 1991`). Opcional: ligar `CheckIPAddr` e fixar `users.ipaddr` da conta no IP da estação.
 2. O humano grava a credencial uma única vez, protegida por DPAPI:
-   `Get-Credential -UserName edmar.ia | Export-Clixml "$env:APPDATA\JEDI\jvcs-ai\cred.xml"`
+   `Get-Credential -UserName <usuario>.ia | Export-Clixml "$env:APPDATA\JEDI\jvcs-ai\cred.xml"`
 3. Criar `tools\ai\jvcs-ai.ps1` (esboço no §3.4) com estas regras:
    - nunca usar `/password` nem `-password`;
    - montar um arquivo `/input` em CP1252 com `openproject` antes do comando;
@@ -351,7 +351,7 @@ jvcs locks --mine --json
       "type": "stdio",
       "command": "C:\\Program Files (x86)\\JEDI\\JVCS 2026\\jvcs.exe",
       "args": ["mcp", "--root", "${CLAUDE_PROJECT_DIR:-.}", "--config", "${CLAUDE_PROJECT_DIR:-.}\\.jvcs.json"],
-      "env": { "JVCS_CREDENTIAL_TARGET": "JEDIVCS:vcsserver:2106:edmar.ia" },
+      "env": { "JVCS_CREDENTIAL_TARGET": "JEDIVCS:vcsserver:2106:<usuario>.ia" },
       "timeout": 600000
     }
   }
@@ -624,8 +624,8 @@ O custo real de recompilar não é o compilador (segundos para cerca de 157 KB).
 
 | Fase | Quem tem sessão | Usuários |
 |---|---|---|
-| Hoje / B0 | A IDE (DLL de 2007, no processo da IDE ou no agente `ide`) e a IA (cada chamada do `jvcs.exe`, serializada pelo mutex) | Humano + **`edmar.ia`**: sem colisão |
-| F2 / F2+ | A IDE (sessão própria) e o CLI/MCP em `--direct` (re-login por 403 + mutex) | Humano + `edmar.ia` enquanto a IDE rodar a DLL de 2007 |
+| Hoje / B0 | A IDE (DLL de 2007, no processo da IDE ou no agente `ide`) e a IA (cada chamada do `jvcs.exe`, serializada pelo mutex) | Humano + **`<usuario>.ia`**: sem colisão |
+| F2 / F2+ | A IDE (sessão própria) e o CLI/MCP em `--direct` (re-login por 403 + mutex) | Humano + `<usuario>.ia` enquanto a IDE rodar a DLL de 2007 |
 | F4 / F5 | GUI e IDE portadas, com re-login transparente (D11-a) ou via agente `session` (D11-b) | A IA **pode** usar a conta do humano (opcional). Com D11-a há "ping-pong" de LOGIN; com D11-b, uma sessão por usuário |
 
 O agente `session`, se adotado:
@@ -709,7 +709,7 @@ Envelope do CLI `--json` (stdout só com JSON; mensagens para humanos vão no st
 
 ```json
 {"schema":"jvcs/1","command":"checkout","ok":false,"exitCode":6,
- "server":{"host":"vcsserver","port":2106,"user":"edmar.ia","serverVersion":250},
+ "server":{"host":"vcsserver","port":2106,"user":"<usuario>.ia","serverVersion":250},
  "items":[{"path":"d:\\projetos\\meuapp\\src\\clientes.pas","moduleId":1234,
    "project":{"id":17,"name":"meuapp.dpr"},"status":"lockedByOther","owner":"maria",
    "version":1,"revision":42,
@@ -732,10 +732,10 @@ O mesmo pedido pelo pipe:
 | Tema | Controle |
 |---|---|
 | **Credenciais** | **Camada 0:** DPAPI via `Export-Clixml`. A senha vai ao `jvcs.exe` pelo **stdin**, como bytes 1252; nunca com `/password` ou `-password`, porque a linha de comando aparece no transcript, em `Win32_Process.CommandLine` e no histórico do shell.<br>**Camada 1+:** **Windows Credential Manager**, genérico, alvo `JEDIVCS:<host>:<porta>:<usuário>`, gravado pelo humano com `jvcs login` ou com `cmdkey /generic:… /user:… /pass` (sem valor, o cmdkey pede a senha).<br>Ordem de busca: Credential Manager → arquivo DPAPI → `--password-stdin` (CI) → `/password` só no modo legado, com aviso.<br>O `jvcs login` recusa rodar sem console. A checagem de `CLAUDECODE`/`AI_AGENT` é só conveniência.<br>O Base64 que a GUI grava no registro (`Create.pas:1237-1239`) só é lido para migração (R21) |
-| **Limite que não dá para eliminar** | A IA roda com o mesmo usuário do Windows, então consegue ler o Credential Manager e o DPAPI, e consegue tirar o somente leitura por caminhos que regras de texto não pegam. As defesas reais são:<br>– a **conta `edmar.ia` com nível global mínimo e RW só nos projetos liberados** (F-I);<br>– opcionalmente, login restrito por IP;<br>– o `deny` de `cmdkey`/`Import-Clixml`, que dificulta mas não é fronteira;<br>– rotação de senha;<br>– o servidor exige lock para o check-in (sem "casually checkin").<br>Nível máximo (caro): um broker em outra conta do Windows |
+| **Limite que não dá para eliminar** | A IA roda com o mesmo usuário do Windows, então consegue ler o Credential Manager e o DPAPI, e consegue tirar o somente leitura por caminhos que regras de texto não pegam. As defesas reais são:<br>– a **conta `<usuario>.ia` com nível global mínimo e RW só nos projetos liberados** (F-I);<br>– opcionalmente, login restrito por IP;<br>– o `deny` de `cmdkey`/`Import-Clixml`, que dificulta mas não é fronteira;<br>– rotação de senha;<br>– o servidor exige lock para o check-in (sem "casually checkin").<br>Nível máximo (caro): um broker em outra conta do Windows |
 | **Confirmação humana** | **(1) No agente:**<br>– regras `ask` para checkout, check-in e undo, cobrindo Bash **e** PowerShell. Elas valem em todos os modos, inclusive auto e bypass;<br>– no MCP, `requiresUserInteraction` no `checkin`, que também vence regras `allow`.<br>**(2) Janela do próprio CLI** (`TaskDialogIndirect`: módulos, comentário, diffstat; ao expirar, código 10), ligada por **política em `HKLM\SOFTWARE\JEDI\JVCS2026\Policy`** (`confirmCheckin=always\|noConsole\|never`; padrão `noConsole`). Ela **não** depende de `CLAUDECODE`/`AI_AGENT`, que a IA consegue remover do ambiente. No MCP com `requiresUserInteraction`, a política pode aceitar `client` para não pedir duas vezes.<br>A janela é necessária porque:<br>– regras por texto não pegam invocações alternativas;<br>– outros agentes não têm essas regras;<br>– SDK (`canUseTool`), hooks `PermissionRequest` e `--permission-prompt-tool` podem aprovar por programa.<br>Risco de UX: a janela de um processo em segundo plano pode abrir atrás; use `FlashWindowEx` e timeout.<br>**(3)** Antes do envio, o CLI valida "sem mudança" e a codificação |
 | **Escopo** | `allowedProjects`/`roots` na política; MCP iniciado com `--root`; direitos por projeto no servidor; `sync`/`label` desligados no MCP |
-| **Auditoria** | **Servidor:** `VCSLog` quando `WriteVCSLog` está ligado (`SrvOBJModules.pas:2226-2233`), separado por ser `edmar.ia`. Atenção: o servidor grava o `UserID` enviado pelo cliente (F-K), então a separação vale para clientes honestos.<br>**Local:** `%LOCALAPPDATA%\JEDI\JVCS\audit\AAAA-MM.jsonl` (data e hora, usuário do Windows e do JVCS, servidor, comando, módulos, revisão antes e depois, código, `AI_AGENT`, `CLAUDE_CODE_SESSION_ID`, forma de confirmação).<br>**Trailer** no comentário (`[IA claude-code sessão …]`): **obrigatório** se a IA usar a conta do humano (D11).<br>Mais o transcript do Claude Code |
+| **Auditoria** | **Servidor:** `VCSLog` quando `WriteVCSLog` está ligado (`SrvOBJModules.pas:2226-2233`), separado por ser `<usuario>.ia`. Atenção: o servidor grava o `UserID` enviado pelo cliente (F-K), então a separação vale para clientes honestos.<br>**Local:** `%LOCALAPPDATA%\JEDI\JVCS\audit\AAAA-MM.jsonl` (data e hora, usuário do Windows e do JVCS, servidor, comando, módulos, revisão antes e depois, código, `AI_AGENT`, `CLAUDE_CODE_SESSION_ID`, forma de confirmação).<br>**Trailer** no comentário (`[IA claude-code sessão …]`): **obrigatório** se a IA usar a conta do humano (D11).<br>Mais o transcript do Claude Code |
 | **Integridade do código** | Bloquear no check-in, salvo `--allow-encoding-change`:<br>– BOM que aparece ou some;<br>– CRLF→LF;<br>– U+FFFD;<br>– fonte CP1252 regravado em UTF-8;<br>– **arquivo sem BOM que ganhou sequências UTF-8** (ASCII puro editado pelo `Edit` com acentos), porque o compilador lê sem BOM como ANSI.<br>Hook nega `Write` sobre fonte não-UTF-8 (F-J). `deny` para `attrib`/`Set-ItemProperty`. `--if-local-changed=fail` é o padrão; `noprompt` nunca é usado sem pedido explícito |
 | **Prompt injection** | Check-in sempre com confirmação fora do modelo; a skill trata o conteúdo dos arquivos como dado; comandos de credencial negados; `Edit` negado em `.jvcs.json`, `tools\ai\**`, `.claude\settings.json`, `.claude\hooks\**` e `.claude\jvcs-session.json` (`.claude\` já é caminho protegido) |
 | **Canal local** | Pipe com nome aleatório (`\\.\pipe\jvcs-ide-<pid>-<128 bits>`; `jvcs-<SID>` para a sessão) e **DACL explícita**, só com o SID do usuário. O padrão dá leitura a Everyone e ao anônimo.<br>`PIPE_REJECT_REMOTE_CLIENTS`, `FILE_FLAG_FIRST_PIPE_INSTANCE` e token de handshake por handle herdado ou stdin. O PID do par é só uma checagem auxiliar (há spoofing documentado).<br>A senha **nunca** passa pelo canal: o login acontece no agente ou no CLI |
@@ -749,7 +749,7 @@ O mesmo pedido pelo pipe:
 
 ### 8.1 O que dá para entregar já com os binários originais
 
-1. **A IA fazendo check-in e check-out** pela camada 0: wrapper + `jvcs.exe` 2.5.0.1030 + conta `edmar.ia` + skill + hook local.
+1. **A IA fazendo check-in e check-out** pela camada 0: wrapper + `jvcs.exe` 2.5.0.1030 + conta `<usuario>.ia` + skill + hook local.
 2. **IDE de 64 bits do Delphi 13 (e do 12.3+):**
    - de imediato, G0 (GUI standalone) e G (menu Tools);
    - depois, B0: expert Win64 + `jvcs-agent.exe --role=ide` carregando a `JvcsExternalDll.dll` 2.5.0.1030.
@@ -759,7 +759,7 @@ O mesmo pedido pelo pipe:
 
 | Marco | Fase | Entrega | Critério de pronto | Estimativa |
 |---|---|---|---|---|
-| **M0** | Agora (paralelo à F0) | Camada 0 completa; conta `edmar.ia` com o esquema de direitos de F-I; decisões em `Decisoes.md`; Plano de Port atualizado (item 2.8, sub-fase F2+, B0 na trilha 5A, F6 reclassificada); `Status.md` corrigido (Win64 presente) | – A IA faz checkout, edita, mostra o diff e faz check-in com `ask`, pelo Bash e pelo PowerShell.<br>– Senha ausente no transcript e no argv.<br>– A IDE continua conectada.<br>– **Checkout com arquivo local alterado não deixa lock órfão.**<br>– Undo com arquivo alterado não libera lock.<br>– Chamadas paralelas serializadas.<br>– `Write` em fonte CP1252 negado | 2–4 d |
+| **M0** | Agora (paralelo à F0) | Camada 0 completa; conta `<usuario>.ia` com o esquema de direitos de F-I; decisões registradas; Plano de Port atualizado (item 2.8, sub-fase F2+, B0 na trilha 5A, F6 reclassificada); `Status.md` corrigido (Win64 presente) | – A IA faz checkout, edita, mostra o diff e faz check-in com `ask`, pelo Bash e pelo PowerShell.<br>– Senha ausente no transcript e no argv.<br>– A IDE continua conectada.<br>– **Checkout com arquivo local alterado não deixa lock órfão.**<br>– Undo com arquivo alterado não libera lock.<br>– Chamadas paralelas serializadas.<br>– `Write` em fonte CP1252 negado | 2–4 d |
 | **M1** | F5 trilha 5A | E1 (W32 22/23/37 + W64 37), refatoração `IJvcsCore` (`TJvcsInProcCore`/`TJvcsAgentCore`), testes do túnel com a `FakeJvcsExternalDll` | PE conferido por BDS e plataforma; os 89 testes de fumaça continuam verdes no modo dentro do processo | 3–5 d |
 | **M2** | F5 trilha 5A | **B0**: `jvcs-agent.exe --role=ide` + pipe + laço reentrante + posse de janelas (as duas estratégias do §4.2) + vigia de travamento + Job Object. E2 opcional | Na IDE 64 do D13:<br>– menu, Connect, check-in e check-out, History e menu do Project Manager;<br>– fechar a IDE sem travar;<br>– agente morto não derruba a IDE;<br>– agente travado é detectado e encerrável.<br>Medições de latência, foco, DPI e antivírus registradas | 10–20 d |
 | — | F1 | `IJVCSTransport` + `TJVCSReplayTransport` + golden | Como no plano | (plano) |
@@ -777,7 +777,7 @@ O mesmo pedido pelo pipe:
 
 | # | Decisão | Opções | **Recomendação** |
 |---|---|---|---|
-| D1 | Conta da IA | (a) conta dedicada `edmar.ia`; (b) a do humano | **(a)** desde já, por causa de F-A. Nível global Guest ou RO e RW em `pjusers` (F-I). Consequência: quem faz o check-in do trabalho da IA é a IA, com aprovação. Reavaliar (b) depois do M6/M7 |
+| D1 | Conta da IA | (a) conta dedicada `<usuario>.ia`; (b) a do humano | **(a)** desde já, por causa de F-A. Nível global Guest ou RO e RW em `pjusers` (F-I). Consequência: quem faz o check-in do trabalho da IA é a IA, com aprovação. Reavaliar (b) depois do M6/M7 |
 | D2 | Arquitetura da Pergunta 2 | A / A64 / **E+B** / C / D | **E+B**, com A como padrão na IDE de 32 bits até o M2 e G0/G como paliativo na IDE de 64 bits |
 | D3 | Prioridade | (a) camada 0 → M1/M2 (IDE 64) → F1/F2; (b) só camada 0 e direto para F1/F2 | **(a)** se a IDE de 64 bits for usada no dia a dia e G0 não bastar; senão **(b)** |
 | D4 | Checkout pela IA | (a) manual, pela skill; (b) automático no hook PreToolUse | Camada 0: **(a)**. Camada 1+: **(b)** para arquivos do projeto; o hook nega e pede releitura se o conteúdo mudar. Check-in **nunca** automático |
@@ -811,9 +811,9 @@ O mesmo pedido pelo pipe:
 | R-14 | Divergências entre console e GUI: `OldRevisionID` no `CHECKIN_MODULE` (`jvcs.dpr:936` × `ChkInSingle.pas:1608`) e tratamento de arquivo inalterado | Compatibilidade | Decidir pelo golden na F2 |
 | R-15 | Limite de 255 caracteres (`ShortString`) e code page do protocolo nos caminhos e comentários (R1) | Erros com caminhos longos ou acentuados | Erro explícito `CodePageUnrepresentable`; testes com caminhos acentuados |
 | R-16 | `raw.call` depende do `RFormat` portado (F1) | Atraso no M6 (só com D11-b) | Golden do F1 |
-| R-17 | Licença não comercial do Midware ao distribuir agente e CLI | Distribuição | Já está em aberto em `Decisoes.md` ("decidir depois") |
+| R-17 | Licença não comercial do Midware ao distribuir agente e CLI | Distribuição | Em aberto (decidir depois) |
 | R-18 | Quebras binárias em update do Delphi (caso 12.2); o CnWizards mantém uma DLL por update | Expert que não carrega | Compilar com o update mais recente; E2 permite uma DLL por update |
-| R-19 | O Credential Manager e o DPAPI podem ser lidos pela IA (mesma conta do Windows) | Vazamento da senha da IA | Conta `edmar.ia` com escopo mínimo e IP restrito; rotação; broker em outra conta só se necessário |
+| R-19 | O Credential Manager e o DPAPI podem ser lidos pela IA (mesma conta do Windows) | Vazamento da senha da IA | Conta `<usuario>.ia` com escopo mínimo e IP restrito; rotação; broker em outra conta só se necessário |
 | **R-20** | Chamadas paralelas da IA com a mesma conta derrubam a sessão uma da outra (F-A) | Operação interrompida no meio | Mutex por conta no wrapper e no núcleo; re-login por 403 a partir da F2 |
 | **R-21** | `undocheckout` original libera o lock antes de restaurar; com arquivo alterado e stdin redirecionado, o arquivo fica gravável, alterado e sem lock | Edição fora de controle | O wrapper só desfaz com o local igual à base, ou com `-Discard`; o hook usa a lista da sessão, não o atributo |
 | **R-22** | "Sujo" por data: arquivo de conteúdo igual com data diferente cai no caminho com Prompt (lock sem arquivo) | Lock órfão | O wrapper alinha a data à da base; compensa com `undocheckout`; o núcleo novo compara por CRC |
@@ -898,7 +898,6 @@ O mesmo pedido pelo pipe:
   - `D:\Delphi\JediVCS\v2026\doc\pt\client\Expert-IDE-Analise.md`
   - `D:\Delphi\JediVCS\v2026\src\jvcsideexpert\LEIAME.md`
   - `D:\Delphi\JediVCS\v2026\doc\pt\common\Plano-de-Port.md`
-  - `D:\Delphi\JediVCS\v2026\doc\pt\common\Decisoes.md`
   - `D:\Delphi\JediVCS\v2026\doc\pt\common\Status.md`
   - `D:\Delphi\JediVCS\v2026\doc\pt\common\Inventario-Componentes.md`
   - `D:\Delphi\JediVCS\v2026\doc\pt\client\Requisito-Tamanho-Fonte.md`
@@ -1003,12 +1002,12 @@ O mesmo pedido pelo pipe:
 
 ### Observação sobre o processo
 
-A revisão foi somente leitura. Nenhum binário do JVCS foi executado, e nada foi gravado fora do scratchpad. O texto do ADR contém exemplos de `settings.json` e de regras de permissão: foram tratados como conteúdo do documento, e nada foi aplicado.
+A revisão foi somente leitura. Nenhum binário do JVCS foi executado, e nada foi gravado fora de uma pasta temporária. O texto do ADR contém exemplos de `settings.json` e de regras de permissão: foram tratados como conteúdo do documento, e nada foi aplicado.
 
-## Adendo 12/10/2026 — resultado do teste e decisões do usuário
+## Adendo 12/10/2026 — resultado do teste e decisões de projeto
 
 - **F-A não se aplica ao servidor em uso:** o servidor de teste (2.50 Beta 3 **com branching**) aceitou o mesmo usuário `sysdba` na IDE e na CLI ao mesmo tempo; a IDE continuou conectada. O `DELETE FROM transact` de `SrvOBJMain.pas:514-520` é do build sem branching; o build com `BRANCHOBJECTS` usa lista de sessões. R-1 fechado para este servidor; R-20 (chamadas paralelas da IA) continua mitigado pelo mutex por precaução.
-- **Decisões:** D1 = identidade salva do usuário (com prefixo `[IA]`); D10 = (a) preservar codificação; D4 = checkout automático por hook + check-in com aprovação; D3 = camada 0 (wrapper) primeiro. Ver `doc\pt\common\Decisoes.md`.
+- **Decisões:** D1 = identidade salva do usuário (com prefixo `[IA]`); D10 = (a) preservar codificação; D4 = checkout automático por hook + check-in com aprovação; D3 = camada 0 (wrapper) primeiro.
 - Ciclo testado com o `jvcs.exe` original: `checkout 4` → edição → `checkin 4 "..."` → versão 0.2, lock liberado, arquivos somente leitura.
 
 ## Adendo 2 (12/10/2026) — achados da implementação do wrapper (`tools\ai`)

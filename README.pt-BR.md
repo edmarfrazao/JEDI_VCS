@@ -132,7 +132,7 @@ Mapa detalhado: [doc/pt/fontes](doc/pt/fontes/README.md).
 | Usar com IA | [doc/pt/ia](doc/pt/ia/README.md) e a skill [skills/pt/jedi-vcs](skills/pt/jedi-vcs/) |
 | Entender o código | [doc/pt/fontes](doc/pt/fontes/README.md) — arquitetura, units, compilação, convenções |
 | História, decisões, testes e release | [doc/pt/processo](doc/pt/processo/README.md) |
-| Decisões datadas e mudanças por versão | [Decisões](doc/pt/common/Decisoes.md), [CHANGELOG](CHANGELOG.md) |
+| Decisões de arquitetura | [03 Decisões de arquitetura](doc/pt/processo/03-Decisoes-de-Arquitetura.md) |
 | O que mudou em cada versão | [Novidades](news/pt/README.md) e [CHANGELOG](CHANGELOG.md) |
 | Índice completo | [doc/pt/README.md](doc/pt/README.md) |
 
@@ -158,6 +158,8 @@ prefixo `[IA]`, e edição que preserva a codificação Windows-1252. Comece por
 - Componentes: JCL/JVCL (MPL 1.1), SynEdit (MPL 1.1/GPL 2), VirtualTreeView (MPL 1.1/LGPL 2.1), ICS
   (freeware), Abbrevia (MPL 1.1); `fvcscrypt.dll` é o binário original redistribuído do instalador 2.50
   Beta 3. Resumo: [Licenças](doc/pt/common/Licencas.md) e [Componentes](doc/pt/common/Componentes.md).
+- **Criadores, direitos e `fvcscrypt.dll`:** quem criou e manteve o JEDI VCS, os direitos da licença, por que a
+  `fvcscrypt.dll` é obrigatória e por que não há cliente de 64 bits: [Créditos e direitos](doc/pt/common/Creditos-e-Direitos.md).
 
 ## Créditos
 

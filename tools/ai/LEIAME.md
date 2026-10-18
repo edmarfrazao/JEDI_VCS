@@ -64,8 +64,8 @@ O instalador:
 Depois abra o projeto no Claude Code e **aceite a confiança da pasta**: hooks e regras `allow` do
 `.claude\settings.json` do projeto só valem depois disso (as `deny`/`ask` valem sempre).
 
-Instalação de teste feita nesta máquina: `%USERPROFILE%\Documents\Embarcadero\Studio\Projects\Ex1`
-com `-Mode auto` (decisão do usuário para esta máquina).
+Instalação de teste: `%USERPROFILE%\Documents\Embarcadero\Studio\Projects\Ex1`
+com `-Mode auto`.
 
 ---
 
@@ -96,9 +96,9 @@ buildTimeoutSec=600   ; 30 a 7200
 
 ; projeto e identidade por pasta (seção 18, R4); grave com config set projectMap|identityMap
 [projects]
-d:\prog\sisv=sesis
+d:\fontes\sistema=projeto1
 [identities]
-d:\prog=Edmar
+d:\fontes=Usuario
 ```
 
 Comandos: `jvcs-ai.ps1 config list | get <chave> | set <chave> <valor>` e
@@ -136,7 +136,7 @@ próprio wrapper aplica os modos, e `deny` > `ask` > `allow` (`-Confirmed`/`-Dis
 continuam perguntando ou negados). A skill manda usar exatamente essa forma (barras normais); outra forma
 cai no fluxo normal (pergunta).
 
-**Desvio da especificação (registrar em `doc\pt\common\Decisoes.md`):** no modo `confirm` o hook **não**
+**Desvio da especificação:** no modo `confirm` o hook **não**
 devolve `permissionDecision: "ask"`. O PreToolUse roda antes da aprovação e não consegue agir depois dela;
 aprovada a edição, o `Edit` falharia com `EPERM` no arquivo somente leitura (testado). A confirmação passa
 para o **comando de checkout** (`-Confirmed` + regra `ask`), que é a ação que muda o servidor, e acontece
@@ -492,7 +492,7 @@ menos itens que arquivos), **nada sai do registro** e a mensagem diz `(status fa
 - o hook só vê `Edit/MultiEdit/Write`: gravação por comandos de shell não passa por ele. O somente leitura
   do JEDI VCS e as regras `attrib`/`IsReadOnly`/`Attributes` são a barreira prática;
 - uma barreira real para `confirm` exigiria confirmação fora do alcance da IA (ex.: diálogo do Windows na
-  área de trabalho, ou a futura aba do cliente); não implementado (o usuário escolheu "regra ask + flag").
+  área de trabalho, ou a futura aba do cliente); não implementado (opção adotada: "regra ask + flag").
 
 ---
 
@@ -565,7 +565,7 @@ menos itens que arquivos), **nada sai do registro** e a mensagem diz `(status fa
 
 ---
 
-## 9. Testes (12/10/2026, servidor 192.168.0.10:2106, identidade DEFAULT, Exemplo01)
+## 9. Testes (12/10/2026, servidor de teste, identidade DEFAULT, Exemplo01)
 
 - **Console falso** (`Invoke-Jvcs` trocado por um console que imita o `jvcs.dpr`, inclusive `Stamp`/`CRC`
   no caminho do servidor): 32/32 — D7, `-Discard`, `-Force` com e sem `-Confirmed`, lock de outro,
@@ -1442,9 +1442,9 @@ cada check-in: 0.1 em 01/10, 0.2 em 05/10, 0.3 (Put) em 10/10, 0.4 em 12/10 (o `
 
 ---
 
-## 18. Pedido 0005 do PC remoto: acervo sem .dpr, lotes e tolerância a falhas
+## 18. Requisitos 0005: acervo sem .dpr, lotes e tolerância a falhas
 
-Pedido do EDMAR-OPT (acervo xHarbour em `D:\PROG`, sem `.dpr`: 8 projetos com nome **sem extensão**, como `sesis`,
+Requisitos para um acervo xHarbour (em `D:\fontes`, sem `.dpr`: 8 projetos com nome **sem extensão**, como `projeto1`,
 e 1.140 módulos). A versão do wrapper continua **1.4.0**. Itens: R1 (status tolerante), R5 (`-Only`), R6 (`locks`
 com o estado local), R4 (projeto e identidade por pasta) e R7 (lote a partir de uma lista) nesta seção; R2 e R3 já
 estavam feitos (`history`, `diff`, `show`, `sync -Dest`).
@@ -1453,7 +1453,7 @@ estavam feitos (`history`, `diff`, `show`, `sync -Dest`).
 
 Causa (conferida no fonte): o `getmodule` do console (`jvcs.dpr`, `CmdProcGetModule`) escolhe a revisão de **maior
 número** (`GetRevisionListById` com `ProjectID 0`) e o `GET_CHECKOUT_MODULE` do servidor devolve os arquivos dela.
-Revisão sem arquivo (no EDMAR-OPT, o `terrt.lnk`) não grava nada, sem erro do console, e o `Get-JvcsBase` lançava 9
+Revisão sem arquivo (no caso relatado, o `atalho.lnk`) não grava nada, sem erro do console, e o `Get-JvcsBase` lançava 9
 para o lote inteiro (`getmodule 586 não gravou nenhum arquivo`).
 
 Agora o `Get-JvcsBase` tem o modo tolerante: a falha de UM módulo (erro do `getmodule`, nada gravado, revisão
@@ -1484,8 +1484,8 @@ falha inteiro ou no meio não apaga nada do registro (seção 5).
 ### R5 — `-Only` em `status`, `list` e `locks`
 
 ```text
-jvcs-ai.ps1 status -Project sesis -Only modified,unlocked     # alterados sem checkout
-jvcs-ai.ps1 status -Project sesis -Only missing,error
+jvcs-ai.ps1 status -Project projeto1 -Only modified,unlocked     # alterados sem checkout
+jvcs-ai.ps1 status -Project projeto1 -Only missing,error
 jvcs-ai.ps1 locks -Only clean                                 # locks sem alteração (undocheckout)
 ```
 
@@ -1557,7 +1557,7 @@ passar `-Project` e `-Identity` em toda chamada.
    não aparece quando o projeto veio de `-Project`. Em `-Text`: "projeto pela pasta: ...".
 4. Pasta do projeto (caminhos truncados no `status -Project`/`sync`/`locks`): `-Project <pasta>`, a pasta já resolvida,
    da pasta atual para cima a "casa" do projeto (arquivo com o nome dele, `.jvcsproject` ou mapa apontando para ele),
-   ou, rodado fora (ex.: `status -Project sesis` em `C:\`), a pasta do mapa `[projects]` se houver **uma** só.
+   ou, rodado fora (ex.: `status -Project projeto1` em `C:\`), a pasta do mapa `[projects]` se houver **uma** só.
 
 **Arquivos** (`status <arq>`, `checkout`, `checkin`, `diff`, `history`, `add`...): candidatos da pasta do arquivo
 para cima; em cada nível `.jvcsproject` (1), mapa (2) e `.dpr/.dpk` (3); um `listproject` em lote e vence o mais
@@ -1568,11 +1568,11 @@ mais próximo, ou o único candidato; senão `ambiguousProject` (2). O `add` avi
 
 **`.jvcsproject`** (até 4 KB; ANSI 1252, UTF-8 com ou sem BOM, UTF-16 com BOM — o `>` do PowerShell 5.1 grava UTF-16):
 ```text
-project=sesis
+project=projeto1
 ; opcional: só CONFERE a identidade em uso (não a escolhe)
-identity=Edmar
+identity=Usuario
 ```
-Também vale uma linha só com o nome (`sesis`). Comentários com `;` ou `#`; chave desconhecida é ignorada. Conteúdo
+Também vale uma linha só com o nome (`projeto1`). Comentários com `;` ou `#`; chave desconhecida é ignorada. Conteúdo
 inválido (linha não reconhecida, chave repetida, nome com aspas, controle, `< > | * ? : \ /`, caractere especial de
 shell, só dígitos, mais de 50 caracteres, fora da 1252) → **7**, e a mensagem não repete o texto do arquivo.
 Atenção: o marcador é lido a cada resolução de projeto **e de identidade**; um marcador inválido em qualquer pasta acima
@@ -1581,16 +1581,16 @@ Falha para o lado seguro: corrija ou apague o arquivo.
 
 **Mapas no `config.ini`** (só o usuário grava; `config set` é recusado à IA com 10):
 ```text
-jvcs-ai.ps1 config set projectMap "D:\PROG\SISV" sesis
-jvcs-ai.ps1 config set identityMap "D:\PROG" Edmar
-jvcs-ai.ps1 config set projectMap "D:\PROG\SISV" none     (remove; se não estava no mapa: 3)
+jvcs-ai.ps1 config set projectMap "D:\fontes\sistema" projeto1
+jvcs-ai.ps1 config set identityMap "D:\fontes" Usuario
+jvcs-ai.ps1 config set projectMap "D:\fontes\sistema" none     (remove; se não estava no mapa: 3)
 jvcs-ai.ps1 config list -Text                             (mostra os mapas; config get projectMap|identityMap)
 ```
 ```ini
 [projects]
-d:\prog\sisv=sesis
+d:\fontes\sistema=projeto1
 [identities]
-d:\prog=Edmar
+d:\fontes=Usuario
 ```
 - A pasta tem de ser absoluta (`d:\...` ou `\\servidor\pasta`), existir (exceto para `none`: senão 5) e não ter `=`,
   aspas nem controle (2). Vale para ela e para as subpastas; a chave é gravada normalizada (minúsculas, sem barra
@@ -1609,7 +1609,7 @@ d:\prog=Edmar
 - Vale a entrada mais próxima de cada pasta. Pastas de identidades diferentes numa chamada → **2** ("faça uma chamada
   por identidade"); parte das pastas no mapa e parte fora, com identidade padrão diferente → **2** (o arquivo fora do
   mapa não troca de credencial); com a mesma identidade, segue.
-- O nome é normalizado para a grafia do registro (`edmar` → `Edmar`); inexistente → 4 "identidade 'X' não existe em
+- O nome é normalizado para a grafia do registro (`usuario` → `Usuario`); inexistente → 4 "identidade 'X' não existe em
   Identities (<origem>)". `identity` mostra a origem (`source`), e a auditoria grava `identitySource`.
 - `identity=` do `.jvcsproject` só **confere**: divergiu da identidade efetiva (sem diferenciar maiúsculas) → 4, com a
   sugestão para o usuário (`config set identityMap "<pasta>" "X"`; para humano também `-Identity "X"`). Com `-Identity`
@@ -1617,9 +1617,9 @@ d:\prog=Edmar
 - Pela IA, `-Identity` diferente da identidade que o usuário mapeou para **qualquer** das pastas do comando exige
   `-Confirmed` (10); com a aprovação, segue com aviso. Para humano, só o aviso.
 
-**Projeto novo sem `.dpr`**: `addproject sesis` (nome **sem** extensão; `.dpr/.dpk` continuam valendo; outra extensão,
+**Projeto novo sem `.dpr`**: `addproject projeto1` (nome **sem** extensão; `.dpr/.dpk` continuam valendo; outra extensão,
 só dígitos, mais de 50 caracteres, caractere inválido ou fora da 1252 → 2; nome sem extensão numa pasta com `.dpr` →
-aviso). Criado ou já existente, o resultado traz `next`: marcar a pasta com `.jvcsproject` (`project=sesis`) ou o
+aviso). Criado ou já existente, o resultado traz `next`: marcar a pasta com `.jvcsproject` (`project=projeto1`) ou o
 usuário registrar `config set projectMap`. `rename-project` de projeto sem extensão avisa que o `.jvcsproject` e as
 entradas do mapa que apontam para o nome antigo precisam ser trocados.
 
@@ -1653,7 +1653,7 @@ divergente; 5 projeto do marcador/mapa que não existe no servidor, arquivo de d
 pasta do `config set` inexistente; 7 `.jvcsproject` inválido, `buildCheck=block` com fonte Delphi sem `.dpr`; 10
 `config set` pela IA, `-Identity` da IA diferente do mapa sem `-Confirmed`.
 
-**Limites**: nomes 8.3 de pastas existentes são expandidos (`EDMARF~1` casa com o caminho longo); `subst`, junções e
+**Limites**: nomes 8.3 de pastas existentes são expandidos (`USUARI~1` casa com o caminho longo); `subst`, junções e
 links não são resolvidos (use o caminho que você abre). Pasta com `=` não entra no mapa. O hook continua só com as
 extensões Delphi: `.prg` pode ser editado sem checkout.
 
@@ -1741,25 +1741,25 @@ checkout | checkin | undocheckout -FromList <arquivo> [-Only termos] [-MaxModule
 - Defesa em profundidade opcional, **não** aplicada: uma regra `ask` `*-FromList*-Apply*` no
   `claude\settings.template.json` (redundante com o `-Confirmed` obrigatório; exigiria subir a versão do modelo).
 
-Caso real (xHarbour, projeto `sesis`, sem `.dpr`), pelo humano no terminal:
+Caso real (xHarbour, projeto `projeto1`, sem `.dpr`), pelo humano no terminal:
 ```text
-jvcs-ai.ps1 status -Project sesis -Identity Edmar > st.json                                   # UTF-16: aceito
-jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Identity Edmar       # prévia: os 31, checkoutKeepLocal
-jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Identity Edmar -Apply -ListHash <h>
-jvcs-ai.ps1 checkin -FromList st.json -Only "modified,unlocked" -Comment "..." -Identity Edmar # prévia (os mesmos 31 do retrato)
-jvcs-ai.ps1 checkin -FromList st.json -Only "modified,unlocked" -Comment "..." -Identity Edmar -Apply -ListHash <h>
-jvcs-ai.ps1 undocheckout -FromList st.json -Only "clean,mine" -Identity Edmar                 # locks esquecidos; depois -Apply -ListHash <h>
+jvcs-ai.ps1 status -Project projeto1 -Identity Usuario > st.json                                   # UTF-16: aceito
+jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Identity Usuario       # prévia: os 31, checkoutKeepLocal
+jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Identity Usuario -Apply -ListHash <h>
+jvcs-ai.ps1 checkin -FromList st.json -Only "modified,unlocked" -Comment "..." -Identity Usuario # prévia (os mesmos 31 do retrato)
+jvcs-ai.ps1 checkin -FromList st.json -Only "modified,unlocked" -Comment "..." -Identity Usuario -Apply -ListHash <h>
+jvcs-ai.ps1 undocheckout -FromList st.json -Only "clean,mine" -Identity Usuario                 # locks esquecidos; depois -Apply -ListHash <h>
 ```
 Pela IA: o mesmo, com a lista de texto gravada no scratchpad (ou o JSON de um `status`), a tabela da prévia e o hash
 mostrados ao usuário, e depois o `next` (`-Apply -ListHash <h> -Confirmed`) com o tempo limite de 600000 ms.
 
 ### Testes (17/10/2026, servidor de teste local, identidade DEFAULT, console 2026 de `bin\client\Win32`)
 
-`APPDATA`/`LOCALAPPDATA` temporários; projetos de teste sem `.dpr` `iateste-xh-r156` (`sisv.prg`, `funcoes.prg`,
-`defs.ch`, `build.bat`, `ter\terminal.prg`, `ter\apagar.prg` ausente no disco, `ter\terrt.lnk`, `ter\semrev.prg` sem
+`APPDATA`/`LOCALAPPDATA` temporários; projetos de teste sem `.dpr` `iateste-xh-r156` (`sistema.prg`, `funcoes.prg`,
+`defs.ch`, `build.bat`, `ter\terminal.prg`, `ter\apagar.prg` ausente no disco, `ter\atalho.lnk`, `ter\semrev.prg` sem
 revisão, `vazio.bat` de 0 byte) e `iateste-xh-r156b` (`outro.prg` e `funcoes.prg` compartilhado), com 4 locks reais.
 - `Get-JvcsBase` real: tolerante com 54 ok, 61 sem revisão (`No revisions found`), 99999 (`Module 99999 not found`)
-  e 57 sem arquivo gravado (o `dest=` desviado para outra pasta: o mesmo caminho do `terrt.lnk`); estrito → 9;
+  e 57 sem arquivo gravado (o `dest=` desviado para outra pasta: o mesmo caminho do `atalho.lnk`); estrito → 9;
   `-Groups` com projeto inexistente → só os módulos dele nos erros; um projeto só inexistente → 5; nome com aspas
   ou controle → recusado.
 - `status -Project` com o 57 sem arquivo: 7 verificados + 57 `error`/`unknown`, código 11, `counts.error` 1; com
@@ -1793,7 +1793,7 @@ revisão, `vazio.bat` de 0 byte) e `iateste-xh-r156b` (`outro.prg` e `funcoes.pr
 ### Testes do R4 (17/10/2026, servidor de teste local, identidade DEFAULT, console 2026, `APPDATA`/`LOCALAPPDATA` temporários)
 
 Projeto de teste sem `.dpr` `iateste-xh-r4` (ID 17) em `D:\Delphi\JediVCS\testes-ia\xharbour\r4-acervo-sem-dpr`
-(`sisv\.jvcsproject` em UTF-16 com `project=iateste-xh-r4`; `sisv\ter\` passa de 50 caracteres, então o console mostra
+(`sistema\.jvcsproject` em UTF-16 com `project=iateste-xh-r4`; `sistema\ter\` passa de 50 caracteres, então o console mostra
 o caminho truncado); `outro\` pelo mapa `[projects]`.
 - Lib (45 casos, 0 falhas): `Read-JaProjectMarker` (formatos, codificações, recusas), `ConvertTo-JaDirKey`,
   `Find-JaMapEntry`, `Get-JaProjectCandidates` (ordem nível/origem, nome repetido), `Set-JaConfigMapValue` (grava,
@@ -1801,20 +1801,20 @@ o caminho truncado); `outro\` pelo mapa `[projects]`.
 - Segurança: `-Identity DEFAULT` pela IA com arquivos em duas pastas mapeadas (DEFAULT e Outra) → 10; só a pasta
   DEFAULT → 0; pasta Outra + pasta fora do mapa (padrão DEFAULT) → 2; DEFAULT + fora do mapa → 0; marcador
   `project=x;calc` → 7; `identity=$(calc)` → 7; `sync -Apply` pela IA com marcador válido → 10 com
-  `sync -Project sesis -Apply -Confirmed` na dica; `rm-project`/`modules`/`cleanup -Project <pasta>` e `rm-project <pasta>`
+  `sync -Project projeto1 -Apply -Confirmed` na dica; `rm-project`/`modules`/`cleanup -Project <pasta>` e `rm-project <pasta>`
   → 2; mapa com `#` no caminho (`C#proj`) → uma linha só; `none` com dois blocos `[projects]` → remove as 2 entradas.
-- `addproject sesis.prg`, `123` e `x;calc` → 2; `addproject iateste-xh-r4` → criado, com `next`; `list` antes de criar →
+- `addproject projeto1.prg`, `123` e `x;calc` → 2; `addproject iateste-xh-r4` → criado, com `next`; `list` antes de criar →
   5 "não existe no servidor" com `projectSource` do marcador.
-- `add a.prg apagar.prg` (relativo, em `sisv\ter`: marcador de nível 1) e `add sisv.prg defs.ch build.bat` (nível 0) → 0.1
+- `add a.prg apagar.prg` (relativo, em `sistema\ter`: marcador de nível 1) e `add sistema.prg defs.ch build.bat` (nível 0) → 0.1
   com o aviso "projeto ... escolhido por .jvcsproject"; em `checkin=confirm` → 10 com `-Project "iateste-xh-r4"` na dica.
-- `list`, `status`, `status -Only missing` em `sisv\ter` sem `-Project` → `projectSource` do marcador (o `apagar.prg`
+- `list`, `status`, `status -Only missing` em `sistema\ter` sem `-Project` → `projectSource` do marcador (o `apagar.prg`
   apagado do disco: `missing` no `list`, `pathTruncated` no `status`); `status a.prg`, `history a.prg`, `diff a.prg` → 0;
-  `list -Project <sisv>` → o projeto do marcador; `list -Project <sisv\ter>` → 2.
-- Pasta pelo mapa reverso: `status -Project iateste-xh-r4` em `C:\` com uma cópia homônima `...-copia\sisv\ter\a.prg`
-  (mesmo prefixo visível) → `a.prg` `pathTruncated`; com `[projects] ...\sisv=iateste-xh-r4` → `a.prg` `clean`.
+  `list -Project <sistema>` → o projeto do marcador; `list -Project <sistema\ter>` → 2.
+- Pasta pelo mapa reverso: `status -Project iateste-xh-r4` em `C:\` com uma cópia homônima `...-copia\sistema\ter\a.prg`
+  (mesmo prefixo visível) → `a.prg` `pathTruncated`; com `[projects] ...\sistema=iateste-xh-r4` → `a.prg` `clean`.
 - Mapa: `list` em `outro\` → `projectSource` "config.ini [projects]"; `add outro.prg` → 0.1 pelo mapa; marcador e mapa
   na mesma pasta com nomes diferentes → vence o marcador, com aviso; marcador de projeto inexistente em `ter\` → `list` 5,
-  `status a.prg` versionado pelo marcador de cima, `add novo.prg` → 5 no `openproject`; marcador inválido em `sisv` → 7
+  `status a.prg` versionado pelo marcador de cima, `add novo.prg` → 5 no `openproject`; marcador inválido em `sistema` → 7
   em `list`, `identity` e `locks`; `.dpr` na pasta atual vence o marcador de cima; dois `.dpr` → 2; pasta sem nada → 2
   com a mensagem nova.
 - Identidade: mapa `[identities] ...\xharbour=DEFAULT` → `identity` com `source` "config.ini [identities] ..."; marcador
@@ -1824,13 +1824,13 @@ o caminho truncado); `outro\` pelo mapa `[projects]`.
   arquivo fora do mapa → 2; `identity -Project iateste-xh-r4` em `C:\` → `LastUsedID` com duas pastas no `[projects]` e
   a identidade da pasta do projeto com uma só.
 - `config set projectMap|identityMap` pela IA → 10. Função `Set-JaFolderMap` (caminho humano) num `config.ini`
-  temporário: grava em minúsculas e troca a grafia (`...\SISV\`), `identityMap ... default` → `DEFAULT`, `NaoExiste` → 4,
+  temporário: grava em minúsculas e troca a grafia (`...\SISTEMA\`), `identityMap ... default` → `DEFAULT`, `NaoExiste` → 4,
   pasta inexistente → 5, `C:\a=b` → 2, `x;calc`/`123` → 2, sem valor → 2, `none` fora do mapa → 3, `none` → removida e
   de novo → 3; BOM e CRLF preservados. `config get projectMap`, `config list` e `config list -Text` mostram os mapas.
 - `buildCheck=block`: `checkout`/`checkin a.prg` → 0.2 com o aviso "compilação não se aplica"; `xr4.pas` (fonte Delphi sem
   `.dpr`) → `add` 0.1, `checkout`, `checkin` → 7 e `undocheckout -Discard -Confirmed` (backup).
-- R1 com R4: `status` sem `-Project` em `sisv\ter` com o `getmodule` de `a.prg` desviado (revisão que não grava arquivo,
-  como o `terrt.lnk`) → `a.prg` `error`, os outros verificados, 11; `-Only error` → só ele, ainda 11.
+- R1 com R4: `status` sem `-Project` em `sistema\ter` com o `getmodule` de `a.prg` desviado (revisão que não grava arquivo,
+  como o `atalho.lnk`) → `a.prg` `error`, os outros verificados, 11; `-Only error` → só ele, ainda 11.
 - `sync` (prévia) e `labels`, `changes -Since 1d`, `todo`, `shared` sem `-Project` → projeto do marcador; `sync -Apply` em
   `confirm` → 10 com `-Project iateste-xh-r4`; `rename-project ... -Apply -Confirmed` → aviso do `.jvcsproject` e do mapa;
   `list` com o marcador antigo → 5; trocado o marcador → 0. `locks` com um lock no acervo → `clean`, `project` e `path`;
@@ -1849,7 +1849,7 @@ o caminho truncado); `outro\` pelo mapa `[projects]`.
 ### Testes do R7 (17/10/2026, servidor de teste local, identidade DEFAULT, console 2026, `APPDATA`/`LOCALAPPDATA` temporários)
 
 Projeto de teste sem `.dpr` `iateste-xh-r7` (ID 19, módulos 75-80) em `D:\Delphi\JediVCS\testes-ia\xharbour\r7`
-(`sisv\.jvcsproject` com `project=iateste-xh-r7`; `sisv.prg`, `funcoes.prg`, `defs.ch`, `build.bat`, `ter\terminal.prg`,
+(`sistema\.jvcsproject` com `project=iateste-xh-r7`; `sistema.prg`, `funcoes.prg`, `defs.ch`, `build.bat`, `ter\terminal.prg`,
 `ter\caixa.prg`; `outro\outro.prg` sem projeto), criado com `addproject`/`add` pela IA (`-Confirmed`). Todo `-Apply` pela
 IA, com `-ListHash` e `-Confirmed` na linha; as alterações de arquivo foram feitas por script de teste.
 - Funções (sem servidor, 31 casos): lista em UTF-8/BOM/UTF-16/ANSI, recusas de caminho, eco só de linha com forma de
@@ -1883,8 +1883,8 @@ IA, com `-ListHash` e `-Confirmed` na linha; as alterações de arquivo foram fe
   `done`, `locks` com 2 (coerente); prévia nova `4 checkout, 2 alreadyMine`; `-Apply` com o hash novo completou.
 - Hash x ação: prévia `undocheckout -Discard` com 6 `undo`; `defs.ch` alterado depois; `-Apply` com o hash antigo → 10;
   prévia nova `5 undo, 1 discard`; `-Apply` → 5 `undone` + `discarded` com backup; `locks -All` → 0.
-- Identidade: `[identities]` com `sisv=DEFAULT` e `outro=NaoExisteR7` → lista com as duas pastas → 2 ("pastas de
-  identidades diferentes"); só `sisv` → 0 com `identitySource` "config.ini [identities] ...\sisv" (a pasta atual não
+- Identidade: `[identities]` com `sistema=DEFAULT` e `outro=NaoExisteR7` → lista com as duas pastas → 2 ("pastas de
+  identidades diferentes"); só `sistema` → 0 com `identitySource` "config.ini [identities] ...\sistema" (a pasta atual não
   mapeada não conta); `identity=OutraR7` no `.jvcsproject` → 4; com `-Identity DEFAULT` → aviso e 0.
 - Limite: 501 linhas → 2 ("use -MaxModules 501"); `-MaxModules 600` → prévia de 501 `notVersioned` (3, ~10 s);
   `-MaxModules 6000` → 2.
@@ -1901,9 +1901,9 @@ IA, com `-ListHash` e `-Confirmed` na linha; as alterações de arquivo foram fe
 - Fim: `rm-project iateste-xh-r7 -Apply -Confirmed` (`projectAdmin=on` só no `APPDATA` de teste). Os módulos 75-80
   ficam no arquivo como abandonados; a pasta local `testes-ia\xharbour\r7` ficou.
 
-## 19. Pedido S0002 do PC remoto: fontes fora do JEDI, Git, todos os projetos, locks antigos e diagnóstico
+## 19. Requisitos S0002: fontes fora do JEDI, Git, todos os projetos, locks antigos e diagnóstico
 
-Pedido do EDMAR-OPT para o acervo xHarbour (18/10/2026), em que o Git é usado no dia a dia e o JEDI fica para trás.
+Requisitos para o acervo xHarbour (18/10/2026), em que o Git é usado no dia a dia e o JEDI fica para trás.
 Tudo aqui **só lê** o servidor; no disco, só pastas temporárias. A versão continua 1.4.0. Entra depois do beta 6.
 
 | Item | Comando | O que faz |
@@ -1921,7 +1921,7 @@ Tudo aqui **só lê** o servidor; no disco, só pastas temporárias. A versão c
 
 ### 19.1 Detalhes
 
-- **Caminhos 8.3.** O servidor guarda a pasta do módulo como ela foi dada (`C:\Users\EDMARF~1\...`, longa ou mista).
+- **Caminhos 8.3.** O servidor guarda a pasta do módulo como ela foi dada (`C:\Users\USUARI~1\...`, longa ou mista).
   `untracked` compara pela forma longa de cada lado (`Get-JaLongPath`), então os três formatos casam.
 - **`untracked`.** Uma busca `SEARCH_MODULES` por extensão (`*.prg`, `*.ch`...) em todos os projetos, inclusive os
   excluídos.
@@ -1929,7 +1929,7 @@ Tudo aqui **só lê** o servidor; no disco, só pastas temporárias. A versão c
   - Com `-All`, os versionados também aparecem (`state=versioned`, com os projetos).
   - Nada fora do JEDI → 3.
   - Limite de 20 000 arquivos.
-- **`.xbp`.** Cada linha `[caminho\fonte.ext]` é um fonte. O bloco do alvo (`[SESIAG.exe]`) e os de binários
+- **`.xbp`.** Cada linha `[caminho\fonte.ext]` é um fonte. O bloco do alvo (`[sistema.exe]`) e os de binários
   (`.exe .dll .lib .obj .res`) não contam.
   - Caminho relativo: procurado no `-Base` ou, sem ele, na pasta do `.xbp` e nas de cima, valendo a primeira em que o
     arquivo existe.
@@ -1964,7 +1964,7 @@ Tudo aqui **só lê** o servidor; no disco, só pastas temporárias. A versão c
 
 ### 19.2 Testes (18/10/2026, servidor de teste, console 2026 9E146737)
 
-Roteiro `teste-s0002.ps1` (scratchpad da sessão), com o wrapper chamado como processo e o `APPDATA` de teste
+Roteiro `teste-s0002.ps1` (local, não versionado), com o wrapper chamado como processo e o `APPDATA` de teste
 (`checkout=auto`, `checkin=auto`). Na rodada completa, 39 verificações, 0 falhas. Na repetição, só o `add` dos mesmos
 3 arquivos devolve 3 "já é módulo", que é o esperado.
 

@@ -2,7 +2,7 @@
 
 Como uma versão do JEDI VCS 2.5 Beta 2026 sai do repositório para a página de
 [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases). Regra de ouro: **só publica o que foi
-instalado e testado aqui e no PC remoto**. Anterior: [04 Testes](04-Testes-e-Validacao.md). Próximo:
+instalado e testado no PC de desenvolvimento e no PC de testes**. Anterior: [04 Testes](04-Testes-e-Validacao.md). Próximo:
 [06 Problemas conhecidos](06-Problemas-Conhecidos-e-Licoes.md).
 
 ## Fluxo
@@ -12,7 +12,7 @@ flowchart LR
     A[commits locais] --> B[gerar-instalador.bat]
     B --> C[testar aqui<br/>instalar, IDE, cliente]
     C --> D[enviar setup pelo canal]
-    D --> E[testar no PC remoto<br/>Delphi 11, 12, 13.x]
+    D --> E[testar no PC de testes<br/>Delphi 11, 12, 13.x]
     E -->|falhou| A
     E -->|ok| F[tag + push]
     F --> G[gh release create]
@@ -53,15 +53,13 @@ Avisos que não bloqueiam mas devem ser lidos: build Debug mais novo que o Relea
 | Fechar o Delphi | sem AV; log em `%LOCALAPPDATA%\JEDI\JVCS\logs` sem erros novos |
 | Reinstalar por cima e desinstalar | valor anterior de `JVCSIDEClient` restaurado |
 
-## 3. Testar no PC remoto (canal)
+## 3. Testar no PC de testes (canal)
 
 1. Copiar o setup para `canal\arquivos\NNNN\` e enviar o pedido:
    `canal.ps1 enviar -Titulo "Testar setup beta N" -ArquivoTexto pedido.md` — o pedido lista o roteiro
    (instalar com o Delphi fechado; abrir Delphi 11, 12 e 13.x; conferir splash/menu/conexão; colher logs).
 2. `canal.ps1 aguardar -Id NNNN -TimeoutMin 60` e ler a resposta com `canal.ps1 ler -Id NNNN`.
 3. Falhou em alguma IDE → corrigir, novo commit, voltar ao passo 1 do fluxo.
-
-Ver [tools/canal/LEIA-PRIMEIRO.md](../../../tools/canal/LEIA-PRIMEIRO.md).
 
 ## 4. Publicar
 
@@ -85,7 +83,7 @@ Convenção de tags: `v2.5.0.2026-beta1` a `v2.5.0.2026-beta4` (as betas 1 a 4 t
 - [ ] `tools\gerar-instalador.bat` com código 0 e sem avisos inesperados no log.
 - [ ] Todos os experts conferidos pelo `verificar-expert.ps1` (13.x, 12.x, 11.x presentes no pacote).
 - [ ] Instalado e testado aqui (tabela da seção 2).
-- [ ] Testado no PC remoto pelo canal (Delphi 11, 12 e 13.x) e resposta arquivada.
+- [ ] Testado no PC de testes pelo canal (Delphi 11, 12 e 13.x) e resposta arquivada.
 - [ ] Notas da release: novidades, correções, problemas conhecidos, aviso do MidWare (uso não comercial).
 - [ ] Nada sensível no pacote nem nas notas (senhas, IPs internos, caminhos pessoais).
 - [ ] Tag criada, push autorizado, `gh release create --prerelease` com o setup anexado.

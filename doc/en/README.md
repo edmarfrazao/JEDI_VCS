@@ -21,6 +21,7 @@ ported to Delphi 11, 12 and 13, fully compatible with the existing **JEDI VCS 2.
 | [05 Using with AI](05-Using-with-AI.md) | The `jvcs-ai.ps1` wrapper, automation modes, the `jedi-vcs` skill, safety rules |
 | [06 Building from source](06-Building-from-Source.md) | Build scripts, Delphi versions, third-party libraries |
 | [07 FAQ and troubleshooting](07-FAQ-and-Troubleshooting.md) | Common problems and their solutions |
+| [08 Credits and rights](08-Credits-and-Rights.md) | Creators and maintainers, license rights, the `FVCSCrypt.dll` requirement and why there is no 64-bit client |
 
 ## Where to start
 

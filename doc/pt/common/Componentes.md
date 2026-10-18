@@ -1,6 +1,6 @@
 # Componentes e bibliotecas: tabela consolidada
 
-Visão única de **todos** os componentes, bibliotecas, units e binários de runtime do cliente JEDI VCS 2.5 Beta 2026. Este documento resume e aponta; o detalhe (notas por unit, riscos, evidências) fica em [Inventario-Componentes.md](Inventario-Componentes.md), e a execução em [Plano-de-Port.md](Plano-de-Port.md). Versões do ambiente: [Versoes.md](Versoes.md). Como a máquina foi montada: [Ambiente.md](Ambiente.md).
+Visão única de **todos** os componentes, bibliotecas, units e binários de runtime do cliente JEDI VCS 2.5 Beta 2026. Este documento resume e aponta; o detalhe (notas por unit, riscos, evidências) fica em [Inventario-Componentes.md](Inventario-Componentes.md), e a execução em [Plano-de-Port.md](Plano-de-Port.md). Versões do ambiente: [Versoes.md](Versoes.md).
 
 Estado verificado em **12/10/2026** (leitura do registro da IDE, do `CatalogRepository`, do disco e do `git log`).
 
@@ -34,7 +34,7 @@ Estado verificado em **12/10/2026** (leitura do registro da IDE, do `CatalogRepo
 
 | Nome | Versão | Origem | Situação | Observação |
 |---|---|---|---|---|
-| SynEdit TurboPack | 2025.03 | GetIt `SynEdit-13` | **removido** | Pasta `SynEdit-13` não existe mais no `CatalogRepository`. BPL antigos em backup (ver [Ambiente.md](Ambiente.md)) |
+| SynEdit TurboPack | 2025.03 | GetIt `SynEdit-13` | **removido** | Pasta `SynEdit-13` não existe mais no `CatalogRepository`. BPL antigos em backup |
 | Virtual Treeview (JAM) | 8.3 | GetIt `VirtualTreeview_by_JamSoftware-13` | **removido da IDE** | Os pacotes não estão mais em `Known Packages`, mas a pasta `CatalogRepository\VirtualTreeview_by_JamSoftware-13\8.3` ainda existe e o `EnvOptions.proj` ainda a cita no Library Path. Em 13/10/2026 o `EnvOptions.proj` já não citava a pasta |
 
 ---

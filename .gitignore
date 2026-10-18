@@ -60,3 +60,17 @@ secrets/
 # Claude Code: configuracoes pessoais (o settings.json do projeto e versionado)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Configuracao local do instalador (pasta de distribuicao; caminho pessoal)
+/instalador/config/distribuicao.bat
+
+# Documentacao pessoal e configuracao desta maquina (fica so local; nao vai para o Git)
+/doc/pt/common/Decisoes.md
+/doc/pt/common/Ambiente.md
+/doc/pt/server/Servidor-Teste-Local.md
+/tools/canal
+/doc/pt/client/golden-console
+/setup/Delphi13-JVCS-v2026.reg
+/setup/Delphi13-JVCS-DLL-nova.reg
+/setup/Delphi11-12-JVCS-dev.reg
+/.claude/settings.json

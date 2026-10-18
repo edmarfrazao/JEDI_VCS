@@ -47,15 +47,15 @@ O expert é registrado pelo valor `JVCSIDEClient` em `HKCU\Software\Embarcadero\
 anterior ao desinstalar. Passo a passo no [capítulo 09](09-Instalador-do-Cliente.md). Os métodos abaixo
 continuam valendo para desenvolvimento (pasta `bin\ideclient\Win32`).
 
-### Método A: importar o `.reg` (só esta máquina)
+### Método A: importar um `.reg` de desenvolvimento (local, não versionado)
 
 ```
-reg import "D:\Delphi\JediVCS\v2026\setup\Delphi13-JVCS-v2026.reg"
+reg import "<pasta>\<arquivo-de-desenvolvimento>.reg"
 ```
 
 (ou duplo clique no arquivo.) Ele aplica de uma vez: SynEdit e Virtual Treeview da v2026 em `Known Packages` (e remove os do GetIt), Library Path, PATH da IDE e o expert `JVCSIDEClient`.
 
-> **Só no ambiente de teste:** esse `.reg` tem caminhos fixos desta máquina (`D:\Delphi\JediVCS\v2026\...`, `%USERPROFILE%\...`) e mexe em bibliotecas de desenvolvimento do port. **Não importe nas máquinas dos colegas.**
+> **Só no ambiente de teste:** esse `.reg` tem caminhos fixos da máquina de desenvolvimento (`D:\Delphi\JediVCS\v2026\...`, `%USERPROFILE%\...`) e mexe em bibliotecas de desenvolvimento do port. **Não importe nas máquinas dos colegas.**
 
 ### Método B: só o expert (colegas e produção)
 
@@ -150,7 +150,7 @@ Os backups estão em `C:\Users\Public\Documents\Embarcadero\Studio\37.0\_backup_
 | `Experts_antes_jvcs.reg` | A chave `Experts` antes de gravar o `JVCSIDEClient` |
 | `Bpl\`, `Dcp\` | BPL/DCP do GetIt (SynEdit e Virtual Treeview) |
 
-O passo a passo completo está em [Ambiente.md](../common/Ambiente.md), seção 5.2. Resumo e cuidados:
+Resumo e cuidados:
 1. `reg import` do backup só **acrescenta/sobrescreve**; os valores criados depois (os dois BPL novos em `Known Packages`, os caminhos `D:\Delphi\JediVCS\v2026\...` do Library Path e o primeiro item do PATH da IDE) precisam ser removidos à mão.
 2. Copie o `EnvOptions_antes_instalacao.proj` sobre o arquivo atual.
 3. Alternativa mais limpa para SynEdit/Virtual Treeview: reinstalar pelo GetIt.

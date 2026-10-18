@@ -7,23 +7,34 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+### Documentação
+- Tópico novo **Créditos e direitos** ([`doc/pt/common/Creditos-e-Direitos.md`](doc/pt/common/Creditos-e-Direitos.md),
+  em inglês [`doc/en/08-Credits-and-Rights.md`](doc/en/08-Credits-and-Rights.md)). Ele cobre:
+  - os criadores e mantenedores do FreeVCS/JEDI VCS, os direitos da MPL 1.1 e os componentes de terceiros;
+  - a exigência da `FVCSCrypt.dll` (32 bits, sem fonte, obrigatória para o login) e por que não há cliente de 64 bits;
+  - como o port de 2026 foi feito (análise, alterações e testes com o Claude Code, modelo Claude Opus 5.5).
+  Links no `README`, nos índices de `doc/` e no `Licencas.md`.
+- Plano de Port: a F7 (IDE de 64 bits do Delphi 13.2) ficou **adiada**; a IDE de 64 bits usa o cliente standalone.
+- Pasta `instalador/` (`bin`, `config`, `doc`) com os bats para gerar, conferir, copiar e versionar o setup à mão
+  ([`instalador/doc/COMO-GERAR.md`](instalador/doc/COMO-GERAR.md)).
+- Pasta `tests/` com os testes automatizados (console, wrapper da IA e instalador isolado), sem caminhos fixos nem
+  senha (a senha vem da identidade DEFAULT pelo stdin): [`tests/LEIAME.md`](tests/LEIAME.md). Rodam por `tests\executar.bat`.
+- O repositório passa a ter só os fontes, a documentação oficial (incluindo como compilar e como testar), os
+  instaladores e os binários. Notas de ambiente local, `.reg` de desenvolvimento e registros de sessões saíram do Git
+  (`.gitignore`), e os documentos foram revisados para não depender deles.
+
+## [Beta 6] — 2026-10-17 (build 2061)
+
 ### Adicionado
-- Wrapper da IA (S0002 do PC remoto, depois do beta 6; ainda 1.4.0). Ver `tools/ai/LEIAME.md` §19.
+- Wrapper da IA (requisitos S0002, no build 2061; ainda 1.4.0). Ver `tools/ai/LEIAME.md` §19.
   - `untracked` (fontes fora do JEDI, por pasta ou pelo `.xbp` do xBuild) e `verify -FromGit|-Since` (o que mudou no Git
     e está atrás no JEDI).
   - `status -AllProjects`, `locks -OlderThan` (com `lockedAtLocal`/`lockAgeDays`; a hora do lock vem em UTC) e
     `doctor`/`ping`.
   - `add -Preview`, `checkin -CommentFromGit` e `diff -Encoding oem|ansi`.
-
-### Alterado
-- Wrapper: opção desconhecida vira erro de uso (2), em vez de ser lida como nome de arquivo; a falha de conexão diz se a
-  porta do servidor responde.
-
-## [Beta 6] — 2026-10-17 (build 2060)
-
-### Adicionado
 - Instalador com o console `jvcs.exe` 2026 (os comandos novos abaixo) e o wrapper da IA 1.4.0; versão
-  `2.5.0.2060` (`tools/versao.ini`). Novidades: [`news/pt/2026-10-17-beta6.md`](news/pt/2026-10-17-beta6.md).
+  `2.5.0.2061` (`tools/versao.ini`; o 2060 foi o 1º setup do beta 6, testado nas IDEs; o 2061 é a recompilação de
+  correção, com as correções do console e a S0002). Novidades: [`news/pt/2026-10-17-beta6.md`](news/pt/2026-10-17-beta6.md).
 - Console `jvcs.exe`: criar projeto e módulos **sem IDE** — `addproject`, `addmodule` (grava também a
   pasta local) e `setmodulepath`; `checkin` faz o 1º check-in (0.1) de módulo recém-criado. Ver
   `doc/pt/client/Port-Console.md` §5.
@@ -58,7 +69,7 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Grupo E: `sync -Date` (rollback ao estado de uma data, como a aba Rollback), `sync -Dest` (exporta o estado
   para uma pasta nova, como cópia de leitura) e `checkin -Keep` (Put: revisão nova mantendo o checkout).
   Console: `projectrevs` e `checkin ... keep`. Ver §17.
-- Pedido do PC remoto (S0001, acervo xHarbour), ainda no wrapper 1.4.0. Ver §18.
+- Requisitos S0001 (acervo xHarbour), ainda no wrapper 1.4.0. Ver §18.
   - R1: `status`/`sync` toleram falha por módulo: o módulo sai com `error`, os outros seguem, código 11 parcial e
     manifesto `complete`/`skipped`.
   - R4: projeto e identidade por pasta sem `.dpr`, por `.jvcsproject` ou pelos mapas `projectMap`/`identityMap`
@@ -70,6 +81,10 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
   settings 1.3.0 com regras `ask` para a administração.
 
 ### Alterado
+- Wrapper: opção desconhecida vira erro de uso (2), em vez de ser lida como nome de arquivo; a falha de conexão diz se a
+  porta do servidor responde.
+- `tools/gerar-instalador.bat`: com a variável `JVCS_COPIA_SETUP`, copia o setup gerado para a pasta de distribuição
+  e regrava o `SHA256.txt` dela (`tools/copiar-setup.ps1`).
 - Instalador: a tarefa "Usar o console novo na automação por IA" (`aiconsole`) vem **marcada** e grava
   `jvcsExe` no `config.ini` da IA. Numa atualização de versão anterior ao build 2060 (em que vinha desmarcada)
   ela é marcada uma vez e pode ser desmarcada, mesmo que a pasta mude; com `/TASKS=`, `/MERGETASKS=` ou `/LOADINF=` vale o
@@ -139,7 +154,6 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Páginas Appearance e AI / Automation em VCS Properties; View → Appearance / Font Size.
 - Tema "seguir o Delphi" com o tema real da IDE (`JVCS_IDE_THEME`).
 - Log de erros do cliente, da DLL e do expert em `%LOCALAPPDATA%\JEDI\JVCS\logs`.
-- Canal de testes entre PCs (`tools/canal`).
 
 ### Corrigido
 - Tema escuro com nomes de projetos/módulos invisíveis; menus em branco na IDE escura; janelas atrás da IDE no Alt+Tab.

@@ -1307,5 +1307,5 @@ const
 - Literais `AnsiString` do Delphi 2007: `FF FF FF FF <len:4> <bytes> 00`. Shortstrings de nome de
   classe: `<len:1> <bytes>`. Na VMT do D2007, `vmtSelfPtr = -76`, `vmtInstanceSize = -40`,
   `vmtParent = -36` e `vmtClassName = -44`.
-- Os scripts auxiliares (parser PE em C# via `Add-Type` e `dis.ps1`) ficaram no scratchpad da sessão
+- Os scripts auxiliares (parser PE em C# via `Add-Type` e `dis.ps1`) ficaram numa pasta temporária
   e não fazem parte do repositório.

@@ -9,7 +9,7 @@ senha cifrada).
 
 Referências: [Plano-de-Port.md](../common/Plano-de-Port.md) (F1, F2),
 [Algoritmos-Recuperados.md](Algoritmos-Recuperados.md) (CRC, protocolo, LOGIN),
-[Decisoes.md](../common/Decisoes.md), [tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md).
+[tools\LEIAME-compilar.md](../../../tools/LEIAME-compilar.md).
 
 ## 1. Como compilar
 
@@ -72,8 +72,8 @@ Método: os dois consoles rodaram os mesmos comandos. Comparei:
   LOGIN, os TransactionIDs, a resposta do `GET_SERVER_TIME` e a pasta de destino;
 - (c) os arquivos extraídos (`cmp`).
 
-As evidências estão em `doc\pt\client\golden-console\` (`saida\` = stdout, `fio\` = tráfego
-normalizado). As capturas brutas, que contêm a senha cifrada, não foram versionadas.
+As evidências (`saida\` = stdout, `fio\` = tráfego
+normalizado) ficaram locais e não foram versionadas (as capturas brutas contêm a senha cifrada).
 
 ### 3.1 Leitura
 

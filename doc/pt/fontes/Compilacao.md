@@ -31,6 +31,8 @@ Documentos redirecionada para o OneDrive). Checklist do 11/12: [manual 10](../ma
 
 Padrões: Delphi 13, `all`, `Debug`, `Win32`. Código de saída 0 = tudo OK. `compilar.bat /?` mostra a ajuda.
 
+**Gerar o instalador à mão:** `instalador\bin\gerar.bat` (ver [instalador/doc/COMO-GERAR.md](../../../instalador/doc/COMO-GERAR.md)).
+
 **Subir a versão:** edite só `tools\versao.ini` (`Build=2050`, `Stage=Beta`, `StageNumber=5`; beta 6 = 2060,
 correção da mesma beta = +1, final = 2100 com `Stage=Release`) e recompile; EXE, DLL, Diff, console,
 experts e instalador saem com a nova versão. Regra e motivo: [Versoes.md, "Numeração de versões"](../common/Versoes.md#numeração-de-versões).

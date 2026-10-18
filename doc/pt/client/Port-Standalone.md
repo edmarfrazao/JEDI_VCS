@@ -9,13 +9,13 @@ Esta etapa usa a JVCL 2026.08 do GetIt como **ponte**: os forms ainda têm contr
 o FavOpenDialog, o RekScan, o ItemProp, o HtmlHlp, o BFCrypt e o mwPasLex foram trocados por código
 nativo ou novo. A auditoria completa de forms ficou para as próximas etapas. **Decisão de 13/10/2026:**
 a JVCL e a JCL **ficam** (livres e mantidas pela comunidade JEDI); os controles `TJv*` restantes não
-serão trocados (ver `doc\pt\common\Decisoes.md`). A 2ª etapa (13/10/2026) trouxe as opções de aparência e de IA e o log de erros
+serão trocados. A 2ª etapa (13/10/2026) trouxe as opções de aparência e de IA e o log de erros
 (seção 4).
 A 3ª etapa (13/10/2026) trouxe a varredura de todos os forms, os testes funcionais dos recursos que
 faltavam, correções Unicode, a troca da JVCL visual simples e o tema escuro legível (seção 5).
 
 Referências: [Plano-de-Port.md](../common/Plano-de-Port.md) (F4 e adendo),
-[Decisoes.md](../common/Decisoes.md), [Port-Console.md](Port-Console.md),
+[Port-Console.md](Port-Console.md),
 [Algoritmos-Recuperados.md](Algoritmos-Recuperados.md) (§2 BFCrypt, §3.5 LOGIN).
 
 ## 1. Como compilar
@@ -52,7 +52,7 @@ tools\compilar.bat exe Release Win32
 | `JVCS_PLUGINS` | não definido | `TJvPluginManager` continua no DFM, mas `LoadPlugins` não é chamado e o menu **Plug-ins** fica oculto |
 | `JVCS_NOTIFY` | não definido | notificação entre estações (mailslot) e SMTP desligadas: `jvcsReadBool` devolve sempre `False` para `NotifyActive`, `SMTPMessages` e `ProjMan_NotifyActive`; `GlobalSettingValue(16)` = `False`; menu **Notify** oculto. Os valores gravados no registro não mudam |
 | `BRANCHING` | **ligado** | protocolo igual ao do 2.5.0.1030 contra o servidor 2.50 (`ServerBranchID`/`sBranchName = 'HEAD'`), como no console |
-| `JVCS_NOBRANCHUI` | **ligado** | decisão do usuário: menu **Branch** oculto e itens desabilitados; a GUI fica no HEAD (o título mostra `[Branch: HEAD]`), sem troca de branch |
+| `JVCS_NOBRANCHUI` | **ligado** | decisão de projeto: menu **Branch** oculto e itens desabilitados; a GUI fica no HEAD (o título mostra `[Branch: HEAD]`), sem troca de branch |
 | `UNISYNEDIT` | ligado | API do SynEdit Unicode (pyscripter) nos frames de Line History e Compressed Diff |
 | `DEBUG`/`RELEASE` | pela linha de comando | o `compopt.inc` não força mais `{$DEFINE DEBUG}`/`{$DEFINE RELEASE}`; `MEMCHECK`/`IMAGEBASE` removidos |
 
@@ -100,7 +100,7 @@ estão. O ExtBugtracker usa `System.RegularExpressions.TRegEx` (13/10, §5.5).
 
 Automação: PowerShell + UI Automation (`BM_CLICK`/`WM_SETTEXT` nos controles com handle) +
 `SendKeys` só com a janela do cliente em primeiro plano (atalhos `Alt+P O`, `Ctrl+Shift+O/I/G`,
-`Alt+M U`) + captura de tela. Os scripts ficaram no scratchpad da sessão (não versionados).
+`Alt+M U`) + captura de tela. Os scripts ficaram numa pasta temporária (não versionados).
 
 | Passo | Resultado |
 |---|---|
@@ -270,7 +270,7 @@ VerSet da DLL; valores `Extended` no DFM), `TJvWizard`+páginas 8 (Create Branch
 `TJvToolBar` e `TJvPluginManager` (1 cada). JVCL não visual: diálogos DSA (`JvDSADialogs`,
 `JvDynControlEngineVCL`), `ItemHtDraw` (`JvJCLUtils`), MRU.
 
-### 5.4 Tema escuro (pedido do usuário: textos invisíveis no Project Manager)
+### 5.4 Tema escuro (requisito: textos invisíveis no Project Manager)
 
 Reproduzido com `UITheme = 2` (árvore de projetos só com ícones, lista de módulos com linhas brancas, ícones
 da toolbar sumindo). Causas e correções:
@@ -341,7 +341,7 @@ janela principal como a janela da barra de tarefas.
 - `exe`/`dll`/`diff`/`console` Debug e Release Win32: 0 erros (exe 313/312 avisos, dll 328/327).
 - `tools\compilar-expert.bat Release nova`: `bin\ideclient\Win32` atualizado com a DLL Release nova.
 - `src\jvcsideexpert\tests\testar-dll.bat ambas`: nova e original 21 ok, 0 falhas, 0 AV.
-- Ambiente: em 13/10 a pasta Documentos passou para o OneDrive (`...\OneDrive - sesistemas.com.br\Documentos`);
+- Ambiente: em 13/10 a pasta Documentos passou para uma pasta sincronizada pelo OneDrive;
   o `compilar.bat` procura o CatalogRepository em `%USERPROFILE%\Documents` e não acha a JCL/JVCL/ICS
   (`jedi.inc` não encontrado). Contorno usado: `JVCS_CATALOG` apontando para a pasta do OneDrive.
   O Exemplo01 está registrado no servidor com o caminho antigo (`C:\Users\...\Documents\...\Ex1`);

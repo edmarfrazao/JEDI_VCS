@@ -375,8 +375,8 @@ A pasta `bin\ideclient\Win32` já está montada com o expert e a **DLL nova** (`
 Release nova`, 12/10/2026). O registro do expert é o mesmo de antes (`JVCSIDEClient`).
 
 1. **Feche o Delphi 13.**
-2. Se o expert ainda não estiver registrado: importe `setup\Delphi13-JVCS-DLL-nova.reg` (duplo
-   clique). Quem já importou `setup\Delphi13-JVCS-v2026.reg` não precisa (é o mesmo valor).
+2. Se o expert ainda não estiver registrado: em `HKCU\Software\Embarcadero\BDS\37.0\Experts`, crie o
+   valor `JVCSIDEClient` apontando para `bin\ideclient\Win32\JvcsExpertBDS37.dll` (caminho completo).
 3. Opcional, para o log: num prompt, `set JVCS_EXPERT_LOG=%TEMP%\jvcs-expert.log` e abra
    `"C:\Program Files (x86)\Embarcadero\Studio\37.0\bin\bds.exe"` desse prompt.
 4. Abra o Delphi 13 (**32 bits**). Help > About deve mostrar o plugin; o menu **JEDI VCS** deve ter

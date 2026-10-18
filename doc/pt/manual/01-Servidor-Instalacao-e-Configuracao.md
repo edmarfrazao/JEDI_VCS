@@ -1,6 +1,6 @@
 # 01. Servidor: instalação e configuração
 
-Como instalar e configurar o **JEDI VCS Firebird Server 2.50 Beta 3** com Firebird 2.5.9. O que está aqui foi feito e verificado nesta máquina em 12/10/2026 (registro em [Servidor-Teste-Local.md](../server/Servidor-Teste-Local.md)); o que veio só da ajuda ou do código-fonte está marcado `(a validar)`.
+Como instalar e configurar o **JEDI VCS Firebird Server 2.50 Beta 3** com Firebird 2.5.9. O que está aqui foi feito e verificado num servidor de teste em 12/10/2026; o que veio só da ajuda ou do código-fonte está marcado `(a validar)`.
 
 ## 1. Como as peças se encaixam
 

@@ -32,7 +32,7 @@ função (`LOGIN`, `CHECKIN_MODULE`...), campos delimitados e blobs ZIP.
 
 ## 3. Decisão: portar só o cliente, com protocolo idêntico
 
-Registrada em 12/10/2026 ([Decisoes](../common/Decisoes.md)):
+Registrada em 12/10/2026:
 
 - **Escopo:** portar o **cliente** (EXE, DLL da IDE, Diff e console). O **servidor 2.5 Beta 3 (Firebird)
   permanece** como está.
@@ -65,5 +65,5 @@ Registrada em 12/10/2026 ([Decisoes](../common/Decisoes.md)):
 O port foi feito em dois dias intensos (12 e 13/10/2026) por **Edmar Frazão** com o **Claude Code**
 (Anthropic) como par de programação: análise estática dos binários, port das units, scripts de build,
 testes contra um servidor 2.5 Beta 3 local e documentação em português. Cada decisão relevante foi
-registrada em [Decisoes](../common/Decisoes.md) e cada fase no [Plano de Port](../common/Plano-de-Port.md) e nos
+registrada com data, e cada fase no [Plano de Port](../common/Plano-de-Port.md) e nos
 documentos `doc/pt/client/Port-*.md`.

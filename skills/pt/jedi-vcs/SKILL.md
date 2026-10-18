@@ -84,7 +84,7 @@ checkout). Conflito (8) = arquivo local alterado sem checkout: mostre o `diff` a
 
 Arquivo novo (não versionado): `jvcs-ai.ps1 add "<arq>" -Comment "..."` cadastra e faz o 1º check-in
 0.1 (com o `.dfm`). Projeto novo: `jvcs-ai.ps1 addproject <proj.dpr>` antes (acervo sem .dpr: nome sem
-extensão, ex.: `addproject sesis`). Os dois seguem o modo de
+extensão, ex.: `addproject projeto1`). Os dois seguem o modo de
 check-in e exigem o console 2026 (código 12 = peça ao usuário para apontar `jvcsExe`).
 
 ## Mais recursos (quase todos exigem o console 2026; detalhes em `references/comandos.md`)

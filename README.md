@@ -199,6 +199,8 @@ documentation is in Brazilian Portuguese.
   (freeware), Abbrevia (MPL 1.1). `fvcscrypt.dll` is the original binary redistributed from the 2.50 Beta 3
   installer. Summary (Portuguese): [Licenças](doc/pt/common/Licencas.md) and
   [Componentes](doc/pt/common/Componentes.md).
+- **Creators, rights and `fvcscrypt.dll`:** who created and maintained JEDI VCS, the license rights, why
+  `fvcscrypt.dll` is required and why there is no 64-bit client: [Credits and rights](doc/en/08-Credits-and-Rights.md).
 
 ## Credits
 

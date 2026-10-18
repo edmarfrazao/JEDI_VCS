@@ -1,7 +1,7 @@
 # Credenciais do JEDI VCS — diagnóstico e recomendação (como o Git, de forma segura)
 
-Pedido do usuário (12/10/2026): "a senha poderia ser igual faz com git que fica em um arquivo na pasta do usuário — analise opções,
-boas práticas, segurança, algo profissional". Análise somente leitura do código da v2026 e do servidor 2.5; nada foi alterado.
+Requisito (12/10/2026): guardar a senha como o Git faz, num arquivo na pasta do usuário, com análise de opções,
+boas práticas e segurança. Análise somente leitura do código da v2026 e do servidor 2.5; nada foi alterado.
 
 ## Resumo
 - **Hoje:** a GUI e a DLL da IDE gravam a senha em `HKCU\Software\JEDI\JEDIVCS\Identities\<identidade>\Password` só em **Base64**
@@ -94,12 +94,12 @@ maxAgeDays = 180
 [profile "producao"]
 server = vcsserver.empresa.local
 port   = 2106
-user   = edmar
+user   = <usuario>
 
 [profile "ia"]
 server = vcsserver.empresa.local
 port   = 2106
-user   = edmar.ia        ; usuário JVCS exclusivo da IA, poucos direitos
+user   = <usuario>.ia        ; usuário JVCS exclusivo da IA, poucos direitos
 agentAllowed = true
 
 [agent]
@@ -111,11 +111,11 @@ Regras: o carregador recusa chaves `password/secret/token/key`; verifica o dono 
 políticas corporativas em `HKLM\SOFTWARE\Policies\JEDI\JVCS` (`CredentialStore`, `AllowPersist`, `AllowPasswordArgument=0`, `AllowEnvPassword`).
 
 ### c.3 Credencial no Windows
-- `CRED_TYPE_GENERIC`, TargetName `JEDIVCS:jvcs://<user>@<host>:<port>` (ex.: `JEDIVCS:jvcs://edmar@vcsserver.empresa.local:2106`),
+- `CRED_TYPE_GENERIC`, TargetName `JEDIVCS:jvcs://<user>@<host>:<port>` (ex.: `JEDIVCS:jvcs://<usuario>@vcsserver.empresa.local:2106`),
   sempre derivado do **perfil** (host minúsculo, porta explícita) — usuário no nome permite você e a IA no mesmo servidor.
 - `UserName`, `Comment` ("JEDI VCS 2.5 – perfil producao"), atributos `JEDIVCS_Version=1`, `JEDIVCS_Profile`, `JEDIVCS_ExpiresUtc`.
 - Blob: senha UTF-16LE sem terminador (≤2560 bytes) — formato do `cmdkey`, permitindo
-  `cmdkey /generic:"JEDIVCS:jvcs://edmar@vcsserver:2106" /user:edmar` (confirmar na F2).
+  `cmdkey /generic:"JEDIVCS:jvcs://<usuario>@vcsserver:2106" /user:<usuario>` (confirmar na F2).
 - Persist: `LOCAL_MACHINE` (padrão), `ENTERPRISE` (perfil móvel), `SESSION` (máquina compartilhada).
 - No login: UTF-16 → ANSI com `WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, …)`; recusar caractere sem representação ou >255 bytes.
 
@@ -181,7 +181,7 @@ TargetName, nunca `LOCAL_MACHINE`, `LocalFree`, DACL dono+SYSTEM); zerar a senha
   auditoria sem segredo; avisar para **trocar a senha**. Cliente 2.5 antigo instalado volta a gravar Base64 → documentar/desinstalar.
 
 ### c.8 IA e MCP: usar o JVCS sem ver a senha
-1. **Usuário JVCS próprio para a IA** (`edmar.ia`, direitos mínimos por projeto): histórico mostra quem fez cada check-in, menor privilégio,
+1. **Usuário JVCS próprio para a IA** (`<usuario>.ia`, direitos mínimos por projeto): histórico mostra quem fez cada check-in, menor privilégio,
    e evita IA e GUI derrubarem a sessão uma da outra.
 2. MCP: `jvcs mcp serve --profile ia` (stdio); ferramentas sem parâmetro de senha (`status`, `list_projects`, `diff`, `get`, `checkout`,
    `checkin`, `undo_checkout`); credencial resolvida internamente com `allowPrompt=false`; sem credencial → `AUTH_REQUIRED`.
@@ -192,20 +192,20 @@ TargetName, nunca `LOCAL_MACHINE`, `LocalFree`, DACL dono+SYSTEM); zerar a senha
    "ask":  ["mcp__jvcs__checkin", "mcp__jvcs__undo_checkout", "Bash(jvcs checkin *)"],
    "deny": ["Bash(cmdkey *)", "PowerShell(cmdkey *)", "Bash(jvcs * /password *)"]
    ```
-   + `[agent] requireConfirmation=checkin` no próprio jvcs (TaskDialog ou Windows Hello) + direitos do usuário `edmar.ia` no servidor
+   + `[agent] requireConfirmation=checkin` no próprio jvcs (TaskDialog ou Windows Hello) + direitos do usuário `<usuario>.ia` no servidor
    (a única camada que o agente não contorna).
 6. Limite honesto: qualquer processo do mesmo usuário Windows pode chamar `CredReadW`; se a ameaça for o próprio agente, rodá-lo em outra
-   conta Windows/VM com só a credencial `edmar.ia`.
+   conta Windows/VM com só a credencial `<usuario>.ia`.
 
 ### c.9 Ambiente corporativo
 `ENTERPRISE` roama com perfil móvel (opção, não padrão); reset de senha por admin em conta local invalida DPAPI/cofre → tratar como
 "credencial ausente"; Credential Guard **não** protege credenciais genéricas; SSH: usar stdin/arquivo/DPAPI; UAC: `SESSION` não é
 compartilhado entre token elevado e normal (`LOCAL_MACHINE` é); máquinas compartilhadas: `AllowPersist=session` via GPO e `jvcs logout --all`.
 
-## (c.10) Modo compatível: a CLI/IA reaproveita a identidade já salva (proposta do usuário, 12/10/2026)
+## (c.10) Modo compatível: a CLI/IA reaproveita a identidade já salva (proposta de 12/10/2026)
 Uso real hoje: na tela **Server Login → Options** ficam marcados "Store Password with identity" e "Auto login"; a última identidade
-(`Identities\LastUsedID`) já traz servidor, porta, usuário e senha, e ninguém digita nada. Nesta máquina: identidade `DEFAULT`,
-`192.168.0.10:2106`, usuário `sysdba`, `SavePassword=1`, `Autologin=1`.
+(`Identities\LastUsedID`) já traz servidor, porta, usuário e senha, e ninguém digita nada. No servidor de teste: identidade `DEFAULT`,
+`<servidor>:2106`, usuário `sysdba`, `SavePassword=1`, `Autologin=1`.
 
 **Proposta:** a CLI (e o MCP) **não cria outro tipo de autenticação**: usa a **mesma identidade salva** que a GUI e a IDE usam.
 - `jvcs <comando>` sem parâmetros de login → usa a identidade `LastUsedID`; `--identity <nome>` escolhe outra.

@@ -1,6 +1,6 @@
 # Check-in de famílias de arquivos (.pas + .dfm / .fmx) e outras opções
 
-Pedido do usuário (12/10/2026): no check-in, `.pas` + `.dfm` vão juntos por padrão, mas em projetos **FMX (mobile)** o `.fmx`
+Requisito (12/10/2026): no check-in, `.pas` + `.dfm` vão juntos por padrão, mas em projetos **FMX (mobile)** o `.fmx`
 precisa ser marcado à mão. Deve funcionar igual: `.pas` + `.fmx`.
 
 ## 1. Como funciona hoje (evidências no código)

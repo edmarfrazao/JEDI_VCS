@@ -7628,7 +7628,7 @@ function Write-AuditEntry {
 # Pedido S0002 do PC remoto (18/10/2026): untracked, verify -FromGit|-Since, status -AllProjects,
 # locks -OlderThan e doctor. Todos só LEEM o servidor; no disco, só pastas temporárias.
 
-# Forma longa de um caminho: componentes 8.3 (C:\Users\EDMARF~1) expandidos quando existem. O servidor
+# Forma longa de um caminho: componentes 8.3 (C:\Users\USUARI~1) expandidos quando existem. O servidor
 # guarda a pasta do módulo como ela foi dada (longa, 8.3 ou mista); as comparações usam a forma longa.
 $script:JaLongDirCache = @{}
 function Get-JaLongPath {

@@ -1,6 +1,6 @@
 # 03. Decisões de arquitetura
 
-Resumo navegável das decisões do port. A fonte é o registro datado em [Decisoes](../common/Decisoes.md)
+Resumo navegável das decisões do port. A fonte é o registro datado das decisões
 e o [ADR-001](../common/ADR-001-CLI-IA-e-Plugin-Multi-Delphi.md); aqui estão agrupadas por tema, com o
 motivo e onde ler o detalhe. Anterior: [02 Linha do tempo](02-Linha-do-Tempo.md). Próximo:
 [04 Testes](04-Testes-e-Validacao.md).
@@ -113,7 +113,7 @@ Tabela completa: [Componentes](../common/Componentes.md).
 
 ## D-10. IA
 
-Do ADR-001 e de [Decisoes](../common/Decisoes.md):
+Do ADR-001 e do registro de decisões:
 
 - a IA usa a **identidade já salva** do usuário (o servidor com branching aceita duas sessões do mesmo
   usuário) e marca os check-ins com `[IA]`;

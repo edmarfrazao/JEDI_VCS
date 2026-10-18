@@ -1,15 +1,16 @@
 # setup
 
-Instalador do **JEDI VCS 2.5 Beta 2026** (Inno Setup 6) e arquivos `.reg` de desenvolvimento.
+Instalador do **JEDI VCS 2.5 Beta 2026** (Inno Setup 6).
 
 | Arquivo | O que é |
 |---|---|
-| `JediVCS2026.iss` | Script do instalador (gera `Output\JediVCS-2.5.0-Beta6-build2060-Setup.exe`) |
+| `JediVCS2026.iss` | Script do instalador (gera `Output\JediVCS-2.5.0-Beta6-build2061-Setup.exe`) |
 | `Output\` | Saída do ISCC (fora do git, `.gitignore`) |
-| `Delphi13-JVCS-v2026.reg` | **Só desenvolvimento** (esta máquina): SynEdit/VTV em `Known Packages`, Library Path, PATH da IDE e o expert apontando para `bin\ideclient\Win32` |
-| `Delphi13-JVCS-DLL-nova.reg` | **Só desenvolvimento**: só o valor `JVCSIDEClient` → `bin\ideclient\Win32\JvcsExpertBDS37.dll` |
 
 ## 1. Gerar o instalador
+
+Para gerar à mão, use os atalhos de `instalador\bin` (`gerar.bat`, `gerar-sem-build.bat`, `conferir.bat`, `copiar.bat`,
+`versao.bat`); o passo a passo está em [instalador/doc/COMO-GERAR.md](../instalador/doc/COMO-GERAR.md).
 
 ```
 tools\gerar-instalador.bat              (compila Release Win32 de tudo e empacota)
@@ -27,6 +28,11 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 - ISCC: `JVCS_ISCC`, ou `D:\Delphi\JediVCS\ferramentas\InnoSetup6\ISCC.exe` (Inno Setup 6.7.3), ou
   `%ProgramFiles(x86)%\Inno Setup 6\ISCC.exe`. Direto: `ISCC.exe setup\JediVCS2026.iss`.
 - Log: `tools\logs\gerar-instalador.log`. Código de saída 0 = OK, 1 = falha.
+- **Cópia para a pasta de distribuição:** com a variável `JVCS_COPIA_SETUP` definida, o script copia o setup
+  gerado para essa pasta (a pasta compartilhada de onde o PC de testes instala), confere o SHA-256 da cópia e
+  regrava o `SHA256.txt` da pasta com o hash de cada `JediVCS-*-Setup.exe` (`tools\copiar-setup.ps1`; falha
+  na cópia = código 1). O caminho não fica no repositório: defina a variável num script pessoal (aqui,
+  `D:\Delphi\tools\gerar-beta.bat [--sem-build]`). **Todo beta gerado vai também para essa pasta.**
 - Experts: entra no pacote todo `bin\ideclient\Win32\JvcsExpertBDS22.dll` / `23` / `37` que existir
   (pré-processador `#if FileExists`), **sem editar o `.iss`**. O `gerar-instalador.bat` compila o 22/23 só se
   o Delphi 11/12 estiver instalado e confere cada expert com `tools\verificar-expert.ps1` (só `rtl`/`vcl`/`xmlrtl`
@@ -40,7 +46,7 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 
 ## 2. Instalar, reinstalar/reparar, desinstalar
 
-- **Instalar:** feche o Delphi e execute `JediVCS-2.5.0-Beta6-build2060-Setup.exe`. Idioma: português (Brasil)
+- **Instalar:** feche o Delphi e execute `JediVCS-2.5.0-Beta6-build2061-Setup.exe`. Idioma: português (Brasil)
   ou inglês. Pede administrador; a primeira tela permite instalar **só para o usuário atual**
   (`PrivilegesRequiredOverridesAllowed=dialog`, ou `/CURRENTUSER` na linha de comando).
 - Pasta padrão: `C:\Program Files (x86)\JEDI\JVCS 2026` (por usuário:
@@ -53,7 +59,7 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
   Desmarcar o expert ou a tarefa da IA numa reinstalação **desfaz** o registro/a gravação correspondentes.
 - **Desinstalar:** Painel de Controle → Programas → "JEDI VCS 2.5 Beta 2026", ou o atalho no Menu
   Iniciar, ou `unins000.exe` na pasta. Feche o Delphi antes.
-- Silencioso: `JediVCS-2.5.0-Beta6-build2060-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR=...]
+- Silencioso: `JediVCS-2.5.0-Beta6-build2061-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR=...]
   [/COMPONENTS=client,ide,ideold\bds10,ideold\bds21,maps,ai] [/TASKS=desktopicon,aiconsole] [/LOG=arquivo]`;
   os nomes das IDEs antigas são `ideold\d7` e `ideold\bds<n>` (n = 1…12, 14…21). Sem `/COMPONENTS`, a
   reinstalação repete a seleção da vez anterior;
@@ -114,7 +120,7 @@ Para cada versão cujo `JvcsExpertBDS<nn>.dll` está no pacote (22 = Delphi 11, 
    `D:\Delphi\JediVCS\v2026\bin\ideclient\Win32\JvcsExpertBDS37.dll`), ele é guardado em
    `{app}\jvcs2026-setup.ini` e **restaurado na desinstalação**.
 
-Só isso. As demais chaves de `Delphi13-JVCS-v2026.reg` (`Known Packages` do SynEdit/VTV, `Library`,
+Só isso. As demais chaves de desenvolvimento (`Known Packages` do SynEdit/VTV, `Library`,
 `Environment Variables`) servem para **compilar** o port na IDE; o usuário final não precisa delas
 (o expert é uma DLL com pacotes `rtl`/`vcl`/`designide` da própria IDE e a `JvcsExternalDll.dll` não usa
 pacotes). Não grava em `Experts x64` (a IDE de 64 bits não carrega DLL de 32 bits).
@@ -190,8 +196,8 @@ Limitações herdadas do expert original, que a DLL nova não corrige:
   instalador nem pela desinstalação. Ele é compartilhado entre o cliente original e o novo.
 - **Expert de desenvolvimento** (`bin\ideclient\Win32`): o setup troca o `JVCSIDEClient` para a pasta
   instalada e devolve o valor de desenvolvimento ao desinstalar. Para voltar ao de desenvolvimento sem
-  desinstalar: rode o setup de novo desmarcando o Expert, ou importe `Delphi13-JVCS-DLL-nova.reg`
-  (Delphi fechado).
+  desinstalar: rode o setup de novo desmarcando o Expert, ou grave de novo o
+  `JVCSIDEClient` de desenvolvimento (Delphi fechado).
 - **Automação por IA:** com a tarefa `aiconsole` (padrão desde o beta 6), o wrapper usa o `jvcs.exe`
   2026 desta instalação, que tem os comandos novos (`add`, `addproject`, `history`, labels, bugs, ToDo,
   administração etc.). Sem a tarefa, o wrapper continua com o `jvcs.exe` que estiver no
@@ -204,10 +210,10 @@ Limitações herdadas do expert original, que a DLL nova não corrige:
 
 ## 6. Testes (13/10/2026)
 
-Feitos com `--sem-build`, instalação silenciosa por usuário numa pasta do scratchpad, sem tocar no
+Feitos com `--sem-build`, instalação silenciosa por usuário numa pasta temporária, sem tocar no
 registro real da IDE nem no `config.ini` real. Dois parâmetros **só para teste** desviam as gravações:
 `/BDSKEY=Software\<chave de teste>\BDS` (base das chaves `BDS\<nn>.0`) e `/AICONFIG=<arquivo>`
-(o `config.ini`). Roteiro (`teste.ps1` no scratchpad da sessão):
+(o `config.ini`). Roteiro (`teste.ps1`, local, não versionado):
 
 | Cenário | Resultado |
 |---|---|
@@ -230,10 +236,10 @@ Há um terceiro parâmetro **só para teste**, `/OLDIDEROOT=Software\<chave de t
 `<raiz>\Borland|CodeGear|Embarcadero\BDS\<n>.0`), tanto em HKCU quanto em HKLM. A desinstalação usa a
 chave guardada no `jvcs2026-setup.ini`.
 
-O roteiro `teste-ideold.ps1` (scratchpad da sessão) roda o setup gerado com `--sem-build` em modo
-silencioso, com `/CURRENTUSER`, numa pasta do scratchpad, com `/BDSKEY` e `/OLDIDEROOT` em
-`HKCU\Software\JVCS2026Teste` e `/AICONFIG` no scratchpad. Ele cria estas IDEs falsas (`App`/`RootDir`
-apontando para arquivos vazios do scratchpad):
+O roteiro `teste-ideold.ps1` (local, não versionado) roda o setup gerado com `--sem-build` em modo
+silencioso, com `/CURRENTUSER`, numa pasta temporária, com `/BDSKEY` e `/OLDIDEROOT` em
+`HKCU\Software\JVCS2026Teste` e `/AICONFIG` na pasta temporária. Ele cria estas IDEs falsas (`App`/`RootDir`
+apontando para arquivos vazios da pasta temporária):
 
 - **XE3** (`Embarcadero\BDS\10.0`): `JVCSIDEClient` do original
   `C:\Program Files (x86)\JEDI\JVCS\JvcsExpertBDS10.dll` e mais um valor `OutroExpert`;
@@ -259,17 +265,17 @@ Resultado: **43 verificações, 0 falhas**.
 2.5.0.1030 ...: ERRO JvcsExpertD7.dll`, código 1, instalador não gerado.
 
 **Skills por idioma (13/10/2026):** setup gerado com `--sem-build` (log do ISCC sem erro), instalado em
-silêncio com `/CURRENTUSER /DIR=<scratchpad> /COMPONENTS="client,ai"`, `/AICONFIG`, `/BDSKEY` e
+silêncio com `/CURRENTUSER /DIR=<pasta temporária> /COMPONENTS="client,ai"`, `/AICONFIG`, `/BDSKEY` e
 `/OLDIDEROOT` numa chave de teste: `tools\ai\skills\pt\jedi-vcs` e `tools\ai\skills\en\jedi-vcs` com hash
 igual ao do repositório; reinstalado por cima de uma pasta `tools\ai\skills\jedi-vcs` simulada (beta 4),
 que o `[InstallDelete]` removeu; desinstalado sem sobras (pasta, entrada de desinstalação e chave de teste).
 
 ### 6.2 Tarefa `aiconsole` e atualização (17/10/2026, beta 6)
 
-Roteiro `teste-beta6.ps1` (scratchpad da sessão), no mesmo esquema da seção 6: instalação silenciosa com
-`/CURRENTUSER`, pasta do scratchpad, `/BDSKEY`, `/OLDIDEROOT` e `/AICONFIG` numa cópia do `config.ini`
+Roteiro `teste-beta6.ps1` (local, não versionado), no mesmo esquema da seção 6: instalação silenciosa com
+`/CURRENTUSER`, pasta temporária, `/BDSKEY`, `/OLDIDEROOT` e `/AICONFIG` numa cópia do `config.ini`
 real. Usa o setup do beta 5 (`JediVCS-2.5.0-Beta5-build2050-Setup.exe`) para criar a instalação anterior.
-Resultado com o setup final (SHA-256 `98D837B7…`): 40 verificações, 0 falhas.
+Resultado com o setup do build 2060 (SHA-256 `98D837B7…`) e com o do 2061 (`D404E371…`): 40 verificações, 0 falhas nos dois.
 
 | Cenário | Resultado |
 |---|---|
@@ -283,7 +289,8 @@ Resultado com o setup final (SHA-256 `98D837B7…`): 40 verificações, 0 falhas
 
 Instalação real pelo Explorer, para todos os usuários (UAC), por cima do beta 5: tarefa marcada,
 `config.ini` com `jvcsExe=C:\Program Files (x86)\JEDI\JVCS 2026\jvcs.exe`, e o expert 2.5.0.2060 carregado
-dessa pasta no Delphi 11.3, 12 e 13.2 (log do expert, menu com 27 itens).
+dessa pasta no Delphi 11.3, 12 e 13.2 (log do expert, menu com 27 itens). O build 2061 foi instalado e testado da mesma forma
+em 18/10/2026.
 
 ## Escolha por Delphi
 

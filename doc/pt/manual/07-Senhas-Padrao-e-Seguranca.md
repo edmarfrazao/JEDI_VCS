@@ -13,7 +13,7 @@ Quais senhas vêm de fábrica, o que trocar e como proteger o servidor e as cred
 
 O script de dados iniciais traz o aviso do próprio JEDI VCS: "create a new administrator and delete sysdba after installation or change the default password immediately!".
 
-> **Só no ambiente de teste:** o servidor de teste desta máquina (`192.168.0.10:2106`) continua com `SYSDBA`/`masterkey` no Firebird e `sysdba`/`admin` no JEDI VCS. Não replique isso em produção.
+> **Só no ambiente de teste:** o servidor de teste (`<servidor>:2106`) continua com `SYSDBA`/`masterkey` no Firebird e `sysdba`/`admin` no JEDI VCS. Não replique isso em produção.
 
 Regras de senha do JEDI VCS: usuário de 2 a 50 caracteres e senha de **5 a 50**, ambos **diferenciam maiúsculas**.
 

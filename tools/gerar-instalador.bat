@@ -26,6 +26,9 @@ rem  Saida: setup\Output\JediVCS-2.5.0-Beta<N>-build<Build>-Setup.exe
 rem         (ex.: JediVCS-2.5.0-Beta5-build2050-Setup.exe; o .iss le o mesmo .ini)
 rem
 rem  Variaveis de ambiente opcionais:
+rem    JVCS_COPIA_SETUP = pasta para onde o setup gerado tambem e copiado (com o SHA256.txt
+rem                regravado por tools\copiar-setup.ps1), ex.: a pasta compartilhada do PC de
+rem                testes; defina fora do repositorio (ex.: D:\Delphi\tools\gerar-beta.bat)
 rem    JVCS_ISCC = caminho do ISCC.exe (padrao: ..\..\ferramentas\InnoSetup6\ISCC.exe,
 rem                depois ProgramFiles(x86)\Inno Setup 6\ISCC.exe)
 rem
@@ -151,6 +154,17 @@ if errorlevel 1 goto :iscc_fail
 if not exist "%GI_OUT%" goto :iscc_fail
 for %%F in ("%GI_OUT%") do set "GI_SIZE=%%~zF"
 call :log "[OK] instalador gerado: %GI_OUT% (%GI_SIZE% bytes)"
+rem  copia opcional para a pasta de distribuicao (JVCS_COPIA_SETUP; o caminho nao fica no repositorio)
+if defined JVCS_COPIA_SETUP (
+    powershell -NoProfile -ExecutionPolicy Bypass -File "%GI_TOOLS%\copiar-setup.ps1" -Setup "%GI_OUT%" -Destino "%JVCS_COPIA_SETUP%" >>"%GI_LOG%" 2>&1
+    if errorlevel 1 (
+        call :log "[FALHOU] copia do setup para %JVCS_COPIA_SETUP% (veja o log)"
+        endlocal & exit /b 1
+    )
+    call :log "[OK] setup copiado para %JVCS_COPIA_SETUP% (SHA256.txt atualizado)"
+) else (
+    call :log "[INFO] JVCS_COPIA_SETUP nao definida: setup so em setup\Output"
+)
 echo.
 echo Pronto. Para instalar: execute o setup ^(feche o Delphi antes^). Veja setup\LEIAME.md.
 endlocal & exit /b 0

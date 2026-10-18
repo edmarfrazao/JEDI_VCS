@@ -130,8 +130,8 @@ Módulo cuja revisão não baixa do servidor (revisão sem arquivo, erro do cons
 os outros são verificados e o comando sai **11**. Em projeto grande, filtre:
 
 ```powershell
-jvcs-ai.ps1 status -Project sesis -Only modified,unlocked     # alterados sem checkout
-jvcs-ai.ps1 status -Project sesis -Only missing,error
+jvcs-ai.ps1 status -Project projeto1 -Only modified,unlocked     # alterados sem checkout
+jvcs-ai.ps1 status -Project projeto1 -Only missing,error
 ```
 
 O JSON traz sempre `counts` (totais por estado, contados antes do filtro) e, com `-Only`, `only`; o código de
@@ -186,7 +186,7 @@ Usado pelo hook. Não versionado → ok (nada a fazer); já é meu → ok; de ou
 ### Lote (`-FromList`)
 
 ```powershell
-jvcs-ai.ps1 status -Project sesis > st.json                                         # o JSON serve de lista
+jvcs-ai.ps1 status -Project projeto1 > st.json                                         # o JSON serve de lista
 jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force             # prévia (nada muda)
 jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Apply -ListHash <hash da prévia>
 jvcs-ai.ps1 undocheckout -FromList lista.txt                                        # lista de texto: um caminho por linha

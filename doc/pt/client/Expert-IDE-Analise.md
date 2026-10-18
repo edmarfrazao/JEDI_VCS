@@ -660,5 +660,5 @@ Riscos e cuidados:
 - **Disassembly**: `llvm-objdump -d -M intel`, anotado com nomes de IAT, thunks e literais.
 
 O IDE de destino (`bds.exe` 32 e 64 bits, LAA) e a existência de `Experts x64` foram verificados
-apenas por leitura de arquivos e do registro HKCU. Nada foi gravado fora do scratchpad, exceto este
+apenas por leitura de arquivos e do registro HKCU. Nada foi gravado fora de uma pasta temporária, exceto este
 documento.

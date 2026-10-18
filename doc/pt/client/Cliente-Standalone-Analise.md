@@ -130,7 +130,7 @@ O `wsock32` do Diff aparece mesmo sem import direto, porque o ICS está linkado 
 
 `weak` (`weak,orgweak[,implicit]`) marca as units de import de API (`Windows`, `Messages`,
 `CommCtrl`, `ShellAPI`, `WinSock`, `RichEdit`, `DBT`…). As listas completas estão em
-`<scratchpad>\cli\<bin>.units.csv`.
+`<pasta temporária>\cli\<bin>.units.csv` (não versionada).
 
 **GUI × DLL**:
 - só no EXE: `JediVCS`, `JVCSManageFavorites`, `ProjectTreeDockWnd`, `OpenProject`, `FastMM4`,
@@ -671,7 +671,7 @@ protocolo, porque usam comandos locais e registro.
   | créditos do About (`TJVCSBASEABOUTDLG`, Abbrevia 3.05 / DFS / mdMailSlot / mwPasLex) | `.rsrc` `$4C5D68`… |
 
   Os offsets equivalentes no Diff e no console estão nos `*.ascii.txt`.
-- **Ferramentas** (scratchpad da sessão, `cli\`):
+- **Ferramentas** (pasta temporária não versionada, `cli\`):
   - `Dfm.cs`: leitor TPF0 com todos os `va*`, como `vaList`, `vaInt8/16/32/64`, `vaExtended` (80
     bits), `vaSingle/Double/Currency/Date`, `vaString/LString/WString/UTF8String`, `vaIdent`,
     `vaFalse/True`, `vaNil`, `vaBinary`, `vaSet`, `vaCollection` com índice, e flags

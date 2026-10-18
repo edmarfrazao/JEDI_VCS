@@ -59,9 +59,7 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 
 ## Documentos relacionados
 
-- [Servidor de teste local](../server/Servidor-Teste-Local.md): registro de como o servidor de teste foi montado.
 - [Credenciais](../common/Credenciais.md): análise de armazenamento de senhas e proposta para a CLI e para a IA.
-- [Ambiente](../common/Ambiente.md): como o Delphi 13 e as bibliotecas foram instalados e como reverter.
 - [CHANGELOG](../../../CHANGELOG.md): mudanças por versão.
 - [Requisito de tamanho de fonte](../client/Requisito-Tamanho-Fonte.md) e [Check-in de famílias FMX](../client/Checkin-Familias-FMX.md).
 - [LEIAME do expert](../../../src/jvcsideexpert/LEIAME.md).

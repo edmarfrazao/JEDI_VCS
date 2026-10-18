@@ -2,7 +2,7 @@
 
 Consolidação do levantamento por famílias de componentes para o port do **cliente** JEDI VCS 2.5 (Beta 3) para o Delphi 13.2 Florence Professional, mantendo a compilação em Delphi 11/12. O servidor 2.5 Beta 3 (Firebird) **não** é portado e o protocolo tem de continuar idêntico.
 
-- **Fonte dos dados:** workflow `wf_41a5e977-854`. Foram usadas só as 9 versões **revisadas** das famílias (correções marcadas com `[REVISÃO]`) e o resultado do crítico de completude (`critic:completude`). Onde a revisão discorda do inventário inicial, vale a revisão.
+- **Fonte dos dados:** levantamento automatizado por famílias. Foram usadas só as 9 versões **revisadas** das famílias (correções marcadas com `[REVISÃO]`) e o resultado do crítico de completude (`critic:completude`). Onde a revisão discorda do inventário inicial, vale a revisão.
 - **Data da consolidação:** 2026-10-12.
 - **Plano de execução:** `doc\pt\common\Plano-de-Port.md`.
 - **Documentos relacionados:** `README.md`, `doc\pt\common\LEIAME-Origem.md`, `doc\pt\common\Licencas.md`, `doc\pt\common\manifesto-origem.csv`.

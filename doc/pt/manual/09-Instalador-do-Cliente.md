@@ -116,7 +116,7 @@ XE3 e `ideold\bds21` = 10.4). Sem `/COMPONENTS`, uma reinstalação repete as es
 | Aviso "ainda não foi aberto por este usuário" | Abra e feche o Delphi uma vez e rode o setup de novo (reparar) |
 | Menu JEDI VCS não aparece | Confira o `JVCSIDEClient` no registro e se a IDE é a de 32 bits (`bin\bds.exe`); veja o [capítulo 08](08-Solucao-de-Problemas.md) |
 | O UAC pediu senha de outra conta e o expert não apareceu | O registro foi gravado no perfil da outra conta. Rode o setup escolhendo "só para mim" |
-| Quer voltar ao expert de desenvolvimento | Desinstale (o valor anterior volta) ou importe `setup\Delphi13-JVCS-DLL-nova.reg` com o Delphi fechado |
+| Quer voltar ao expert de desenvolvimento | Desinstale (o valor anterior volta) ou, com o Delphi fechado, grave de novo o `JVCSIDEClient` apontando para `bin\ideclient\Win32` |
 
 ## Escolha por Delphi
 

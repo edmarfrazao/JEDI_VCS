@@ -23,7 +23,7 @@ veja também o [manual 08 — Solução de problemas](../manual/08-Solucao-de-Pr
 
 | Problema | Causa | Solução |
 |---|---|---|
-| "unsupported on-disk structure ... found **11.2**, support **11.1**" | campo *Server* = `LOCALHOST`/vazio faz o servidor abrir o banco **sem host**, caindo no Firebird **2.1 embutido**; o banco tinha sido restaurado com o `gbak` 2.5 | usar um **IP** (`127.0.0.1`) no *Server*: a conexão vai por TCP ao Firebird 2.5. Detalhe: [Servidor-Teste-Local](../server/Servidor-Teste-Local.md) |
+| "unsupported on-disk structure ... found **11.2**, support **11.1**" | campo *Server* = `LOCALHOST`/vazio faz o servidor abrir o banco **sem host**, caindo no Firebird **2.1 embutido**; o banco tinha sido restaurado com o `gbak` 2.5 | usar um **IP** (`127.0.0.1`) no *Server*: a conexão vai por TCP ao Firebird 2.5. |
 | Configuração do servidor "some" ou muda conforme quem executa | o servidor sem permissão em Program Files grava o `jvcssrv.ini` no **VirtualStore**; como administrador lê o de Program Files | manter os dois iguais; ver [manual 01 §5](../manual/01-Servidor-Instalacao-e-Configuracao.md) |
 | "Column unknown BRANCHID" | banco de 2003 atualizado pelo servidor só até 2.42; o `Upgrade250` pressupõe as tabelas de branch | aplicar `UpdateV25.sql` + branch `HEAD` e reiniciar o servidor |
 | Módulo criado sem IDE recusa o 1º check-in com "Revision already checked in" | `ADD_NEW_MODULE` com **descrição vazia** faz o servidor criar uma revisão *placeholder* 0.1 (sem caminho) | o `addmodule` do console sempre envia descrição (padrão = nome do arquivo). Módulos já criados assim (ex2: IDs 5 e 6) precisam ser removidos pelo standalone |
@@ -78,4 +78,4 @@ veja também o [manual 08 — Solução de problemas](../manual/08-Solucao-de-Pr
 3. **O mínimo de dependências no que roda dentro da IDE.**
 4. **Ferramentas de diagnóstico no próprio produto** (`-formsweep`, automação, log de erros) aceleram
    muito o teste com IA.
-5. **Registrar cada decisão com data** ([Decisoes](../common/Decisoes.md)) evita rediscutir o escopo.
+5. **Registrar cada decisão com data** evita rediscutir o escopo.

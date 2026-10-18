@@ -47,7 +47,7 @@ Releases: `v2.5.0.2026-beta1` (commit `5a31446`, 13/10) e `v2.5.0.2026-beta2` (c
 | Licença e segurança | `cde6ae9`, `1aa4c0b`, `68adddb`, `5a31446` | `LICENSE` (MPL 1.1), `.gitignore`/`.claude/settings.json` contra credenciais, aviso do MidWare no README, About e console → **beta1** |
 | Multi-Delphi | `0912562`, `d3a730a`, `c1d0ddc`, `85942a4`, `47d3584`, `e98ca78`, `f78b0ea` | `compilar.bat /delphi:NN` (11, 12 ou 13); expert sem `designide` (carrega em todas as atualizações); `.dproj` + `JediVCS2026.groupproj`; decisão "expert fino + núcleo único" |
 | F4 — 3ª etapa | `bdcda0c`, `c439db7`, `b61088a`, `2378a76`, `e6455e2`, `2d8b2f8`, `04927fe`, `0202a19`, `361eba9`, `81e7058` | `-formsweep` e automação de teste; JVCL simples → VCL; escala 175–200%; bugs Unicode; ExtBugtracker com `TRegEx`; testes funcionais |
-| Testes remotos | `0971f1c` | Canal assinado (HMAC) entre o Claude do PC de desenvolvimento e o do PC remoto (Delphi 11, 12, 13.1) |
+| Testes remotos | `0971f1c` | Canal assinado (HMAC) entre o Claude do PC de desenvolvimento e o do PC de testes (Delphi 11, 12, 13.1) |
 | Ajustes finais | `55663f0`, `37a15a6`, `d0d9994`, `b59378b` | Mensagens do expert, aviso de projeto antes do login, tema real da IDE (`JVCS_IDE_THEME`), log padrão do expert, Documentos no OneDrive → **beta2** |
 
 ## O que ainda falta (resumo)

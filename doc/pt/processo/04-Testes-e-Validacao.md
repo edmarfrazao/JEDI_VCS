@@ -21,7 +21,7 @@ Como o port foi validado: compatibilidade de protocolo, ABI da IDE, interface e 
 
 Um servidor **JEDI VCS 2.50 Beta 3 (Firebird)** com Firebird 2.5.9, banco atualizado para o esquema 2.5
 (branch `HEAD`) e um projeto de exemplo (`Exemplo01`: `.dpr`, `.dproj`, `.res`, `uPrincipal.pas/.dfm`).
-Montagem: [Servidor-Teste-Local](../server/Servidor-Teste-Local.md) e
+Montagem:
 [manual 01](../manual/01-Servidor-Instalacao-e-Configuracao.md). Usuário inicial `sysdba` / `admin`
 (padrão do banco novo; troque após o 1º login).
 
@@ -36,8 +36,8 @@ Os consoles **novo e original** rodam os mesmos comandos e três coisas são com
 
 Resultado (12/10): `listprojects`, `listproject`, `listlocks`, `getmodule` (inclusive `rev=`),
 `checkout`/`checkin` com comentário acentuado — **iguais**. Leitura cruzada: o original lê as revisões
-gravadas pelo novo e vice-versa. Evidências normalizadas em
-[`doc/pt/client/golden-console`](../client/golden-console) (as capturas brutas, com a senha cifrada, não
+gravadas pelo novo e vice-versa. As evidências normalizadas
+ficaram locais, fora do repositório (as capturas brutas, com a senha cifrada, também não
 foram versionadas).
 
 ## 3. Harness da DLL (ABI)
@@ -79,7 +79,7 @@ Resultado: nova e original com **0 access violations e 0 falhas** (21 verificaç
 |---|---|---|
 | Delphi 13.2 (BDS 37) | PC de desenvolvimento | expert carregado, menu **JEDI VCS**, atalhos Ctrl+Shift+P/I/O/G/B, check-in pela IDE do `Exemplo01`, tema seguindo a IDE |
 | Delphi 11.3 (BDS 22) | PC de desenvolvimento | `compilar-expert.bat /delphi:11`, `verificar-expert.ps1`, `libs` e `.dproj` |
-| Delphi 11, 12 e 13.1 | PC remoto, pelo canal | instalador da release, carga do expert por atualização (foi assim que o problema do `designide` no 13.1 apareceu), tema real da IDE |
+| Delphi 11, 12 e 13.1 | PC de testes, pelo canal | instalador da release, carga do expert por atualização (foi assim que o problema do `designide` no 13.1 apareceu), tema real da IDE |
 
 Roteiro do teste na IDE: [Port-DLL-IDE §5](../client/Port-DLL-IDE.md) e
 [manual 03](../manual/03-Integracao-com-o-Delphi.md).
@@ -87,15 +87,13 @@ Roteiro do teste na IDE: [Port-DLL-IDE §5](../client/Port-DLL-IDE.md) e
 ## 6. Canal entre PCs
 
 Para testar em IDEs que não estão na máquina de desenvolvimento, o Claude Code do PC de desenvolvimento
-manda **pedidos assinados** ao Claude Code do PC remoto por uma pasta sincronizada:
+manda **pedidos assinados** ao Claude Code do PC de testes por uma pasta sincronizada:
 
-- `tools\canal\canal.ps1` (`enviar`, `pendentes`, `ler`, `responder`, `aguardar`, `status`);
+- um script de canal local, não versionado (`enviar`, `pendentes`, `ler`, `responder`, `aguardar`, `status`);
 - cada pedido e resposta é assinado com **HMAC-SHA256**; a chave fica fora da pasta compartilhada e pedido
   com assinatura inválida nunca é executado;
 - o Claude remoto roda em `/loop`, executa só o que o pedido descreve e pergunta ao usuário local antes de
   qualquer ação fora do combinado.
-
-Uso e regras: [tools/canal/LEIA-PRIMEIRO.md](../../../tools/canal/LEIA-PRIMEIRO.md).
 
 ## 7. verificar-expert
 

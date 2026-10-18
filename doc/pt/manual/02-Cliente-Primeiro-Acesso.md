@@ -12,7 +12,7 @@ Como conectar ao servidor pela primeira vez, trocar a senha padrão, criar usuá
 
 Os três usam o mesmo servidor e o mesmo banco.
 
-> **Atenção:** o servidor permite **uma sessão por nome de usuário** ao mesmo tempo: um novo login do mesmo usuário derruba o anterior (ajuda: "you need to connect with two different user names"). Se você usa a IDE e o standalone ao mesmo tempo, use usuários diferentes. Se isso também vale para IDE + `jvcs.exe` neste servidor ainda será testado (item 5 da lista de testes em [Servidor-Teste-Local.md](../server/Servidor-Teste-Local.md)).
+> **Atenção:** o servidor permite **uma sessão por nome de usuário** ao mesmo tempo: um novo login do mesmo usuário derruba o anterior (ajuda: "you need to connect with two different user names"). Se você usa a IDE e o standalone ao mesmo tempo, use usuários diferentes. Se isso também vale para IDE + `jvcs.exe` neste servidor ainda será testado.
 
 ## 2. Primeiro login
 
@@ -31,7 +31,7 @@ Os três usam o mesmo servidor e o mesmo banco.
 | Botão **Ping** (Ctrl+P) | Testa se o servidor responde | |
 | Botão **Connect** | Conecta | |
 
-> **Só no ambiente de teste:** `sysdba`/`admin` e o IP `192.168.0.10` valem para o servidor de teste. Troque a senha logo no primeiro acesso (seção 4).
+> **Só no ambiente de teste:** `sysdba`/`admin` valem para o servidor de teste. Troque a senha logo no primeiro acesso (seção 4).
 
 Se o servidor e o cliente estão na mesma máquina, a ajuda manda usar o IP real da máquina, não `localhost`/`127.0.0.1`. (No teste de 12/10/2026 o `jvcs.exe` também conectou em `127.0.0.1:2106`.)
 
@@ -43,9 +43,9 @@ Só preencha se a rede exigir proxy SOCKS: **Server**, **Port**, **Usercode**, *
 
 | Opção | O que faz | Recomendação |
 |---|---|---|
-| **Store Password with identity** | Grava a senha junto da identidade, em `HKCU\Software\JEDI\JEDIVCS\Identities\<nome>\Password`, só em **Base64** (legível por qualquer processo seu). A ajuda também desaconselha | **Desmarque** em produção. Hoje a identidade `DEFAULT` desta máquina tem senha gravada (`SavePassword=1`). Detalhes na seção (a) do [Credenciais.md](../common/Credenciais.md) e no capítulo 07 |
+| **Store Password with identity** | Grava a senha junto da identidade, em `HKCU\Software\JEDI\JEDIVCS\Identities\<nome>\Password`, só em **Base64** (legível por qualquer processo seu). A ajuda também desaconselha | **Desmarque** em produção. No ambiente de teste, a identidade `DEFAULT` tem senha gravada (`SavePassword=1`). Detalhes na seção (a) do [Credenciais.md](../common/Credenciais.md) e no capítulo 07 |
 | **Auto login local clients (Host = local IP)** | Conecta sem mostrar a tela. Segundo a ajuda só funciona com cliente e servidor na mesma máquina e com "Enable local login w/o password" ligado no servidor. No código, o auto-login aciona o botão Connect sozinho, o que dispensa digitar quando a senha está gravada | Desmarcado (aqui `Autologin=0`) |
-| **Use always current local IP as host name** | Troca o host pelo IP atual da máquina; só para instalação local | Aqui está marcado (`UseCurrentIP=1`), por isso o host aparece como `192.168.0.10`. Desmarque se o servidor for outra máquina |
+| **Use always current local IP as host name** | Troca o host pelo IP atual da máquina; só para instalação local | Aqui está marcado (`UseCurrentIP=1`), por isso o host aparece como o IP local. Desmarque se o servidor for outra máquina |
 | **Sync local time with server time** | Acerta o relógio do Windows pelo do servidor ao logar. Exige direito de mudar a hora do sistema (normalmente só administrador) | Desmarcado se você não é administrador local (aqui `SyncServerTime=0`); com vários usuários, mantenha os relógios sincronizados por NTP |
 
 3. Clique **Ping**, depois **Connect**. O login do `sysdba` deve entrar como Archive Administrator (o `jvcs.exe` mostra `User accepted. Access level: 4 [Archive Admin]`).
@@ -88,8 +88,8 @@ Outros itens do menu de contexto da lista: Edit, Delete (mostra/oculta excluído
 | Usuário | Nível | Para quê |
 |---|---|---|
 | `sysdba` | Archive administrator | Conta de emergência, senha longa, fora do uso diário |
-| `edmar` | Archive administrator | Seu uso diário como administrador |
-| `edmar.ia` | **Guest account** + direito **Read-Write** só nos projetos liberados (seção 6) | CLI/IA. Poucos direitos, não cria projetos, não mexe em usuários. O histórico mostra o que foi feito pela IA |
+| `<usuario>` | Archive administrator | Seu uso diário como administrador |
+| `<usuario>.ia` | **Guest account** + direito **Read-Write** só nos projetos liberados (seção 6) | CLI/IA. Poucos direitos, não cria projetos, não mexe em usuários. O histórico mostra o que foi feito pela IA |
 | Colegas (um por pessoa) | Read write access | Desenvolvedores |
 | `ci` (opcional) | Read only access | Build que só sincroniza (`syncproject`) |
 
@@ -105,7 +105,7 @@ Outros itens do menu de contexto da lista: Edit, Delete (mostra/oculta excluído
 | **Read only access** | Ver e baixar (Get) tudo, menos lista de usuários, direitos por projeto e opções do servidor | Não cria projetos |
 | **Read write access** | Ver e alterar tudo, menos usuários, direitos por projeto e opções do servidor. Cria projetos, adiciona/remove módulos, check-in/out, labels | Só faz check-in do que ele mesmo fez check-out |
 | **Project administrator** | Tudo dentro do projeto, incluindo marcos (milestones) | |
-| **Archive administrator** | Tudo, em todos os projetos: usuários, opções do servidor, check-in de módulo de outro usuário, logout de qualquer usuário | O seu `edmar` e o `sysdba` |
+| **Archive administrator** | Tudo, em todos os projetos: usuários, opções do servidor, check-in de módulo de outro usuário, logout de qualquer usuário | O seu `<usuario>` e o `sysdba` |
 
 O número do nível aparece no login: `Access level: 4 [Archive Admin]` (confirmado). Os números 0 a 3 seguem a ordem da lista e a legenda da tela de direitos por projeto (`0 = None, 1 = Read-only, 2 = Read-Write, 3 = Project Admin`) (a validar).
 
@@ -198,7 +198,7 @@ Nunca tire o atributo somente leitura de um arquivo no Explorer: faça Check Out
 
 ## 9. Identidade e usuário para a IA
 
-1. Crie o usuário `edmar.ia` (seção 5), nível Guest, com direitos Read-Write só nos projetos liberados.
+1. Crie o usuário `<usuario>.ia` (seção 5), nível Guest, com direitos Read-Write só nos projetos liberados.
 2. No cliente, crie uma identidade separada (por exemplo `TESTE-IA`) apontando para esse usuário.
 3. A IA não deve digitar nem ver a senha. Hoje isso só se garante usando a **identidade salva** ou a entrada padrão do `jvcs.exe` (capítulo 06, seção 5). Cuidado: com "Store Password" a senha fica em Base64 no registro, e a IA com acesso ao registro conseguiria lê-la; por isso a recomendação de regras `deny` no Claude Code está em [Credenciais.md](../common/Credenciais.md), seção c.10.
 
@@ -207,7 +207,7 @@ Nunca tire o atributo somente leitura de um arquivo no Explorer: faça Check Out
 1. Ping e login com `sysdba`/`admin`.
 2. Server > Whoami: nível Archive Admin.
 3. Trocar a senha do `sysdba`.
-4. Criar `edmar` (admin), `edmar.ia` (Guest + projeto) e os colegas.
+4. Criar `<usuario>` (admin), `<usuario>.ia` (Guest + projeto) e os colegas.
 5. Server Properties: check-in **restritivo**, VCS log ligado, login local sem senha **desligado**.
 6. Criar o projeto Dummy e fazer check-in/check-out de teste.
 7. Desmarcar "Store Password" ou aceitar o risco conscientemente (capítulo 07).
