@@ -93,9 +93,16 @@ buildCommand=         ; script .bat/.cmd/.ps1 do usuário; o SHA-256 vai em buil
 buildConfig=Debug
 buildPlatform=Win32   ; Win32 | Win64
 buildTimeoutSec=600   ; 30 a 7200
+
+; projeto e identidade por pasta (seção 18, R4); grave com config set projectMap|identityMap
+[projects]
+d:\prog\sisv=sesis
+[identities]
+d:\prog=Edmar
 ```
 
-Comandos: `jvcs-ai.ps1 config list | get <chave> | set <chave> <valor>`.
+Comandos: `jvcs-ai.ps1 config list | get <chave> | set <chave> <valor>` e
+`config set projectMap|identityMap "<pasta>" <valor|none>` (seção 18, R4).
 **`config set` é recusado em contexto de agente**: o modo é decisão do usuário. O `config.ini` vale para
 o usuário do Windows inteiro (todos os projetos).
 
@@ -161,14 +168,15 @@ exige o `jvcs.exe` 2026 (`config set jvcsExe`); com o original, código 12.
 | `help` | Resumo dos comandos e opções |
 | `identity [-Test]` | Identidade em uso (nome, host, porta, usuário, origem). `-Test` faz login. **Nunca mostra a senha** |
 | `projects` | Projetos do servidor (`listprojects`) |
-| `list [-Project p]` | Módulos do projeto: versão, lock e estado local pelo **CRC que o console calcula** no caminho do servidor (rápido) |
-| `locks [-All]` | Módulos em checkout: meus, ou de todos |
-| `status <arq...>` / `status -Project p` | Estado **exato**: baixa a última revisão com `getmodule <id> dest="<pasta nova>"` e compara bytes. `localState` = `clean`, `modified`, `missing`, `notVersioned` ou `unknown` |
+| `list [-Project p] [-Only estados]` | Módulos do projeto: versão, lock e estado local pelo **CRC que o console calcula** no caminho do servidor (rápido). `-Only` filtra (seção 18) |
+| `locks [-All] [-NoLocalState] [-Only estados]` | Módulos em checkout: meus, ou de todos. Nos **meus**, `localState` contra a última revisão: `clean` = lock sem alteração (`undocheckout` libera), `modified` = falta `checkin`. `-NoLocalState` = só a lista, como antes (seção 18) |
+| `status <arq...>` / `status -Project p [-Only estados]` | Estado **exato**: baixa a última revisão com `getmodule <id> dest="<pasta nova>"` e compara bytes. `localState` = `clean`, `modified`, `missing`, `notVersioned` ou `unknown`. Módulo cuja revisão não baixa sai com `state: "error"` e os outros seguem (código 11; seção 18) |
 | `checkout <arq...> [-Force]` | Checkout seguro (ver abaixo) |
 | `ensure-checkout <arq> [-CheckOnly]` | Para hooks, idempotente. Não versionado → ok (no-op); já é meu → ok; de outro → 6; local alterado → 8. `-CheckOnly` só informa (`needsCheckout`) |
 | `checkin <arq...> -Comment "texto" [-AllowEncodingChange] [-SkipBuild]` | Check-in (ver abaixo). Com `buildCheck=warn\|block`, compila antes com o script do usuário (seção 16) |
 | `checkin <arq...> -Comment "texto" -Keep` | **Put**: revisão nova e o checkout continua; sem mudança → 3 sem desfazer o checkout. Modo `checkin`; console 2026 (seção 17) |
 | `undocheckout <arq...> [-Discard]` | Desfaz o checkout só se o local for igual à base; com `-Discard`, faz backup e restaura a base |
+| `checkout\|checkin\|undocheckout -FromList <lista> [-Only ...] [-MaxModules n] [-Apply -ListHash h]` | **Lote** a partir de uma lista de caminhos ou do JSON de `status`/`list`/`locks`/lote anterior: sem `-Apply` é prévia com `listHash`; `-Apply` executa pelos comandos de um arquivo; pela IA sempre com `-ListHash` e `-Confirmed`; saída por módulo, 11 se misto (seção 18, R7) |
 | `diff <arq> [-Rev x.y]` | Diff unificado do arquivo local contra a revisão do servidor (padrão: a última), com `getmodule <id> [rev=x.y] dest="<pasta nova>"` e `git diff --no-index` sobre o texto decodificado; diferença de codificação/quebras vai para `warnings`. Só leitura; funciona com o console original |
 | `diff <arq> -Rev x.y -Rev2 y.z` | Diff entre duas revisões do servidor; o arquivo local não precisa existir (seção 12) |
 | `history <arq> [-Max n]` | Revisões do módulo, mais recente primeiro: data do arquivo, usuário, família, comentário e labels. Console 2026 (seções 12 e 13) |
@@ -191,7 +199,7 @@ exige o `jvcs.exe` 2026 (`config set jvcsExe`); com o original, código 12.
 | `bug-add -Title "..." [-Severity s] [-Status s] [-Keywords ..] [-ReportedBy ..] [-Description ..\|-DescriptionFile f] [-Workaround ..\|-WorkaroundFile f] [<arq...> \| -Project p]` | Cria o bug e liga aos módulos (ou ao projeto); ligação falha → 11 com `bugId`. Modo `checkin`; console 2026 (seção 13) |
 | `bug-update -Bug n [campos]` | Muda só os campos dados. Modo `checkin`; console 2026 (seção 13) |
 | `bug-link -Bug n <arq...> \| -Project p [-Remove \| -Done \| -Reopen]` | Liga, desliga ou marca a ligação como resolvida/reaberta. Modo `checkin`; console 2026 (seção 13) |
-| `addproject <proj.dpr> [-Comment "descrição"]` | Cria o projeto no servidor (use o nome do `.dpr`, como a IDE). Passa pelo modo `checkin`. **Exige o console 2026** (`config set jvcsExe`), senão código 12 |
+| `addproject <proj.dpr\|nome> [-Comment "descrição"]` | Cria o projeto no servidor (use o nome do `.dpr`, como a IDE; acervo sem `.dpr`: nome sem extensão, seção 18, R4). Passa pelo modo `checkin`. **Exige o console 2026** (`config set jvcsExe`), senão código 12 |
 | `add <arq...> -Comment "texto"` | Cadastra o arquivo no projeto (com a pasta local) e faz o 1º check-in 0.1, com a família (o `.dfm` de uma unit). Já versionado → 3. Passa pelo modo `checkin`; exige o console 2026 |
 | `blame <arq> [-Lines a-b] [-Max n] [-Rev x.y] [-IgnoreWhitespace]` | Revisão, usuário, data e comentário de cada linha; `local` = alteração ainda não enviada. Só leitura; console 2026 (seção 16) |
 | `revert <arq> -Rev x.y [-Force] [-AllowEncodingChange]` | Grava a revisão x.y (família inteira) na cópia local, com o módulo em checkout e backup. Modo `checkout` (seção 16) |
@@ -206,11 +214,14 @@ exige o `jvcs.exe` 2026 (`config set jvcsExe`); com o original, código 12.
 | `comment <arq>\|id:<n> [-Project p] -Rev x.y -Comment "texto" [-OutComment] [-Apply]` | Prévia / troca o comentário de check-in (ou de check-out) de uma revisão (seção 14) |
 | `cleanup -Project p [-Deserted] [-Apply [-Archive] id:<n> ...]` | Prévia do lixo com os motivos; `-Apply` só nos IDs listados que ainda forem candidatos (seção 14) |
 | `config list\|get\|set` | Configuração (`set` só por humano; recusado ao agente com 10) |
+| `config set projectMap\|identityMap "<pasta>" <valor\|none>` | Projeto / identidade salva da pasta e das subpastas (só humano; seção 18, R4) |
 
 Opções (sempre **por extenso**: `-Pr`, `-De`, `-Ti` são ambíguos):
-- gerais: `-Project <nome.dpr\|caminho>`, `-Identity <nome>`, `-Text` (saída legível), `-Agent` (força
+- gerais: `-Project <nome.dpr\|nome\|pasta>` (pasta = o projeto que ela declara; seção 18, R4), `-Identity <nome>`, `-Text` (saída legível), `-Agent` (força
   contexto de agente), `-Confirmed`, `-TimeoutSec <n>` (por execução do `jvcs.exe`), `-LockWaitSec <n>`
   (espera pelo mutex), `-Raw` (inclui a saída bruta do console; não contém senha), `-Test`, `-CheckOnly`;
+- estado: `-Only <lista>` (`status`, `list`, `locks`; no lote também `ok`/`failed`), `-NoLocalState` (`locks`) — seção 18;
+- lote: `-FromList <arquivo>`, `-ListHash <12 hex>` (`checkout`, `checkin`, `undocheckout`; com `-Apply` e `-MaxModules`) — seção 18, R7;
 - checkout/check-in: `-Comment`, `-Force`, `-Discard`, `-AllowEncodingChange`, `-Keep`, `-SkipBuild`;
 - revisões, datas e sync: `-Rev`, `-Rev2`, `-Max`, `-Since`, `-User`, `-Date`, `-Label`, `-Dest`, `-Apply`, `-All`;
 - busca: `-InComments`, `-MaxModules`;
@@ -306,6 +317,8 @@ em `%LOCALAPPDATA%\JEDI\JVCS\sessoes\<sessão>.txt` para o hook Stop.
 Campos extras conforme o comando: `identity`, `projects`, `config`, `configPath`, `comment`, `warnings`, `raw`;
 os comandos das seções 12 a 17 acrescentam os seus (`changes`, `labels`/`label`, `todos`/`todo`, `milestones`,
 `bugs`/`bug`, `backup`, `build`, `target`, `dest`, `keep`, ...), descritos em cada seção.
+`status`, `list` e `locks` trazem sempre `counts` (totais por estado, antes do filtro) e, com `-Only`, `only`
+(seção 18).
 `ok` é verdadeiro para 0 e 3.
 
 `modules[].state`:
@@ -314,7 +327,9 @@ os comandos das seções 12 a 17 acrescentam os seus (`changes`, `labels`/`label
 - `checkedIn`, `unchangedUndone`, `refused`, `encodingChanged`, `notCheckedOut`, `localMissing`;
 - `undone`, `discarded`, `releasedButDirty`, `failedCompensated`, `failed`, `timeout`, `error`, `ok`, `pathTruncated`;
 - comandos das seções 13 a 17: `checkedInKept`/`unchangedKept` (`-Keep`), os de labels, ToDo, bugs, `sync -Label`/
-  `-Date`/`-Dest`, `revert` e administração, listados em cada seção.
+  `-Date`/`-Dest`, `revert` e administração, listados em cada seção;
+- `locks` (seção 18): `ok`, `error`, `pathTruncated`, `notMine` (lock de outro usuário) e `notComputed` (estado
+  local não calculado).
 
 ### Códigos de saída (estáveis)
 
@@ -322,15 +337,15 @@ os comandos das seções 12 a 17 acrescentam os seus (`changes`, `labels`/`label
 |---|---|
 | 0 | ok |
 | 2 | uso/parâmetro inválido (inclui comentário com aspas, texto fora do CP1252, `-Project` com CR/LF/aspas) |
-| 3 | nada a fazer (check-in sem mudança → checkout desfeito) |
+| 3 | nada a fazer (check-in sem mudança → checkout desfeito; lista vazia ou prévia de lote sem nada a fazer) |
 | 4 | credencial: identidade ausente/incompleta, sem senha salva, login recusado |
 | 5 | não encontrado: projeto/módulo, arquivo não versionado, ambiguidade, **caminho do servidor diferente** (`pathMismatch`) |
 | 6 | travado por outro usuário |
 | 7 | pré-condição: sem checkout, codificação mudou, servidor recusou, compensação de checkout |
 | 8 | conflito local: arquivo local difere do servidor (nada foi travado ou liberado) |
 | 9 | servidor/console: conexão, timeout, saída inesperada, "not changed" incoerente |
-| 10 | aprovação necessária (`-Confirmed`), modo manual, `config set` por agente |
-| 11 | lote parcial (resultados diferentes por arquivo) |
+| 10 | aprovação necessária (`-Confirmed`), modo manual, `config set` por agente; lote pela IA sem `-ListHash`, ou hash diferente do recalculado (seção 18, R7) |
+| 11 | lote parcial (resultados diferentes por arquivo, inclusive no `-FromList`); também quando parte dos módulos não pôde ser verificada (`state: "error"`) em `status`, `sync` e `locks` (seção 18) |
 | 12 | ambiente: `jvcs.exe` ausente ou não reconhecido, mutex ocupado além de `lockWaitSec` |
 
 O `jvcs.exe` original devolve 0 mesmo com erro dentro de `/input`. Por isso o wrapper ignora o código
@@ -399,10 +414,11 @@ Formato conferido em code.claude.com/docs/en/hooks (12/10/2026): forma exec `"co
 | Write | existente que não é UTF-8 sem BOM/ASCII, ou com CRLF, ou ASCII + conteúdo não-ASCII | nega → `edit-preserve -ContentFile` |
 | Write | novo com não-ASCII | nega → `edit-preserve -ContentFile -NewFileEncoding` |
 
-**Checkout** (só se houver `.dpr`/`.dpk` na pasta ou acima), conforme o modo (§2).
+**Checkout** (só se houver `.dpr`/`.dpk`, `.jvcsproject` ou mapa `[projects]` na pasta ou acima; seção 18, R4),
+conforme o modo (§2).
 
 **Somente leitura:** nega (e manda não remover o atributo) quando o arquivo está somente leitura e o
-checkout não resolve: sem `.dpr`/`.dpk` acima (unit de biblioteca: checkout com `-Project`), não versionado,
+checkout não resolve: sem `.dpr`/`.dpk`, `.jvcsproject` nem mapa acima (unit de biblioteca: checkout com `-Project`), não versionado,
 "já é meu" mas somente leitura (checkout feito em outra pasta/máquina), ou checkout feito e o arquivo
 continua somente leitura.
 
@@ -415,6 +431,10 @@ de agente), roda `status` nesses arquivos e mostra ao usuário (`systemMessage`)
 checkout: **sem alteração** (sugere `undocheckout`) ou **com alteração** (falta check-in). Os que não estão
 mais em checkout saem do registro. Sem registro, termina na hora (não chama o `jvcs.exe`). Sempre exit 0:
 nunca bloqueia nem faz o Claude continuar, e não desfaz nada sozinho.
+Item que o `status` não conseguiu verificar (`state: "error"`, por exemplo a revisão que não baixa) ou sem
+projeto identificado (`noProject`, acervo sem `.dpr`) continua no registro e aparece como **NÃO verificado**.
+Se o `status` falhar como um todo ou no meio (timeout, credencial, ambiente, mutex: código diferente de 11 e
+menos itens que arquivos), **nada sai do registro** e a mensagem diz `(status falhou: ...)` (seção 18).
 
 ---
 
@@ -480,7 +500,8 @@ nunca bloqueia nem faz o Claude continuar, e não desfaz nada sozinho.
 
 1. **Caminho truncado no `listproject`/`listlocks`:** só 47 caracteres + "...".
    - Operações que mudam o servidor provam o caminho (§3); `status`/`list` não (`pathCheck=prefix`).
-   - `status -Project` procura o arquivo sob a pasta do `.dpr`. Se não achar, devolve `localState=unknown`.
+   - `status -Project` procura o arquivo sob a pasta do `.dpr` (ou do `.jvcsproject`/mapa `[projects]`, seção 18, R4).
+     Se não achar, devolve `localState=unknown`.
    - A prova precisa de um arquivo do módulo existente localmente; sem nenhum → 5.
 2. **Módulos homônimos** no mesmo projeto com o mesmo prefixo visível → erro 5. Não há como distinguir
    pelo console. Nome de arquivo com mais de 30 caracteres também aparece truncado (comparação por prefixo).
@@ -505,6 +526,13 @@ nunca bloqueia nem faz o Claude continuar, e não desfaz nada sozinho.
     recusar com 8 (local difere do servidor); resolva com o usuário (`checkout -Force -Confirmed` ou check-in pela IDE).
 12. A sonda de data muda a data do arquivo por cerca de 1 s; uma IDE que olhe a data nesse instante pode
     perguntar se recarrega o arquivo (o conteúdo não muda).
+13. Mapas `[projects]`/`[identities]` (seção 18, R4): a pasta é comparada como texto normalizado; nomes 8.3 de
+    pastas existentes são expandidos, `subst`, junções e links não. O hook só protege extensões Delphi
+    (`.prg` de xHarbour pode ser editado sem checkout; o `edit-preserve` também não aceita `.prg`).
+14. Lote (`-FromList`, seção 18, R7): a prévia estima pela tabela do console (CRC no caminho do servidor), e a execução
+    confere de novo byte a byte; o `-Only` vale sobre o retrato gravado no JSON, não sobre o estado atual. Chamando
+    `powershell -File` de dentro do PowerShell, escreva `-Only "clean,mine"` entre aspas (sem aspas, a vírgula vira
+    argumentos soltos e o lote dá 2 com essa dica).
 
 ---
 
@@ -1349,7 +1377,8 @@ jvcs-ai.ps1 sync -Dest <pasta> [-Label l | -Date d] [-Project p] [-Apply]
 - Os bytes são os do `getmodule rev=` da versão que o `projectrevs` devolveu (o mesmo instantâneo, também no
   latest); data do arquivo = data da revisão; somente leitura pelo filtro *Writeable Files*. Grava
   `jvcs-export.json` (servidor, usuário, projeto, alvo, raiz, módulos com versão, revisionId e caminho, e nota de
-  que não é pasta de trabalho). Módulo em checkout por mim exporta a revisão do servidor (a mensagem avisa).
+  que não é pasta de trabalho; desde o pedido 0005, `complete` e `skipped[]`, seção 18). Módulo em checkout por mim
+  exporta a revisão do servidor (a mensagem avisa).
 - Módulo sem pasta absoluta no servidor → `noPath` (7 só com `-Apply`; os demais são exportados → 11).
 - JSON: `dest`, `target`, `sourceRoot`, `manifest` e, por módulo, `state` `export`/`exported`/`noPath`/`badPath`,
   `path`, `version`, `revisionId`, `targetFileDate`, `targetFiles` e `files[]` (`name`, `path`, `action`,
@@ -1410,3 +1439,555 @@ cada check-in: 0.1 em 01/10, 0.2 em 05/10, 0.3 (Put) em 10/10, 0.4 em 12/10 (o `
 - Não testado: recusa real do servidor no check-in (`refused by server`, exige outro usuário com o lock ou o
   *CasuallyCheckin* desligado) e módulo com subpasta no nome **no servidor** (o console 2026 não cria mais esse
   tipo de módulo; os de `ex2` já foram removidos) — coberto pelo teste sem servidor.
+
+---
+
+## 18. Pedido 0005 do PC remoto: acervo sem .dpr, lotes e tolerância a falhas
+
+Pedido do EDMAR-OPT (acervo xHarbour em `D:\PROG`, sem `.dpr`: 8 projetos com nome **sem extensão**, como `sesis`,
+e 1.140 módulos). A versão do wrapper continua **1.4.0**. Itens: R1 (status tolerante), R5 (`-Only`), R6 (`locks`
+com o estado local), R4 (projeto e identidade por pasta) e R7 (lote a partir de uma lista) nesta seção; R2 e R3 já
+estavam feitos (`history`, `diff`, `show`, `sync -Dest`).
+
+### R1 — um módulo não derruba mais o projeto
+
+Causa (conferida no fonte): o `getmodule` do console (`jvcs.dpr`, `CmdProcGetModule`) escolhe a revisão de **maior
+número** (`GetRevisionListById` com `ProjectID 0`) e o `GET_CHECKOUT_MODULE` do servidor devolve os arquivos dela.
+Revisão sem arquivo (no EDMAR-OPT, o `terrt.lnk`) não grava nada, sem erro do console, e o `Get-JvcsBase` lançava 9
+para o lote inteiro (`getmodule 586 não gravou nenhum arquivo`).
+
+Agora o `Get-JvcsBase` tem o modo tolerante: a falha de UM módulo (erro do `getmodule`, nada gravado, revisão
+inválida, nome de projeto recusado) fica nos erros daquele módulo e os outros seguem; o `openproject` que falha
+derruba só os módulos daquele projeto (com um projeto só, continua 5). Quem usa:
+
+| Comando | Módulo cuja revisão não baixa |
+|---|---|
+| `status -Project p` | `state: "error"`, `exitCode: 9`, `message` "estado não verificado: ..."; `localState` pela presença do arquivo: `missing` se nenhum arquivo do módulo existe no disco, senão `unknown`; `files[]` com `name`, `localState`, `readOnly`. A base só é baixada para módulo com pasta local |
+| `status <arq...>` | o erro de um arquivo (2, 5, 9...) vira item `error` e os outros seguem; credencial (4), ambiente (12) e timeout derrubam o comando. A mensagem não diz "verificado" para o que deu erro; com um arquivo só, é a mensagem do item (como antes) |
+| `sync` (prévia e `-Apply`) | `state`/`action` `error`, "não verificado (...): nada será alterado neste módulo"; **nunca é gravado**. A recusa de pasta protegida vem antes de baixar ou gravar qualquer coisa |
+| `sync -Label` / `sync -Date` | o mesmo, se a última revisão ou a revisão-alvo não baixar |
+| `sync -Dest -Apply` | "não exportado: ..."; não é gravado nem entra em `modules` do manifesto. Nenhum baixou → nada é gravado (nem a pasta), código 9 |
+| `checkin` e `add` (conferência depois) | aviso "check-in ok, mas não foi possível conferir ..."; o item não vira erro (a revisão já entrou) e, no `checkin`, fica `localState: "unknown"` sem `files` (nunca o estado da base antiga) |
+
+`checkout`, `checkin`, `undocheckout` e `revert` continuam exigindo a base (um módulo; sem ela nada muda no
+servidor). Caminho do servidor vazio ou relativo vira `unknown`/`pathTruncated` (nunca é resolvido contra a pasta atual).
+
+Código de saída: o comando sai **11** quando parte dos módulos ficou com `state: "error"`; todos com erro → 9. No
+`sync -Apply`, sem nenhum módulo gravado vale o código dos bloqueados (só erro → 9; erro e conflito → 11).
+
+Manifesto do `sync -Dest` (`jvcs-export.json`): `complete` (`true` quando nada ficou de fora) e `skipped[]`
+(`{id, state, message}` dos módulos `noPath`, `badPath` e `error`). Quem usar a pasta depois só vê o manifesto.
+
+Hook Stop: item `error` (com ou sem lock) e `noProject` continuam no registro como "NÃO verificados"; `status` que
+falha inteiro ou no meio não apaga nada do registro (seção 5).
+
+### R5 — `-Only` em `status`, `list` e `locks`
+
+```text
+jvcs-ai.ps1 status -Project sesis -Only modified,unlocked     # alterados sem checkout
+jvcs-ai.ps1 status -Project sesis -Only missing,error
+jvcs-ai.ps1 locks -Only clean                                 # locks sem alteração (undocheckout)
+```
+
+- Valores (sem diferenciar maiúsculas; saem na forma canônica), em dois grupos:
+  - estado local: `clean`, `modified`, `missing`, `unknown`, `notVersioned`, `error` (`error` = `state: "error"`,
+    não verificado; o módulo com erro também conta no seu `localState`);
+  - lock: `locked` (meus e de outros), `mine`, `others`, `unlocked`.
+- Dentro do grupo vale **OU**; entre os grupos, **E**. Separadores: vírgula, ponto e vírgula ou espaço
+  (`-Only "modified,unlocked"` numa string só também serve, inclusive pelo `-File`).
+- O filtro vem depois do cálculo. O JSON de `status`, `list` e `locks` traz sempre `counts` (`total`, um contador
+  por estado, `locked`, `mine`, `others`, `unlocked` e `shown` = quantos ficaram em `modules`), contados **antes** do
+  filtro, e `only` quando há filtro. A mensagem termina com `[clean n, modified n, ...]` (só os estados presentes)
+  e, com filtro, `; -Only modified,unlocked: 31 de 634`.
+- O código de saída é calculado sobre **todos** os módulos, antes do filtro: um erro que o filtro esconde ainda dá
+  11 (veja com `-Only error`). A auditoria registra `only` (os `modules` dela saem filtrados).
+- Uso (2): valor inválido (a mensagem lista os aceitos), `-Only` vazio, `-Only` em outro comando, `-NoLocalState`
+  fora do `locks`, `locks -NoLocalState` com valor de estado local.
+
+### R6 — `locks` com o estado local
+
+```text
+jvcs-ai.ps1 locks [-All] [-NoLocalState] [-Only estados] [-Project p]
+```
+
+Item: `id`, `name`, `dir`, `version`, `lockedBy`, `lockedAt`, `localState`, `path`, `project`, `state`, `exitCode`,
+`message` e `files[]` (quando calculado).
+
+1. `listlocks` (como antes). Lock de outro usuário (`-All`): `state: "notMine"`, `localState: null`.
+2. Projeto de cada módulo meu: o `listlocks` não diz o projeto e traz módulos de vários projetos. Com o console
+   2026, **uma** execução com `sharedby <id>` para todos; o servidor só devolve projetos não excluídos
+   (`GET_SHARED_BY`, `projects.deleted = '0'`) e o nome passa por validação (ANSI, sem aspas, controle, barra,
+   dois-pontos nem curinga; fora disso é ignorado: dado do servidor, não ordem). Vale o projeto que cobre mais
+   módulos em lock; o `-Project` dado tem preferência quando está na lista.
+   Sem console 2026: só os módulos que o `listproject` do `-Project` mostra têm o estado calculado (nunca se abre um
+   projeto para ler módulo de outro: o console pede a revisão com `ProjectID 0` e o servidor confere o direito só no
+   projeto aberto); os outros ficam `notComputed`. Sem console 2026 e sem `-Project`: aviso e `notComputed`, código 0.
+3. Arquivo local: o mesmo `Find-LocalMember` do `status` (caminho exato, ou truncado procurado no disco).
+4. Bases: **uma** execução do console para todos os projetos (`openproject A`, `getmodule...`, `openproject B`, ...)
+   e a mesma comparação por bytes do `status`.
+5. Resultado: `state: "ok"` e a mensagem: `clean` → "lock sem alteração (undocheckout libera)"; `modified` → "pede
+   checkin (ou undocheckout -Discard)"; `missing` → arquivo ausente. Falha num módulo, no `sharedby` ou na execução
+   das bases (timeout, saída inesperada): `state: "error"` nos itens afetados, a lista do `listlocks` continua e o
+   comando sai 11 (todos com erro → 9); credencial (4) e ambiente (12) derrubam o comando. `sharedby` sem projeto
+   válido para o módulo (lock órfão): `notComputed`, código 0. `-Project` inexistente (sem console 2026): itens com
+   `exitCode` 5.
+
+`-NoLocalState`: só o `listlocks` (comportamento da 1.4.0, mais rápido; o `-Project` é ignorado, como antes). O
+`-Project` do `locks` é validado antes de chamar o console. Custo: 1 (`listlocks`) + 1 (`sharedby`) + 1 (bases)
+execuções do console, mais a leitura do `jvcs.exe` para detectar o console 2026.
+
+Atenção: `status` e `locks` baixam revisões (GET). Com o log do servidor ligado, aparecem entradas de "get" do
+módulo no log, atribuídas ao projeto aberto.
+
+### R4 — projeto e identidade por pasta (acervo sem `.dpr/.dpk`)
+
+Num acervo sem `.dpr` (xHarbour, scripts...), o wrapper acha o projeto e a identidade pela pasta: não é mais preciso
+passar `-Project` e `-Identity` em toda chamada.
+
+**Projeto padrão** (comandos sem arquivo: `list`, `status -Project`, `sync`, `changes`, `labels`, `label`, `shared`,
+`todo`, `todo-add`, `bugs -Summary`, `search -InComments`...):
+1. `-Project <nome.dpr | nome | pasta>`. Com uma pasta vale o que **ela** declara: `.jvcsproject` > mapa `[projects]` >
+   único `.dpr/.dpk` dela; senão 2 ("a pasta ... não declara projeto ...: informe o nome do projeto").
+2. Sem `-Project`, da pasta atual para cima: vale a pasta **mais próxima** que declara um projeto (`.jvcsproject` ou
+   entrada do mapa; na mesma pasta vence o marcador, com aviso se o mapa disser outro nome). O `.dpr/.dpk` só conta na
+   pasta atual, como antes, e uma pasta de cima nunca vence o `.dpr/.dpk` da pasta atual (dois `.dpr` com nome próprio
+   na pasta atual continuam dando 2). Nada encontrado: 2 "informe -Project <projeto> (nenhum .jvcsproject nem mapa
+   [projects] do config.ini nesta pasta ou acima, nem um único .dpr/.dpk na pasta atual)".
+3. A saída traz `projectSource` (`.jvcsproject: <arquivo>`, `config.ini [projects]: <pasta>` ou `.dpr/.dpk: <arquivo>`);
+   não aparece quando o projeto veio de `-Project`. Em `-Text`: "projeto pela pasta: ...".
+4. Pasta do projeto (caminhos truncados no `status -Project`/`sync`/`locks`): `-Project <pasta>`, a pasta já resolvida,
+   da pasta atual para cima a "casa" do projeto (arquivo com o nome dele, `.jvcsproject` ou mapa apontando para ele),
+   ou, rodado fora (ex.: `status -Project sesis` em `C:\`), a pasta do mapa `[projects]` se houver **uma** só.
+
+**Arquivos** (`status <arq>`, `checkout`, `checkin`, `diff`, `history`, `add`...): candidatos da pasta do arquivo
+para cima; em cada nível `.jvcsproject` (1), mapa (2) e `.dpr/.dpk` (3); um `listproject` em lote e vence o mais
+próximo **do qual o arquivo é módulo no servidor** (um marcador nunca faz um arquivo virar "versionado"). Empate no
+mesmo nível e mesma origem (dois `.dpr`) sem `-Project` → 5, como antes. O `add` usa `-Project`, ou o marcador/mapa
+mais próximo, ou o único candidato; senão `ambiguousProject` (2). O `add` avisa a origem ("projeto X escolhido por
+.jvcsproject (...)") e a dica de aprovação traz `-Project "<projeto>"`.
+
+**`.jvcsproject`** (até 4 KB; ANSI 1252, UTF-8 com ou sem BOM, UTF-16 com BOM — o `>` do PowerShell 5.1 grava UTF-16):
+```text
+project=sesis
+; opcional: só CONFERE a identidade em uso (não a escolhe)
+identity=Edmar
+```
+Também vale uma linha só com o nome (`sesis`). Comentários com `;` ou `#`; chave desconhecida é ignorada. Conteúdo
+inválido (linha não reconhecida, chave repetida, nome com aspas, controle, `< > | * ? : \ /`, caractere especial de
+shell, só dígitos, mais de 50 caracteres, fora da 1252) → **7**, e a mensagem não repete o texto do arquivo.
+Atenção: o marcador é lido a cada resolução de projeto **e de identidade**; um marcador inválido em qualquer pasta acima
+dá 7 em **todos** os comandos daquela árvore (inclusive `identity`, `projects`, `locks` e o hook de fontes Delphi).
+Falha para o lado seguro: corrija ou apague o arquivo.
+
+**Mapas no `config.ini`** (só o usuário grava; `config set` é recusado à IA com 10):
+```text
+jvcs-ai.ps1 config set projectMap "D:\PROG\SISV" sesis
+jvcs-ai.ps1 config set identityMap "D:\PROG" Edmar
+jvcs-ai.ps1 config set projectMap "D:\PROG\SISV" none     (remove; se não estava no mapa: 3)
+jvcs-ai.ps1 config list -Text                             (mostra os mapas; config get projectMap|identityMap)
+```
+```ini
+[projects]
+d:\prog\sisv=sesis
+[identities]
+d:\prog=Edmar
+```
+- A pasta tem de ser absoluta (`d:\...` ou `\\servidor\pasta`), existir (exceto para `none`: senão 5) e não ter `=`,
+  aspas nem controle (2). Vale para ela e para as subpastas; a chave é gravada normalizada (minúsculas, sem barra
+  final) e substitui qualquer outra grafia da mesma pasta, em qualquer bloco `[projects]`/`[identities]` do arquivo.
+- `projectMap`: o nome passa pelas mesmas regras do marcador (2), vai em minúsculas e **não** é conferido no servidor
+  (a mensagem diz para testar com `list`). `identityMap`: só identidade **salva** em `HKCU\...\Identities` (senão 4),
+  gravada com a grafia do registro.
+- O arquivo continua UTF-8 com BOM e CRLF, com o resto preservado. Entrada inválida escrita à mão é ignorada com o
+  aviso "config.ini [projects] <pasta>: <motivo>; entrada ignorada".
+
+**Identidade**: `-Identity` > mapa `[identities]` > `[ai] identity` > `LastUsedID`.
+- Pastas que decidem: as dos arquivos do comando (`status`, `checkout`, `ensure-checkout`, `checkin`, `undocheckout`,
+  `diff`, `history`, `show`, `blame`, `revert`, `add`, `labels`, `shared`, `bugs`, `bug-add`, `bug-link`, `rm-module`,
+  `rename-module` (só o 1º argumento), `hide`, `comment`; sem os `id:<n>`); sem arquivo, a de `-Project <pasta>`;
+  senão a pasta atual. Rodado fora, com `-Project <nome>`: a pasta do `[projects]` desse projeto, se for uma só.
+- Vale a entrada mais próxima de cada pasta. Pastas de identidades diferentes numa chamada → **2** ("faça uma chamada
+  por identidade"); parte das pastas no mapa e parte fora, com identidade padrão diferente → **2** (o arquivo fora do
+  mapa não troca de credencial); com a mesma identidade, segue.
+- O nome é normalizado para a grafia do registro (`edmar` → `Edmar`); inexistente → 4 "identidade 'X' não existe em
+  Identities (<origem>)". `identity` mostra a origem (`source`), e a auditoria grava `identitySource`.
+- `identity=` do `.jvcsproject` só **confere**: divergiu da identidade efetiva (sem diferenciar maiúsculas) → 4, com a
+  sugestão para o usuário (`config set identityMap "<pasta>" "X"`; para humano também `-Identity "X"`). Com `-Identity`
+  explícito, só aviso.
+- Pela IA, `-Identity` diferente da identidade que o usuário mapeou para **qualquer** das pastas do comando exige
+  `-Confirmed` (10); com a aprovação, segue com aviso. Para humano, só o aviso.
+
+**Projeto novo sem `.dpr`**: `addproject sesis` (nome **sem** extensão; `.dpr/.dpk` continuam valendo; outra extensão,
+só dígitos, mais de 50 caracteres, caractere inválido ou fora da 1252 → 2; nome sem extensão numa pasta com `.dpr` →
+aviso). Criado ou já existente, o resultado traz `next`: marcar a pasta com `.jvcsproject` (`project=sesis`) ou o
+usuário registrar `config set projectMap`. `rename-project` de projeto sem extensão avisa que o `.jvcsproject` e as
+entradas do mapa que apontam para o nome antigo precisam ser trocados.
+
+**Compilação (`buildCheck`)**: check-in sem `.dpr/.dpk` acima e **sem fonte Delphi** (caso do xHarbour) → aviso
+"buildCheck=...: nenhum fonte Delphi no check-in e nenhum .dpr/.dpk acima; compilação não se aplica" e segue. Fonte
+Delphi sem `.dpr` continua como antes (`warn` avisa, `block` → 7): um `.jvcsproject` não serve para pular a
+compilação. Correção junto: o `Find-JaBuildProject` embrulhava a lista do `Find-JaProjectFiles` em `@()` (no PS 5.1 isso
+vira UM elemento): sem `.dpr` dava erro 9 no check-in com `buildCheck` ligado, e o filtro por `-Project` não filtrava.
+
+**Hook e edit-preserve**: o arquivo "tem projeto" se houver `.dpr/.dpk`, `.jvcsproject` (válido ou não) ou mapa
+`[projects]` na pasta dele ou acima; aí o `ensure-checkout` decide (um `.pas` somente leitura sob um marcador passa a
+receber "não está em checkout ... rode checkout -Confirmed" em vez de "não há .dpr/.dpk").
+
+**Segurança**:
+- O `.jvcsproject` fica na pasta do projeto, onde a IA, o Git ou o `sync` podem gravá-lo: ele só **escolhe o projeto**
+  (equivale a `-Project`; os modos, o `-Confirmed` e as recusas continuam) e só **confere** a identidade. A identidade por
+  pasta vem só do mapa do usuário, e só vale com uma identidade salva.
+- O nome que vem de arquivo (marcador, mapa) entra entre aspas nas linhas do `/input` e **sem aspas** nas dicas de
+  aprovação (`sync -Project x -Apply -Confirmed`): por isso não pode ter `` ` $ ; & ' ( ) { } [ ] % ! ^ , @ # = < > ``
+  nem começar com `-` (o mesmo vale para `config set projectMap` e `addproject`; nome de `.dpr` é identificador Pascal e
+  não é afetado). O `identity=` do marcador tem a mesma restrição e sai entre aspas nas sugestões.
+- Administração (`rm-project`, `restore-project`, `rename-project`, `modules`, `rm-module`, `rename-module`, `hide`,
+  `comment`, `cleanup`) exige o **nome** do projeto: `-Project <pasta>` ou pasta como argumento → 2.
+
+**JSON novo**: `projectSource` no resultado; `projectMap`/`identityMap` (objetos pasta → valor) em `config list`,
+`config get` e `config set`; `next` no `addproject` sem extensão; auditoria com `identitySource` e `projectSource`.
+
+**Códigos**: 2 sem projeto padrão, nome inválido, pasta sem projeto em `-Project`, pasta na administração, arquivos de
+identidades diferentes; 3 `config set ... none` de pasta fora do mapa; 4 identidade do mapa inexistente, `identity=`
+divergente; 5 projeto do marcador/mapa que não existe no servidor, arquivo de dois projetos no mesmo nível e origem,
+pasta do `config set` inexistente; 7 `.jvcsproject` inválido, `buildCheck=block` com fonte Delphi sem `.dpr`; 10
+`config set` pela IA, `-Identity` da IA diferente do mapa sem `-Confirmed`.
+
+**Limites**: nomes 8.3 de pastas existentes são expandidos (`EDMARF~1` casa com o caminho longo); `subst`, junções e
+links não são resolvidos (use o caminho que você abre). Pasta com `=` não entra no mapa. O hook continua só com as
+extensões Delphi: `.prg` pode ser editado sem checkout.
+
+### R7 — lote a partir de uma lista (`-FromList`)
+
+```text
+checkout | checkin | undocheckout -FromList <arquivo> [-Only termos] [-MaxModules n] [-Project p] [-Identity i]
+    [opções do comando: -Force | -Comment "..." [-Keep] [-AllowEncodingChange] [-SkipBuild] | -Discard]
+    [-Apply [-ListHash <12 hex>] [-Confirmed]]
+```
+
+- **A lista** pode ser texto, com um caminho **absoluto** por linha (`#` no início comenta; linhas vazias e aspas em
+  volta são ignoradas; `/` vira `\`), ou o **JSON de saída** do próprio wrapper: `status`, `list`, `locks` ou um lote
+  anterior. Do JSON vale `modules[].path`; no `list`/`locks`, a pasta do servidor + o nome, quando nem a pasta nem o
+  nome vêm truncados pelo console (senão o item sai `pathUnknown`, 5, e o resto segue). Aceita UTF-8 (com ou sem BOM),
+  UTF-16 com BOM (o `>` do PowerShell 5.1) ou ANSI 1252, até 16 MB; byte NUL (UTF-16 sem BOM) → 2. A saída `-Text` do
+  wrapper como lista → 2. JSON de um comando que falhou e sem módulos (ex.: `status` com exitCode 5) → 2 com a mensagem
+  dele. O `dir /b` do cmd grava em OEM (850) e estraga acentos: gere a lista pelo PowerShell, com caminhos longos.
+- **`-Only`** (só com JSON) é o filtro do R5 sobre o que o JSON registrou: estado local `clean`, `modified`, `missing`,
+  `unknown`, `notVersioned`, `error`; lock `locked`, `mine`, `others`, `unlocked`; e, só no lote, o resultado de um lote
+  anterior: `ok` (exitCode 0 ou 3) e `failed` (o resto). OU dentro do grupo, E entre grupos: `-Only modified,unlocked` =
+  modificado **e** sem lock. Vale sobre o **retrato** do JSON (a prévia mostra o estado atual). `-Only` com lista de
+  texto → 2; JSON sem `localState` com filtro de estado local → 2. Chamando `powershell -File` de dentro do PowerShell,
+  use aspas: `-Only "clean,mine"`.
+- **Validação antes de qualquer consulta ao servidor**: caminho absoluto (`X:\...` ou `\\servidor\compartilhamento\...`),
+  sem curinga, aspas ou caractere de controle, sem `\\.\`/`\\?\`, sem dois-pontos fora da unidade, sem ponto ou espaço
+  no fim (nome truncado `abc...` viraria `abc`, outro arquivo), CP1252, até 259 caracteres, fora das pastas protegidas.
+  **Uma linha ruim recusa a lista inteira (2)**, com até 10 citações (`linha N` ou `modules[i]`); o trecho da linha só
+  aparece quando ela tem forma de caminho absoluto. A lista em pasta protegida, caminho de dispositivo ou com `$nome`
+  ou crase no caminho (voltaria no `next`) → 2. Repetidos contam uma vez (aviso); dois arquivos do mesmo módulo
+  (família `.pas`/`.dfm`) também (`sameModule`, 3). Limite: 500 entradas (`-MaxModules n`, até 5000).
+- **Projeto**: vale o `-Project`; sem ele, o de cada arquivo como no comando de um arquivo (`.jvcsproject`, mapa
+  `[projects]` ou `.dpr/.dpk`, R4). O `project` gravado no JSON (o do item; se não houver, o do topo) só entra para o
+  arquivo que isso não resolve, e vale igual na prévia e na execução (aviso "resolvido(s) pelo projeto gravado no
+  JSON"). Ele passa pelo crivo do nome vindo do servidor (ANSI, sem aspas, controle, barra, dois-pontos ou curinga);
+  barra → 2 (uma pasta escolheria o projeto pelo `.jvcsproject` dela).
+- **Identidade**: a de sempre (`-Identity` > mapa `[identities]` > `[ai] identity` > `LastUsedID`), decidida **uma vez**
+  pelas pastas dos **alvos** da lista (não pela pasta atual nem pela da lista), antes da 1ª consulta. Alvos em pastas
+  mapeadas para identidades diferentes, ou parte fora do mapa com outra identidade padrão → 2 ("faça uma chamada por
+  identidade": divida a lista). O `identity=` do `.jvcsproject` só confere (4). O `-Only mine/others` precisa da
+  identidade: as pastas são fixadas pelos candidatos do filtro antes de escolher.
+- **Sem `-Apply` é prévia** (nada muda no servidor nem no disco): uma listagem por projeto, sem baixar nada. Em
+  `modules[]`: `listLine`, `project`, `action` (`checkout`, `checkoutKeepLocal`, `checkin`, `checkinKeep`,
+  `undoUnchanged`, `undo`, `discard` ou `none`), `expectedState`/`expectedExitCode` e `state` `preview` (há ação),
+  `skip` ou o estado de recusa (`noProject`, `notVersioned`, `pathUnknown`, `sameModule`, `error`); na prévia todo item
+  sai com `exitCode` 0. Regras: checkout — de outro 6, meu `alreadyMine`, modificado sem `-Force` `localModified` 8,
+  com `-Force` `checkoutKeepLocal`; checkin — sem lock 7, de outro 6, ausente 7, limpo `undoUnchanged` (com `-Keep`
+  `unchangedKept` 3), modificado `checkin`/`checkinKeep`; undocheckout — sem lock 7, de outro 6, limpo `undo`,
+  modificado com `-Discard` `discard`, sem `-Discard` 8. Topo: `fromList`, `listKind` (`text`|`json`), `listSource`,
+  `listSha256` (dos bytes), `listHash`, `only`, `estimatedSec`, `next` (o comando do `-Apply`; no checkin sem
+  `-Comment`, com o marcador `-Comment "<comentário>"`) e `listProjects` (mais de um projeto). Código 0, ou 3 quando não
+  há nada a fazer. Erro 4, 9 ou 12 na resolução aborta o lote (nada mudou); os outros erros viram item `error`.
+- **`listHash`** (12 hex): identidade (nome, usuário, host, porta), comando, `-Force`/`-Discard`/`-Keep`/
+  `-AllowEncodingChange`/`-SkipBuild` e, por entrada, caminho, projeto, ID, **ação prevista** e estado previsto. Se
+  algo disso mudar entre a prévia e o `-Apply` (ex.: o arquivo foi editado e `undo` virou `discard`), o `-Apply` dá
+  **10** e nada é feito. O comentário do check-in não entra no hash: ele aparece na linha que o usuário aprova.
+- **`-Apply`** executa pelos mesmos `checkout`/`checkin`/`undocheckout` de um arquivo: modos, `-Force`, `-Discard`,
+  prova do caminho truncado, codificação, compilação do `buildCheck` (uma vez, fora do mutex) e compensação continuam
+  por módulo. Os portões vêm antes de qualquer consulta: `-Comment` (e o console 2026 para `-Keep`), `Assert-Mode`
+  (`checkout`, `checkin`, `release` ou `discard`; `manual` → 10) e, **pela IA, sempre** `-ListHash <hash da prévia>`
+  (sem ele → 10 com o comando da prévia) e `-Confirmed` escrito por extenso, em qualquer modo (inclusive `auto`): a
+  linha que o usuário aprova mostra só o arquivo da lista, então ele aprova a tabela que a IA mostrou, e o hash garante
+  que o plano é o mesmo. Pelo humano no terminal, o `-ListHash` é opcional e é conferido quando vier. Itens que não
+  executam (sem projeto, não versionado, `pathUnknown`, `sameModule`) entram com o código da prévia.
+- **Saída do `-Apply`**: um item por módulo, na ordem da lista (`listLine`), com `project` e a `action` que a prévia
+  mostrou; `state` diz o que aconteceu. Mensagem: "lote checkout: N módulo(s): x ok, y sem nada a fazer, z com erro ou
+  recusado". Código: 0 quando tudo deu certo (0 e 3 juntos dão 0), o código comum quando todos falham igual, **11**
+  quando é misto; os que deram certo ficam feitos. Para repetir só os outros, use a própria saída JSON como lista com
+  `-Only failed`.
+- **Diário**: `%LOCALAPPDATA%\JEDI\JVCS\lote\<data>-<comando>-<pid>.jsonl`, uma linha por evento: `plan` (comando, lista,
+  `listSha256`, `listHash` e as entradas com linha, caminho, projeto, ID, `run` e ação), `start` e `done` de cada módulo
+  e `end` (ok, nada a fazer, falhas). Se o processo for morto no meio (tempo limite da ferramenta), o `start` sem `done`
+  é o módulo em andamento; uma prévia nova mostra `alreadyMine` nos que já foram feitos. No `checkout -Force`, o
+  conteúdo do usuário fica em `backup\<data>-checkout-force-<id>\`; no `-Discard`, em `backup\<data>-discard-<id>\`.
+- **Tempo**: cerca de 2 execuções do console por módulo (3 no check-in, +1 com caminho truncado). A prévia estima pelo
+  tempo das listagens (`estimatedSec`). Acima de ~90 s, pela IA, rode o `-Apply` com o tempo limite da ferramenta em
+  600000 ms, ou divida a lista; acima de ~9 min, divida. O mutex da identidade fica preso durante a execução dos
+  módulos (um hook que chegue no meio espera só `lockWaitSec` e dá 12).
+- **Compilação**: com `buildCheck=warn|block`, o check-in em lote compila uma vez antes de enviar; acervo sem `.dpr` e
+  sem fonte Delphi (xHarbour) → aviso "compilação não se aplica" e segue (R4). `-SkipBuild` pela IA exige `-Confirmed`.
+- `ensure-checkout` não aceita lista (é dos hooks, um arquivo por vez). `-FromList` em outro comando, `-FromList` junto
+  com arquivos, `-Apply`/`-ListHash` em checkout/checkin/undocheckout sem `-FromList`, `-ListHash` sem `-Apply` ou fora
+  do formato (12 hex minúsculos) → 2. A auditoria registra `fromList`, `listSha256`, `listHash`, `apply`, `journal` e,
+  por módulo, `path` e `listLine`.
+- Defesa em profundidade opcional, **não** aplicada: uma regra `ask` `*-FromList*-Apply*` no
+  `claude\settings.template.json` (redundante com o `-Confirmed` obrigatório; exigiria subir a versão do modelo).
+
+Caso real (xHarbour, projeto `sesis`, sem `.dpr`), pelo humano no terminal:
+```text
+jvcs-ai.ps1 status -Project sesis -Identity Edmar > st.json                                   # UTF-16: aceito
+jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Identity Edmar       # prévia: os 31, checkoutKeepLocal
+jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Identity Edmar -Apply -ListHash <h>
+jvcs-ai.ps1 checkin -FromList st.json -Only "modified,unlocked" -Comment "..." -Identity Edmar # prévia (os mesmos 31 do retrato)
+jvcs-ai.ps1 checkin -FromList st.json -Only "modified,unlocked" -Comment "..." -Identity Edmar -Apply -ListHash <h>
+jvcs-ai.ps1 undocheckout -FromList st.json -Only "clean,mine" -Identity Edmar                 # locks esquecidos; depois -Apply -ListHash <h>
+```
+Pela IA: o mesmo, com a lista de texto gravada no scratchpad (ou o JSON de um `status`), a tabela da prévia e o hash
+mostrados ao usuário, e depois o `next` (`-Apply -ListHash <h> -Confirmed`) com o tempo limite de 600000 ms.
+
+### Testes (17/10/2026, servidor de teste local, identidade DEFAULT, console 2026 de `bin\client\Win32`)
+
+`APPDATA`/`LOCALAPPDATA` temporários; projetos de teste sem `.dpr` `iateste-xh-r156` (`sisv.prg`, `funcoes.prg`,
+`defs.ch`, `build.bat`, `ter\terminal.prg`, `ter\apagar.prg` ausente no disco, `ter\terrt.lnk`, `ter\semrev.prg` sem
+revisão, `vazio.bat` de 0 byte) e `iateste-xh-r156b` (`outro.prg` e `funcoes.prg` compartilhado), com 4 locks reais.
+- `Get-JvcsBase` real: tolerante com 54 ok, 61 sem revisão (`No revisions found`), 99999 (`Module 99999 not found`)
+  e 57 sem arquivo gravado (o `dest=` desviado para outra pasta: o mesmo caminho do `terrt.lnk`); estrito → 9;
+  `-Groups` com projeto inexistente → só os módulos dele nos erros; um projeto só inexistente → 5; nome com aspas
+  ou controle → recusado.
+- `status -Project` com o 57 sem arquivo: 7 verificados + 57 `error`/`unknown`, código 11, `counts.error` 1; com
+  `defs.ch` apagado e sem arquivo: `missing`; `-Only error` (1), `-Only clean` (5 de 8, ainda 11),
+  `-Only modified,unlocked` (`build.bat`), `-Only clean;mine` (os 2 locks limpos); `status` de 2 arquivos (11,
+  "1 arquivo(s) verificado(s); 1 não verificado(s)") e de 1 (9, a mensagem do item).
+- `sync` prévia (11, "1 com erro"), `sync -Date` hoje (11), `sync -Apply` (baixou o `defs.ch` apagado, `build.bat`
+  intacto, 11), `sync -Dest -Apply` (7 gravados, manifesto `complete: false` e `skipped` com o 57, 11; sem falha
+  `complete: true`, `skipped: []`; todos falhando: nada gravado, nem a pasta, 9).
+- `locks` real: 3 `clean` e 1 `modified` com `path`, `project` e `files`; o compartilhado lido pelo projeto que cobre
+  mais locks, ou pelo `-Project`; `-Only clean`, `-Only modified,mine`, `-NoLocalState`, `-NoLocalState -Only mine`;
+  `-NoLocalState -Only clean` → 2. Injetados: `getmodule` sem arquivo (11), timeout no `sharedby` (lista mantida,
+  itens `error`; com lock de outro usuário simulado, 11 e `notMine`), credencial no `sharedby` (4), timeout nas bases,
+  `sharedby` vazio ou com nome com aspas (`notComputed`, 0), erro do console no `sharedby` de um módulo (11).
+  Console original: aviso e `notComputed` (0); com `-Project iateste-xh-r156`, 3 calculados e o do outro projeto
+  `notComputed`; `-Project` inexistente → itens 5, lista mantida.
+- Uso pela linha de comando (bash e PowerShell): `-Only modified,bogus` → 2 com a lista; `-Only ""` e `-Only ",;"`
+  → 2; `-Only UNLOCKED,Clean` → `clean,unlocked`; `checkout -Only` → 2; `status -NoLocalState` → 2; `locks -Project
+  'a"b'` → 2 (com `-NoLocalState`, ignorado).
+- Hook Stop: acervo sem `.dpr` (`noProject`, fica no registro); arquivo sem lock (sai); `jvcsExe` inválido (falha
+  inteira e falha no meio: registro intacto, "status falhou"); e, com um wrapper falso que devolve o JSON pronto,
+  parcial 11 com item `error` com lock, timeout no meio, login recusado, caso normal e item `error` sem lock.
+- Regressão: `help`, `list`, `status` (projeto e arquivo), `locks`, `history`, `diff` e `sync` (prévia) em `ex4ia.dpr`;
+  `status -Project` de `exemplo01.dpr` e `ex2.dpr`; `status` com o console original; auditoria com `only`. Os
+  arquivos de `ex1`, `ex2` e `ex4` ficaram idênticos (hash, somente leitura e data).
+- Fim: `undocheckout` dos 3 locks limpos; o alterado → 8 sem `-Discard` e `discarded` (com backup) com
+  `-Discard -Confirmed`; `locks -All` → 0; `rm-project` dos dois projetos de teste (`projectAdmin=on` no `APPDATA`
+  de teste). Os módulos deles ficam no arquivo do servidor como abandonados (o servidor 2.5 com ramos não apaga
+  módulo com revisão; seção 14).
+
+### Testes do R4 (17/10/2026, servidor de teste local, identidade DEFAULT, console 2026, `APPDATA`/`LOCALAPPDATA` temporários)
+
+Projeto de teste sem `.dpr` `iateste-xh-r4` (ID 17) em `D:\Delphi\JediVCS\testes-ia\xharbour\r4-acervo-sem-dpr`
+(`sisv\.jvcsproject` em UTF-16 com `project=iateste-xh-r4`; `sisv\ter\` passa de 50 caracteres, então o console mostra
+o caminho truncado); `outro\` pelo mapa `[projects]`.
+- Lib (45 casos, 0 falhas): `Read-JaProjectMarker` (formatos, codificações, recusas), `ConvertTo-JaDirKey`,
+  `Find-JaMapEntry`, `Get-JaProjectCandidates` (ordem nível/origem, nome repetido), `Set-JaConfigMapValue` (grava,
+  troca outra grafia, remove, BOM/CRLF, `[ai]` intacto) e `Read-JaConfigMaps` (entrada inválida ignorada com aviso).
+- Segurança: `-Identity DEFAULT` pela IA com arquivos em duas pastas mapeadas (DEFAULT e Outra) → 10; só a pasta
+  DEFAULT → 0; pasta Outra + pasta fora do mapa (padrão DEFAULT) → 2; DEFAULT + fora do mapa → 0; marcador
+  `project=x;calc` → 7; `identity=$(calc)` → 7; `sync -Apply` pela IA com marcador válido → 10 com
+  `sync -Project sesis -Apply -Confirmed` na dica; `rm-project`/`modules`/`cleanup -Project <pasta>` e `rm-project <pasta>`
+  → 2; mapa com `#` no caminho (`C#proj`) → uma linha só; `none` com dois blocos `[projects]` → remove as 2 entradas.
+- `addproject sesis.prg`, `123` e `x;calc` → 2; `addproject iateste-xh-r4` → criado, com `next`; `list` antes de criar →
+  5 "não existe no servidor" com `projectSource` do marcador.
+- `add a.prg apagar.prg` (relativo, em `sisv\ter`: marcador de nível 1) e `add sisv.prg defs.ch build.bat` (nível 0) → 0.1
+  com o aviso "projeto ... escolhido por .jvcsproject"; em `checkin=confirm` → 10 com `-Project "iateste-xh-r4"` na dica.
+- `list`, `status`, `status -Only missing` em `sisv\ter` sem `-Project` → `projectSource` do marcador (o `apagar.prg`
+  apagado do disco: `missing` no `list`, `pathTruncated` no `status`); `status a.prg`, `history a.prg`, `diff a.prg` → 0;
+  `list -Project <sisv>` → o projeto do marcador; `list -Project <sisv\ter>` → 2.
+- Pasta pelo mapa reverso: `status -Project iateste-xh-r4` em `C:\` com uma cópia homônima `...-copia\sisv\ter\a.prg`
+  (mesmo prefixo visível) → `a.prg` `pathTruncated`; com `[projects] ...\sisv=iateste-xh-r4` → `a.prg` `clean`.
+- Mapa: `list` em `outro\` → `projectSource` "config.ini [projects]"; `add outro.prg` → 0.1 pelo mapa; marcador e mapa
+  na mesma pasta com nomes diferentes → vence o marcador, com aviso; marcador de projeto inexistente em `ter\` → `list` 5,
+  `status a.prg` versionado pelo marcador de cima, `add novo.prg` → 5 no `openproject`; marcador inválido em `sisv` → 7
+  em `list`, `identity` e `locks`; `.dpr` na pasta atual vence o marcador de cima; dois `.dpr` → 2; pasta sem nada → 2
+  com a mensagem nova.
+- Identidade: mapa `[identities] ...\xharbour=DEFAULT` → `identity` com `source` "config.ini [identities] ..."; marcador
+  `identity=default` → 0 (nome `DEFAULT`); `identity=Outra` → 4 (pela IA sem sugerir `-Identity`); com `-Identity DEFAULT`
+  → aviso e 0; mapa `...\ter=Outra` (não salva) → 4 "não existe em Identities (config.ini [identities] ...)"; pela IA
+  `-Identity DEFAULT` → 10 e, com `-Confirmed`, 0 com aviso; `a.prg` (Outra) + `outro.prg` (DEFAULT) → 2; `a.prg` +
+  arquivo fora do mapa → 2; `identity -Project iateste-xh-r4` em `C:\` → `LastUsedID` com duas pastas no `[projects]` e
+  a identidade da pasta do projeto com uma só.
+- `config set projectMap|identityMap` pela IA → 10. Função `Set-JaFolderMap` (caminho humano) num `config.ini`
+  temporário: grava em minúsculas e troca a grafia (`...\SISV\`), `identityMap ... default` → `DEFAULT`, `NaoExiste` → 4,
+  pasta inexistente → 5, `C:\a=b` → 2, `x;calc`/`123` → 2, sem valor → 2, `none` fora do mapa → 3, `none` → removida e
+  de novo → 3; BOM e CRLF preservados. `config get projectMap`, `config list` e `config list -Text` mostram os mapas.
+- `buildCheck=block`: `checkout`/`checkin a.prg` → 0.2 com o aviso "compilação não se aplica"; `xr4.pas` (fonte Delphi sem
+  `.dpr`) → `add` 0.1, `checkout`, `checkin` → 7 e `undocheckout -Discard -Confirmed` (backup).
+- R1 com R4: `status` sem `-Project` em `sisv\ter` com o `getmodule` de `a.prg` desviado (revisão que não grava arquivo,
+  como o `terrt.lnk`) → `a.prg` `error`, os outros verificados, 11; `-Only error` → só ele, ainda 11.
+- `sync` (prévia) e `labels`, `changes -Since 1d`, `todo`, `shared` sem `-Project` → projeto do marcador; `sync -Apply` em
+  `confirm` → 10 com `-Project iateste-xh-r4`; `rename-project ... -Apply -Confirmed` → aviso do `.jvcsproject` e do mapa;
+  `list` com o marcador antigo → 5; trocado o marcador → 0. `locks` com um lock no acervo → `clean`, `project` e `path`;
+  hook Stop → "em checkout SEM alteração: a.prg". Auditoria com `identitySource` e `projectSource`.
+- Hook PreToolUse (`checkout=confirm`): `Edit` em `xr4.pas` somente leitura sob o marcador → `ensure-checkout -CheckOnly`
+  e "não está em checkout ... rode checkout -Confirmed".
+- Regressão: `help -Text`; em `ex4ia.dpr` `list`, `status`, `locks`, `history`, `diff` e `sync` (prévia) com
+  `projectSource` `.dpr/.dpk`; em `ex1` a escolha automática de `Exemplo01.dpr` entre três `.dpr` e `status` de unit; `ex2`
+  (dois `.dpr` com nome próprio) → 2 como antes; `status -Project ex2.dpr` → 0. Os arquivos de `ex1`, `ex2` e `ex4`
+  ficaram idênticos (hash, somente leitura e data).
+- Fim: `rm-module id:69 -Archive -Apply -Confirmed` (módulo sem revisão, apagado do arquivo) e `rm-project iateste-xh-r4b
+  -Apply -Confirmed` (`moduleAdmin=archive`/`projectAdmin=on` só no `APPDATA` de teste). Os módulos 64-68, 73 e 74 ficam
+  no arquivo como abandonados; as pastas locais `r4-acervo-sem-dpr` e `r4-acervo-sem-dpr-copia` ficaram em
+  `testes-ia\xharbour`.
+
+### Testes do R7 (17/10/2026, servidor de teste local, identidade DEFAULT, console 2026, `APPDATA`/`LOCALAPPDATA` temporários)
+
+Projeto de teste sem `.dpr` `iateste-xh-r7` (ID 19, módulos 75-80) em `D:\Delphi\JediVCS\testes-ia\xharbour\r7`
+(`sisv\.jvcsproject` com `project=iateste-xh-r7`; `sisv.prg`, `funcoes.prg`, `defs.ch`, `build.bat`, `ter\terminal.prg`,
+`ter\caixa.prg`; `outro\outro.prg` sem projeto), criado com `addproject`/`add` pela IA (`-Confirmed`). Todo `-Apply` pela
+IA, com `-ListHash` e `-Confirmed` na linha; as alterações de arquivo foram feitas por script de teste.
+- Funções (sem servidor, 31 casos): lista em UTF-8/BOM/UTF-16/ANSI, recusas de caminho, eco só de linha com forma de
+  caminho (chave privada e JSON quebrado não aparecem na mensagem), nome/pasta truncados → `pathUnknown`, projeto do
+  JSON como fallback, projeto com aspas ou barra → 2, `-Only` unificado (`failed` só no lote), hash muda com `-Force` e
+  com a ação, pastas da identidade fixadas antes do 1º `Test-IsMe` no `-Only clean,mine`, aspas simples no `next`
+  para valor com `$`.
+- Sem servidor pelo wrapper (21 casos): ajuda; `ensure-checkout -FromList`, `checkout <arq> -Apply`, `history -Only`,
+  `status -Only failed`, `-FromList` com arquivos, linha relativa (sem eco), `-Only` com texto, `-ListHash` sem `-Apply`
+  ou malformado, `sync -ListHash`, `checkin -Apply` sem comentário → 2; lista vazia e JSON UTF-16 fora do filtro → 3;
+  pela IA: sem `-Confirmed` (confirm), sem `-ListHash`, `undocheckout` (release), `-Discard`, `checkout=manual` e
+  `checkin=auto` sem `-Confirmed` → 10; auditoria com `fromList`, `listSha256` e `apply`.
+- Prévia de 7 linhas (comentário, aspas, `/`, repetido em outra caixa, `outro.prg`): 3 `checkout` + 1 `noProject`, aviso
+  do repetido, `next`; `-Apply` → 3 `checkedOut` e `noProject` 5 → **11**, diário `plan`/`start`/`done`/`end`, auditoria
+  com `path`/`listLine`, registro da sessão para o hook Stop. A saída usada como lista: `-Only failed` → só o
+  `outro.prg` (3, nada a fazer); `-Only ok` → `undo` do que deu certo.
+- `checkin -FromList` (um alterado, dois iguais): prévia `1 checkin, 2 undoUnchanged`; `-ListHash 000000000000` → 10
+  ("hash aprovado ..., agora ..."; nada feito); com o hash → `checkedIn` 0.1→0.2 e `unchangedUndone` (0 e 3 → 0).
+- `checkout -FromList` de dois alterados sem lock + um limpo: sem `-Force` `2 localModified` (8 previsto) + 1 checkout;
+  com `-Force` `2 checkoutKeepLocal`, hash diferente (o hash sem `-Force` com `-Force` na linha → 10); `-Apply` →
+  `checkedOutKeptLocal` com o disco mantido (hash do arquivo igual) e `backup\*-checkout-force-76|79`.
+- `locks` gravado como JSON (UTF-8 com BOM e UTF-16 com BOM): `undocheckout -Only "clean,mine"` → 1 `undo` (2 fora do
+  filtro); `checkin -Only "modified,mine"` → 2 `checkin` → `checkedIn`; `-Only clean,mine` sem aspas pelo `& powershell
+  -File` → 2 com a dica das aspas.
+- `status -Project` como lista (UTF-16): `caixa.prg` fora do disco → `-Only missing` → `checkout` "(arquivo ausente)";
+  item `error` (simulado no JSON, como o do R1) → `-Only failed` e `-Only error` → só ele; `-Only modified,unlocked`
+  sem nenhum → 3. JSON de `status` que falhou (projeto inexistente, exitCode 5, sem módulos) → 2 com a mensagem.
+- Sem o `.jvcsproject` (acervo sem marcador): lista de texto → `noProject` (3); `-Project iateste-xh-r7` → 3 checkout;
+  o JSON do `status` → 6 checkout com o aviso "resolvido(s) pelo projeto gravado no JSON", e a execução resolveu igual.
+- Interrupção: `-Apply` de 6 checkouts morto (`Stop-Process`) depois do 2º `done` → diário com o `start` do 3º sem
+  `done`, `locks` com 2 (coerente); prévia nova `4 checkout, 2 alreadyMine`; `-Apply` com o hash novo completou.
+- Hash x ação: prévia `undocheckout -Discard` com 6 `undo`; `defs.ch` alterado depois; `-Apply` com o hash antigo → 10;
+  prévia nova `5 undo, 1 discard`; `-Apply` → 5 `undone` + `discarded` com backup; `locks -All` → 0.
+- Identidade: `[identities]` com `sisv=DEFAULT` e `outro=NaoExisteR7` → lista com as duas pastas → 2 ("pastas de
+  identidades diferentes"); só `sisv` → 0 com `identitySource` "config.ini [identities] ...\sisv" (a pasta atual não
+  mapeada não conta); `identity=OutraR7` no `.jvcsproject` → 4; com `-Identity DEFAULT` → aviso e 0.
+- Limite: 501 linhas → 2 ("use -MaxModules 501"); `-MaxModules 600` → prévia de 501 `notVersioned` (3, ~10 s);
+  `-MaxModules 6000` → 2.
+- `buildCheck=block` com `checkin -FromList` no acervo sem `.dpr`: aviso "compilação não se aplica", `checkedIn` 0.2→0.3.
+- Caso real reduzido: dois arquivos alterados sem lock → `status -Project` (UTF-16) → `checkout -Only "modified,unlocked"
+  -Force` (2 `checkoutKeepLocal`) → `-Apply` → `checkin` com o mesmo JSON e filtro (os mesmos 2, pelo retrato) →
+  `-Apply` → `status -Project` todo `clean`, `locks -All` 0.
+- Regressão: `checkout`, `ensure-checkout -CheckOnly`, `checkin` (sem mudança → 3), `checkout` + `undocheckout` de um
+  arquivo; em `ex4ia.dpr` `help`, `list`, `list -Only clean`, `status -Project`, `status <arq>`, `locks`, `history`,
+  `diff` e `sync` (prévia); os arquivos de `ex4` ficaram idênticos (hash, somente leitura e data). Parse do PS 5.1 sem
+  erro; `git diff --stat` igual com `--ignore-cr-at-eol`.
+- Não testado aqui: o caminho humano do `-Apply` (sem `-ListHash`): sem `CLAUDECODE` o wrapper ainda detectou o agente
+  (correto) e exigiu o hash; e lock de outro usuário (só há a identidade DEFAULT).
+- Fim: `rm-project iateste-xh-r7 -Apply -Confirmed` (`projectAdmin=on` só no `APPDATA` de teste). Os módulos 75-80
+  ficam no arquivo como abandonados; a pasta local `testes-ia\xharbour\r7` ficou.
+
+## 19. Pedido S0002 do PC remoto: fontes fora do JEDI, Git, todos os projetos, locks antigos e diagnóstico
+
+Pedido do EDMAR-OPT para o acervo xHarbour (18/10/2026), em que o Git é usado no dia a dia e o JEDI fica para trás.
+Tudo aqui **só lê** o servidor; no disco, só pastas temporárias. A versão continua 1.4.0. Entra depois do beta 6.
+
+| Item | Comando | O que faz |
+|---|---|---|
+| N1 | `untracked [-Path pasta] [-Pattern *.prg] [-Recurse]` | arquivos da pasta que não são módulo de nenhum projeto |
+| N1 | `untracked -FromXbp arq.xbp [-Base pasta]` | fontes do projeto xBuild (blocos `[caminho\fonte]`) que não são módulo |
+| N2 | `add <arq...> -Comment "..." [-Project p] -Preview` | o `add` (que já cadastra e faz o 1º check-in) ganhou a prévia |
+| N3 | `verify -FromGit <rev>[..<rev>]` ou `verify -Since <data>` | arquivos dos commits que estão atrás no JEDI (7 = pendência) |
+| N4 | `status -AllProjects [-Only ...]` | status de todos os projetos, com resumo em `projects[]` |
+| N5 | `locks [-All] -OlderThan 7d` | só locks antigos; `lockedAtLocal` e `lockAgeDays` em todo lock |
+| N6 | `doctor` / `ping` | config, `jvcs.exe`, `fvcscrypt.dll`, identidade, porta (latência) e login |
+| menor | opção desconhecida | código 2 (antes o PowerShell a punha em `$Rest`, como nome de arquivo) |
+| menor | `checkin -CommentFromGit` | comentário = assunto do último commit do Git que mexeu nos arquivos |
+| menor | `diff -Encoding oem\|ansi\|auto` | code page dos lados ANSI sem BOM (`oem` = CP850) |
+
+### 19.1 Detalhes
+
+- **Caminhos 8.3.** O servidor guarda a pasta do módulo como ela foi dada (`C:\Users\EDMARF~1\...`, longa ou mista).
+  `untracked` compara pela forma longa de cada lado (`Get-JaLongPath`), então os três formatos casam.
+- **`untracked`.** Uma busca `SEARCH_MODULES` por extensão (`*.prg`, `*.ch`...) em todos os projetos, inclusive os
+  excluídos.
+  - Arquivo sem extensão conferível sai como `unknown`.
+  - Com `-All`, os versionados também aparecem (`state=versioned`, com os projetos).
+  - Nada fora do JEDI → 3.
+  - Limite de 20 000 arquivos.
+- **`.xbp`.** Cada linha `[caminho\fonte.ext]` é um fonte. O bloco do alvo (`[SESIAG.exe]`) e os de binários
+  (`.exe .dll .lib .obj .res`) não contam.
+  - Caminho relativo: procurado no `-Base` ou, sem ele, na pasta do `.xbp` e nas de cima, valendo a primeira em que o
+    arquivo existe.
+  - Entrada sem arquivo → `localMissing`.
+- **`verify`.** Usa `git diff --name-only <rev>..HEAD` (só `-FromGit abc` vira `abc..HEAD`) ou
+  `git log --since --name-only`, nos arquivos sob a pasta (`-Path` ou a atual).
+  - Para cada arquivo, faz o status exato contra a última revisão. O resultado vai em `modules[].verify`:
+    - `modifiedNoLock`: diferente do servidor e sem checkout; o caso do acervo;
+    - `lockedByOther`;
+    - `pendingCheckin`: em checkout seu;
+    - `notVersioned`;
+    - `localMissing`;
+    - `error`;
+    - `ok`.
+  - Algum diferente de `ok` → 7, para rodar antes do deploy.
+  - O intervalo só aceita nomes de revisão (nada que comece com `-`). Limite de 500 arquivos (`-Max`).
+- **`status -AllProjects`.** Usa o mesmo status do `-Project`, projeto por projeto. Cada módulo ganha `project`, e
+  `projects[]` traz `total`, `clean`, `modified`, `missing`, `unknown`, `error` e `locked`.
+  - A falha de um projeto (ou de um módulo, R1) não para os outros e o comando sai 11.
+  - Projeto com nome cortado em 30 caracteres pelo `listprojects` é listado como erro: rode `status -Project`.
+- **Hora do lock.** O servidor grava e os dois consoles (2026 e 2.5.0.1030) mostram a hora do lock em **UTC**:
+  conferido em 18/10/2026, com o lock das 08:00 locais exibido como 11:00.
+  - `lockedAt` continua o texto do console; `lockedAtLocal` é a hora local e `lockAgeDays` a idade.
+  - `-OlderThan` aceita `7d`, `24h` ou `aaaa-mm-dd[Thh:mm]` (hora local).
+- **Falha de conexão.** Em qualquer comando, a falha antes do 1º comando do console agora diz se a porta responde: "servidor
+  host:porta não responde (...): JVCSSrv parado, porta fechada ou rede", ou "a porta responde (n ms); o servidor
+  JEDI VCS recusou ou falhou". O `doctor` mostra o mesmo em `checks[]` e sai com o pior código (9 rede/servidor,
+  4 credencial, 12 ambiente).
+- **`-CommentFromGit`.** Roda `git log -1 --format=%s -- <arquivos>` na pasta do 1º arquivo.
+  - As aspas duplas viram `'`, caractere fora do cp1252 vira `?`, e o prefixo `commentPrefix` da IA continua valendo.
+  - Não vale com `-Comment` nem com `-FromList`.
+
+### 19.2 Testes (18/10/2026, servidor de teste, console 2026 9E146737)
+
+Roteiro `teste-s0002.ps1` (scratchpad da sessão), com o wrapper chamado como processo e o `APPDATA` de teste
+(`checkout=auto`, `checkin=auto`). Na rodada completa, 39 verificações, 0 falhas. Na repetição, só o `add` dos mesmos
+3 arquivos devolve 3 "já é módulo", que é o esperado.
+
+- **Validações:** opção desconhecida, `-Encoding`/`-OlderThan` inválidos e `-AllProjects` fora do `status` → 2.
+- **`doctor` e `ping`:** as 6 verificações, com a latência e "Firebird v.250". `Test-JaTcpPort` isolado: porta 2109
+  fechada → sem resposta; 2106 → aberta.
+- **`locks`:** lock real do módulo 87. O `lockedAtLocal` deu a hora de agora; `-OlderThan 1h` não mostra o lock e
+  `-All -OlderThan 0h` mostra.
+- **`status -AllProjects`:** 10 projetos e 17 módulos, com `projects[]` (ex4ia.dpr: 2, clean 2). O `-Only modified`
+  filtra.
+- **`untracked`:**
+  - `ex4 -Pattern *.pas` acha o `uExtra.pas`, e `-All` mostra os versionados;
+  - pasta gravada em 8.3 e pedida na forma longa: `x.txt` versionado, `semrev.txt` (apagado do arquivo) untracked;
+  - `-FromXbp`: `NOVO.PRG` untracked, `SUMIU.PRG` localMissing, o bloco `[TESTE.exe]` ignorado.
+- **Projeto `zzbeta6v.dpr` com Git:**
+  - `add` de 3 módulos; `add -Preview` → `wouldAdd`, sem gravar nada;
+  - `verify -FromGit HEAD~1`: `a.prg` modifiedNoLock e `b.prg` notVersioned, código 7;
+  - `verify -Since 1h -Pattern c.prg` → ok; `-FromGit --output=x` → 2;
+  - `checkout -Force -Confirmed` e `checkin -CommentFromGit` → 0.2 com o comentário
+    `[IA] S0002: a.prg ajustado no Git - ação`;
+  - `diff -Encoding oem` de um `.prg` em CP850 mostra `ação` e `revisão`; sem a opção, os acentos saem trocados.
+- **Regressão:** `status -Project ex4ia.dpr` e `locks` sem mudança.
+- **Achado à parte:** um `x.dpr` solto em `%TEMP%` foi visto como projeto candidato pelo `add` numa subpasta. Isso é
+  comportamento do R4 (`.dpr` nas pastas de cima); no teste, `-Project` resolveu.
+- **Não testado:** `.xbp` real do acervo (o formato veio da descrição do pedido); `verify` com milhares de commits; porta
+  fechada pelo comando inteiro (exigiria parar o servidor ou alterar uma identidade salva).

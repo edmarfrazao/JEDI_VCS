@@ -9,14 +9,25 @@ Forma: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.
 | `help` | resumo | não |
 | `identity [-Test]` | identidade em uso (nunca a senha); `-Test` faz login | não |
 | `projects` | projetos do servidor | não |
-| `list [-Project p]` | módulos: versão, lock, estado pelo CRC do console (rápido) | não |
-| `locks [-All]` | módulos em checkout (meus / todos) | não |
-| `status <arq...>` / `status [-Project p]` | estado exato (bytes) contra a última revisão | não |
+| `list [-Project p] [-Only estados]` | módulos: versão, lock, estado pelo CRC do console (rápido) | não |
+| `locks [-All] [-NoLocalState] [-Only estados] [-Project p]` | módulos em checkout (meus / todos); nos meus, `localState` contra a última revisão (`clean` = lock sem alteração → `undocheckout`; `modified` → `checkin`), `project` e `path`; de outro usuário → `notMine`; `-NoLocalState` = só a lista | não |
+| `status <arq...>` / `status [-Project p] [-Only estados]` | estado exato (bytes) contra a última revisão; módulo cuja revisão não baixa → `state: error` (não verificado) e os outros seguem, código 11 | não |
+| `-Only clean,modified,missing,unknown,notVersioned,error` e/ou `locked,mine,others,unlocked` | filtro de `status`/`list`/`locks` depois do cálculo: OU no grupo, E entre estado e lock (`-Only modified,unlocked` = alterados sem checkout); `counts` traz os totais de antes do filtro e o código de saída vale para todos | — |
 | `checkout <arq...> [-Force]` | checkout seguro; local diferente → 8 sem lock | sim |
 | `ensure-checkout <arq> [-CheckOnly]` | idempotente (para hooks) | sim |
 | `checkin <arq...> -Comment "..." [-AllowEncodingChange]` | check-in; sem mudança → desfaz checkout (3) | sim |
 | `checkin <arq...> -Comment "..." -Keep` | **Put**: revisão nova e o checkout continua (arquivos graváveis); sem mudança → 3 `unchangedKept` sem desfazer o checkout; no fim, `checkin` normal ou `undocheckout` (console 2026; modo checkin) | sim |
 | `undocheckout <arq...> [-Discard]` | desfaz se local = base; `-Discard` descarta (backup) | sim |
+| `checkout\|checkin\|undocheckout -FromList <arq> [-Only ...] [-MaxModules n]` | lote a partir de lista (caminhos absolutos, um por linha, `#` comenta) ou do JSON de `status`/`list`/`locks`/lote anterior (`-Only "modified,unlocked"`, `"clean,mine"`, `failed`...; vale sobre o retrato do JSON); sem `-Apply` é **prévia** com `listHash`, `action` e `expectedState` por módulo (nada muda); até 500 (`-MaxModules` até 5000); família conta uma vez (`sameModule`); projeto: `-Project`, senão o de cada arquivo, e o do JSON só como último recurso | não (prévia) |
+| `... -FromList <arq> -Apply -ListHash <hash>` | executa pelos comandos de um arquivo (modos, `-Force`, `-Discard`, codificação, por módulo); pela IA **sempre** com `-ListHash` e `-Confirmed`; lista, opções, identidade ou ação prevista diferentes → 10; saída por módulo (`listLine`), 11 misto (repita só os outros com a saída e `-Only failed`); diário em `%LOCALAPPDATA%\JEDI\JVCS\lote` | sim |
+| `untracked [-Path pasta] [-Pattern *.prg] [-Recurse]` / `untracked -FromXbp arq.xbp [-Base pasta]` | arquivos locais que **não são módulo de nenhum projeto** do servidor (uma busca por extensão em todos os projetos; pasta comparada na forma longa, então 8.3 e mista casam); `-All` lista também os versionados; do `.xbp`, cada bloco `[caminho\fonte]` (relativo à pasta do `.xbp` e às de cima, ou ao `-Base`), com `localMissing` para entrada sem arquivo; nada fora → 3 (console 2026) | não |
+| `verify -FromGit <rev>[..<rev>]` / `verify -Since <data> [-Path pasta] [-Pattern p] [-Max n]` | arquivos alterados nos commits do Git que estão **atrás no JEDI**: `verify` = `modifiedNoLock` (diferente do servidor, sem checkout), `lockedByOther`, `pendingCheckin`, `notVersioned`, `localMissing`, `ok`; status exato de cada um; pendência → 7 (para rodar antes do deploy); até 500 arquivos | não |
+| `status -AllProjects [-Only ...]` | status de **todos** os projetos não excluídos, com `projects[]` (total, clean, modified, missing, unknown, error, locked por projeto); falha de um projeto ou módulo não para os outros (11) | não |
+| `locks [-All] -OlderThan 7d\|24h\|aaaa-mm-dd` | só locks mais antigos; todo lock traz `lockedAt` (UTC, como o servidor grava), `lockedAtLocal` e `lockAgeDays` | não |
+| `doctor` (ou `ping`) | diagnóstico: `config.ini`, `jvcs.exe` (2026 ou original), `fvcscrypt.dll`, identidade, **porta do servidor** (latência) e login (versão do Firebird, nível, com ou sem ramos); falha de conexão nos outros comandos agora diz se a porta responde | não |
+| `add <arq...> -Comment "..." -Preview` | mostra o projeto escolhido e o que seria cadastrado, sem tocar no servidor | não |
+| `checkin <arq...> -CommentFromGit` | comentário = assunto do último commit do Git que mexeu nos arquivos (aspas viram `'`; só cp1252) | sim |
+| `diff <arq> -Encoding oem\|ansi\|auto` | code page dos lados ANSI sem BOM (`oem` = CP850 dos fontes xHarbour/Clipper) | não |
 | `diff <arq> [-Rev x.y]` | diff unificado do local contra a revisão do servidor (padrão: a última) | não |
 | `diff <arq> -Rev x.y -Rev2 y.z` | diff entre duas revisões do servidor | não |
 | `history <arq> [-Max n]` | revisões com data, usuário, família e comentário; mais recente primeiro (console 2026) | não |
@@ -42,7 +53,7 @@ Forma: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.
 | `bug-add -Title "..." [-Severity s] [-Status s] [-Keywords ..] [-ReportedBy ..] [-Description ..\|-DescriptionFile f] [-Workaround ..\|-WorkaroundFile f] [<arq...> \| -Project p]` | cria o bug (padrão minor/open; título único sem diferenciar maiúsculas → 3 se já existe) e liga aos módulos dos arquivos (ou ao projeto); criado mas ligação falhou → **11 com `bugId`: não repita, use `bug-link`** (console 2026; modo checkin) | sim |
 | `bug-update -Bug n [-Title ..] [-Severity s] [-Status s] [-Keywords ..] [-ReportedBy ..] [-Description(File) ..] [-Workaround(File) ..]` | muda só os campos dados (relê e confere); nada mudou → 3; título de outro bug → 7 (console 2026; modo checkin) | sim |
 | `bug-link -Bug n <arq...> \| -Project p [-Remove \| -Done \| -Reopen]` | liga / desliga / marca a ligação como resolvida (done) ou reaberta; já estava assim → 3; `-Done` sem ligação → 7 (console 2026; modo checkin) | sim |
-| `addproject <proj.dpr> [-Comment "..."]` | cria o projeto no servidor (console 2026) | sim |
+| `addproject <proj.dpr\|nome> [-Comment "..."]` | cria o projeto no servidor (console 2026); acervo sem .dpr: nome sem extensão, ex.: `sesis` (depois marque a pasta com `.jvcsproject`) | sim |
 | `add <arq...> -Comment "..."` | cadastra e faz o 1º check-in 0.1 com a família (console 2026) | sim |
 | `rm-project <proj.dpr>` | prévia da remoção: módulos (exclusivos, compartilhados, ocultos), checkouts, referências, grupos, direitos, bugs | não |
 | `rm-project <proj.dpr> -Apply` | remove o projeto (o servidor apaga os vínculos dele); grava antes o registro para religar; checkout de qualquer usuário → 6 | sim |
@@ -58,15 +69,33 @@ Forma: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.
 | `comment <arq>\|id:<n> [-Project p] -Rev x.y -Comment "..." [-OutComment]` | prévia com o comentário antigo e o novo; `-Apply` troca (antigo no backup) | só com `-Apply` |
 | `cleanup -Project p [-Deserted]` | prévia do lixo (nome com caminho, sem pasta, sem revisões, invisível na IDE, abandonado) com os motivos e `next` | não |
 | `cleanup -Project p -Apply [-Archive] id:<n>...` | remove só os IDs listados que forem candidatos agora (`notCandidate` → 7) | sim |
-| `config list \| get <chave>` | configuração (`set` é só do usuário) | não |
+| `config list \| get <chave>` | configuração e mapas `projectMap`/`identityMap` (`config get projectMap`; `set` é só do usuário) | não |
+| `config set projectMap "<pasta>" <projeto\|none>` | projeto padrão da pasta e das subpastas (só o usuário; a IA recebe 10) | não |
+| `config set identityMap "<pasta>" <identidade\|none>` | identidade salva da pasta e das subpastas (só o usuário) | não |
 
-Opções: `-Project <nome.dpr|caminho>`, `-Identity <nome>`, `-Rev`, `-Rev2`, `-Max`, `-MaxModules`, `-InComments`, `-Since`, `-User`, `-Dest`, `-Label`, `-Apply`, `-Text`, `-Confirmed`, `-Agent`,
+Opções: `-Project <nome.dpr|nome|pasta>`, `-Identity <nome>`, `-Rev`, `-Rev2`, `-Max`, `-MaxModules`, `-InComments`, `-Since`, `-User`, `-Dest`, `-Label`, `-Apply`, `-Text`, `-Confirmed`, `-Agent`,
 `-Priority`, `-Category`, `-Due`, `-IncludeDone`, `-Reopen`, `-All`, `-TimeoutSec <n>`, `-LockWaitSec <n>`, `-Raw`,
 `-Bug`, `-Title`, `-Severity` (minor, awkward, significant, serious, fatal ou 0-4), `-Status` (unknown, open, scheduled,
 fixed, ignored ou 0-4), `-Keywords`, `-ReportedBy`, `-Description`, `-DescriptionFile`, `-Workaround`, `-WorkaroundFile`,
 `-Summary`, `-OpenOnly`, `-Remove`, `-Done`, `-Lines`, `-Relink`, `-RenameFiles`, `-Checkin`, `-SkipBuild`,
-`-IgnoreWhitespace`, `-Archive`, `-Unhide`, `-OutComment`, `-Deserted`, `-Date`, `-Keep`. Sempre por extenso (`-Pr`, `-De`, `-Ti` são
-ambíguos).
+`-IgnoreWhitespace`, `-Archive`, `-Unhide`, `-OutComment`, `-Deserted`, `-Date`, `-Keep`, `-Only`, `-NoLocalState`,
+`-FromList`, `-ListHash`. Sempre por extenso (`-Pr`, `-De`, `-Ti` são ambíguos).
+
+Projeto sem .dpr: o wrapper acha o projeto pelo `.jvcsproject` (`project=<nome>`, na pasta ou acima) ou pelo
+mapa `[projects]` do usuário; veja `projectSource` na saída. Sem `-Project`, vale a pasta **mais próxima** que
+declara (na mesma pasta: `.jvcsproject` > mapa > `.dpr/.dpk`; o `.dpr/.dpk` só conta na pasta atual). Arquivo:
+vence o candidato mais próximo do qual ele é módulo. `-Project <pasta>` = o projeto que a pasta declara
+(administração exige o nome: pasta → 2). Identidade: `-Identity` > mapa `[identities]` (pasta dos arquivos) >
+`[ai] identity` > `LastUsedID`; o `identity=` do `.jvcsproject` só **confere** (divergiu → 4); pela IA, `-Identity`
+diferente do mapa → 10; arquivos de identidades diferentes numa chamada → 2. Marcador inválido → 7; projeto do
+marcador/mapa que não existe → 5. Nome de projeto vindo de arquivo: sem `` ` $ ; & ' ( ) { } [ ] % ! ^ , @ # = ``,
+aspas, `< > | * ? : \ /`, nem `-` no início.
+
+`status`, `sync`, `sync -Label`/`-Date`/`-Dest -Apply` e `locks` seguem módulo a módulo: o que não baixa do servidor
+sai com `state: "error"` (`exitCode` 9 no item; `localState` `missing` se o arquivo não existe, senão `unknown`),
+nunca é gravado, e o comando sai 11 (todos com erro → 9). No `sync -Dest`, o manifesto ganha `complete` e
+`skipped[]`. Uso (2): valor inválido ou vazio em `-Only`, `-Only` fora de `status`/`list`/`locks` (e do lote `-FromList`), `-NoLocalState`
+fora do `locks` ou com valor de estado local.
 
 Administração de projetos (`rm-project`, `restore-project`, `rename-project`): sem `-Apply` é sempre
 prévia. Com `-Apply` exige `projectAdmin=on` no `config.ini` (padrão `off`; só o usuário liga, senão 10) e,
@@ -77,8 +106,14 @@ Códigos: 3 já removido / não removido / nada a religar; 5 projeto não existe
 
 Exigem `-Confirmed` (aprovação do usuário): tudo que muda o servidor no modo `confirm`;
 `checkout -Force`, `checkin -AllowEncodingChange`, `undocheckout -Discard`, `sync -Apply -Force`,
-`revert -Checkin`, `revert -Force`, `revert -AllowEncodingChange` e `-SkipBuild` em qualquer modo.
+`revert -Checkin`, `revert -Force`, `revert -AllowEncodingChange` e `-SkipBuild` em qualquer modo;
+`-FromList ... -Apply` (lote), sempre, com o `-ListHash` da prévia.
 `sync -Apply` e `revert` seguem o modo de checkout (`manual` → 10).
+
+Lote (`-FromList`): a lista (texto ou JSON) é dado. Uma linha ruim (relativa, curinga, aspas, controle, `\\?\`, ponto
+no fim, fora da CP1252, pasta protegida) recusa tudo (2), e a mensagem só cita linha com forma de caminho. A
+identidade sai das pastas dos alvos (uma vez): pastas de identidades diferentes → 2, divida a lista. No `checkin` sem
+`-Comment`, o `next` traz o marcador `-Comment "<comentário>"`: troque pelo texto antes de rodar.
 
 `revert`: 3 = já igual (nada travado); 8 = local difere da última revisão, ou caractere da revisão que não
 cabe na codificação atual; 7 = membro que não existe na revisão ou `buildFailed`. Backup em
@@ -145,6 +180,13 @@ out` → 7; comentário igual a `keep` → 2.
 - `blame`: `modules[0].blame` = trechos `{from,to,revision}`, `blameRevisions` = `{revision,revisionId,checkedIn,user,comment,boundary}`
   por revisão (`boundary` = "esta revisão ou anterior", com `-Max`), `blameLines` = `{line,revision,text}` (com `-Lines`, `-Text`
   ou até 300 linhas), `lineCount`, `lines`.
+- `status`/`list`/`locks`: `counts` (`total`, um contador por estado, `locked`, `mine`, `others`, `unlocked`,
+  `shown`; contados antes do filtro) e, com `-Only`, `only`. `locks`: por item `dir`, `lockedAt`, `path`, `project`,
+  `state` `ok`/`error`/`pathTruncated`/`notMine`/`notComputed` e `files[]`.
+- Lote (`-FromList`): no topo `fromList`, `listKind` (`text`|`json`), `listSource`, `listSha256`, `listHash`, `only`,
+  `estimatedSec` e `next` (prévia), `journal` (`-Apply`), `listProjects`; por módulo `listLine`, `project`, `action`
+  (`checkout`, `checkoutKeepLocal`, `checkin`, `checkinKeep`, `undoUnchanged`, `undo`, `discard`, `none`),
+  `expectedState` e `expectedExitCode` (na prévia o `exitCode` é 0).
 - `localState`: `clean`, `modified`, `missing`, `notVersioned`, `unknown`.
 - `pathCheck`: `exact`, `prefix` (truncado, não provado), `verified`.
 - `state`: `ok`, `checkedOut`, `checkedOutKeptLocal`, `alreadyMine`, `needsCheckout`, `notVersioned`,
@@ -152,7 +194,8 @@ out` → 7; comentário igual a `keep` → 2.
   `refused`, `encodingChanged`, `notCheckedOut`, `localMissing`, `undone`, `discarded`,
   `releasedButDirty`, `failedCompensated`, `failed`, `timeout`, `error`, `pathTruncated`,
   `buildFailed`, `reverted`, `revertedCheckedIn`, `revertedNotCheckedIn`, `alreadyAtRevision`,
-  `memberNotInRevision`, `encodingConflict`, `checkoutFailed`, `readOnly`, `lockLost`, `changedDuringBuild`; administração:
+  `memberNotInRevision`, `encodingConflict`, `checkoutFailed`, `readOnly`, `lockLost`, `changedDuringBuild`; lote
+  (`-FromList`): `preview`, `skip`, `sameModule`, `pathUnknown`, `noProject` (e os de cada comando no `-Apply`); administração:
   `listed`, `candidate`, `notCandidate`, `preview`, `locked`, `shared`, `backupFailed`, `removedFromProject`,
   `removedFromArchive`, `archiveRefused`, `linkRemoved`, `renamed`, `conflict`, `hidden`, `unhidden`, `changed`,
   `unchanged`.
@@ -161,7 +204,7 @@ out` → 7; comentário igual a `keep` → 2.
 
 0 ok · 2 uso · 3 nada a fazer · 4 credencial · 5 não encontrado/`pathMismatch` · 6 travado por outro ·
 7 pré-condição · 8 conflito local · 9 servidor/console/timeout · 10 confirmação/manual ·
-11 lote parcial · 12 ambiente.
+11 lote parcial (também: parte dos módulos não verificada, `state: "error"`) · 12 ambiente.
 
 ## Configuração (`%APPDATA%\JEDI\JVCS\config.ini`, seção `[ai]`)
 

@@ -304,6 +304,214 @@ function Find-JaProjectFiles {
     return , $result
 }
 
+# ---------------------------------------------------------------- projeto/identidade por pasta (R4)
+#
+# Acervos sem .dpr/.dpk (xHarbour, scripts...) acham o projeto por:
+#   1. arquivo-marcador .jvcsproject na pasta (ou acima): "project=<nome>" e, opcional, "identity=<nome>";
+#   2. mapa [projects] do config.ini ("<pasta>=<projeto>"), gravado só pelo usuário (config set projectMap).
+# A identidade por pasta vem SÓ do mapa [identities] do config.ini (config set identityMap, só humano).
+# O identity= do .jvcsproject apenas CONFERE a identidade em uso (recusa se divergir), nunca a escolhe:
+# o marcador fica na pasta do projeto, onde a IA, o Git ou o servidor (sync) podem gravá-lo.
+
+$script:JaMarkerName = '.jvcsproject'
+$script:JaMarkerCache = @{}
+
+# Caracteres que, numa dica de comando (Assert-Mode/Assert-RiskyOption montam '-Project <nome>' SEM
+# aspas, e a IA repete a dica com -Confirmed), virariam outro comando ou expansão no PowerShell, cmd ou
+# bash. Nome vindo de arquivo (.jvcsproject, config.ini) é dado: não pode tê-los.
+$script:JaHintUnsafeChars = '[`$;&|''(){}\[\]%!^,@#=<>]'
+
+# '' = nome de projeto aceitável; senão, o motivo. O nome vai entre aspas numa linha do /input
+# (openproject/listproject "<nome>") e sem aspas nas dicas de aprovação: nada de controle, aspas,
+# caractere de caminho/máscara nem caractere especial de shell.
+function Test-JaProjectNameText {
+    param([string]$Name)
+    if ([string]::IsNullOrWhiteSpace($Name)) { return 'nome vazio' }
+    $n = $Name.Trim()
+    if ($n -match '[\x00-\x1f\x7f"]') { return 'caractere de controle ou aspas' }
+    if ($n -match '[<>|*?:\\/]') { return 'caractere de caminho ou máscara (< > | * ? : \ /)' }
+    if ($n -match $script:JaHintUnsafeChars) { return 'caractere especial de shell (` $ ; & '' ( ) { } [ ] % ! ^ , @ # =)' }
+    if ($n.StartsWith('-')) { return 'começa com -' }
+    if ($n -match '^\d+$') { return 'só dígitos (o console trataria como ID)' }
+    if ($n.Length -gt 50) { return 'mais de 50 caracteres' }
+    if (-not (Test-JaAnsiText $n)) { return "caractere fora da code page 1252 ($(Get-JaFirstNonAnsiChar $n))" }
+    return ''
+}
+
+# Mesmas regras do Get-JaIdentity (nome de subchave de HKCU\...\Identities).
+function Test-JaIdentityNameText {
+    param([string]$Name)
+    if ([string]::IsNullOrWhiteSpace($Name)) { return 'nome vazio' }
+    $n = $Name.Trim()
+    if ($n -match '[\\/"\x00-\x1f\x7f]' -or $n -eq '.' -or $n -eq '..') { return 'caractere inválido (\ / aspas ou controle)' }
+    if ($n.Length -gt 100) { return 'mais de 100 caracteres' }
+    if (-not (Test-JaAnsiText $n)) { return "caractere fora da code page 1252 ($(Get-JaFirstNonAnsiChar $n))" }
+    return ''
+}
+
+# Lê um .jvcsproject (até 4 KB; ANSI 1252, UTF-8 com ou sem BOM, UTF-16 com BOM - o ">" do PS 5.1 grava UTF-16).
+#   ; comentário (ou #)
+#   project=<nome do projeto no servidor>   obrigatório (ou a 1ª linha útil só com o nome, sem "=")
+#   identity=<identidade salva>             opcional: só confere a identidade em uso
+# O conteúdo é dado, não comando: o que fugir disso recusa o marcador (7). As mensagens não repetem o
+# texto do arquivo (só o motivo e o caminho).
+function Read-JaProjectMarker {
+    param([string]$Path)
+    $ck = $Path.ToLowerInvariant()
+    if ($script:JaMarkerCache.ContainsKey($ck)) { return $script:JaMarkerCache[$ck] }
+    $bad = "marcador $Path inválido"
+    $b = $null
+    try {
+        $fi = New-Object IO.FileInfo $Path
+        if ($fi.Length -le 4096) { $b = [IO.File]::ReadAllBytes($Path) }
+    } catch { throw (New-JaError 7 "${bad}: não foi possível ler o arquivo") }
+    if ($null -eq $b) { throw (New-JaError 7 "${bad}: mais de 4 KB") }
+    $text = $null
+    try {
+        if ($b.Length -ge 3 -and $b[0] -eq 0xEF -and $b[1] -eq 0xBB -and $b[2] -eq 0xBF) { $text = $script:JaUtf8Strict.GetString($b, 3, $b.Length - 3) }
+        elseif ($b.Length -ge 2 -and $b[0] -eq 0xFF -and $b[1] -eq 0xFE) { $text = (New-Object Text.UnicodeEncoding($false, $false, $true)).GetString($b, 2, $b.Length - 2) }
+        elseif ($b.Length -ge 2 -and $b[0] -eq 0xFE -and $b[1] -eq 0xFF) { $text = (New-Object Text.UnicodeEncoding($true, $false, $true)).GetString($b, 2, $b.Length - 2) }
+        else {
+            try { $text = $script:JaUtf8Strict.GetString($b) } catch { $text = $script:JaEnc1252.GetString($b) }
+        }
+    } catch { throw (New-JaError 7 "${bad}: codificação ilegível") }
+    $proj = $null; $ident = $null
+    $unknown = New-Object System.Collections.ArrayList
+    $n = 0
+    foreach ($raw in ($text -split "`r`n|`n|`r")) {
+        $n++
+        $line = $raw.Trim()
+        if ($line.Length -gt 0 -and $line[0] -eq [char]0xFEFF) { $line = $line.Substring(1).Trim() }
+        if ($line -eq '' -or $line.StartsWith(';') -or $line.StartsWith('#')) { continue }
+        if ($line -match '^([A-Za-z][A-Za-z0-9_]{0,29})\s*=\s*(.*)$') {
+            $k = $Matches[1].ToLowerInvariant(); $v = $Matches[2].Trim()
+            if ($k -eq 'project') {
+                if ($null -ne $proj) { throw (New-JaError 7 "${bad}: project repetido (linha $n)") }
+                $proj = $v
+            } elseif ($k -eq 'identity') {
+                if ($null -ne $ident) { throw (New-JaError 7 "${bad}: identity repetido (linha $n)") }
+                $ident = $v
+            } elseif ($unknown.Count -lt 5 -and -not $unknown.Contains($k)) { [void]$unknown.Add($k) }
+        } elseif ($null -eq $proj -and $line -notmatch '=') { $proj = $line }
+        else { throw (New-JaError 7 "${bad}: linha $n não reconhecida (use project=<nome> e, opcional, identity=<nome>)") }
+    }
+    if (-not $proj) { throw (New-JaError 7 "${bad}: falta project=<nome>") }
+    $why = Test-JaProjectNameText $proj
+    if ($why) { throw (New-JaError 7 "${bad}: project: $why") }
+    if ($ident -eq '') { $ident = $null }
+    if ($null -ne $ident) {
+        $why = Test-JaIdentityNameText $ident
+        # o identity= do marcador aparece nas mensagens/sugestões de comando: nada de caractere de shell
+        if (-not $why -and ($ident -match $script:JaHintUnsafeChars -or $ident.Trim().StartsWith('-'))) { $why = 'caractere especial de shell ou começa com -' }
+        if ($why) { throw (New-JaError 7 "${bad}: identity: $why") }
+        $ident = $ident.Trim()
+    }
+    $m = [pscustomobject]@{ Path = $Path; Dir = [IO.Path]::GetDirectoryName($Path); Project = $proj.Trim().ToLowerInvariant(); Identity = $ident; Unknown = @($unknown) }
+    $script:JaMarkerCache[$ck] = $m
+    return $m
+}
+
+# Marcadores .jvcsproject da pasta $Dir e acima (mais próximo primeiro), com o nível (0 = a própria pasta).
+function Find-JaProjectMarkers {
+    param([string]$Dir)
+    $out = New-Object System.Collections.ArrayList
+    $level = 0
+    while ($Dir) {
+        $p = [IO.Path]::Combine($Dir, $script:JaMarkerName)
+        if (Test-Path -LiteralPath $p -PathType Leaf) {
+            $m = Read-JaProjectMarker $p
+            [void]$out.Add([pscustomobject]@{ Path = $m.Path; Dir = $Dir; Level = $level; Project = $m.Project; Identity = $m.Identity; Unknown = $m.Unknown })
+        }
+        $parent = [IO.Path]::GetDirectoryName($Dir)
+        if (-not $parent -or $parent -eq $Dir) { break }
+        $Dir = $parent
+        $level++
+    }
+    return , $out
+}
+
+# Pasta normalizada para chave dos mapas: absoluta (d:\... ou \\srv\share\...), minúsculas, sem barra
+# final (exceto "d:\"). $null se não for caminho absoluto válido. O GetFullPath expande nomes 8.3 de
+# pastas existentes; subst, junções e links NÃO são resolvidos.
+function ConvertTo-JaDirKey {
+    param([string]$Path)
+    if ([string]::IsNullOrWhiteSpace($Path)) { return $null }
+    $p = $Path.Trim().Replace('/', '\')
+    if ($p -notmatch '^([A-Za-z]:\\|\\\\[^\\]+\\[^\\]+)') { return $null }
+    try { $p = [IO.Path]::GetFullPath($p) } catch { return $null }
+    $p = $p.TrimEnd('\')
+    if ($p -match '^[A-Za-z]:$') { $p += '\' }
+    return $p.ToLowerInvariant()
+}
+
+# Entrada do mapa (chave = pasta normalizada) que vale para $Dir: a da pasta mais próxima, atual ou acima.
+function Find-JaMapEntry {
+    param($Map, [string]$Dir)
+    if ($null -eq $Map -or $Map.Count -eq 0) { return $null }
+    $k = ConvertTo-JaDirKey $Dir
+    $level = 0
+    while ($k) {
+        if ($Map.Contains($k)) { return [pscustomobject]@{ Dir = $k; Value = [string]$Map[$k]; Level = $level } }
+        $parent = [IO.Path]::GetDirectoryName($k)
+        if (-not $parent -or $parent -eq $k) { break }
+        $k = $parent.TrimEnd('\')
+        if ($k -match '^[a-z]:$') { $k += '\' }
+        $level++
+    }
+    return $null
+}
+
+# Pastas do mapa [projects] que apontam para o projeto (busca reversa: rodado fora da pasta).
+function Get-JaMapDirsForProject {
+    param($Map, [string]$ProjectName)
+    $out = New-Object System.Collections.ArrayList
+    if ($null -eq $Map) { return , $out }
+    foreach ($k in @($Map.Keys)) { if ([string]$Map[$k] -ieq $ProjectName) { [void]$out.Add($k) } }
+    return , $out
+}
+
+# Projetos candidatos de um arquivo, da pasta dele para cima. Em cada nível: .jvcsproject (Rank 1),
+# mapa [projects] (Rank 2) e .dpr/.dpk (Rank 3). Ordem: nível, depois Rank; nome repetido fica no 1º.
+function Get-JaProjectCandidates {
+    param([string]$FullPath, $ProjectMap)
+    $dir0 = [IO.Path]::GetDirectoryName($FullPath)
+    $all = New-Object System.Collections.ArrayList
+    foreach ($m in (Find-JaProjectMarkers $dir0)) {
+        [void]$all.Add([pscustomobject]@{ Name = $m.Project; Level = $m.Level; Rank = 1; Source = '.jvcsproject'; Where = $m.Path })
+    }
+    if ($null -ne $ProjectMap -and $ProjectMap.Count -gt 0) {
+        $k = ConvertTo-JaDirKey $dir0
+        $level = 0
+        while ($k) {
+            if ($ProjectMap.Contains($k)) { [void]$all.Add([pscustomobject]@{ Name = [string]$ProjectMap[$k]; Level = $level; Rank = 2; Source = 'config.ini [projects]'; Where = $k }) }
+            $parent = [IO.Path]::GetDirectoryName($k)
+            if (-not $parent -or $parent -eq $k) { break }
+            $k = $parent.TrimEnd('\')
+            if ($k -match '^[a-z]:$') { $k += '\' }
+            $level++
+        }
+    }
+    foreach ($pf in (Find-JaProjectFiles $FullPath)) {
+        [void]$all.Add([pscustomobject]@{ Name = $pf.Name; Level = $pf.Level; Rank = 3; Source = '.dpr/.dpk'; Where = $pf.Path })
+    }
+    $out = New-Object System.Collections.ArrayList
+    foreach ($c in @($all | Sort-Object Level, Rank)) {
+        if (-not ($out | Where-Object { $_.Name -eq $c.Name })) { [void]$out.Add($c) }
+    }
+    return , $out
+}
+
+# Para o hook e o edit-preserve: o arquivo pertence a algum projeto (.dpr/.dpk, .jvcsproject ou mapa)?
+# Marcador inválido conta como "sim": o wrapper (ensure-checkout) explica o erro.
+function Test-JaProjectContext {
+    param([string]$FullPath, $ConfigInfo = $null)
+    if ((Find-JaProjectFiles $FullPath).Count -gt 0) { return $true }
+    $dir = [IO.Path]::GetDirectoryName($FullPath)
+    try { if ((Find-JaProjectMarkers $dir).Count -gt 0) { return $true } } catch { return $true }
+    if ($null -eq $ConfigInfo) { $ConfigInfo = Read-JaConfig }
+    return ($null -ne (Find-JaMapEntry -Map $ConfigInfo.ProjectMap -Dir $dir))
+}
+
 # ---------------------------------------------------------------- contexto de agente
 
 # Contexto de agente: -Agent, CLAUDECODE=1, AI_AGENT, ou entrada padrão redirecionada.
@@ -442,7 +650,31 @@ function Read-JaConfig {
         if (-not [int]::TryParse([string]$cfg[$spec[0]], [ref]$n) -or $n -lt $spec[1] -or $n -gt $spec[2]) { $n = [int]$script:JaConfigDefaults[$spec[0]] }
         $cfg[$spec[0]] = $n
     }
-    return [pscustomobject]@{ Values = $cfg; Sources = $src; Path = $path }
+    $maps = Read-JaConfigMaps -Path $path
+    return [pscustomobject]@{ Values = $cfg; Sources = $src; Path = $path; ProjectMap = $maps.ProjectMap; IdentityMap = $maps.IdentityMap; MapWarnings = $maps.MapWarnings }
+}
+
+# Mapas por pasta (R4): [projects] pasta=projeto e [identities] pasta=identidade. Só o usuário grava
+# (config set projectMap/identityMap é recusado à IA; o settings nega editar o config.ini).
+function Read-JaConfigMaps {
+    param([string]$Path)
+    $pm = [ordered]@{}; $im = [ordered]@{}
+    $mw = New-Object System.Collections.ArrayList
+    foreach ($spec in @(@('projects', $pm), @('identities', $im))) {
+        $sec = Read-JaIniSection -Path $Path -Section $spec[0]
+        foreach ($k in @($sec.Keys)) {
+            $dk = ConvertTo-JaDirKey $k
+            $v = ([string]$sec[$k]).Trim()
+            $why = ''
+            if (-not $dk) { $why = 'pasta inválida (use o caminho absoluto)' }
+            elseif ($spec[0] -eq 'projects') { $why = Test-JaProjectNameText $v }
+            else { $why = Test-JaIdentityNameText $v }
+            if ($why) { [void]$mw.Add("config.ini [$($spec[0])] ${k}: $why; entrada ignorada"); continue }
+            if ($spec[0] -eq 'projects') { $v = $v.ToLowerInvariant() }
+            $spec[1][$dk] = $v
+        }
+    }
+    return [pscustomobject]@{ ProjectMap = $pm; IdentityMap = $im; MapWarnings = $mw }
 }
 
 function Get-JaConfigKeyName {
@@ -539,6 +771,59 @@ function Set-JaConfigValue {
     $bytes = (New-Object Text.UTF8Encoding($true)).GetPreamble() + $script:JaUtf8NoBom.GetBytes($text)
     [IO.File]::WriteAllBytes($path, $bytes)
     return $name
+}
+
+# Grava (ou remove, com $Value vazio) "pasta=valor" na seção [projects]/[identities] do config.ini,
+# preservando o resto (UTF-8 com BOM e CRLF, como Set-JaConfigValue). As chaves existentes são
+# comparadas já normalizadas; todas as que apontam para a mesma pasta saem. Devolve quantas saíram.
+function Set-JaConfigMapValue {
+    param([ValidateSet('projects', 'identities')][string]$Section, [string]$DirKey, [string]$Value)
+    if (-not $DirKey -or $DirKey -match '[=\x00-\x1f\x7f"]' -or $DirKey -match '^[;#\[]') { throw (New-JaError 2 'pasta inválida para o mapa do config.ini') }
+    if ([string]$Value -match '[\x00-\x1f\x7f]') { throw (New-JaError 2 'valor do mapa com caractere de controle') }
+    $path = Get-JaConfigPath
+    $dir = Split-Path -Parent $path
+    if (-not (Test-Path -LiteralPath $dir)) { [void](New-Item -ItemType Directory -Path $dir -Force) }
+    $lines = New-Object System.Collections.Generic.List[string]
+    if (Test-Path -LiteralPath $path) {
+        foreach ($l in [IO.File]::ReadAllLines($path, $script:JaUtf8NoBom)) { $lines.Add($l.TrimStart([char]0xFEFF)) }
+    } else {
+        $lines.Add('; JEDI VCS - automação por IA (Claude Code). Sem segredos: a senha fica na identidade salva.')
+    }
+    # Mesma leitura do Read-JaIniSection: comentário só no INÍCIO da linha (pasta pode ter '#' ou ';',
+    # ex.: D:\Projetos\C#) e a seção pode aparecer em mais de um bloco (todos contam; grava no 1º).
+    $secStart = -1; $secEnd = -1; $inSec = $false
+    $hits = New-Object System.Collections.Generic.List[int]
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $t = $lines[$i].Trim()
+        if ($t -match '^\[(.+)\]$') {
+            if ($inSec -and $secEnd -lt 0) { $secEnd = $i }
+            $inSec = ($Matches[1].Trim() -ieq $Section)
+            if ($inSec -and $secStart -lt 0) { $secStart = $i }
+            continue
+        }
+        if (-not $inSec -or $t -eq '' -or $t.StartsWith(';') -or $t.StartsWith('#')) { continue }
+        if ($t -match '^([^=]+?)\s*=' -and (ConvertTo-JaDirKey $Matches[1].Trim()) -eq $DirKey) { $hits.Add($i) }
+    }
+    if ($secStart -ge 0 -and $secEnd -lt 0) { $secEnd = $lines.Count }
+    $before = @($hits | Where-Object { $_ -lt $secEnd }).Count
+    for ($j = $hits.Count - 1; $j -ge 0; $j--) { $lines.RemoveAt($hits[$j]) }
+    if ($secStart -ge 0) { $secEnd -= $before }
+    if ($Value) {
+        $newLine = "$DirKey=$Value"
+        if ($secStart -ge 0) {
+            $insertAt = $secEnd
+            while ($insertAt -gt $secStart + 1 -and $lines[$insertAt - 1].Trim() -eq '') { $insertAt-- }
+            $lines.Insert($insertAt, $newLine)
+        } else {
+            if ($lines.Count -gt 0 -and $lines[$lines.Count - 1].Trim() -ne '') { $lines.Add('') }
+            $lines.Add("[$Section]")
+            $lines.Add($newLine)
+        }
+    }
+    $text = ($lines -join "`r`n") + "`r`n"
+    $bytes = (New-Object Text.UTF8Encoding($true)).GetPreamble() + $script:JaUtf8NoBom.GetBytes($text)
+    [IO.File]::WriteAllBytes($path, $bytes)
+    return $hits.Count
 }
 
 # ---------------------------------------------------------------- auditoria

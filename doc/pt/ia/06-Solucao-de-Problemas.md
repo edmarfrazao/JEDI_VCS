@@ -22,13 +22,33 @@ visível). Quando não encontra, devolve `unknown`/`pathTruncated`.
 - Confira se o projeto local está na **mesma pasta** registrada no servidor (ver "caminho diferente" abaixo).
 - `pathCheck=prefix` em `status`/`list` é normal: checkout e check-in provam o caminho antes de agir.
 
+## `state=error` ("estado não verificado") e código 11 no `status`, `sync` ou `locks`
+
+**Causa.** A revisão daquele módulo não baixou do servidor. O caso mais comum: `getmodule <id> não gravou
+nenhum arquivo` — o console pega a revisão de maior número e ela não tem arquivo no servidor (no acervo xHarbour,
+um `.lnk`). Também: erro do console no `getmodule` ou no `sharedby` (`locks`). Os outros módulos foram verificados;
+o comando sai 11 (todos com erro: 9). Nada é gravado nesse módulo pelo `sync`.
+
+**Solução.**
+- Veja só os não verificados: `status -Project <p> -Only error -Text`.
+- Confira o módulo com `history <arq>` (se a última revisão não tem arquivo, resolva pelo cliente standalone).
+- `localState=missing` no item = o arquivo também não existe no disco.
+
 ## Projeto não encontrado / `informe -Project`
 
 | Mensagem | Causa | Solução |
 |---|---|---|
-| `[ERRO 2] informe -Project <nome.dpr> (não há um único .dpr/.dpk na pasta atual)` | a pasta tem mais de um `.dpr`/`.dpk` com nome próprio (ex.: `Exemplo01.dpr` e `Exemplo01 - Copia.dpr`) ou nenhum | `-Project Exemplo01.dpr`, ou remova as cópias da pasta do projeto |
-| `projeto '<nome>' não existe no servidor` (5) | o projeto não foi criado no JEDI VCS, ou o nome difere | crie pelo cliente (Project Manager); confira com `projects` |
-| arquivo em dois projetos no mesmo nível (5) | ambiguidade | `-Project` |
+| `[ERRO 2] informe -Project <projeto> (não há um único .dpr/.dpk na pasta atual)` | a pasta tem mais de um `.dpr`/`.dpk` com nome próprio (ex.: `Exemplo01.dpr` e `Exemplo01 - Copia.dpr`) | `-Project Exemplo01.dpr`, ou remova as cópias da pasta do projeto |
+| `[ERRO 2] informe -Project <projeto> (nenhum .jvcsproject nem mapa [projects] ...)` | pasta sem `.dpr`, sem marcador e sem mapa (ex.: acervo xHarbour) | `-Project <nome>`, ou `.jvcsproject` com `project=<nome>` na pasta do acervo, ou o usuário roda `config set projectMap "<pasta>" <nome>` |
+| `[ERRO 2] a pasta ... não declara projeto` | `-Project <pasta>` numa pasta sem `.jvcsproject`, sem mapa e sem um único `.dpr/.dpk` | informe o nome do projeto |
+| `[ERRO 2] administração: informe -Project <nome do projeto>, não a pasta` | `rm-project`, `modules`, `cleanup`... com uma pasta | escreva o nome do projeto (a pasta resolveria pelo `.jvcsproject`) |
+| `[ERRO 2] parte dos arquivos está em ... e parte fora do mapa` / `arquivos em pastas de identidades diferentes` | arquivos de pastas com identidades diferentes (mapa `[identities]`) numa chamada só | uma chamada por pasta/identidade |
+| `[ERRO 4] identidade 'X' não existe em Identities (config.ini [identities] ...)` | o mapa `[identities]` aponta uma identidade que não está salva | o usuário salva a identidade pela GUI ou corrige o mapa (`config set identityMap "<pasta>" <identidade>`) |
+| `[ERRO 4] a pasta declara identity=X em ...\.jvcsproject` | o marcador pede outra identidade que a em uso | o usuário registra no terminal dele: `config set identityMap "<pasta>" X`; a IA não usa `-Identity` por conta própria |
+| `[ERRO 7] marcador ...\.jvcsproject inválido: ...` | linha não reconhecida, `project` repetido, nome com aspas, controle, caractere de caminho ou caractere especial de shell (`project: caractere especial de shell`), mais de 4 KB | corrija o arquivo (`project=<nome>`) ou apague-o; enquanto isso, **todo** comando abaixo daquela pasta dá 7 (inclusive `identity`, `locks` e o hook de fontes Delphi) |
+| `[ERRO 10] -Identity X, diferente da identidade registrada pelo usuário para a pasta` | a IA tentou sair da identidade mapeada para a pasta | só com a aprovação do usuário (`-Confirmed`) |
+| `projeto '<nome>' não existe no servidor` (5) | o projeto não foi criado no JEDI VCS, ou o nome difere (também quando vem do `.jvcsproject` ou do mapa: confira `projectSource`) | crie pelo cliente (Project Manager) ou `addproject`; confira com `projects` |
+| arquivo em dois projetos no mesmo nível (5) | ambiguidade (ex.: dois `.dpr` na mesma pasta) | `-Project` |
 | `notVersioned` | o arquivo não é módulo do projeto | se for o caso, `add <arq> -Comment "..."` (console 2026, modo de check-in) ou pelo cliente |
 
 ## Nomes padrão (`Project1`, `Unit1`) recusados

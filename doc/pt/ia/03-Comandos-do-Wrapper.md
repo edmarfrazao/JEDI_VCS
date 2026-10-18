@@ -22,14 +22,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.ps1" <co
 | `help` | resumo dos comandos | não |
 | `identity [-Test]` | identidade em uso (nome, host, porta, usuário, se tem senha, origem). `-Test` faz login. Nunca mostra a senha | não |
 | `projects` | projetos do servidor | não |
-| `list [-Project p]` | módulos do projeto: versão, lock e estado local pelo CRC que o console calcula (rápido, aproximado) | não |
-| `locks [-All]` | módulos em checkout: os meus, ou de todos | não |
-| `status <arq...>` / `status [-Project p]` | estado **exato**: baixa a última revisão numa pasta temporária e compara bytes | não |
+| `list [-Project p] [-Only estados]` | módulos do projeto: versão, lock e estado local pelo CRC que o console calcula (rápido, aproximado) | não |
+| `locks [-All] [-NoLocalState] [-Only estados]` | módulos em checkout: os meus (com o estado local: `clean` = lock sem alteração, `modified` = falta check-in), ou de todos | não |
+| `status <arq...>` / `status [-Project p] [-Only estados]` | estado **exato**: baixa a última revisão numa pasta temporária e compara bytes; módulo que não baixa sai `state: error` e os outros seguem (11) | não |
 | `checkout <arq...> [-Force]` | checkout seguro | sim |
 | `ensure-checkout <arq> [-CheckOnly]` | para hooks: idempotente. `-CheckOnly` só informa | sim (sem `-CheckOnly`) |
 | `checkin <arq...> -Comment "texto" [-AllowEncodingChange] [-SkipBuild]` | check-in; sem mudança desfaz o checkout; com `buildCheck` compila antes | sim |
 | `checkin <arq...> -Comment "texto" -Keep` | **Put**: revisão nova e o checkout continua (console 2026) | sim |
 | `undocheckout <arq...> [-Discard]` | desfaz o checkout (só com local igual ao servidor, ou `-Discard`) | sim |
+| `checkout\|checkin\|undocheckout -FromList <arq> [-Only ...] [-MaxModules n]` | lote a partir de lista (caminhos absolutos, um por linha, `#` comenta) ou do JSON de `status`/`list`/`locks`/lote anterior (`-Only "modified,unlocked"`, `"clean,mine"`, `failed`...); sem `-Apply` é **prévia** com `listHash` (nada muda); até 500 (`-MaxModules` até 5000); família conta uma vez (`sameModule`) | não (prévia) |
+| `... -FromList <arq> -Apply -ListHash <hash>` | executa pelos comandos de um arquivo (modos, `-Force`, `-Discard`, codificação, por módulo); pela IA **sempre** com `-Confirmed`; hash diferente → 10; saída por módulo (`listLine`), 11 misto; diário em `%LOCALAPPDATA%\JEDI\JVCS\lote` | sim |
 | `diff <arq> [-Rev x.y]` | diff do arquivo local contra a revisão do servidor (padrão: a última) | não |
 | `diff <arq> -Rev x.y -Rev2 y.z` | diff entre duas revisões do servidor | não |
 | `history <arq> [-Max n]` | revisões com data, usuário, família, comentário e labels (console 2026) | não |
@@ -51,26 +53,34 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.ps1" <co
 | `milestones [-Project p \| -All]` | milestones definidos e atingidos (console 2026) | não |
 | `bugs [<arq>] \| -Project p \| -All \| -Bug n \| -Summary [-OpenOnly]` | bugs do módulo/projeto/servidor (console 2026) | não |
 | `bug-add -Title "..." [...]` / `bug-update -Bug n [...]` / `bug-link -Bug n <arq...> \| -Project p [-Remove \| -Done \| -Reopen]` | cria e liga / altera / liga, desliga ou marca bug (console 2026) | sim |
-| `addproject <proj.dpr> [-Comment "descrição"]` | cria o projeto no servidor (console 2026) | sim |
+| `addproject <proj.dpr\|nome> [-Comment "descrição"]` | cria o projeto no servidor (console 2026); acervo sem `.dpr` (xHarbour...): nome sem extensão | sim |
 | `add <arq...> -Comment "texto"` | cadastra e faz o 1º check-in 0.1 com a família (console 2026) | sim |
 | `modules -Project p [-Deserted]` | todos os módulos ligados ao projeto, com flags; `-Deserted`: abandonados (console 2026) | não |
 | `rm-module`, `rename-module`, `hide`, `comment`, `cleanup` | administração de módulos: prévia; `-Apply` exige `moduleAdmin` (console 2026) | só com `-Apply` |
 | `rm-project`, `restore-project`, `rename-project` | administração de projetos: prévia; `-Apply` exige `projectAdmin=on` (console 2026) | só com `-Apply` |
 | `config list \| get <chave> \| set <chave> <valor>` | configuração (`set` só por humano) | não |
+| `config set projectMap "<pasta>" <projeto\|none>` / `config set identityMap "<pasta>" <identidade\|none>` | projeto padrão / identidade salva da pasta e das subpastas (só humano; `config get projectMap` mostra) | não |
+
+**Projeto e identidade por pasta (acervo sem `.dpr`).** Sem `-Project`, o wrapper usa a pasta mais próxima
+(da atual para cima) que declara um projeto: arquivo `.jvcsproject` (`project=<nome>`), mapa `[projects]` do
+`config.ini` ou, só na pasta atual, o único `.dpr/.dpk`. A saída traz `projectSource`. A identidade vem de
+`-Identity`, do mapa `[identities]` (pasta dos arquivos), de `[ai] identity` ou da `LastUsedID`; o `identity=` do
+`.jvcsproject` só confere. Detalhes: `tools/ai/LEIAME.md`, seção 18 (R4).
 
 Os modos valem para o que muda alguma coisa: `label`, `todo-add`/`todo-done`, `bug-*`, `addproject`, `add` e
 `checkin -Keep` seguem o modo de **check-in** (a administração de projetos também: `checkin=manual` → 10);
 `sync -Apply` (todas as formas) e `revert` seguem o modo de **checkout** (o `revert -Checkin`, os dois). A
 administração depende ainda da chave `moduleAdmin`/`projectAdmin`, que só você liga. Pela IA, exigem `-Confirmed` em
 **qualquer** modo: `checkout -Force`, `checkin -AllowEncodingChange`, `undocheckout -Discard`,
-`sync -Apply -Force`, `revert -Checkin`/`-Force`/`-AllowEncodingChange`, `-SkipBuild` e todo `-Apply` de
-administração. Detalhes de cada comando novo: `tools/ai/LEIAME.md`, seções 11 a 17.
+`sync -Apply -Force`, `revert -Checkin`/`-Force`/`-AllowEncodingChange`, `-SkipBuild`, todo `-Apply` de
+administração e o `-Apply` do lote (`-FromList`, sempre com o `-ListHash` da prévia). Detalhes de cada comando novo:
+`tools/ai/LEIAME.md`, seções 11 a 18.
 
 ### Opções
 
 | Opção | Efeito |
 |---|---|
-| `-Project <nome.dpr\|caminho>` | projeto explícito (obrigatório se a pasta tiver mais de um `.dpr`/`.dpk` com nome próprio) |
+| `-Project <nome.dpr\|nome\|pasta>` | projeto explícito; sem ele vale o `.jvcsproject`/mapa `[projects]` da pasta mais próxima ou o único `.dpr/.dpk` da pasta atual (obrigatório se a pasta tiver mais de um `.dpr`/`.dpk` com nome próprio); uma pasta vale o projeto que ela declara |
 | `-Identity <nome>` | outra identidade salva |
 | `-Text` | saída legível em vez de JSON |
 | `-Confirmed` | aprovação humana já dada (escreva exatamente assim) |
@@ -84,6 +94,9 @@ administração. Detalhes de cada comando novo: `tools/ai/LEIAME.md`, seções 1
 | `-Bug`, `-Title`, `-Severity`, `-Status`, `-Keywords`, `-ReportedBy`, `-Description`, `-DescriptionFile`, `-Workaround`, `-WorkaroundFile`, `-Summary`, `-OpenOnly`, `-Remove`, `-Done` | bugs |
 | `-Lines`, `-IgnoreWhitespace`, `-Checkin`, `-SkipBuild` | blame, revert e compilação |
 | `-Relink`, `-RenameFiles`, `-Archive`, `-Unhide`, `-OutComment`, `-Deserted` | administração |
+| `-Only <lista>` | `status`, `list`, `locks`: só os módulos nesses estados (`clean`, `modified`, `missing`, `unknown`, `notVersioned`, `error`) e/ou locks (`locked`, `mine`, `others`, `unlocked`); OU no grupo, E entre os grupos. No lote (`-FromList` com JSON), também `ok`/`failed` (resultado de lote anterior) |
+| `-FromList <arquivo>`, `-ListHash <12 hex>` | lote de `checkout`/`checkin`/`undocheckout` (prévia; `-Apply -ListHash` executa) |
+| `-NoLocalState` | `locks`: só a lista, sem calcular o estado local |
 
 Escreva as opções **por extenso**: `-Pr`, `-De` e `-Ti` são ambíguas.
 
@@ -111,6 +124,31 @@ jvcs-ai.ps1 status -Project Exemplo01.dpr -Text
 `localState`: `clean` (igual ao servidor), `modified`, `missing`, `notVersioned` ou `unknown`.
 `pathCheck`: `exact` (caminho inteiro visível), `prefix` (o console mostra o caminho truncado; não
 provado) ou `verified` (provado por checkout/check-in).
+
+Módulo cuja revisão não baixa do servidor (revisão sem arquivo, erro do console) sai com `state: "error"` e
+`message` "estado não verificado: ..." (`localState` `missing` se o arquivo não existe no disco, senão `unknown`);
+os outros são verificados e o comando sai **11**. Em projeto grande, filtre:
+
+```powershell
+jvcs-ai.ps1 status -Project sesis -Only modified,unlocked     # alterados sem checkout
+jvcs-ai.ps1 status -Project sesis -Only missing,error
+```
+
+O JSON traz sempre `counts` (totais por estado, contados antes do filtro) e, com `-Only`, `only`; o código de
+saída vale para todos os módulos (um erro escondido pelo filtro ainda dá 11).
+
+### `locks`
+
+```powershell
+jvcs-ai.ps1 locks -Text                # os meus, com o estado local
+jvcs-ai.ps1 locks -Only clean          # locks sem alteração: candidatos a undocheckout
+jvcs-ai.ps1 locks -All -NoLocalState   # de todos, só a lista
+```
+
+Nos módulos em checkout por você: `localState` (`clean` = lock sem alteração, `undocheckout` libera; `modified` =
+falta `checkin`), `path`, `project` e `files[]`. O projeto de cada módulo vem do `sharedby` (console 2026); com o
+console original, informe `-Project p` (só os módulos desse projeto são calculados). Locks de outros usuários:
+`state: "notMine"`. Detalhes: `tools/ai/LEIAME.md`, seção 18.
 
 ### `checkout`
 
@@ -145,6 +183,33 @@ Usado pelo hook. Não versionado → ok (nada a fazer); já é meu → ok; de ou
 - Sem `-Discard`: só quando o local é igual à base; senão 8 e o lock fica.
 - `-Discard` (pela IA, só com `-Confirmed`): backup, desfaz e restaura a base como somente leitura.
 
+### Lote (`-FromList`)
+
+```powershell
+jvcs-ai.ps1 status -Project sesis > st.json                                         # o JSON serve de lista
+jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force             # prévia (nada muda)
+jvcs-ai.ps1 checkout -FromList st.json -Only "modified,unlocked" -Force -Apply -ListHash <hash da prévia>
+jvcs-ai.ps1 undocheckout -FromList lista.txt                                        # lista de texto: um caminho por linha
+```
+
+- **Lista**: texto com um caminho absoluto por linha (`#` comenta, aspas em volta e linhas vazias são ignoradas) ou o
+  JSON de `status`, `list`, `locks` ou de um lote anterior, em UTF-8, UTF-16 com BOM (o `>` do PowerShell) ou ANSI.
+  Uma linha ruim (relativa, curinga, aspas, controle, ponto no fim, fora da CP1252, pasta protegida) recusa a lista
+  inteira (2), sem consultar o servidor; a mensagem só cita linha com forma de caminho.
+- **`-Only`** (só com JSON) filtra pelo que o JSON registrou (o retrato); no lote vale também `ok`/`failed`.
+- **Projeto**: `-Project`; sem ele, o de cada arquivo (`.jvcsproject`, mapa ou `.dpr/.dpk`); o `project` do JSON só
+  para o arquivo que isso não resolve. **Identidade**: decidida uma vez pelas pastas dos alvos; pastas de
+  identidades diferentes → 2 (divida a lista).
+- **Prévia** (sem `-Apply`): por módulo `action` (`checkout`, `checkoutKeepLocal`, `checkin`, `checkinKeep`,
+  `undoUnchanged`, `undo`, `discard`, `none`), `expectedState`/`expectedExitCode` e `listLine`; no topo `listHash`,
+  `estimatedSec` e `next` (o comando do `-Apply`). Código 0, ou 3 sem nada a fazer.
+- **`-Apply`**: pelos mesmos comandos de um arquivo, módulo a módulo. Pela IA, sempre `-ListHash` e `-Confirmed`; o
+  hash cobre identidade, comando, opções e, por módulo, caminho, projeto, ID e ação prevista: se algo mudou (até o
+  disco: `undo` que virou `discard`), 10 e nada é feito. Saída na ordem da lista; 11 quando é misto (use a saída como
+  lista com `-Only failed` para repetir só os outros). Diário em `%LOCALAPPDATA%\JEDI\JVCS\lote\*.jsonl` (`plan`,
+  `start`/`done` por módulo, `end`): se o processo morrer no meio, mostra o que já foi feito.
+- Detalhes, limites e testes: `tools/ai/LEIAME.md`, seção 18 (R7).
+
 ### `config`
 
 ```powershell
@@ -152,6 +217,15 @@ jvcs-ai.ps1 config list -Text
 jvcs-ai.ps1 config get checkout
 jvcs-ai.ps1 config set checkin confirm     # só no seu terminal
 ```
+
+### Fontes fora do JEDI, Git, todos os projetos e diagnóstico (S0002)
+
+- `untracked -Path <pasta> -Pattern *.prg -Recurse` ou `untracked -FromXbp <arq.xbp>`: fontes que não são módulo de nenhum projeto.
+- `verify -FromGit <rev>..HEAD` ou `verify -Since 7d`: o que mudou no Git e está atrás no JEDI (`modifiedNoLock`, `notVersioned`...); 7 = pendência.
+- `status -AllProjects`, `locks -OlderThan 7d` (a hora do lock vem em UTC), `doctor`/`ping`.
+- `add -Preview`, `checkin -CommentFromGit` e `diff -Encoding oem`.
+
+Detalhes e testes: `tools\ai\LEIAME.md` §19.
 
 ## Saída JSON
 
@@ -174,15 +248,15 @@ e, nos comandos novos, `changes`, `labels`/`label`, `todos`/`todo`, `milestones`
 Cada item de `modules`: `id`, `name`, `path`, `version`, `lockedBy`, `localState`, `state`, `exitCode`,
 `message`, `pathCheck` e `files[]` (`name`, `localState`, `readOnly`).
 
-Exemplos (`identity` e `status` reais de 13/10/2026; `checkin` resumido do teste de 12/10/2026;
-caminhos, servidor e usuário trocados por marcadores):
+Exemplos (`identity` e `status` reais de 13/10/2026, o `status` com o `counts` da 1.4.0 do pedido 0005;
+`checkin` resumido do teste de 12/10/2026; caminhos, servidor e usuário trocados por marcadores):
 
 ```json
 {"ok":true,"command":"identity","project":null,"modules":[],"message":"identidade 'DEFAULT': usuario@servidor:2106","exitCode":0,"identity":{"name":"DEFAULT","host":"servidor","port":"2106","user":"usuario","hasPassword":true,"source":"LastUsedID=0"}}
 ```
 
 ```json
-{"ok":true,"command":"status","project":"exemplo01.dpr","modules":[{"id":4,"name":"uprincipal.pas","path":"C:\\...\\Ex1\\uPrincipal.pas","version":"0.14","lockedBy":"","localState":"clean","state":"ok","exitCode":0,"message":"","pathCheck":"prefix","files":[{"name":"uPrincipal.dfm","localState":"clean","readOnly":true},{"name":"uPrincipal.pas","localState":"clean","readOnly":true}]}],"message":"1 arquivo(s) verificado(s)","exitCode":0}
+{"ok":true,"command":"status","project":"exemplo01.dpr","modules":[{"id":4,"name":"uprincipal.pas","path":"C:\\...\\Ex1\\uPrincipal.pas","version":"0.14","lockedBy":"","localState":"clean","state":"ok","exitCode":0,"message":"","pathCheck":"prefix","files":[{"name":"uPrincipal.dfm","localState":"clean","readOnly":true},{"name":"uPrincipal.pas","localState":"clean","readOnly":true}]}],"message":"1 arquivo(s) verificado(s) [clean 1]","exitCode":0,"counts":{"total":1,"clean":1,"modified":0,"missing":0,"unknown":0,"notVersioned":0,"error":0,"locked":0,"mine":0,"others":0,"unlocked":1,"shown":1}}
 ```
 
 ```json
@@ -194,13 +268,14 @@ caminhos, servidor e usuário trocados por marcadores):
 | Grupo | Estados |
 |---|---|
 | sucesso | `ok`, `checkedOut`, `checkedOutKeptLocal`, `alreadyMine`, `checkedIn`, `unchangedUndone`, `undone`, `discarded`, `notVersioned` |
-| informativo | `needsCheckout`, `pathTruncated` |
+| informativo | `needsCheckout`, `pathTruncated`, `notMine` e `notComputed` (`locks`) |
 | impedimento | `lockedByOther`, `localModified`, `needsConfirmation`, `pathMismatch`, `notCheckedOut`, `localMissing`, `encodingChanged`, `refused` |
 | falha | `releasedButDirty`, `failedCompensated`, `failed`, `timeout`, `error` |
 | Put, revert e compilação | `checkedInKept`, `unchangedKept`, `reverted`, `revertedCheckedIn`, `revertedNotCheckedIn`, `alreadyAtRevision`, `memberNotInRevision`, `encodingConflict`, `checkoutFailed`, `readOnly`, `buildFailed`, `lockLost`, `changedDuringBuild` |
 | labels, sync e ToDo/bugs | `labeled`, `notInLabel`, `hidden`, `keptOld`, `notLabeled`, `mismatch`, `shared`, `notInTarget`, `export`, `exported`, `noPath`, `badPath`, `created`, `done`, `reopened`, `linked`, `alreadyLinked`, `unlinked`, `notLinked`, `open` |
 | administração de módulos | `listed`, `candidate`, `notCandidate`, `preview`, `locked`, `backupFailed`, `removedFromProject`, `removedFromArchive`, `archiveRefused`, `linkRemoved`, `renamed`, `conflict`, `unhidden`, `changed`, `unchanged`, `refused` |
 | administração de projetos | `preview`, `removed`, `restored`, `relinked`, `renamed`, `alreadyDeleted`, `notDeleted`, `nameInUse`, `noRecord`, `partial` |
+| Lote (`-FromList`) | `preview`, `skip`, `sameModule`, `pathUnknown`, `noProject` (e os de cada comando no `-Apply`) |
 
 A tabela traz os estados principais; os de cada comando novo estão no `tools/ai/LEIAME.md` (seções 13 a 17).
 
@@ -217,8 +292,8 @@ A tabela traz os estados principais; os de cada comando novo estão no `tools/ai
 | 7 | pré-condição: sem checkout, codificação mudou, servidor recusou, checkout compensado | ler `message`/`state` |
 | 8 | conflito local: arquivo local difere do servidor (nada travado nem liberado) | perguntar ao usuário |
 | 9 | servidor/console: conexão, timeout, saída inesperada | repetir depois; avisar se persistir |
-| 10 | aprovação necessária (`-Confirmed`), modo manual, `config set` por agente | mostrar ao usuário e pedir aprovação, ou deixar com ele |
-| 11 | lote parcial (resultados diferentes por arquivo) | ver cada item de `modules` |
+| 10 | aprovação necessária (`-Confirmed`), modo manual, `config set` por agente; lote pela IA sem `-ListHash` ou com hash diferente | mostrar ao usuário e pedir aprovação, ou deixar com ele; no lote, refazer a prévia |
+| 11 | lote parcial (resultados diferentes por arquivo; também parte dos módulos não verificada, `state: "error"`) | ver cada item de `modules` |
 | 12 | ambiente: `jvcs.exe` ausente ou não reconhecido, mutex ocupado | conferir instalação/`jvcsExe`; esperar |
 
 O `jvcs.exe` original devolve 0 mesmo com erro; o wrapper ignora o código dele e interpreta a saída.

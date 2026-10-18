@@ -48,18 +48,36 @@ try {
 
     $clean = New-Object System.Collections.Generic.List[string]
     $dirty = New-Object System.Collections.Generic.List[string]
+    $unk = New-Object System.Collections.Generic.List[string]
     $keep = New-Object System.Collections.Generic.List[string]
     if ($existing.Count -gt 0) {
         $out = & $wrapper 'status' @existing -TimeoutSec 45 -LockWaitSec 20
         $res = (@($out) -join "`n") | ConvertFrom-Json
         foreach ($m in @($res.modules)) {
+            # sem .dpr/.dpk, .jvcsproject nem mapa [projects] acima do arquivo (ex.: acervo xHarbour com checkout
+            # por -Project): o status não acha o projeto; o checkout continua registrado e o usuário é avisado
+            if ($m.state -eq 'noProject') {
+                [void]$keep.Add([string]$m.path)
+                [void]$unk.Add([IO.Path]::GetFileName([string]$m.path) + ' (projeto não identificado: status <arquivo> -Project <projeto>)')
+                continue
+            }
+            # state=error (status 1.4.0 com o R1): a revisão não baixou, ou o arquivo não pôde ser resolvido
+            # (sem lockedBy); não dá para dizer se mudou nem se o checkout continua: fica no registro e avisa
+            if ($m.state -eq 'error') {
+                [void]$keep.Add([string]$m.path)
+                [void]$unk.Add([IO.Path]::GetFileName([string]$m.path))
+                continue
+            }
             if (-not $m.lockedBy) { continue }
             [void]$keep.Add([string]$m.path)
             $nm = [IO.Path]::GetFileName([string]$m.path)
             if ($m.localState -eq 'clean') { [void]$clean.Add($nm) } else { [void]$dirty.Add($nm) }
         }
-        # o que não pôde ser verificado (erro) continua no registro
-        foreach ($m in @($res.modules)) { if ($m.state -eq 'error' -and $keep -notcontains [string]$m.path) { [void]$keep.Add([string]$m.path) } }
+        # status que falhou como um todo ou no meio (timeout, credencial, ambiente, mutex): nada sai do registro
+        if (-not $res.ok -and [int]$res.exitCode -ne 11 -and @($res.modules).Count -lt $existing.Count) {
+            foreach ($ef in $existing) { if ($keep -notcontains [string]$ef) { [void]$keep.Add([string]$ef) } }
+            [void]$unk.Add("(status falhou: $($res.message))")
+        }
     }
     if ($keep.Count -eq 0) { Remove-Item -LiteralPath $marker -Force -ErrorAction SilentlyContinue }
     else { [IO.File]::WriteAllText($marker, (($keep -join "`r`n") + "`r`n"), (New-Object Text.UTF8Encoding($false))) }
@@ -67,6 +85,7 @@ try {
     $parts = New-Object System.Collections.Generic.List[string]
     if ($clean.Count -gt 0) { $parts.Add('em checkout SEM alteração (desfaça com undocheckout se não for editar): ' + ($clean -join ', ')) }
     if ($dirty.Count -gt 0) { $parts.Add('em checkout COM alteração (falta check-in): ' + ($dirty -join ', ')) }
+    if ($unk.Count -gt 0) { $parts.Add('em checkout, NÃO verificados (confira com status): ' + ($unk -join ', ')) }
     if ($parts.Count -gt 0) {
         Write-Stdout (ConvertTo-JaJson ([ordered]@{ systemMessage = ('JEDI VCS - checkouts feitos pela IA nesta sessão: ' + ($parts -join ' | ')) }) -Ascii)
     }

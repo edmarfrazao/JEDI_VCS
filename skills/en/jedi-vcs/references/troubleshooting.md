@@ -6,7 +6,12 @@ to the user and suggest their next step.
 | Symptom | Likely cause | What to do |
 |---|---|---|
 | `localizar-wrapper.ps1` → 12 | `tools\ai` not installed | the user installs JEDI VCS 2.5 Beta 2026 with "AI tools" or sets `JVCS_AI_TOOLS` |
-| `[ERRO 2] informe -Project <nome.dpr>` | folder with more than one `.dpr`/`.dpk` (e.g. `X - Copy.dpr`) | repeat with `-Project X.dpr` |
+| `[ERRO 2] informe -Project <projeto> (não há um único .dpr/.dpk na pasta atual)` | folder with more than one `.dpr`/`.dpk` (e.g. `X - Copy.dpr`) | repeat with `-Project X.dpr` |
+| `[ERRO 2] informe -Project <projeto> (nenhum .jvcsproject nem mapa [projects] ...)` | folder without `.dpr`, marker or map | `-Project <name>`, or a `.jvcsproject` with `project=<name>` (only if the user asks), or ask the user for `config set projectMap` |
+| `[ERRO 2] parte dos arquivos está em ... e parte fora do mapa` | files of different identities in one call | one call per folder |
+| `[ERRO 4] a pasta declara identity=X em ... .jvcsproject` | the marker asks for another identity | the user registers it with `config set identityMap "<folder>" X`; the AI does not use `-Identity` on its own |
+| `[ERRO 7] marcador ...\.jvcsproject inválido: ...` | invalid line or name in the marker (including `project: caractere especial de shell`) | tell the user; fix the file (`project=<name>`) |
+| `[ERRO 10] -Identity X, diferente da identidade registrada ...` | the AI tried to leave the folder's identity | only with the user's approval (`-Confirmed`) |
 | `projeto '...' não existe no servidor` (5) | project not created in JEDI VCS, or a different name | `projects` to list them; the user creates it in the client |
 | `notVersioned` | the file is not a module | edit without check-out; version it only if the user asks (`add`, 2026 console) |
 | `local=unknown -> pathTruncated` | server path truncated (47 chars) and file not found under the project folder | run `status "<file>"` in the project folder |

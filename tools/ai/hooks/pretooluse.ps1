@@ -99,7 +99,8 @@ try {
     $full = [IO.Path]::GetFullPath($fp)
     if (-not (Test-JaDelphiSource $full)) { exit 0 }
 
-    $cfg = (Read-JaConfig).Values
+    $cfgInfo = Read-JaConfig
+    $cfg = $cfgInfo.Values
     $asciiAs = $cfg.asciiAs
     $ep = Get-JaCanonicalCommand 'edit-preserve.ps1'
     $wr = Get-JaCanonicalCommand 'jvcs-ai.ps1'
@@ -150,9 +151,9 @@ try {
 
     # ------------------------------------------------ 2. checkout JEDI VCS
     $isRo = (New-Object IO.FileInfo $full).IsReadOnly
-    if ((Find-JaProjectFiles $full).Count -eq 0) {
+    if (-not (Test-JaProjectContext -FullPath $full -ConfigInfo $cfgInfo)) {
         if ($isRo) {
-            Exit-Deny ("JEDI VCS: '$full' está somente leitura e não há .dpr/.dpk na pasta dele nem acima. Se for unit versionada (ex.: biblioteca compartilhada), faça o checkout com: $wr checkout `"$full`" -Project <projeto.dpr> ; senão, pergunte ao usuário. $noRo")
+            Exit-Deny ("JEDI VCS: '$full' está somente leitura e não há .dpr/.dpk, .jvcsproject nem mapa [projects] na pasta dele nem acima. Se for unit versionada (ex.: biblioteca compartilhada), faça o checkout com: $wr checkout `"$full`" -Project <projeto> ; senão, pergunte ao usuário. $noRo")
         }
         exit 0
     }

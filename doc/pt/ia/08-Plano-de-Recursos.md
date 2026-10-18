@@ -91,7 +91,7 @@ Folder, Merge (a IA edita direto), usuários e direitos, opções do servidor, b
 
 ## 7. Ordem e situação
 
-Situação em 17/10/2026 (wrapper **1.4.0**; detalhes e testes em `tools/ai/LEIAME.md`, seções 13 a 17):
+Situação em 17/10/2026 (wrapper **1.4.0**; detalhes e testes em `tools/ai/LEIAME.md`, seções 13 a 18):
 
 | Ordem | Item | Situação |
 |---|---|---|
@@ -102,6 +102,9 @@ Situação em 17/10/2026 (wrapper **1.4.0**; detalhes e testes em `tools/ai/LEIA
 | 5 | D4 administração de projetos: `rm-project`, `restore-project [-Relink]`, `rename-project [-RenameFiles]` | **feito** e testado (seção 15) |
 | 6 | A1 `blame`, A2 `revert`, A3 `buildCheck`, A4 `commentPrefix` | **feito** e testado (seção 16). A3 roda só o script registrado pelo usuário (sem msbuild/dcc automáticos, achado do revisor); A4: o prefixo, já configurável, vale também na descrição do `addproject` e no `revert -Checkin` |
 | 7 | E2 `sync -Date`, E3 `sync -Dest`, E4 `checkin -Keep` | **feito** e testado (seção 17) |
+| 7a | Pedido 0005 do PC remoto (acervo xHarbour sem `.dpr`): R1 `status`/`sync`/`locks` tolerantes a módulo que não baixa (`state: error`, código 11), R5 `-Only` em `status`/`list`/`locks` (com `counts`), R6 `locks` com o estado local dos meus locks | **feito** e testado no servidor de teste (seção 18; a versão continua 1.4.0) |
+| 7b | Pedido 0005: R4 projeto e identidade por pasta sem `.dpr` (`.jvcsproject`, mapas `[projects]`/`[identities]` do `config.ini`, `config set projectMap`/`identityMap` só do usuário, `addproject` com nome sem extensão) | **feito** e testado no servidor de teste (seção 18, R4) |
+| 7c | Pedido 0005: R7 lote a partir de uma lista | pendente (seção 18 recebe a subseção quando for feito) |
 | 8 | B6 conta própria da IA | **pendente**: depende do administrador criar no standalone o usuário com direitos limitados (sem Archive Admin) e de uma identidade salva para ele |
 | 9 | E1 Restore version number, E5 Description, E6 label de uma revisão | **fora por ora** (decisão de 17/10); o console já tem `projectrevs ... version=` se o E1 voltar |
 | 10 | Beta 6 com o console 2026 no instalador | pendente |

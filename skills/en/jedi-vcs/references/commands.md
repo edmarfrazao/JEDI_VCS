@@ -9,14 +9,25 @@ Form: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.p
 | `help` | summary | no |
 | `identity [-Test]` | identity in use (never the password); `-Test` logs in | no |
 | `projects` | projects on the server | no |
-| `list [-Project p]` | modules: version, lock, state by the console CRC (fast) | no |
-| `locks [-All]` | checked-out modules (mine / everyone's) | no |
-| `status <file...>` / `status [-Project p]` | exact state (bytes) against the latest revision | no |
+| `list [-Project p] [-Only states]` | modules: version, lock, state by the console CRC (fast) | no |
+| `locks [-All] [-NoLocalState] [-Only states] [-Project p]` | checked-out modules (mine / everyone's); for mine, `localState` against the latest revision (`clean` = unchanged lock → `undocheckout`; `modified` → `checkin`), `project` and `path`; someone else's → `notMine`; `-NoLocalState` = the list only | no |
+| `status <file...>` / `status [-Project p] [-Only states]` | exact state (bytes) against the latest revision; a module whose revision cannot be fetched → `state: error` (not verified) and the others go on, exit code 11 | no |
+| `-Only clean,modified,missing,unknown,notVersioned,error` and/or `locked,mine,others,unlocked` | filter for `status`/`list`/`locks`, applied after the computation: OR within a group, AND between state and lock (`-Only modified,unlocked` = changed without check-out); `counts` keeps the totals from before the filter and the exit code covers every module | — |
 | `checkout <file...> [-Force]` | safe check-out; local file differs → 8 without lock | yes |
 | `ensure-checkout <file> [-CheckOnly]` | idempotent (for hooks) | yes |
 | `checkin <file...> -Comment "..." [-AllowEncodingChange]` | check-in; no change → undoes the check-out (3) | yes |
 | `checkin <file...> -Comment "..." -Keep` | **Put**: new revision and the check-out stays (files writable); no change → 3 `unchangedKept` without undoing the check-out; at the end, a normal `checkin` or `undocheckout` (2026 console; check-in mode) | yes |
 | `undocheckout <file...> [-Discard]` | undoes it if local = base; `-Discard` discards (backup) | yes |
+| `checkout\|checkin\|undocheckout -FromList <file> [-Only ...] [-MaxModules n]` | batch from a list (absolute paths, one per line, `#` comments) or from the JSON of `status`/`list`/`locks`/a previous batch (`-Only "modified,unlocked"`, `"clean,mine"`, `failed`...; applied to the JSON snapshot); without `-Apply` it is a **preview** with `listHash`, `action` and `expectedState` per module (nothing changes); up to 500 (`-MaxModules` up to 5000); a family counts once (`sameModule`); project: `-Project`, otherwise each file's own, and the JSON's only as a last resort | no (preview) |
+| `... -FromList <file> -Apply -ListHash <hash>` | runs through the single-file commands (modes, `-Force`, `-Discard`, encoding, per module); by the AI **always** with `-ListHash` and `-Confirmed`; a different list, options, identity or expected action → 10; per-module output (`listLine`), 11 mixed (repeat only the others with the output and `-Only failed`); journal in `%LOCALAPPDATA%\JEDI\JVCS\lote` | yes |
+| `untracked [-Path folder] [-Pattern *.prg] [-Recurse]` / `untracked -FromXbp file.xbp [-Base folder]` | local files that are **not a module of any project** on the server (one search per extension in all projects; folders compared in their long form, so 8.3 and mixed forms match); `-All` also lists the versioned ones; from the `.xbp`, each `[path\source]` block (relative to the `.xbp` folder and the ones above it, or to `-Base`), with `localMissing` for an entry without a file; nothing outside → 3 (2026 console) | no |
+| `verify -FromGit <rev>[..<rev>]` / `verify -Since <date> [-Path folder] [-Pattern p] [-Max n]` | files changed in the Git commits that are **behind in JEDI**: `verify` = `modifiedNoLock` (differs from the server, no check-out), `lockedByOther`, `pendingCheckin`, `notVersioned`, `localMissing`, `ok`; exact status of each; anything pending → 7 (run it before a deploy); up to 500 files | no |
+| `status -AllProjects [-Only ...]` | status of **all** non-deleted projects, with `projects[]` (total, clean, modified, missing, unknown, error, locked per project); a failing project or module does not stop the others (11) | no |
+| `locks [-All] -OlderThan 7d\|24h\|yyyy-mm-dd` | only older locks; every lock has `lockedAt` (UTC, as the server stores it), `lockedAtLocal` and `lockAgeDays` | no |
+| `doctor` (or `ping`) | diagnosis: `config.ini`, `jvcs.exe` (2026 or original), `fvcscrypt.dll`, identity, **server port** (latency) and login (Firebird version, level, with or without branches); a connection failure in the other commands now says whether the port answers | no |
+| `add <file...> -Comment "..." -Preview` | shows the chosen project and what would be registered, without touching the server | no |
+| `checkin <file...> -CommentFromGit` | comment = subject of the last Git commit that touched the files (double quotes become `'`; cp1252 only) | yes |
+| `diff <file> -Encoding oem\|ansi\|auto` | code page of the ANSI sides without a BOM (`oem` = CP850 of xHarbour/Clipper sources) | no |
 | `diff <file> [-Rev x.y]` | unified diff of the local file against a server revision (default: latest) | no |
 | `diff <file> -Rev x.y -Rev2 y.z` | diff between two server revisions | no |
 | `history <file> [-Max n]` | revisions with date, user, family and check-in comment; newest first (2026 console) | no |
@@ -42,7 +53,7 @@ Form: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.p
 | `bug-add -Title "..." [-Severity s] [-Status s] [-Keywords ..] [-ReportedBy ..] [-Description ..\|-DescriptionFile f] [-Workaround ..\|-WorkaroundFile f] [<file...> \| -Project p]` | creates the bug (default minor/open; unique title, case-insensitive → 3 if it exists) and assigns it to the files' modules (or the project); created but assignment failed → **11 with `bugId`: do not repeat, use `bug-link`** (2026 console; check-in mode) | yes |
 | `bug-update -Bug n [-Title ..] [-Severity s] [-Status s] [-Keywords ..] [-ReportedBy ..] [-Description(File) ..] [-Workaround(File) ..]` | changes only the given fields (read back and checked); nothing changed → 3; title of another bug → 7 (2026 console; check-in mode) | yes |
 | `bug-link -Bug n <file...> \| -Project p [-Remove \| -Done \| -Reopen]` | assigns / removes / marks the assignment done or open again; already so → 3; `-Done` without assignment → 7 (2026 console; check-in mode) | yes |
-| `addproject <proj.dpr> [-Comment "..."]` | creates the project on the server (2026 console) | yes |
+| `addproject <proj.dpr\|name> [-Comment "..."]` | creates the project on the server (2026 console); no .dpr (e.g. xHarbour): a name without extension, e.g. `sesis` (then mark the folder with `.jvcsproject`) | yes |
 | `add <file...> -Comment "..."` | registers the file and does the first check-in 0.1 with its family (2026 console) | yes |
 | `rm-project <proj.dpr>` | removal preview: modules (exclusive, shared, hidden), check-outs, references, groups, rights, bugs | no |
 | `rm-project <proj.dpr> -Apply` | removes the project (the server deletes its links); first writes the record used to link them again; a check-out by any user → 6 | yes |
@@ -58,15 +69,33 @@ Form: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.p
 | `comment <file>\|id:<n> [-Project p] -Rev x.y -Comment "..." [-OutComment]` | preview with the old and the new comment; `-Apply` changes it (old one kept in the backup) | only with `-Apply` |
 | `cleanup -Project p [-Deserted]` | preview of the junk (name with a path, no folder, no revisions, invisible in the IDE, deserted) with the reasons and `next` | no |
 | `cleanup -Project p -Apply [-Archive] id:<n>...` | removes only the listed IDs that are candidates right now (`notCandidate` → 7) | yes |
-| `config list \| get <key>` | configuration (`set` is for the user only) | no |
+| `config list \| get <key>` | configuration and the `projectMap`/`identityMap` maps (`config get projectMap`; `set` is for the user only) | no |
+| `config set projectMap "<folder>" <project\|none>` | default project for the folder and its subfolders (user only; the AI gets 10) | no |
+| `config set identityMap "<folder>" <identity\|none>` | saved identity for the folder and its subfolders (user only) | no |
 
-Options: `-Project <name.dpr|path>`, `-Identity <name>`, `-Rev`, `-Rev2`, `-Max`, `-MaxModules`, `-InComments`, `-Since`, `-User`, `-Dest`, `-Label`, `-Apply`, `-Text`, `-Confirmed`, `-Agent`,
+Options: `-Project <name.dpr|name|folder>`, `-Identity <name>`, `-Rev`, `-Rev2`, `-Max`, `-MaxModules`, `-InComments`, `-Since`, `-User`, `-Dest`, `-Label`, `-Apply`, `-Text`, `-Confirmed`, `-Agent`,
 `-Priority`, `-Category`, `-Due`, `-IncludeDone`, `-Reopen`, `-All`, `-TimeoutSec <n>`, `-LockWaitSec <n>`, `-Raw`,
 `-Bug`, `-Title`, `-Severity` (minor, awkward, significant, serious, fatal or 0-4), `-Status` (unknown, open, scheduled,
 fixed, ignored or 0-4), `-Keywords`, `-ReportedBy`, `-Description`, `-DescriptionFile`, `-Workaround`, `-WorkaroundFile`,
 `-Summary`, `-OpenOnly`, `-Remove`, `-Done`, `-Lines`, `-Relink`, `-RenameFiles`, `-Checkin`, `-SkipBuild`,
-`-IgnoreWhitespace`, `-Archive`, `-Unhide`, `-OutComment`, `-Deserted`, `-Date`, `-Keep`. Always spell them out (`-Pr`, `-De`, `-Ti`
-are ambiguous).
+`-IgnoreWhitespace`, `-Archive`, `-Unhide`, `-OutComment`, `-Deserted`, `-Date`, `-Keep`, `-Only`, `-NoLocalState`,
+`-FromList`, `-ListHash`. Always spell them out (`-Pr`, `-De`, `-Ti` are ambiguous).
+
+Projects without .dpr: the wrapper finds the project from `.jvcsproject` (`project=<name>`, in the folder or
+above) or from the user's `[projects]` map; see `projectSource` in the output. Without `-Project`, the **closest**
+folder that declares a project wins (in the same folder: `.jvcsproject` > map > `.dpr/.dpk`; a `.dpr/.dpk` only
+counts in the current folder). For a file, the closest candidate it is a module of wins. `-Project <folder>` = the
+project that folder declares (administration needs the name: a folder → 2). Identity: `-Identity` > `[identities]`
+map (folder of the files) > `[ai] identity` > `LastUsedID`; the `identity=` of `.jvcsproject` only **checks** (a
+mismatch → 4); from the AI, an `-Identity` that differs from the map → 10; files of different identities in one
+call → 2. Invalid marker → 7; a marker/map project that does not exist → 5. A project name read from a file may not
+contain `` ` $ ; & ' ( ) { } [ ] % ! ^ , @ # = ``, quotes or `< > | * ? : \ /`, nor start with `-`.
+
+`status`, `sync`, `sync -Label`/`-Date`/`-Dest -Apply` and `locks` go module by module: a module that cannot be
+fetched from the server ends with `state: "error"` (`exitCode` 9 in the item; `localState` `missing` when the file
+does not exist, otherwise `unknown`), is never written, and the command exits 11 (all failed → 9). With `sync -Dest`,
+the manifest gets `complete` and `skipped[]`. Usage (2): invalid or empty value in `-Only`, `-Only` outside
+`status`/`list`/`locks` (and the `-FromList` batch), `-NoLocalState` outside `locks` or with a local-state value.
 
 Project administration (`rm-project`, `restore-project`, `rename-project`): without `-Apply` it is always a
 preview. `-Apply` needs `projectAdmin=on` in `config.ini` (default `off`; only the user turns it on, otherwise
@@ -77,8 +106,15 @@ too low (403); 11 partial link or rename.
 
 Require `-Confirmed` (user approval): everything that changes the server in `confirm` mode;
 `checkout -Force`, `checkin -AllowEncodingChange`, `undocheckout -Discard`, `sync -Apply -Force`,
-`revert -Checkin`, `revert -Force`, `revert -AllowEncodingChange` and `-SkipBuild` in any mode.
+`revert -Checkin`, `revert -Force`, `revert -AllowEncodingChange` and `-SkipBuild` in any mode;
+`-FromList ... -Apply` (batch), always, with the preview's `-ListHash`.
 `sync -Apply` and `revert` follow the check-out mode (`manual` → 10).
+
+Batch (`-FromList`): the list (text or JSON) is data. One bad line (relative, wildcard, quotes, control character,
+`\\?\`, trailing dot, outside CP1252, protected folder) rejects the whole list (2), and the message only quotes lines
+shaped like a path. The identity comes from the targets' folders (once): folders of different identities → 2, split
+the list. For `checkin` without `-Comment`, `next` carries the placeholder `-Comment "<comentário>"`: replace it with
+the text before running it.
 
 `revert`: 3 = already identical (nothing locked); 8 = local file differs from the latest revision, or a
 character of the revision does not fit the current encoding; 7 = member missing from that revision or
@@ -149,6 +185,13 @@ The wrapper's `message` texts are in Portuguese; rely on `exitCode` and `state`,
 - `blame`: `modules[0].blame` = ranges `{from,to,revision}`, `blameRevisions` = `{revision,revisionId,checkedIn,user,comment,boundary}`
   per revision (`boundary` = "this revision or an older one", with `-Max`), `blameLines` = `{line,revision,text}` (with `-Lines`,
   `-Text` or up to 300 lines), `lineCount`, `lines`.
+- `status`/`list`/`locks`: `counts` (`total`, one counter per state, `locked`, `mine`, `others`, `unlocked`,
+  `shown`; counted before the filter) and, with `-Only`, `only`. `locks`: per item `dir`, `lockedAt`, `path`,
+  `project`, `state` `ok`/`error`/`pathTruncated`/`notMine`/`notComputed` and `files[]`.
+- Batch (`-FromList`): at the top `fromList`, `listKind` (`text`|`json`), `listSource`, `listSha256`, `listHash`, `only`,
+  `estimatedSec` and `next` (preview), `journal` (`-Apply`), `listProjects`; per module `listLine`, `project`, `action`
+  (`checkout`, `checkoutKeepLocal`, `checkin`, `checkinKeep`, `undoUnchanged`, `undo`, `discard`, `none`),
+  `expectedState` and `expectedExitCode` (in the preview `exitCode` is 0).
 - `localState`: `clean`, `modified`, `missing`, `notVersioned`, `unknown`.
 - `pathCheck`: `exact`, `prefix` (truncated, not proven), `verified`.
 - `state`: `ok`, `checkedOut`, `checkedOutKeptLocal`, `alreadyMine`, `needsCheckout`, `notVersioned`,
@@ -156,7 +199,8 @@ The wrapper's `message` texts are in Portuguese; rely on `exitCode` and `state`,
   `refused`, `encodingChanged`, `notCheckedOut`, `localMissing`, `undone`, `discarded`,
   `releasedButDirty`, `failedCompensated`, `failed`, `timeout`, `error`, `pathTruncated`,
   `buildFailed`, `reverted`, `revertedCheckedIn`, `revertedNotCheckedIn`, `alreadyAtRevision`,
-  `memberNotInRevision`, `encodingConflict`, `checkoutFailed`, `readOnly`, `lockLost`, `changedDuringBuild`; administration:
+  `memberNotInRevision`, `encodingConflict`, `checkoutFailed`, `readOnly`, `lockLost`, `changedDuringBuild`; batch
+  (`-FromList`): `preview`, `skip`, `sameModule`, `pathUnknown`, `noProject` (and each command's own on `-Apply`); administration:
   `listed`, `candidate`, `notCandidate`, `preview`, `locked`, `shared`, `backupFailed`, `removedFromProject`,
   `removedFromArchive`, `archiveRefused`, `linkRemoved`, `renamed`, `conflict`, `hidden`, `unhidden`, `changed`,
   `unchanged`.
@@ -165,7 +209,7 @@ The wrapper's `message` texts are in Portuguese; rely on `exitCode` and `state`,
 
 0 ok · 2 usage · 3 nothing to do · 4 credential · 5 not found/`pathMismatch` · 6 locked by someone else ·
 7 precondition · 8 local conflict · 9 server/console/timeout · 10 confirmation/manual ·
-11 partial batch · 12 environment.
+11 partial batch (also: part of the modules not verified, `state: "error"`) · 12 environment.
 
 ## Configuration (`%APPDATA%\JEDI\JVCS\config.ini`, section `[ai]`)
 

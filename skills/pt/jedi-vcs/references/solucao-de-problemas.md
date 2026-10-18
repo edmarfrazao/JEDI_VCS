@@ -6,7 +6,12 @@ ao usuário e sugira o passo dele.
 | Sintoma | Causa provável | O que fazer |
 |---|---|---|
 | `localizar-wrapper.ps1` → 12 | `tools\ai` não instalado | usuário instala o JEDI VCS 2.5 Beta 2026 com "Ferramentas da IA" ou define `JVCS_AI_TOOLS` |
-| `[ERRO 2] informe -Project <nome.dpr>` | pasta com mais de um `.dpr`/`.dpk` (ex.: `X - Copia.dpr`) | repetir com `-Project X.dpr` |
+| `[ERRO 2] informe -Project <projeto> (não há um único .dpr/.dpk na pasta atual)` | pasta com mais de um `.dpr`/`.dpk` (ex.: `X - Copia.dpr`) | repetir com `-Project X.dpr` |
+| `[ERRO 2] informe -Project <projeto> (nenhum .jvcsproject nem mapa [projects] ...)` | pasta sem `.dpr`, sem marcador e sem mapa | `-Project <nome>`, ou `.jvcsproject` com `project=<nome>` (só se o usuário pedir), ou peça ao usuário `config set projectMap` |
+| `[ERRO 2] parte dos arquivos está em ... e parte fora do mapa` | arquivos de identidades diferentes numa chamada | uma chamada por pasta |
+| `[ERRO 4] a pasta declara identity=X em ... .jvcsproject` | o marcador pede outra identidade | o usuário registra com `config set identityMap "<pasta>" X`; a IA não usa `-Identity` por conta própria |
+| `[ERRO 7] marcador ...\.jvcsproject inválido: ...` | linha ou nome inválido no marcador (inclusive `project: caractere especial de shell`) | avisar o usuário; corrigir o arquivo (`project=<nome>`) |
+| `[ERRO 10] -Identity X, diferente da identidade registrada ...` | a IA tentou sair da identidade da pasta | só com a aprovação do usuário (`-Confirmed`) |
 | `projeto '...' não existe no servidor` (5) | projeto não criado no JEDI VCS ou nome diferente | `projects` para listar; usuário cria pelo cliente |
 | `notVersioned` | arquivo não é módulo | editar sem checkout; versionar só se o usuário pedir (`add`, console 2026) |
 | `local=unknown -> pathTruncated` | caminho do servidor truncado (47 car.) e arquivo não achado sob a pasta do projeto | rodar `status "<arquivo>"` na pasta do projeto |

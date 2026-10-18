@@ -133,8 +133,11 @@ identidade 'DEFAULT': usuario@servidor:2106
 4 módulo(s) em exemplo01.dpr
 ```
 
-Se a pasta tiver mais de um `.dpr` (por exemplo uma cópia `Exemplo01 - Copia.dpr`), o `status` sem
-argumento responde `[ERRO 2] informe -Project <nome.dpr>`; use `status -Project Exemplo01.dpr`.
+Se a pasta tiver mais de um `.dpr` com nome próprio (cópias `X - Copia.dpr` e `Project1.dpr` são ignoradas
+na escolha), o `status` sem argumento responde `[ERRO 2] informe -Project <projeto>`; use
+`status -Project Exemplo01.dpr`. Em acervo sem `.dpr` (xHarbour, scripts), marque a pasta com um arquivo
+`.jvcsproject` (`project=<nome>`) ou registre `config set projectMap "<pasta>" <nome>` (veja
+`tools\ai\LEIAME.md`, seção 18).
 
 Depois, no Claude Code: *"mostre o status do JEDI VCS deste projeto"*. A IA deve usar a skill e
 responder com a tabela de módulos.

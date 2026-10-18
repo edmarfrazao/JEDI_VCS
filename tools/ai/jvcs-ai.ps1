@@ -7,13 +7,15 @@
     Comandos:
       identity [-Test]                  identidade salva em uso (nunca a senha)
       projects                          projetos do servidor
-      list [-Project p]                 módulos do projeto (versão, lock, estado pelo CRC do console)
-      locks [-All]                      módulos em checkout (meus ou de todos)
-      status <arquivo...> | -Project p  estado exato (bytes) contra a última revisão do servidor
+      list [-Project p] [-Only estados] módulos do projeto (versão, lock, estado pelo CRC do console)
+      locks [-All] [-NoLocalState] [-Only estados]   módulos em checkout (meus ou de todos), com o estado local dos meus
+      status <arquivo...> | -Project p [-Only estados]   estado exato (bytes) contra a última revisão do servidor;
+                                        módulo cuja revisão não baixa sai com state=error e os outros seguem (11)
       checkout <arquivo...> [-Force]    checkout seguro (nunca deixa lock órfão)
       ensure-checkout <arquivo> [-CheckOnly]   para hooks: idempotente
       checkin <arquivo...> -Comment "texto" [-Keep]   check-in (sem mudança -> undocheckout); -Keep = Put (o checkout continua)
       undocheckout <arquivo> [-Discard] desfaz checkout (só com local = base, ou -Discard)
+      checkout|checkin|undocheckout -FromList <arquivo> [-Only ...] [-Apply -ListHash h]   lote a partir de lista/JSON (prévia por padrão)
       diff <arquivo> [-Rev x.y [-Rev2 y.z]]   diff local x servidor, ou entre duas revisões
       history <arquivo> [-Max n]        revisões do módulo com data, usuário e comentário (console 2026)
       changes [-Project p] [-Since d] [-User u] [-Max n]   check-ins do projeto desde uma data (console 2026)
@@ -23,7 +25,7 @@
       sync -Label <nome> [-Project p] [-Apply [-Force]]   prévia / volta a cópia local ao label, com backup
       sync -Date <aaaa-mm-dd[Thh:mm]> [-Project p] [-Apply [-Force]]   prévia / volta ao estado da data (rollback)
       sync -Dest <pasta> [-Label l | -Date d] [-Project p] [-Apply]   cópia de leitura numa pasta nova ou vazia
-      addproject <projeto.dpr> [-Comment "descrição"]   cria o projeto no servidor (console 2026; modo checkin)
+      addproject <projeto.dpr | nome> [-Comment "descrição"]   cria o projeto no servidor (console 2026; modo checkin; sem .dpr: nome sem extensão)
       add <arquivo...> -Comment "texto" cadastra no projeto e faz o 1º check-in 0.1 (console 2026; modo checkin)
       labels [-Project p] | labels -All | labels <arquivo> | labels -Label <nome> [-Project p]
                                         labels do projeto, do servidor, das revisões do arquivo, ou revisões de um label
@@ -52,9 +54,14 @@
       comment <arquivo>|id:<n> [-Project p] -Rev x.y -Comment "..." [-OutComment] [-Apply]
       cleanup -Project p [-Deserted] [-Apply [-Archive] id:<n>...]   prévia do lixo; -Apply só nos IDs
       (administração: -Apply exige moduleAdmin=on|archive no config.ini e, pela IA, -Confirmed sempre)
+      untracked [-Path p] [-Pattern m] [-Recurse] | -FromXbp arq.xbp [-Base p]   fontes fora do JEDI (S0002)
+      verify -FromGit <rev>[..<rev>] | -Since <data>   arquivos alterados no Git atrás no JEDI (S0002)
+      status -AllProjects | locks -OlderThan <d>        todos os projetos | locks antigos (S0002)
+      doctor | ping                     diagnóstico: config, jvcs.exe, identidade, porta e login (S0002)
       config list | get <chave> | set <chave> <valor>
+      config set projectMap|identityMap "<pasta>" <valor|none>   projeto/identidade da pasta (só humano)
 
-    Opções comuns (sempre por extenso: -Pr seria ambíguo entre -Project e -Priority): -Project <nome.dpr>, -Identity <nome>, -Text (saída legível),
+    Opções comuns (sempre por extenso: -Pr seria ambíguo entre -Project e -Priority): -Project <nome.dpr | nome | pasta>, -Identity <nome>, -Text (saída legível),
     -Agent (força contexto de agente), -Confirmed (aprovação humana já dada; em agente,
     escreva exatamente -Confirmed), -TimeoutSec <n> (por execução do jvcs.exe),
     -LockWaitSec <n> (espera pelo mutex), -Raw (inclui a saída bruta do console).
@@ -82,6 +89,8 @@ param(
     [string]$User = '',
     [int]$Max = 0,
     [int]$MaxModules = 0,
+    [string]$FromList = '',
+    [string]$ListHash = '',
     [int]$Priority = 0,
     [string]$Category = '',
     [string]$Due = '',
@@ -124,6 +133,19 @@ param(
     [switch]$OutComment,
     [switch]$Deserted,
     [switch]$Keep,
+    [string[]]$Only = @(),
+    [switch]$NoLocalState,
+    [string]$Path = '',
+    [string]$Pattern = '',
+    [switch]$Recurse,
+    [string]$FromXbp = '',
+    [string]$Base = '',
+    [string]$FromGit = '',
+    [switch]$AllProjects,
+    [string]$OlderThan = '',
+    [switch]$CommentFromGit,
+    [string]$Encoding = '',
+    [switch]$Preview,
     [int]$TimeoutSec = 0,
     [int]$LockWaitSec = 0
 )
@@ -150,6 +172,13 @@ $script:Ident = $null
 $script:Mutex = $null
 $script:ConfirmedUsed = $false
 $script:BoundArgs = $PSBoundParameters
+$script:ListingCache = $null                       # @{} só durante um lote (-FromList)
+$script:ListingStats = @{ Runs = 0; Sec = 0.0 }    # tempo das listagens (estimativa do lote)
+$script:BatchJournal = $null                       # diário do -Apply do lote
+$script:BatchProjectOf = $null                     # lote: caminho (minúsculas) -> projeto vindo do JSON (fallback)
+$script:OnlyFilter = $null
+$script:JaDefaultProject = $null   # R4: {Name, Source, Where, Dir} do projeto padrão já resolvido
+$script:JaContextDirs = $null      # R4: pastas que decidem a identidade por pasta (dos arquivos, ou a atual)
 
 # ======================================================================= utilidades
 
@@ -172,10 +201,27 @@ function Get-ProjectNameFromArg {
     # TStringList do console quebra linha em CR ou LF (injeção de comandos)
     if ($Value -match '[\x00-\x1f\x7f"]') { throw (New-JaError 2 'nome/caminho de projeto com caractere de controle ou aspas: recusado') }
     $leaf = $Value
-    if ($Value -match '[\\/]') { $leaf = [IO.Path]::GetFileName($Value) }
+    if ($Value -match '[\\/]') {
+        # R4: -Project <pasta> = o projeto que a pasta declara (.jvcsproject, mapa [projects]) ou o único .dpr/.dpk dela
+        $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Value)
+        if (Test-Path -LiteralPath $full -PathType Container) { return (Get-ProjectNameFromFolder $full) }
+        $leaf = [IO.Path]::GetFileName($Value)
+    }
     $leaf = $leaf.Trim().ToLowerInvariant()
     if (-not $leaf -or $leaf -match '[<>|*?:]') { throw (New-JaError 2 "nome de projeto inválido: '$leaf'") }
     return $leaf
+}
+
+# Projeto declarado por uma pasta (só ela, sem subir): .jvcsproject > mapa [projects] > único .dpr/.dpk.
+function Get-ProjectNameFromFolder {
+    param([string]$Dir)
+    $mp = [IO.Path]::Combine($Dir, $script:JaMarkerName)
+    if (Test-Path -LiteralPath $mp -PathType Leaf) { return (Read-JaProjectMarker $mp).Project }
+    $k = ConvertTo-JaDirKey $Dir
+    if ($k -and $script:CfgInfo.ProjectMap.Contains($k)) { return [string]$script:CfgInfo.ProjectMap[$k] }
+    $d = @(Get-ChildItem -LiteralPath $Dir -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.dpr' -or $_.Extension -ieq '.dpk' })
+    if ($d.Count -eq 1) { return $d[0].Name.ToLowerInvariant() }
+    throw (New-JaError 2 "a pasta $Dir não declara projeto (.jvcsproject ou mapa [projects]) nem tem um único .dpr/.dpk: informe o nome do projeto")
 }
 
 function Assert-AnsiArg {
@@ -187,6 +233,109 @@ function Assert-AnsiArg {
 
 # ======================================================================= identidade
 
+# Comandos cujos argumentos posicionais são arquivos: a identidade por pasta usa a pasta deles.
+$script:JaFileCommands = @('status', 'checkout', 'ensure-checkout', 'checkin', 'undocheckout', 'diff', 'history', 'show', 'blame',
+    'revert', 'add', 'labels', 'shared', 'bugs', 'bug-add', 'bug-link', 'rm-module', 'rename-module', 'hide', 'comment')
+
+# Pastas que decidem a identidade por pasta (R4): as dos arquivos do comando; sem arquivo, a de -Project
+# <caminho>; senão a pasta atual. O lote (-FromList, R7) fixa $script:JaContextDirs com as pastas dos
+# alvos da lista ANTES da 1ª chamada a Get-JaIdentityCached (Set-JaBatchContextDirs).
+function Get-JaContextDirs {
+    if ($null -ne $script:JaContextDirs) { return , $script:JaContextDirs }
+    $dirs = New-Object System.Collections.ArrayList
+    if ($script:JaFileCommands -contains $script:Cmd) {
+        $a = @($Rest | Where-Object { $_ -and $_.Trim() -and $_.Trim() -notmatch '^id:\d+$' })
+        if ($script:Cmd -eq 'rename-module') { $a = @($a | Select-Object -First 1) }
+        foreach ($x in $a) {
+            $d = $null
+            try { $d = [IO.Path]::GetDirectoryName($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($x)) } catch { }
+            if ($d -and -not ($dirs -contains $d)) { [void]$dirs.Add($d) }
+        }
+    }
+    if ($dirs.Count -eq 0 -and $Project -and $Project -match '[\\/]') {
+        try {
+            $pf = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Project)
+            if (Test-Path -LiteralPath $pf -PathType Container) { [void]$dirs.Add($pf) } else { [void]$dirs.Add([IO.Path]::GetDirectoryName($pf)) }
+        } catch { }
+    }
+    if ($dirs.Count -eq 0) { [void]$dirs.Add((Get-Location).ProviderPath) }
+    $script:JaContextDirs = $dirs
+    return , $dirs
+}
+
+# Entradas do mapa [identities] do config.ini (só o usuário grava) que valem para as pastas do comando,
+# SEM lançar: Hits (identidade em minúsculas -> entrada) e Unmapped (pastas fora do mapa). Rodado fora
+# das pastas com -Project <nome>: a pasta do mapa [projects] desse projeto, se for uma só.
+function Get-JaFolderIdentityHits {
+    $map = $script:CfgInfo.IdentityMap
+    $hits = [ordered]@{}
+    $unmapped = 0
+    if ($null -ne $map -and $map.Count -gt 0) {
+        foreach ($d in (Get-JaContextDirs)) {
+            $e = Find-JaMapEntry -Map $map -Dir $d
+            if ($e) { $hits[$e.Value.ToLowerInvariant()] = $e } else { $unmapped++ }
+        }
+        if ($hits.Count -eq 0 -and $Project -and $Project -notmatch '[\\/]') {
+            $pd = Get-JaMapDirsForProject -Map $script:CfgInfo.ProjectMap -ProjectName (Get-ProjectNameFromArg $Project)
+            if ($pd.Count -eq 1) {
+                $e = Find-JaMapEntry -Map $map -Dir $pd[0]
+                if ($e) { $hits[$e.Value.ToLowerInvariant()] = $e; $unmapped = 0 }
+            }
+        }
+    }
+    return [pscustomobject]@{ Hits = $hits; Unmapped = $unmapped }
+}
+
+# Identidade sem o mapa por pasta: [ai] identity ou LastUsedID ('' se não houver).
+function Get-JaFallbackIdentityName {
+    param($Root)
+    $n = [string]$script:Cfg.identity
+    if ($n) { return $n }
+    $idx = $Root.GetValue('LastUsedID')
+    if ($null -eq $idx) { $idx = 0 }
+    return [string]$Root.GetValue('ID' + $idx)
+}
+
+# Identidade do mapa [identities] para as pastas do comando (sem -Identity). Pastas com identidades
+# diferentes, ou parte fora do mapa com outra identidade padrão: 2 (uma chamada por identidade).
+function Find-JaFolderIdentity {
+    param($Root)
+    $fi = Get-JaFolderIdentityHits
+    if ($fi.Hits.Count -eq 0) { return $null }
+    if ($fi.Hits.Count -gt 1) {
+        throw (New-JaError 2 ('arquivos em pastas de identidades diferentes (' + (@($fi.Hits.Values | ForEach-Object { "$($_.Dir)=$($_.Value)" }) -join ', ') + '): faça uma chamada por identidade'))
+    }
+    $e = @($fi.Hits.Values)[0]
+    if ($fi.Unmapped -gt 0) {
+        # a identidade registrada vale só para as pastas do mapa: arquivo fora dele não muda de credencial
+        $fb = Get-JaFallbackIdentityName $Root
+        if ($fb -and $fb -ine $e.Value) {
+            throw (New-JaError 2 "parte dos arquivos está em $($e.Dir) (identidade '$($e.Value)' do mapa [identities]) e parte fora do mapa (identidade padrão '$fb'): faça uma chamada por identidade")
+        }
+    }
+    return $e
+}
+
+# identity= do .jvcsproject só CONFERE: nunca escolhe a identidade (o marcador fica na pasta do projeto,
+# onde a IA, o Git ou o sync podem gravá-lo). Divergência: recusa (4); com -Identity explícito, só avisa.
+function Assert-JaMarkerIdentity {
+    param([string]$Effective, [string]$Source, [bool]$Explicit)
+    $seen = @{}
+    foreach ($d in (Get-JaContextDirs)) {
+        foreach ($m in (Find-JaProjectMarkers $d)) {
+            if (-not $m.Identity -or $seen.ContainsKey($m.Path)) { continue }
+            $seen[$m.Path] = $true
+            if ($m.Identity -ieq $Effective) { continue }
+            if ($Explicit) { Add-JaWarning "$($m.Path) declara identity=$($m.Identity); usando -Identity $Effective (explícito)"; continue }
+            $how = "o usuário registra a identidade da pasta no terminal dele: jvcs-ai.ps1 config set identityMap `"$($m.Dir)`" `"$($m.Identity)`""
+            if (-not $script:IsAgent) { $how += " (ou use -Identity `"$($m.Identity)`" nesta chamada)" }
+            throw (New-JaError 4 "a pasta declara identity=$($m.Identity) em $($m.Path), mas a identidade em uso é '$Effective' ($Source). O .jvcsproject só confere a identidade, não a escolhe: $how")
+        }
+    }
+}
+
+# Ordem: -Identity > mapa [identities] do config.ini (pasta) > [ai] identity > LastUsedID. Depois, a
+# conferência do .jvcsproject (Assert-JaMarkerIdentity).
 function Get-JaIdentity {
     param([string]$Name)
     $base = 'HKCU:\Software\JEDI\JEDIVCS\Identities'
@@ -194,7 +343,25 @@ function Get-JaIdentity {
         throw (New-JaError 4 'nenhuma identidade salva (HKCU\Software\JEDI\JEDIVCS\Identities). Conecte uma vez pela GUI/IDE com "Store Password with identity".')
     }
     $root = Get-Item -LiteralPath $base
+    $explicit = [bool]$Name
     $source = 'parâmetro -Identity'
+    if ($explicit) {
+        # a identidade que o USUÁRIO registrou para a pasta é a regra: a IA sair dela exige aprovação humana.
+        # TODAS as pastas do comando contam (sem try/catch: arquivos de duas pastas mapeadas não escapam).
+        $fi = Get-JaFolderIdentityHits
+        $diff = @($fi.Hits.Values | Where-Object { $_.Value -ine $Name })
+        if ($diff.Count -gt 0) {
+            $desc = (@($diff | ForEach-Object { "$($_.Value) em $($_.Dir)" }) -join ', ')
+            if ($script:IsAgent) {
+                $hint = (Get-JaCanonicalCommand 'jvcs-ai.ps1') + " $script:Cmd ... -Identity $Name"
+                if (Assert-JaHumanApproval -IsAgent $true -ConfirmedSwitch $Confirmed.IsPresent -InvocationLine $script:InvocationLine -Why "-Identity $Name, diferente da identidade registrada pelo usuário para a pasta ($desc)," -CommandHint $hint) { $script:ConfirmedUsed = $true }
+            }
+            Add-JaWarning "pasta(s) mapeada(s) para outra identidade ($desc); usando -Identity $Name (explícito)"
+        }
+    } else {
+        $fe = Find-JaFolderIdentity -Root $root
+        if ($fe) { $Name = $fe.Value; $source = "config.ini [identities] $($fe.Dir)" }
+    }
     if (-not $Name) { $Name = [string]$script:Cfg.identity; $source = 'config.ini (identity)' }
     if ($Name -and ($Name -match '[\\/"\x00-\x1f]' -or $Name -eq '.' -or $Name -eq '..')) { throw (New-JaError 2 "nome de identidade inválido: '$Name'") }
     if (-not $Name) {
@@ -204,13 +371,17 @@ function Get-JaIdentity {
         $source = "LastUsedID=$idx"
     }
     if (-not $Name) { throw (New-JaError 4 'identidade não encontrada (LastUsedID sem ID correspondente)') }
+    # o nome como está no registro (o mutex e a auditoria usam o nome: 'edmar' e 'Edmar' são a mesma)
+    $real = @($root.GetSubKeyNames() | Where-Object { $_ -ieq $Name }) | Select-Object -First 1
+    if (-not $real) { throw (New-JaError 4 "identidade '$Name' não existe em Identities ($source)") }
+    $Name = $real
     $subPath = Join-Path $base $Name
-    if (-not (Test-Path -LiteralPath $subPath)) { throw (New-JaError 4 "identidade '$Name' não existe em Identities") }
     $sub = Get-Item -LiteralPath $subPath
     $h = [string]$sub.GetValue('HostName'); $p = [string]$sub.GetValue('Port'); $u = [string]$sub.GetValue('User')
     if (-not $p) { $p = '2106' }
     if (-not $h -or -not $u) { throw (New-JaError 4 "identidade '$Name' incompleta (HostName/User)") }
     $hasPw = -not [string]::IsNullOrEmpty([string]$sub.GetValue('Password'))
+    Assert-JaMarkerIdentity -Effective $Name -Source $source -Explicit $explicit
     return [pscustomobject]@{ Name = $Name; Host = $h; Port = $p; User = $u; HasPassword = $hasPw; Source = $source; RegPath = $subPath }
 }
 
@@ -384,6 +555,9 @@ function ConvertFrom-JvcsOutput {
             throw (New-JaError 4 "login recusado pelo servidor: $msg")
         }
         if ($msg -match 'Required library') { throw (New-JaError 12 "jvcs.exe: $msg") }
+        # S0002 (N6): diz se a porta do servidor responde (JVCSSrv parado dá a mesma falha genérica)
+        $hint = Get-JaConnectHint
+        if ($hint) { $msg = "$msg ($hint)" }
         throw (New-JaError 9 "falha ao conectar no servidor JEDI VCS: $msg")
     }
     foreach ($s in $sections) {
@@ -555,6 +729,26 @@ function Get-ProjectListing {
     return $out
 }
 
+# Listagens em cache durante um lote ($script:ListingCache = $null fora dele: igual a Get-ProjectListing).
+# Cada módulo aparece uma vez no lote (deduplicado por ID) e o que o lote faz num módulo não muda as
+# linhas dos outros; mudança de terceiros no meio do lote é barrada pelo servidor (locked by, not
+# checked out) e o Assert-ServerPath/Get-ModuleServerState fazem listagem própria (sem cache).
+function Get-ProjectListingCached {
+    param([string[]]$Names)
+    if ($null -eq $script:ListingCache) { return (Get-ProjectListing -Names $Names) }
+    $miss = @($Names | Where-Object { -not $script:ListingCache.ContainsKey($_) })
+    if ($miss.Count -gt 0) {
+        $sw = [Diagnostics.Stopwatch]::StartNew()
+        $l = Get-ProjectListing -Names $miss
+        $script:ListingStats.Runs++
+        $script:ListingStats.Sec += $sw.Elapsed.TotalSeconds
+        foreach ($k in @($l.Keys)) { $script:ListingCache[$k] = $l[$k] }
+    }
+    $out = [ordered]@{}
+    foreach ($n in $Names) { $out[$n] = $script:ListingCache[$n] }
+    return $out
+}
+
 # Resolve o projeto e o módulo de um arquivo local.
 # Status: versioned | notVersioned | noProject
 function Resolve-FileContext {
@@ -564,15 +758,17 @@ function Resolve-FileContext {
     Assert-AnsiArg $FullPath 'caminho do arquivo'
     $cands = New-Object System.Collections.ArrayList
     if ($Project) {
-        [void]$cands.Add([pscustomobject]@{ Name = (Get-ProjectNameFromArg $Project); Level = 0 })
+        [void]$cands.Add([pscustomobject]@{ Name = (Get-ProjectNameFromArg $Project); Level = 0; Rank = 0; Source = '-Project'; Where = $null })
+    } elseif ($null -ne $script:BatchProjectOf -and $script:BatchProjectOf.ContainsKey($FullPath.ToLowerInvariant())) {
+        # lote (-FromList, R7): projeto gravado no JSON, para arquivo que .jvcsproject, mapa [projects] e .dpr/.dpk não resolvem (já validado)
+        [void]$cands.Add([pscustomobject]@{ Name = [string]$script:BatchProjectOf[$FullPath.ToLowerInvariant()]; Level = 0; Rank = 0; Source = 'JSON da lista (-FromList)'; Where = $null })
     } else {
-        foreach ($pf in (Find-JaProjectFiles $FullPath)) {
-            if (-not ($cands | Where-Object { $_.Name -eq $pf.Name })) { [void]$cands.Add([pscustomobject]@{ Name = $pf.Name; Level = $pf.Level }) }
-        }
+        # R4: .jvcsproject (Rank 1), mapa [projects] (2) e .dpr/.dpk (3), da pasta do arquivo para cima
+        foreach ($pc in (Get-JaProjectCandidates -FullPath $FullPath -ProjectMap $script:CfgInfo.ProjectMap)) { [void]$cands.Add($pc) }
     }
-    $ctx = [pscustomobject]@{ Status = 'noProject'; FullPath = $FullPath; Project = $null; Rows = $null; ModuleRows = $null; Candidates = @($cands | ForEach-Object Name); Note = '' }
-    if ($cands.Count -eq 0) { $ctx.Note = 'nenhum .dpr/.dpk na pasta do arquivo ou acima (use -Project)'; return $ctx }
-    $listing = Get-ProjectListing -Names @($cands | ForEach-Object Name)
+    $ctx = [pscustomobject]@{ Status = 'noProject'; FullPath = $FullPath; Project = $null; Rows = $null; ModuleRows = $null; Candidates = @($cands | ForEach-Object Name); CandidateInfo = @($cands); Source = $null; Note = '' }
+    if ($cands.Count -eq 0) { $ctx.Note = 'nenhum .jvcsproject, mapa [projects] do config.ini nem .dpr/.dpk na pasta do arquivo ou acima (use -Project)'; return $ctx }
+    $listing = Get-ProjectListingCached -Names @($cands | ForEach-Object Name)
     $found = New-Object System.Collections.ArrayList
     $sameName = New-Object System.Collections.ArrayList
     $existing = 0
@@ -588,7 +784,7 @@ function Resolve-FileContext {
             throw (New-JaError 5 "módulos homônimos no projeto $($c.Name) (IDs $($ids -join ', ')) e o caminho exibido pelo console está truncado; não dá para escolher com segurança")
         }
         if ($ids.Count -eq 1) {
-            [void]$found.Add([pscustomobject]@{ Name = $c.Name; Level = $c.Level; Rows = $rows; ModuleRows = @($rows | Where-Object { $_.Id -eq $ids[0] }) })
+            [void]$found.Add([pscustomobject]@{ Name = $c.Name; Level = $c.Level; Rank = $c.Rank; Source = $c.Source; Rows = $rows; ModuleRows = @($rows | Where-Object { $_.Id -eq $ids[0] }) })
         }
     }
     if ($existing -eq 0) { $ctx.Note = "projeto(s) $(@($cands | ForEach-Object Name) -join ', ') não existe(m) no servidor"; return $ctx }
@@ -599,53 +795,124 @@ function Resolve-FileContext {
         return $ctx
     }
     $best = $found[0]
-    $tied = @($found | Where-Object { $_.Level -eq $best.Level })
+    # mesma pasta e mesma origem (ex.: dois .dpr): ambíguo; marcador > mapa > .dpr resolve a mesma pasta
+    $tied = @($found | Where-Object { $_.Level -eq $best.Level -and $_.Rank -eq $best.Rank })
     if ($tied.Count -gt 1 -and -not $Project) {
         throw (New-JaError 5 "o arquivo pertence a mais de um projeto ($(@($tied | ForEach-Object Name) -join ', ')); informe -Project")
     }
     $ctx.Status = 'versioned'
     $ctx.Project = $best.Name
+    $ctx.Source = $best.Source
     $ctx.Rows = $best.Rows
     $ctx.ModuleRows = $best.ModuleRows
     return $ctx
 }
 
 # Baixa uma revisão de cada módulo numa pasta nova e vazia (sem Prompt e sem noprompt): a última,
-# ou a de $Revs['<id>'] ('x.y', usada pelo sync -Label).
+# ou a de $Revs['<id>'] ('x.y', usada pelo sync -Label/-Date/-Dest). -Groups (projeto -> IDs) baixa
+# módulos de vários projetos numa execução só do console (locks); sem -Groups, -ProjectName/-Ids.
+# Sem -Tolerant, qualquer falha lança erro (checkout, checkin, undocheckout, revert: um módulo só,
+# nada muda no servidor sem a base). Com -Tolerant (R1: status -Project, sync, locks) a falha de UM
+# módulo vai para Errors['<id>'] e os outros seguem; o openproject que falha derruba só os módulos
+# daquele projeto (com um projeto só, lança 5 como antes). Map['<id>'] = arquivos baixados.
+# 'não gravou nenhum arquivo': o getmodule escolhe a revisão de MAIOR número (jvcs.dpr, GetRevisionListById)
+# e o GET_CHECKOUT_MODULE devolve os blobs dela; revisão sem blob (ex.: terrt.lnk no xHarbour) não grava nada.
 function Get-JvcsBase {
-    param([string]$ProjectName, [int[]]$Ids, [hashtable]$Revs = $null)
+    param([string]$ProjectName, [int[]]$Ids, [hashtable]$Revs = $null, [switch]$Tolerant, $Groups = $null)
+    if ($null -eq $Groups) { $Groups = [ordered]@{}; $Groups[$ProjectName] = @($Ids) }
     $root = New-JaTempDir -Prefix 'base'
     try {
         $lines = New-Object System.Collections.ArrayList
-        [void]$lines.Add('openproject "' + $ProjectName + '"')
-        foreach ($id in $Ids) {
-            $d = Join-Path $root ([string]$id)
-            [void](New-Item -ItemType Directory -Path $d -Force)
-            $get = 'getmodule ' + $id
-            if ($null -ne $Revs -and $Revs.ContainsKey([string]$id)) {
-                $rv = [string]$Revs[[string]$id]
-                if ($rv -notmatch '^\d{1,4}\.\d{1,5}$') { throw (New-JaError 9 "revisão inesperada '$rv' para o módulo $id") }
-                $get += ' rev=' + $rv
-            }
-            [void]$lines.Add($get + ' dest="' + $d + '"')
-        }
-        $r = Invoke-Jvcs ([string[]]$lines)
-        $e0 = Get-SectionError $r.Sections[0]
-        if ($e0) { throw (New-JaError 5 "openproject $($ProjectName): $e0") }
+        $plan = New-Object System.Collections.ArrayList
         $map = @{}
-        for ($i = 0; $i -lt $Ids.Count; $i++) {
-            $sec = $r.Sections[$i + 1]
-            $e = Get-SectionError $sec
-            if ($e) { throw (New-JaError 9 "getmodule $($Ids[$i]): $e") }
-            $files = @(Get-ChildItem -LiteralPath (Join-Path $root ([string]$Ids[$i])) -File)
-            if ($files.Count -eq 0) { throw (New-JaError 9 "getmodule $($Ids[$i]) não gravou nenhum arquivo") }
-            $map[[string]$Ids[$i]] = $files
+        $errs = @{}
+        $seen = @{}
+        foreach ($pn in @($Groups.Keys)) {
+            $gets = New-Object System.Collections.ArrayList
+            # o nome vai entre aspas numa linha do /input (vale para nome vindo do servidor, no locks)
+            $badName = (-not $pn -or ([string]$pn) -match '[\x00-\x1f\x7f"]')
+            foreach ($id in @($Groups[$pn])) {
+                $k = [string]$id
+                if ($seen.ContainsKey($k)) { continue }
+                $seen[$k] = $true
+                $msg = ''
+                $get = 'getmodule ' + $id
+                if ($badName) { $msg = "nome de projeto recusado para o /input (aspas ou controle): '$pn'" }
+                elseif ($null -ne $Revs -and $Revs.ContainsKey($k)) {
+                    $rv = [string]$Revs[$k]
+                    if ($rv -notmatch '^\d{1,4}\.\d{1,5}$') { $msg = "revisão inesperada '$rv' para o módulo $id" }
+                    else { $get += ' rev=' + $rv }
+                }
+                if ($msg) {
+                    if (-not $Tolerant) { throw (New-JaError 9 $msg) }
+                    $errs[$k] = $msg
+                    continue
+                }
+                $d = Join-Path $root $k
+                [void](New-Item -ItemType Directory -Path $d -Force)
+                [void]$gets.Add([pscustomobject]@{ Line = ($get + ' dest="' + $d + '"'); Id = [int]$id })
+            }
+            if ($gets.Count -eq 0) { continue }
+            [void]$lines.Add('openproject "' + $pn + '"')
+            [void]$plan.Add([pscustomobject]@{ Kind = 'open'; Project = [string]$pn; Id = $null })
+            foreach ($g in $gets) {
+                [void]$lines.Add($g.Line)
+                [void]$plan.Add([pscustomobject]@{ Kind = 'get'; Project = [string]$pn; Id = $g.Id })
+            }
         }
-        return [pscustomobject]@{ Root = $root; Map = $map }
+        if ($plan.Count -eq 0) { return [pscustomobject]@{ Root = $root; Map = $map; Errors = $errs } }
+        $r = Invoke-Jvcs ([string[]]$lines)
+        $openErr = ''
+        for ($i = 0; $i -lt $plan.Count; $i++) {
+            $p = $plan[$i]
+            $e = Get-SectionError $r.Sections[$i]
+            if ($p.Kind -eq 'open') {
+                $openErr = ''
+                if ($e) {
+                    $openErr = "openproject $($p.Project): $e"
+                    if (-not $Tolerant -or $Groups.Count -eq 1) { throw (New-JaError 5 $openErr) }
+                }
+                continue
+            }
+            $k = [string]$p.Id
+            $msg = $openErr
+            if (-not $msg -and $e) { $msg = "getmodule $($p.Id): $e" }
+            if (-not $msg) {
+                $files = @(Get-ChildItem -LiteralPath (Join-Path $root $k) -File)
+                if ($files.Count -gt 0) { $map[$k] = $files; continue }
+                $msg = "getmodule $($p.Id) não gravou nenhum arquivo (a revisão que o console escolhe não tem arquivo no servidor)"
+            }
+            if (-not $Tolerant) { throw (New-JaError 9 $msg) }
+            $errs[$k] = $msg
+        }
+        return [pscustomobject]@{ Root = $root; Map = $map; Errors = $errs }
     } catch {
         Remove-JaTempDir $root
         throw
     }
+}
+
+# R1: estado local de um módulo SEM a base do servidor (getmodule falhou). Por membro da listagem:
+# 'missing' se o arquivo não existe na pasta local, 'unknown' se existe (não há com o que comparar)
+# ou se o nome veio truncado. Agregado: 'missing' só quando nenhum existe; senão 'unknown'.
+function Get-LocalPresence {
+    param($Rows, [string]$LocalDir, [string]$Action = '')
+    $files = New-Object System.Collections.ArrayList
+    $present = 0
+    foreach ($r in $Rows) {
+        $nm = [string]$r.File
+        $st = 'unknown'; $ro = $false
+        if ($LocalDir -and $nm -and -not ($nm.Length -eq 30 -and $nm.EndsWith('...'))) {
+            $lp = Join-Path $LocalDir $nm
+            if (Test-Path -LiteralPath $lp -PathType Leaf) { $present++; $ro = (New-Object IO.FileInfo $lp).IsReadOnly } else { $st = 'missing' }
+        } else { $present++ }
+        $f = [ordered]@{ name = $nm; localState = $st; readOnly = $ro }
+        if ($Action) { $f['action'] = $Action }
+        [void]$files.Add($f)
+    }
+    $agg = 'unknown'
+    if ($present -eq 0) { $agg = 'missing' }
+    return [pscustomobject]@{ State = $agg; Files = $files }
 }
 
 # Compara cada membro da base com o arquivo local de mesmo nome na pasta local.
@@ -872,14 +1139,56 @@ function Invoke-CmdProjects {
     $script:Res.message = "$($list.Count) projeto(s)"
 }
 
-function Get-DefaultProjectName {
-    if ($Project) { return (Get-ProjectNameFromArg $Project) }
-    $here = @(Get-ChildItem -LiteralPath (Get-Location).Path -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.dpr' -or $_.Extension -ieq '.dpk' })
-    if ($here.Count -eq 1) { return $here[0].Name.ToLowerInvariant() }
-    # o JEDI VCS recusa nomes padrão do Delphi (Project1, Package1): descarta-os na escolha automática
-    $named = @($here | Where-Object { $_.BaseName -notmatch '^(Project|Package)\d*$' -and $_.BaseName -notmatch ' - (C[oó]pia|Copy)( \(\d+\))?$' })
-    if ($named.Count -eq 1) { return $named[0].Name.ToLowerInvariant() }
-    throw (New-JaError 2 'informe -Project <nome.dpr> (não há um único .dpr/.dpk na pasta atual)')
+# Projeto padrão (R4). -Project; senão, da pasta atual para cima, a pasta mais próxima que declara um
+# projeto, e numa mesma pasta: .jvcsproject > mapa [projects] do config.ini > .dpr/.dpk. O .dpr/.dpk só
+# conta na pasta atual (como antes), e uma pasta acima nunca vence o .dpr/.dpk da pasta atual.
+function Resolve-DefaultProject {
+    if ($null -ne $script:JaDefaultProject) { return $script:JaDefaultProject }
+    $r = $null
+    if ($Project) {
+        $r = [pscustomobject]@{ Name = (Get-ProjectNameFromArg $Project); Source = '-Project'; Where = $null; Dir = $null; Level = 0 }
+    } else {
+        $cwd = (Get-Location).ProviderPath
+        $decl = $null
+        $mk = Find-JaProjectMarkers $cwd   # sem @(): a função devolve a lista com "return ,"
+        if ($mk.Count -gt 0) { $decl = [pscustomobject]@{ Name = $mk[0].Project; Source = '.jvcsproject'; Where = $mk[0].Path; Dir = $mk[0].Dir; Level = $mk[0].Level } }
+        $me = Find-JaMapEntry -Map $script:CfgInfo.ProjectMap -Dir $cwd
+        if ($me) {
+            if (-not $decl -or $me.Level -lt $decl.Level) { $decl = [pscustomobject]@{ Name = $me.Value; Source = 'config.ini [projects]'; Where = $me.Dir; Dir = $me.Dir; Level = $me.Level } }
+            elseif ($me.Level -eq $decl.Level -and $me.Value -ne $decl.Name) { Add-JaWarning "$($decl.Where) (project=$($decl.Name)) prevalece sobre o mapa [projects] $($me.Dir)=$($me.Value)" }
+        }
+        if ($decl -and $decl.Level -eq 0) { $r = $decl }
+        else {
+            $here = @(Get-ChildItem -LiteralPath $cwd -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.dpr' -or $_.Extension -ieq '.dpk' })
+            if ($here.Count -gt 0) {
+                $pick = $null
+                if ($here.Count -eq 1) { $pick = $here[0] }
+                else {
+                    # o JEDI VCS recusa nomes padrão do Delphi (Project1, Package1): descarta-os na escolha automática
+                    $named = @($here | Where-Object { $_.BaseName -notmatch '^(Project|Package)\d*$' -and $_.BaseName -notmatch ' - (C[oó]pia|Copy)( \(\d+\))?$' })
+                    if ($named.Count -eq 1) { $pick = $named[0] }
+                }
+                if (-not $pick) { throw (New-JaError 2 'informe -Project <projeto> (não há um único .dpr/.dpk na pasta atual)') }
+                $r = [pscustomobject]@{ Name = $pick.Name.ToLowerInvariant(); Source = '.dpr/.dpk'; Where = $pick.FullName; Dir = $cwd; Level = 0 }
+            } elseif ($decl) { $r = $decl }
+        }
+        if (-not $r) { throw (New-JaError 2 'informe -Project <projeto> (nenhum .jvcsproject nem mapa [projects] do config.ini nesta pasta ou acima, nem um único .dpr/.dpk na pasta atual)') }
+    }
+    $script:JaDefaultProject = $r
+    if ($r.Source -ne '-Project') { $script:Res['projectSource'] = "$($r.Source): $($r.Where)" }
+    return $r
+}
+
+function Get-DefaultProjectName { return (Resolve-DefaultProject).Name }
+
+# A pasta $Dir é a "casa" do projeto? (arquivo com o nome do projeto, .jvcsproject ou mapa [projects])
+function Test-JaProjectHome {
+    param([string]$Dir, [string]$ProjectName)
+    if (Test-Path -LiteralPath ([IO.Path]::Combine($Dir, $ProjectName)) -PathType Leaf) { return $true }
+    $mp = [IO.Path]::Combine($Dir, $script:JaMarkerName)
+    if ((Test-Path -LiteralPath $mp -PathType Leaf) -and (Read-JaProjectMarker $mp).Project -eq $ProjectName) { return $true }
+    $k = ConvertTo-JaDirKey $Dir
+    return [bool]($k -and $script:CfgInfo.ProjectMap.Contains($k) -and [string]$script:CfgInfo.ProjectMap[$k] -eq $ProjectName)
 }
 
 function Get-ProjectDir {
@@ -889,13 +1198,18 @@ function Get-ProjectDir {
         if (Test-Path -LiteralPath $full -PathType Leaf) { return (Split-Path -Parent $full) }
         if (Test-Path -LiteralPath $full -PathType Container) { return $full }
     }
-    $d = (Get-Location).Path
+    $dp = $script:JaDefaultProject
+    if ($dp -and $dp.Dir -and $dp.Name -eq $ProjectName) { return $dp.Dir }
+    $d = (Get-Location).ProviderPath
     while ($d) {
-        if (Test-Path -LiteralPath (Join-Path $d $ProjectName) -PathType Leaf) { return $d }
+        if (Test-JaProjectHome -Dir $d -ProjectName $ProjectName) { return $d }
         $parent = [IO.Path]::GetDirectoryName($d)
         if (-not $parent -or $parent -eq $d) { break }
         $d = $parent
     }
+    # rodado fora da pasta (ex.: -Project sesis de C:\): a pasta do mapa [projects] do usuário, se for uma só
+    $md = Get-JaMapDirsForProject -Map $script:CfgInfo.ProjectMap -ProjectName $ProjectName
+    if ($md.Count -eq 1 -and (Test-Path -LiteralPath $md[0] -PathType Container)) { return $md[0] }
     return $null
 }
 
@@ -925,23 +1239,202 @@ function Invoke-CmdList {
 }
 
 function Invoke-CmdLocks {
+    if ($NoLocalState -and $null -ne $script:OnlyFilter -and @($script:OnlyFilter.Local).Count -gt 0) {
+        throw (New-JaError 2 '-Only com estado local (clean, modified, missing, unknown, error) precisa do estado local: tire o -NoLocalState')
+    }
+    # -Project no locks só escolhe o projeto das bases (estado local): validado ANTES de rodar o console;
+    # com -NoLocalState continua ignorado, como na 1.4.0
+    $fixed = ''
+    if ($Project -and -not $NoLocalState) { $fixed = Get-ProjectNameFromArg $Project }
     Enter-JaLock
     $line = 'listlocks'
     if ($All) { $line = 'listlocks all_users' }
     $r = Invoke-Jvcs @($line)
     $e = Get-SectionError $r.Sections[0]
     if ($e) { throw (New-JaError 9 "$($line): $e") }
-    foreach ($row in (ConvertFrom-ListLocks $r.Sections[0])) {
-        [void]$script:Res.modules.Add([ordered]@{ id = $row.Id; name = $row.File; dir = $row.Dir; version = $row.Version; lockedBy = $row.Owner; lockedAt = $row.Locked; localState = $null })
+    $rows = ConvertFrom-ListLocks $r.Sections[0]
+    # S0002 (N5): a hora do lock vem em UTC; -OlderThan filtra pela idade
+    $limit = $null
+    if ($OlderThan) { $limit = Get-OlderThanLimit $OlderThan; $script:Res['olderThan'] = $limit.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss') }
+    $nowUtc = (Get-Date).ToUniversalTime()
+    $noDate = 0
+    $byId = [ordered]@{}
+    foreach ($row in $rows) {
+        $utc = ConvertFrom-JaLockTime $row.Locked
+        if ($null -ne $limit) {
+            if ($null -eq $utc) { $noDate++ }
+            elseif ($utc -ge $limit) { continue }
+        }
+        $it = [ordered]@{ id = $row.Id; name = $row.File; dir = $row.Dir; version = $row.Version; lockedBy = $row.Owner; lockedAt = $row.Locked; lockedAtLocal = $null; lockAgeDays = $null; localState = $null; path = $null; project = $null; state = $null; exitCode = 0; message = '' }
+        if ($null -ne $utc) {
+            $it.lockedAtLocal = $utc.ToLocalTime().ToString('yyyy-MM-dd HH:mm:ss')
+            $it.lockAgeDays = [Math]::Round(($nowUtc - $utc).TotalDays, 1)
+        }
+        [void]$script:Res.modules.Add($it)
+        $byId[[string]$row.Id] = [pscustomobject]@{ Row = $row; Item = $it }
     }
     $who = 'meus'
     if ($All) { $who = 'de todos os usuários' }
     $script:Res.message = "$($script:Res.modules.Count) módulo(s) em checkout ($who)"
+    if ($null -ne $limit) {
+        $script:Res.message += " com lock anterior a $($script:Res['olderThan'])"
+        if ($noDate -gt 0) { Add-JaWarning "$noDate lock(s) sem data legível no listlocks: incluídos na lista" }
+    }
+    if (-not $NoLocalState -and $byId.Count -gt 0) { Add-LockLocalState -ById $byId -Fixed $fixed }
+}
+
+# Nome de projeto vindo do servidor (sharedby) que vai entre aspas numa linha do /input: só ANSI, sem
+# aspas, controle, barra, dois-pontos nem curinga; fora disso é ignorado (dado do servidor, não ordem).
+function Test-JaServerProjectName {
+    param([string]$Name)
+    if (-not $Name -or $Name.Length -gt 250) { return $false }
+    if ($Name -match '[\x00-\x1f\x7f"\\/<>|*?:]') { return $false }
+    return (Test-JaAnsiText $Name)
+}
+
+# R6: estado local (clean/modified/missing/unknown) de cada módulo em checkout MEU; os de outros
+# usuários (-All) ficam com localState null e state notMine. O listlocks não diz o projeto: vem do
+# sharedby (console 2026; o servidor só devolve projetos não excluídos), escolhendo para cada módulo o
+# projeto que cobre mais módulos em lock (o -Project dado tem preferência quando está na lista). Sem
+# console 2026, só os módulos que o listproject do -Project mostra (nunca abre um projeto para ler
+# módulo de outro); sem os dois, não calcula (aviso). Uma execução para o projeto dos módulos e UMA
+# para todas as bases (Get-JvcsBase -Groups -Tolerant). Falha num módulo ou numa dessas execuções:
+# state=error no item (o comando sai 11) e a lista do listlocks continua; 4 e 12 derrubam o comando.
+function Add-LockLocalState {
+    param($ById, [string]$Fixed = '')
+    $mine = [ordered]@{}
+    foreach ($k in $ById.Keys) {
+        $x = $ById[$k]
+        if (Test-IsMe $x.Row.Owner) { $mine[$k] = $x; continue }
+        $x.Item.state = 'notMine'
+        $x.Item.message = 'checkout de outro usuário: estado local não calculado'
+    }
+    if ($mine.Count -eq 0) { return }
+    $has2026 = $true
+    try { Assert-Console2026 'locks (estado local)' -Needle 'projects that share a module' } catch { $has2026 = $false }
+    if (-not $has2026 -and -not $Fixed) {
+        foreach ($k in $mine.Keys) { $mine[$k].Item.state = 'notComputed'; $mine[$k].Item.message = 'estado local não calculado: o console configurado não tem sharedby (2026); use -Project' }
+        Add-JaWarning 'estado local dos locks não calculado: o console configurado não tem sharedby (console 2026). Informe -Project <projeto> para baixar as bases por ele, ou use -NoLocalState'
+        return
+    }
+    # Projeto de cada módulo. A falha desta execução (timeout, console) não derruba o locks: a lista já
+    # veio do listlocks; os módulos ficam state=error. Credencial (4) e ambiente (12) derrubam, como no resto.
+    $projOf = @{}
+    try {
+        if ($has2026) {
+            $keys = @($mine.Keys)
+            $rs = Invoke-Jvcs ([string[]]@($keys | ForEach-Object { 'sharedby ' + $_ }))
+            for ($i = 0; $i -lt $keys.Count; $i++) {
+                $sec = $rs.Sections[$i]
+                $es = Get-SectionError $sec
+                $names = New-Object System.Collections.ArrayList
+                if ($es) { $mine[$keys[$i]].Item.message = "sharedby: $es" }
+                else {
+                    # o GET_SHARED_BY só devolve projetos não excluídos (projects.deleted = '0')
+                    $prj = ConvertFrom-SharedBy $sec
+                    foreach ($pp in $prj) {
+                        $pn = ([string]$pp.name).Trim()
+                        if ((Test-JaServerProjectName $pn) -and -not $names.Contains($pn)) { [void]$names.Add($pn) }
+                    }
+                }
+                $projOf[$keys[$i]] = $names
+            }
+        } else {
+            # sem sharedby: só os módulos que o listproject do -Project mostra. Nunca abre um projeto para
+            # ler módulo de outro (o console pede a revisão com ProjectID 0 e o servidor só confere o
+            # direito no projeto aberto: a leitura e o log 'g' ficariam atribuídos ao projeto errado)
+            $lst = Get-ProjectListing -Names @($Fixed)
+            if ($null -eq $lst[$Fixed]) { throw (New-JaError 5 "projeto '$Fixed' (-Project) não existe no servidor") }
+            $inProj = @{}
+            foreach ($rw in $lst[$Fixed]) { $inProj[[string]$rw.Id] = $true }
+            foreach ($k in $mine.Keys) {
+                if ($inProj.ContainsKey($k)) { $projOf[$k] = @($Fixed); continue }
+                $projOf[$k] = @()
+                $mine[$k].Item.state = 'notComputed'
+                $mine[$k].Item.message = "estado local não calculado: o módulo não é do projeto $Fixed (-Project) e o console configurado não tem sharedby (2026)"
+            }
+        }
+    } catch {
+        $code = Get-JaErrorCode $_
+        if ($code -eq 4 -or $code -eq 12) { throw }
+        $msg = Get-JaErrorMessage $_
+        foreach ($k in $mine.Keys) {
+            $x = $mine[$k]
+            if ($x.Item.state) { continue }
+            $x.Item.localState = 'unknown'; $x.Item.state = 'error'; $x.Item.exitCode = $code
+            $x.Item.message = "estado local não verificado (projeto do módulo): $msg"
+        }
+        return
+    }
+    $freq = @{}
+    foreach ($k in $projOf.Keys) { foreach ($pn in $projOf[$k]) { $freq[$pn] = 1 + [int]$freq[$pn] } }
+    $groups = [ordered]@{}
+    $dirOf = [ordered]@{}
+    foreach ($k in $mine.Keys) {
+        $x = $mine[$k]
+        if ($x.Item.state) { continue }
+        $cands = @($projOf[$k])
+        if ($cands.Count -eq 0) {
+            if ($x.Item.message) {
+                # o console respondeu erro ao sharedby deste módulo: não verificado
+                $x.Item.localState = 'unknown'; $x.Item.state = 'error'; $x.Item.exitCode = 9
+            } else {
+                # nenhum projeto ativo (ou só nomes recusados) contém o módulo: não é falha de verificação
+                $x.Item.state = 'notComputed'
+                $x.Item.message = 'estado local não calculado: o sharedby não mostra projeto ativo (com nome aceito) para o módulo; confira com status <arquivo> -Project <projeto>'
+            }
+            continue
+        }
+        $pick = [string]$cands[0]
+        if ($Fixed -and ($cands -contains $Fixed)) { $pick = $Fixed }
+        elseif ($cands.Count -gt 1) {
+            $pick = [string](@($cands | Sort-Object -Property @{ Expression = { $freq[$_] }; Descending = $true }, @{ Expression = { $_ }; Descending = $false })[0])
+        }
+        $x.Item.project = $pick
+        $script:JaProjectName = $pick
+        $loc = Find-LocalMember -Row $x.Row -ProjectDir (Get-ProjectDir $pick)
+        if (-not $loc.Path) {
+            $x.Item.localState = 'unknown'; $x.Item.state = 'pathTruncated'
+            $x.Item.message = 'caminho do servidor truncado (ou não absoluto) e arquivo não localizado; rode status <arquivo>'
+            continue
+        }
+        $x.Item.path = $loc.Path
+        $dirOf[$k] = [IO.Path]::GetDirectoryName($loc.Path)
+        if (-not $groups.Contains($pick)) { $groups[$pick] = New-Object System.Collections.ArrayList }
+        [void]$groups[$pick].Add([int]$k)
+    }
+    if ($groups.Count -eq 0) { return }
+    $base = $null
+    try {
+        $base = Get-JvcsBase -Groups $groups -Tolerant
+        foreach ($k in $dirOf.Keys) {
+            $x = $mine[$k]
+            if (-not (Set-StatusFromBase -Item $x.Item -Base $base -Key $k -Rows @($x.Row) -LocalDir $dirOf[$k])) { continue }
+            switch ($x.Item.localState) {
+                'clean' { $x.Item.message = 'igual à última revisão: lock sem alteração (undocheckout libera)' }
+                'modified' { $x.Item.message = 'diferente da última revisão: pede checkin (ou undocheckout -Discard)' }
+                'missing' { $x.Item.message = 'arquivo(s) do módulo ausente(s) no disco' }
+            }
+        }
+    } catch {
+        $code = Get-JaErrorCode $_
+        if ($code -eq 4 -or $code -eq 12) { throw }
+        $msg = Get-JaErrorMessage $_
+        foreach ($k in $dirOf.Keys) {
+            $x = $mine[$k]
+            if ($x.Item.state) { continue }
+            $x.Item.localState = 'unknown'; $x.Item.state = 'error'; $x.Item.exitCode = 9
+            $x.Item.message = "estado local não verificado: $msg"
+        }
+    } finally { if ($base) { Remove-JaTempDir $base.Root } }
 }
 
 # Procura no disco o arquivo de um membro cujo caminho a tabela mostra truncado.
+# Caminho do servidor vazio ou relativo: Path $null (nunca resolve contra a pasta atual; Join-Path
+# com pasta vazia lançaria erro e derrubaria o projeto inteiro).
 function Find-LocalMember {
     param($Row, [string]$ProjectDir)
+    if (-not (Test-JaRootedPath $Row.Dir)) { return [pscustomobject]@{ Path = $null; Exact = $false; Count = 0 } }
     if (-not ($Row.Dir.Length -eq 50 -and $Row.Dir.EndsWith('...'))) {
         return [pscustomobject]@{ Path = (Join-Path $Row.Dir $Row.File); Exact = $true }
     }
@@ -958,7 +1451,7 @@ function Find-LocalMember {
             $hits = @(Get-ChildItem -LiteralPath $root -Recurse -Depth 8 -File -Filter $Row.File -ErrorAction SilentlyContinue |
                     Where-Object { ($_.DirectoryName.ToLowerInvariant() + '\').StartsWith($vis, [StringComparison]::OrdinalIgnoreCase) })
             if ($hits.Count -gt 1 -and $script:JaProjectName) {
-                $hits = @($hits | Where-Object { Test-Path -LiteralPath (Join-Path $_.DirectoryName $script:JaProjectName) -PathType Leaf })
+                $hits = @($hits | Where-Object { Test-JaProjectHome -Dir $_.DirectoryName -ProjectName $script:JaProjectName })
             }
         }
     }
@@ -966,66 +1459,119 @@ function Find-LocalMember {
     return [pscustomobject]@{ Path = $null; Exact = $false; Count = $hits.Count }
 }
 
+# R1: compara um módulo com a base já baixada (Get-JvcsBase -Tolerant) e preenche o item. Sem base
+# (getmodule falhou) ou erro lendo o arquivo local: state=error, exitCode 9 e localState pela
+# presença dos arquivos (Get-LocalPresence); nada lança, os outros módulos seguem.
+function Set-StatusFromBase {
+    param($Item, $Base, [string]$Key, $Rows, [string]$LocalDir)
+    try {
+        if (-not $Base.Map.ContainsKey($Key)) {
+            $why = [string]$Base.Errors[$Key]
+            if (-not $why) { $why = 'revisão não baixada do servidor' }
+            throw (New-JaError 9 $why)
+        }
+        $cmp = Compare-WithBase -BaseFiles $Base.Map[$Key] -LocalDir $LocalDir
+        $Item.localState = $cmp.State
+        $Item['files'] = ConvertTo-FileItems $cmp
+        $Item.state = 'ok'
+        return $true
+    } catch {
+        $pr = Get-LocalPresence -Rows $Rows -LocalDir $LocalDir
+        $Item.localState = $pr.State
+        $Item['files'] = $pr.Files
+        $Item.state = 'error'; $Item.exitCode = 9
+        $Item.message = 'estado não verificado: ' + (Get-JaErrorMessage $_)
+        return $false
+    }
+}
+
+function Get-FileStatusItem {
+    param([string]$FullPath)
+    $ctx = Resolve-FileContext $FullPath
+    if ($ctx.Status -ne 'versioned') {
+        return [ordered]@{ id = $null; name = [IO.Path]::GetFileName($FullPath); path = $FullPath; version = $null; lockedBy = $null; localState = 'notVersioned'; state = $ctx.Status; exitCode = 0; message = $ctx.Note }
+    }
+    $script:Res.project = $ctx.Project
+    $item = New-ModuleItem $ctx.ModuleRows $FullPath
+    $base = Get-JvcsBase -ProjectName $ctx.Project -Ids @($item.id) -Tolerant
+    try { [void](Set-StatusFromBase -Item $item -Base $base -Key ([string]$item.id) -Rows $ctx.ModuleRows -LocalDir ([IO.Path]::GetDirectoryName($FullPath))) }
+    finally { Remove-JaTempDir $base.Root }
+    return $item
+}
+
 function Invoke-CmdStatus {
     Enter-JaLock
     $files = @($Rest | Where-Object { $_ -and $_.Trim() })
     if ($files.Count -gt 0) {
         foreach ($f in (Get-FileArgs)) {
-            $ctx = Resolve-FileContext $f
-            if ($ctx.Status -ne 'versioned') {
-                $item = [ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = 'notVersioned'; state = $ctx.Status; exitCode = 0; message = $ctx.Note }
-                [void]$script:Res.modules.Add($item)
-                continue
+            # R1: o erro de UM arquivo vira item com state=error (os outros seguem); credencial,
+            # ambiente e timeout derrubam o comando (repetiriam em cada arquivo)
+            try { [void]$script:Res.modules.Add((Get-FileStatusItem $f)) }
+            catch {
+                $code = Get-JaErrorCode $_
+                if ($code -eq 4 -or $code -eq 12 -or (Test-JaTimeoutError $_)) { throw }
+                [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = 'unknown'; state = 'error'; exitCode = $code; message = (Get-JaErrorMessage $_) })
             }
-            $script:Res.project = $ctx.Project
-            $item = New-ModuleItem $ctx.ModuleRows $f
-            $base = Get-JvcsBase -ProjectName $ctx.Project -Ids @($item.id)
-            try {
-                $cmp = Compare-WithBase -BaseFiles $base.Map[[string]$item.id] -LocalDir ([IO.Path]::GetDirectoryName($f))
-                $item.localState = $cmp.State
-                $item['files'] = ConvertTo-FileItems $cmp
-                $item.state = 'ok'
-            } finally { Remove-JaTempDir $base.Root }
-            [void]$script:Res.modules.Add($item)
         }
-        $script:Res.message = "$($script:Res.modules.Count) arquivo(s) verificado(s)"
+        # não diz "verificado" para o que deu erro; um arquivo só com erro: a mensagem é a do item (como antes)
+        $errs = @($script:Res.modules | Where-Object { [string]$_['state'] -eq 'error' })
+        if ($errs.Count -eq 0) { $script:Res.message = "$($script:Res.modules.Count) arquivo(s) verificado(s)" }
+        elseif ($script:Res.modules.Count -eq 1) { $script:Res.message = [string]$errs[0]['message'] }
+        else { $script:Res.message = "$($script:Res.modules.Count - $errs.Count) arquivo(s) verificado(s); $($errs.Count) não verificado(s) (state=error): " + (@($errs | ForEach-Object { "$($_['name']): $($_['message'])" }) -join ' | ') }
         return
     }
+    # S0002 (N4): todos os projetos do servidor
+    if ($AllProjects) { Invoke-StatusAllProjects; return }
     # status do projeto inteiro
     $name = Get-DefaultProjectName
     $listing = Get-ProjectListing -Names @($name)
     if ($null -eq $listing[$name]) { throw (New-JaError 5 "projeto '$name' não existe no servidor") }
     $script:Res.project = $name
+    $x = Invoke-StatusOneProject -Name $name -Listing $listing[$name]
+    $script:Res.message = $x.Message
+}
+
+# Status de um projeto inteiro (listagem já lida): acrescenta os módulos em $script:Res.modules e
+# devolve {Message; Count; Errors}. Usado pelo status -Project e pelo status -AllProjects.
+function Invoke-StatusOneProject {
+    param([string]$Name, $Listing)
+    $name = $Name
     $pdir = Get-ProjectDir $name
     $script:JaProjectName = $name
-    $groups = Get-ModuleGroups $listing[$name]
-    $ids = @($groups.Keys | ForEach-Object { [int]$_ })
-    if ($ids.Count -eq 0) { $script:Res.message = 'projeto sem módulos'; return }
-    $base = Get-JvcsBase -ProjectName $name -Ids $ids
+    $groups = Get-ModuleGroups $Listing
+    if ($groups.Count -eq 0) { return [pscustomobject]@{ Message = 'projeto sem módulos'; Count = 0; Errors = 0 } }
+    $before = $script:Res.modules.Count
+    # 1a passada: arquivo local de cada módulo; a base só é baixada para quem tem pasta local
+    $paths = @{}
+    foreach ($k in $groups.Keys) {
+        foreach ($r in $groups[$k]) {
+            $loc = Find-LocalMember -Row $r -ProjectDir $pdir
+            if ($loc.Path) { $paths[$k] = $loc.Path; break }
+        }
+    }
+    $base = $null
+    $ids = @($groups.Keys | Where-Object { $paths.ContainsKey($_) } | ForEach-Object { [int]$_ })
+    if ($ids.Count -gt 0) { $base = Get-JvcsBase -ProjectName $name -Ids $ids -Tolerant }
+    $nErr = 0
     try {
         foreach ($k in $groups.Keys) {
             $rows = $groups[$k]
             $item = New-ModuleItem $rows
-            $localDir = $null; $unknown = $false
-            foreach ($r in $rows) {
-                $loc = Find-LocalMember -Row $r -ProjectDir $pdir
-                if ($loc.Path) { $localDir = [IO.Path]::GetDirectoryName($loc.Path); $item.path = $loc.Path; break }
-                $unknown = $true
-            }
-            if ($localDir) {
-                $cmp = Compare-WithBase -BaseFiles $base.Map[$k] -LocalDir $localDir
-                $item.localState = $cmp.State
-                $item['files'] = ConvertTo-FileItems $cmp
-                $item.state = 'ok'
+            if ($paths.ContainsKey($k)) {
+                $item.path = $paths[$k]
+                if (-not (Set-StatusFromBase -Item $item -Base $base -Key $k -Rows $rows -LocalDir ([IO.Path]::GetDirectoryName($paths[$k])))) { $nErr++ }
             } else {
                 $item.localState = 'unknown'
                 $item.state = 'pathTruncated'
-                $item.message = 'caminho do servidor truncado pelo console e arquivo não localizado sob a pasta do projeto; rode status <arquivo>'
+                $item.message = 'caminho do servidor truncado pelo console (ou não absoluto) e arquivo não localizado sob a pasta do projeto; rode status <arquivo>'
             }
             [void]$script:Res.modules.Add($item)
         }
-    } finally { Remove-JaTempDir $base.Root }
-    $script:Res.message = "$($script:Res.modules.Count) módulo(s) em $name"
+    } finally { if ($base) { Remove-JaTempDir $base.Root } }
+    $count = $script:Res.modules.Count - $before
+    $msg = "$count módulo(s) em $name"
+    if ($nErr -gt 0) { $msg += "; $nErr não verificado(s) (state=error: a revisão do servidor não baixou ou o arquivo local não pôde ser lido)" }
+    return [pscustomobject]@{ Message = $msg; Count = $count; Errors = $nErr }
 }
 
 # ======================================================================= checkout
@@ -1186,15 +1732,17 @@ function Invoke-CompensateCheckout {
 }
 
 function Invoke-CmdCheckout {
-    param([bool]$Ensure)
+    param([bool]$Ensure, $FileList = $null)
     $max = 1000
     if ($Ensure) { $max = 1 }
-    $files = Get-FileArgs -Min 1 -Max $max
+    $files = $FileList
+    if ($null -eq $files) { $files = Get-FileArgs -Min 1 -Max $max }
     Enter-JaLock
     foreach ($f in $files) {
-        try { [void]$script:Res.modules.Add((Invoke-CheckoutOne -FullPath $f -Ensure $Ensure)) }
+        Write-JaBatchStart $f
+        try { Add-JaResultItem (Invoke-CheckoutOne -FullPath $f -Ensure $Ensure) }
         catch {
-            [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'error'; exitCode = (Get-JaErrorCode $_); message = (Get-JaErrorMessage $_) })
+            Add-JaResultItem ([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'error'; exitCode = (Get-JaErrorCode $_); message = (Get-JaErrorMessage $_) })
         }
     }
 }
@@ -1203,6 +1751,8 @@ function Invoke-CmdCheckout {
 
 function Get-CheckinComment {
     $c = ([string]$Comment).Trim()
+    # S0002: -CommentFromGit = assunto do último commit do Git que mexeu nos arquivos
+    if (-not $c -and $CommentFromGit) { $c = Get-JaCommentFromGit -Files @(Get-FileArgs) }
     if (-not $c) { throw (New-JaError 2 'informe -Comment "texto" (uma linha, o porquê da mudança)') }
     if ($c -match '[\r\n]') { throw (New-JaError 2 'comentário deve ter uma linha só') }
     if ($c.Contains('"')) { throw (New-JaError 2 'comentário não pode conter aspas duplas (o console 2.5 não tem escape)') }
@@ -1350,10 +1900,14 @@ function Invoke-CheckinOne {
             $item.message = "check-in ok: $versionBefore -> $($item.version)"
         }
         if ($item.state -eq 'checkedIn' -or $item.state -eq 'checkedInKept') {
-            # confere o arquivo local contra a revisão recém-criada
-            $nb = Get-JvcsBase -ProjectName $ctx.Project -Ids @($item.id)
+            # confere o arquivo local contra a revisão recém-criada. A revisão JÁ entrou: falha aqui
+            # vira aviso, nunca erro do item (antes, a exceção virava state=error num check-in feito)
+            $nb = $null
             try {
-                $cmp3 = Compare-WithBase -BaseFiles $nb.Map[[string]$item.id] -LocalDir $localDir
+                $nb = Get-JvcsBase -ProjectName $ctx.Project -Ids @($item.id) -Tolerant
+                $kk = [string]$item.id
+                if (-not $nb.Map.ContainsKey($kk)) { throw (New-JaError 9 ([string]$nb.Errors[$kk])) }
+                $cmp3 = Compare-WithBase -BaseFiles $nb.Map[$kk] -LocalDir $localDir
                 $item.localState = $cmp3.State
                 $item['files'] = ConvertTo-FileItems $cmp3
                 if ($cmp3.State -ne 'clean') { Add-JaWarning "$($item.name): depois do check-in o arquivo local difere da revisão $($item.version) do servidor" }
@@ -1361,7 +1915,12 @@ function Invoke-CheckinOne {
                     $ro = @($cmp3.Members | Where-Object { $_.ReadOnly })
                     if ($ro.Count -gt 0) { Add-JaWarning ('depois do Put o arquivo ficou somente leitura (esperado gravável; o checkout continua): ' + (@($ro | ForEach-Object Name) -join ', ')) }
                 }
-            } finally { Remove-JaTempDir $nb.Root }
+            } catch {
+                # não deixa no item o estado da comparação ANTERIOR (contra a base velha: 'modified')
+                $item.localState = 'unknown'
+                if ($item.Contains('files')) { $item.Remove('files') }
+                Add-JaWarning "$($item.name): check-in ok, mas não foi possível conferir o arquivo local contra a revisão $($item.version): $(Get-JaErrorMessage $_)"
+            } finally { if ($nb) { Remove-JaTempDir $nb.Root } }
         } else {
             $item['files'] = ConvertTo-FileItems (Compare-WithBase -BaseFiles $base.Map[[string]$item.id] -LocalDir $localDir)
         }
@@ -1370,15 +1929,18 @@ function Invoke-CheckinOne {
 }
 
 function Invoke-CmdCheckin {
-    $files = Get-FileArgs
+    param($FileList = $null, [string]$WhatOverride = '')
+    $files = $FileList
+    if ($null -eq $files) { $files = Get-FileArgs }
     $c = Get-CheckinComment
     $script:Res['comment'] = $c
-    $what = 'checkin ' + (($files | ForEach-Object { '"' + $_ + '"' }) -join ' ') + " -Comment `"$Comment`""
+    $what = $WhatOverride
+    if (-not $what) { $what = 'checkin ' + (($files | ForEach-Object { '"' + $_ + '"' }) -join ' ') + " -Comment `"$Comment`"" }
     if ($Keep) {
         # Put (checkin ... keep): só o console 2026 tem; o original faria check-in normal e soltaria o lock
         Assert-Console2026 'checkin -Keep' -Needle 'stays checked out (Put'
         $script:Res['keep'] = $true
-        $what += ' -Keep'
+        if (-not $WhatOverride) { $what += ' -Keep' }
     }
     if (Test-JaBuildOn) {
         # buildCheck=warn|block: o modo e o -SkipBuild são conferidos ANTES da compilação (que pode
@@ -1387,23 +1949,24 @@ function Invoke-CmdCheckin {
         $probe = [ordered]@{ state = $null; exitCode = 0; message = '' }
         if (-not (Test-ModeGate -Item $probe -Kind 'checkin' -What $what)) {
             foreach ($f in $files) {
-                [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = $probe.state; exitCode = $probe.exitCode; message = $probe.message })
+                Add-JaResultItem ([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = $probe.state; exitCode = $probe.exitCode; message = $probe.message })
             }
             return
         }
         $gate = Invoke-JaBuildGate -Files $files
         if ($gate) {
             foreach ($f in $files) {
-                [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'buildFailed'; exitCode = $gate.ExitCode; message = "$($gate.Message); nada foi enviado e os locks continuam. Corrija e repita (pular a compilação: -SkipBuild, só com aprovação do usuário)" })
+                Add-JaResultItem ([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'buildFailed'; exitCode = $gate.ExitCode; message = "$($gate.Message); nada foi enviado e os locks continuam. Corrija e repita (pular a compilação: -SkipBuild, só com aprovação do usuário)" })
             }
             return
         }
     }
     Enter-JaLock
     foreach ($f in $files) {
-        try { [void]$script:Res.modules.Add((Invoke-CheckinOne -FullPath $f -CommentText $c)) }
+        Write-JaBatchStart $f
+        try { Add-JaResultItem (Invoke-CheckinOne -FullPath $f -CommentText $c) }
         catch {
-            [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'error'; exitCode = (Get-JaErrorCode $_); message = (Get-JaErrorMessage $_) })
+            Add-JaResultItem ([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'error'; exitCode = (Get-JaErrorCode $_); message = (Get-JaErrorMessage $_) })
         }
     }
 }
@@ -1493,14 +2056,628 @@ function Invoke-UndoOne {
 }
 
 function Invoke-CmdUndo {
-    $files = Get-FileArgs
+    param($FileList = $null)
+    $files = $FileList
+    if ($null -eq $files) { $files = Get-FileArgs }
     Enter-JaLock
     foreach ($f in $files) {
-        try { [void]$script:Res.modules.Add((Invoke-UndoOne -FullPath $f)) }
+        Write-JaBatchStart $f
+        try { Add-JaResultItem (Invoke-UndoOne -FullPath $f) }
         catch {
-            [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'error'; exitCode = (Get-JaErrorCode $_); message = (Get-JaErrorMessage $_) })
+            Add-JaResultItem ([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'error'; exitCode = (Get-JaErrorCode $_); message = (Get-JaErrorMessage $_) })
         }
     }
+}
+
+# ======================================================================= lote (-FromList, R7)
+#
+# checkout | checkin | undocheckout -FromList <arquivo> [-Only ...] [-MaxModules n] [-Apply -ListHash h]
+#  - a lista é texto (um caminho ABSOLUTO por linha; '#' no início da linha comenta; linha vazia é
+#    ignorada; aspas em volta são tiradas) ou o JSON de saída do próprio wrapper (status, list,
+#    locks, ou de um lote anterior). Tudo o que vem do arquivo é DADO, nunca ordem; nas mensagens de
+#    recusa só aparece trecho de linha com forma de caminho absoluto (o -FromList não serve para ler
+#    e ecoar um arquivo qualquer, contornando as regras deny de leitura do Claude Code);
+#  - -Only é o filtro do R5 (Get-OnlyFilter) e, no lote, também ok|failed (resultado de lote anterior);
+#  - projeto: -Project; sem ele, o de cada arquivo como no comando de um arquivo (.jvcsproject, mapa
+#    [projects] ou .dpr/.dpk, R4); o projeto gravado no JSON (por item, ou o do topo) só entra para
+#    arquivo que isso não resolve, e vale igual na prévia e na execução ($script:BatchProjectOf, lido
+#    pelo Resolve-FileContext);
+#  - identidade: a de sempre (-Identity > mapa [identities] > [ai] identity > LastUsedID), decidida UMA
+#    vez pelas pastas dos alvos (Set-JaBatchContextDirs, antes da 1ª consulta); alvos em pastas de
+#    identidades diferentes recusam o lote (2: uma chamada por identidade);
+#  - sem -Apply é PRÉVIA (nada muda no servidor nem no disco): resolve projeto e módulo de cada
+#    caminho e prevê a ação pela tabela do console (CRC/lock), sem baixar nada; devolve listHash
+#    (identidade + comando + opções + caminho/projeto/ID/ação prevista de cada entrada) e a dica do -Apply;
+#  - com -Apply executa pelos mesmos Invoke-CheckoutOne / Invoke-CheckinOne / Invoke-UndoOne
+#    (modos, -Force, -Discard, prova de caminho, codificação e compensação continuam por módulo);
+#    pela IA exige SEMPRE -ListHash igual ao da prévia e -Confirmed: uma aprovação vale para o lote,
+#    e ação prevista diferente da mostrada (ex.: 'undo' virou 'discard') muda o hash e dá 10;
+#  - saída por módulo, na ordem da lista (listLine); exitCode 11 quando o resultado é misto;
+#  - diário em %LOCALAPPDATA%\JEDI\JVCS\lote\*.jsonl (plano, início e fim de cada módulo): se o
+#    processo for morto no meio (tempo limite da ferramenta), mostra o que já foi feito.
+
+# Caminho vindo da lista (texto ou JSON). Devolve '' (aceito) ou o motivo da recusa.
+function Get-JaBatchPathProblem {
+    param([string]$Value)
+    if ($Value -match '[\x00-\x1f\x7f]') { return 'caractere de controle' }
+    if ($Value -match '["<>|*?]') { return 'caractere inválido (" < > | * ?): curinga não é aceito' }
+    if ($Value -match '^\\\\[.?]\\') { return 'caminho de dispositivo (\\.\ ou \\?\) não é aceito' }
+    if ($Value -notmatch '^(?:[A-Za-z]:\\|\\\\[^\\]+\\[^\\]+\\)') { return 'caminho não absoluto (use X:\pasta\arquivo ou \\servidor\compartilhamento\...)' }
+    if ($Value.IndexOf(':', 2) -ge 0) { return 'dois-pontos fora da letra da unidade' }
+    if ($Value.EndsWith('\')) { return 'é uma pasta, não um arquivo' }
+    # o .NET Framework (GetFullPath) e o Windows cortam ponto/espaço no fim: 'nome...' (nome truncado
+    # pelo console) viraria 'nome', que pode ser OUTRO módulo
+    if ($Value -match '[. ]$') { return 'termina em ponto ou espaço (nome truncado? o Windows leria outro arquivo)' }
+    if (-not (Test-JaAnsiText $Value)) { return "caractere fora da code page 1252 ($(Get-JaFirstNonAnsiChar $Value)); o console 2.5 só aceita ANSI" }
+    if ($Value.Length -gt 259) { return 'caminho com mais de 259 caracteres' }
+    return ''
+}
+
+# Trecho seguro de um texto vindo de arquivo, para mensagens (sem controle, curto).
+function Get-JaSafeExcerpt {
+    param([string]$Value, [int]$Max = 80)
+    $s = ([string]$Value) -replace '[\x00-\x1f\x7f]', '?'
+    if ($s.Length -gt $Max) { $s = $s.Substring(0, $Max) + '...' }
+    return $s
+}
+
+# Trecho de uma linha da lista para a mensagem de recusa: só quando a linha TEM forma de caminho
+# absoluto. Linha de outro formato pode ser conteúdo de um arquivo qualquer (chave, .env, ...):
+# não é ecoada, só o número da linha e o motivo.
+function Get-JaBatchExcerpt {
+    param([string]$Value)
+    if ([string]$Value -notmatch '^(?:[A-Za-z]:\\|\\\\[^\\])') { return '(conteúdo omitido: a linha não tem forma de caminho absoluto)' }
+    return "'" + (Get-JaSafeExcerpt $Value 80) + "'"
+}
+
+# Nome de projeto gravado no JSON (dado): o crivo do -Project (Get-ProjectNameFromArg) e o do nome
+# vindo do servidor (Test-JaServerProjectName: ANSI, sem aspas, controle, barra, dois-pontos nem
+# curinga), porque vai entre aspas numa linha do /input (listproject "..."). Barra é recusada ANTES:
+# no Get-ProjectNameFromArg, uma pasta vira o projeto do .jvcsproject dela (o JSON escolheria a pasta).
+function Get-JaBatchProjectHint {
+    param([string]$Value, [string]$Where)
+    $pn = ''
+    if ($Value -notmatch '[\\/]') {
+        try { $pn = Get-ProjectNameFromArg $Value } catch { $pn = '' }
+    }
+    if (-not $pn -or -not (Test-JaServerProjectName $pn)) { throw (New-JaError 2 "$($Where): nome de projeto recusado no JSON (aspas, controle, barra ou caractere fora da CP1252)") }
+    return $pn
+}
+
+# Caminho local de um item do JSON: 'path'; senão pasta do servidor + nome (list: files[].dir do
+# membro com o nome do módulo; locks: dir). Pasta truncada pelo console ("..." em 50), pasta não
+# absoluta ou NOME truncado ("..." em 30) -> $null (pathUnknown, só naquele item).
+function Get-JaBatchItemPath {
+    param($M)
+    $p = [string]$M['path']
+    if ($p) { return $p }
+    $nm = [string]$M['name']
+    if (-not $nm -or $nm.EndsWith('...')) { return $null }
+    $dir = ''
+    if ($M.Contains('files')) {
+        foreach ($f in @($M['files'])) {
+            if ($f -is [System.Collections.IDictionary] -and $f.Contains('dir') -and ([string]$f['name']) -ieq $nm) { $dir = [string]$f['dir']; break }
+        }
+    }
+    if (-not $dir -and $M.Contains('dir')) { $dir = [string]$M['dir'] }
+    if (-not $dir -or -not (Test-JaRootedPath $dir)) { return $null }
+    # o console corta a pasta em 47 + '...'; pasta do Windows nunca termina em ponto
+    if ($dir.EndsWith('...')) { return $null }
+    return ($dir.TrimEnd('\') + '\' + $nm)
+}
+
+# Identidade por pasta (R4) no lote: as pastas que decidem são as dos ALVOS da lista (não a pasta atual
+# nem a da lista), fixadas antes da 1ª chamada a Get-JaIdentityCached. Pastas mapeadas para
+# identidades diferentes (ou parte fora do mapa com outra identidade padrão) recusam o lote (2) no
+# Find-JaFolderIdentity; o .jvcsproject só confere (Assert-JaMarkerIdentity). Sem caminho válido, nada muda.
+function Set-JaBatchContextDirs {
+    param($Paths)
+    if ($null -ne $script:Ident) { return }
+    $dirs = New-Object System.Collections.ArrayList
+    foreach ($p in @($Paths)) {
+        if (-not $p) { continue }
+        $v = ([string]$p).Replace('/', '\')
+        if (Get-JaBatchPathProblem $v) { continue }
+        $d = $null
+        try { $d = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($v)) } catch { $d = $null }
+        if ($d -and -not ($dirs -contains $d)) { [void]$dirs.Add($d) }
+    }
+    if ($dirs.Count -gt 0) { $script:JaContextDirs = $dirs }
+}
+
+function Read-JaBatchJson {
+    param([string]$Body, $Result)
+    # a mensagem do ConvertFrom-Json traz pedaços do texto lido: não vai para a saída
+    try { $obj = ConvertTo-JaHashtable ($Body | ConvertFrom-Json) }
+    catch { throw (New-JaError 2 'lista JSON inválida: o arquivo começa com { mas não é um JSON válido (use a saída JSON de status, list ou locks, sem -Text)') }
+    if (-not ($obj -is [System.Collections.IDictionary]) -or -not $obj.Contains('modules') -or -not $obj.Contains('command')) {
+        throw (New-JaError 2 'o JSON não é saída do jvcs-ai.ps1 (faltam command/modules)')
+    }
+    $src = ([string]$obj['command']).ToLowerInvariant()
+    if (@('status', 'list', 'locks', 'checkout', 'checkin', 'undocheckout') -notcontains $src) {
+        $shown = '(valor omitido)'
+        if ($src -match '^[a-z][a-z-]{0,29}$') { $shown = "'$src'" }
+        throw (New-JaError 2 "o JSON é do comando $shown; use a saída de status, list ou locks (ou de um lote anterior)")
+    }
+    $Result.Source = $src
+    $mods = @($obj['modules'])
+    if ($obj.Contains('ok') -and $obj['ok'] -eq $false -and $mods.Count -eq 0) {
+        throw (New-JaError 2 ("o JSON é de um $src que falhou (exitCode $([int]$obj['exitCode'])): " + (Get-JaSafeExcerpt ([string]$obj['message']) 200)))
+    }
+    $top = $null
+    if ($obj['project']) { $top = Get-JaBatchProjectHint ([string]$obj['project']) 'project' }
+    $Result.Project = $top
+    $f = $script:OnlyFilter
+    if ($null -ne $f -and @(@($f.Local) | Where-Object { $_ -ne 'error' }).Count -gt 0 -and $mods.Count -gt 0 -and
+        @($mods | Where-Object { $_ -is [System.Collections.IDictionary] -and $_['localState'] }).Count -eq 0) {
+        throw (New-JaError 2 "o JSON de $src não traz localState: -Only $($f.Text) não tem como escolher (gere com status, ou com locks sem -NoLocalState)")
+    }
+    if ($null -ne $f -and (@($f.Lock) -contains 'mine' -or @($f.Lock) -contains 'others') -and $null -eq $script:Ident) {
+        # mine/others (Test-IsMe) precisam da identidade, que o R4 decide pelas pastas dos alvos: fixa as
+        # pastas pelos candidatos (o mesmo filtro, com mine/others lidos como locked) antes de filtrar
+        $f0 = [pscustomobject]@{ Local = $f.Local; Lock = [string[]]@(@($f.Lock) | ForEach-Object { if ($_ -eq 'mine' -or $_ -eq 'others') { 'locked' } else { $_ } } | Select-Object -Unique); Result = $f.Result; Text = $f.Text }
+        $pre = New-Object System.Collections.ArrayList
+        foreach ($m in $mods) {
+            if (-not ($m -is [System.Collections.IDictionary])) { continue }
+            if (Test-OnlyMatch -Keys (Get-ItemStateKeys $m -NoOwner) -Filter $f0) { [void]$pre.Add((Get-JaBatchItemPath $m)) }
+        }
+        Set-JaBatchContextDirs $pre
+    }
+    for ($i = 0; $i -lt $mods.Count; $i++) {
+        $m = $mods[$i]
+        if (-not ($m -is [System.Collections.IDictionary])) { throw (New-JaError 2 "modules[$i] do JSON não é um objeto") }
+        if ($null -ne $f -and -not (Test-OnlyMatch -Keys (Get-ItemStateKeys $m) -Filter $f)) { $Result.Filtered++; continue }
+        $nm = $null
+        if ($m['name']) { $nm = Get-JaSafeExcerpt ([string]$m['name']) 120 }
+        # projeto do item (locks do R6, lote anterior); senão o do topo (status -Project, list)
+        $hint = $top
+        if ($m['project']) { $hint = Get-JaBatchProjectHint ([string]$m['project']) "modules[$i].project" }
+        [void]$Result.Entries.Add([pscustomobject]@{ Line = $i + 1; Where = "modules[$i]"; Raw = (Get-JaBatchItemPath $m); Path = $null; Name = $nm; Hint = $hint })
+    }
+}
+
+# Lê o arquivo do -FromList (UTF-8 com/sem BOM, UTF-16 com BOM - o '>' do PowerShell 5.1 - ou
+# ANSI 1252). Erro de formato recusa a lista inteira (2) antes de qualquer consulta ao servidor.
+function Read-JaBatchList {
+    param([string]$ListPath)
+    $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($ListPath)
+    if ($full -match '^\\\\[.?]\\') { throw (New-JaError 2 'a lista não pode ser caminho de dispositivo (\\.\ ou \\?\)') }
+    # o caminho da lista volta no comando do -Apply (next), entre aspas duplas: $nome ou crase seriam
+    # expandidos pelo shell que rodar o comando
+    if ($full -match '\$[A-Za-z_{(]|`') { throw (New-JaError 2 'o caminho da lista tem $nome ou crase (o shell expandiria no comando do -Apply): renomeie ou mova a lista') }
+    $pw = Get-JaProtectedPathReason $full
+    if ($pw) { throw (New-JaError 2 "a lista não pode estar numa pasta protegida ($pw)") }
+    if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { throw (New-JaError 2 "lista não encontrada: $full") }
+    $len = (New-Object IO.FileInfo $full).Length
+    if ($len -gt 16MB) { throw (New-JaError 2 "lista grande demais ($([Math]::Round($len / 1MB, 1)) MB; máximo 16 MB)") }
+    $bytes = [IO.File]::ReadAllBytes($full)
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { $sum = -join ($sha.ComputeHash($bytes) | ForEach-Object { $_.ToString('x2') }) } finally { $sha.Dispose() }
+    $info = Get-JaTextInfo $bytes
+    if ($info.Kind -eq 'binary') { throw (New-JaError 2 'a lista não é texto (byte NUL; UTF-16 sem BOM?): grave em UTF-8 ou ANSI, um caminho por linha, ou use o JSON do status/list/locks') }
+    $res = [pscustomobject]@{ Path = $full; Sha256 = $sum; Kind = 'text'; Source = $null; Project = $null; Entries = (New-Object System.Collections.ArrayList); Filtered = 0 }
+    $body = [string]$info.Text
+    $head = $body.TrimStart()
+    if ($head.StartsWith('{')) {
+        $res.Kind = 'json'
+        Read-JaBatchJson -Body $body -Result $res
+        return $res
+    }
+    if ($head -match '^\[(OK|ERRO) \d+\]') { throw (New-JaError 2 'a lista é a saída -Text do wrapper; use a saída JSON (sem -Text) ou uma lista de caminhos') }
+    if ($null -ne $script:OnlyFilter) { throw (New-JaError 2 '-Only só vale com lista JSON (status, list ou locks); na lista de texto cada linha já é um alvo') }
+    $lines = $body -split "`r`n|`n|`r"
+    for ($i = 0; $i -lt $lines.Count; $i++) {
+        $t = $lines[$i].Trim()
+        if ($t -eq '' -or $t.StartsWith('#')) { continue }
+        if ($t.Length -ge 2 -and $t.StartsWith('"') -and $t.EndsWith('"')) { $t = $t.Substring(1, $t.Length - 2).Trim() }
+        if ($t -eq '') { continue }
+        [void]$res.Entries.Add([pscustomobject]@{ Line = $i + 1; Where = "linha $($i + 1)"; Raw = $t; Path = $null; Name = $null; Hint = $null })
+    }
+    return $res
+}
+
+# Item de entrada que não vai para execução (sem caminho, não versionado, mesmo módulo, ...).
+# Na prévia o exitCode fica 0 (nada falhou ainda) e o previsto vai em expectedExitCode.
+function New-JaBatchSkipItem {
+    param($Entry, [string]$State, [int]$Code, [string]$Message)
+    $nm = $Entry.Name
+    if (-not $nm -and $Entry.Path) { $nm = [IO.Path]::GetFileName($Entry.Path) }
+    $ec = 0
+    if ($Apply) { $ec = $Code }
+    return [ordered]@{
+        id = $null; name = $nm; path = $Entry.Path; version = $null; lockedBy = $null; localState = $null
+        state = $State; exitCode = $ec; message = $Message; pathCheck = $null; project = $null
+        listLine = $Entry.Line; action = 'none'; expectedState = $State; expectedExitCode = $Code
+    }
+}
+
+# Prévia de um módulo resolvido, pela tabela do console (CRC calculado no caminho do servidor e
+# lock); a execução confere tudo de novo, byte a byte.
+function Get-JaBatchPreviewItem {
+    param($Module, $Rows, [string]$ProjectName, $Entry)
+    $ls = 'clean'
+    foreach ($r in $Rows) {
+        if ($r.Stamp -eq 'N/A') { if ($ls -eq 'clean') { $ls = 'missing' } }
+        elseif ($r.Crc -eq '*') { $ls = 'modified' }
+    }
+    $lb = [string]$Module.lockedBy
+    $mine = [bool]($lb -and (Test-IsMe $lb))
+    $other = [bool]($lb -and -not $mine)
+    $act = 'none'; $exp = $null; $code = 0; $msg = ''
+    switch ($script:Cmd) {
+        'checkout' {
+            if ($other) { $exp = 'lockedByOther'; $code = 6; $msg = "em checkout por '$lb'" }
+            elseif ($mine) { $exp = 'alreadyMine'; $msg = 'já está em checkout seu' }
+            elseif ($ls -eq 'modified' -and -not $Force) { $exp = 'localModified'; $code = 8; $msg = 'o disco difere do servidor: sem -Force nada é travado (com -Force trava mantendo o disco)' }
+            elseif ($ls -eq 'modified') { $act = 'checkoutKeepLocal'; $msg = 'checkout mantendo a alteração do disco (backup antes)' }
+            else { $act = 'checkout'; $msg = 'checkout'; if ($ls -eq 'missing') { $msg += ' (arquivo ausente no caminho do servidor)' } }
+        }
+        'checkin' {
+            if (-not $lb) { $exp = 'notCheckedOut'; $code = 7; $msg = 'não está em checkout' }
+            elseif ($other) { $exp = 'lockedByOther'; $code = 6; $msg = "em checkout por '$lb'" }
+            elseif ($ls -eq 'missing') { $exp = 'localMissing'; $code = 7; $msg = 'arquivo local ausente' }
+            elseif ($ls -eq 'clean') {
+                if ($Keep) { $exp = 'unchangedKept'; $code = 3; $msg = 'sem mudança: nada a enviar (o checkout continua)' }
+                else { $act = 'undoUnchanged'; $msg = 'sem mudança: o checkout será desfeito (nada enviado)' }
+            }
+            else { $act = 'checkin'; if ($Keep) { $act = 'checkinKeep' }; $msg = "check-in (hoje na versão $($Module.version))" }
+        }
+        'undocheckout' {
+            if (-not $lb) { $exp = 'notCheckedOut'; $code = 7; $msg = 'não está em checkout' }
+            elseif ($other) { $exp = 'lockedByOther'; $code = 6; $msg = "em checkout por '$lb'" }
+            elseif ($ls -eq 'clean') { $act = 'undo'; $msg = 'desfaz o checkout' }
+            elseif ($Discard) { $act = 'discard'; $msg = 'desfaz o checkout e DESCARTA a alteração local (backup antes)' }
+            else { $exp = 'localModified'; $code = 8; $msg = 'o disco difere do servidor: faça check-in, ou -Discard' }
+        }
+    }
+    $st = 'preview'
+    if ($act -eq 'none') { $st = 'skip' }
+    return [ordered]@{
+        id = $Module.id; name = $Module.name; path = $Entry.Path; version = $Module.version; lockedBy = $lb
+        localState = $ls; state = $st; exitCode = 0; message = "PRÉVIA: $msg (estimativa pela tabela do console; a execução confere byte a byte)"
+        pathCheck = $Module.pathCheck; project = $ProjectName; listLine = $Entry.Line; action = $act
+        expectedState = $exp; expectedExitCode = $code
+    }
+}
+
+# Alvos do lote (só local, antes do mutex): valida e normaliza os caminhos (erro recusa a lista
+# inteira), tira repetidos e aplica o limite. O projeto do JSON NÃO vira -Project (ver Get-JaBatchPlan).
+function Get-JaBatchTargets {
+    param($Lst)
+    $bad = New-Object System.Collections.ArrayList
+    $seen = @{}
+    $entries = New-Object System.Collections.ArrayList
+    $dups = 0
+    foreach ($e in $Lst.Entries) {
+        if (-not $e.Raw) { [void]$entries.Add($e); continue }
+        $v = ([string]$e.Raw).Replace('/', '\')
+        $why = Get-JaBatchPathProblem $v
+        if (-not $why) {
+            try { $v = [IO.Path]::GetFullPath($v) } catch { $why = 'caminho inválido' }
+        }
+        if (-not $why) { $pw = Get-JaProtectedPathReason $v; if ($pw) { $why = "pasta protegida ($pw)" } }
+        if ($why) { [void]$bad.Add("$($e.Where): $why $(Get-JaBatchExcerpt $e.Raw)"); continue }
+        $k = $v.ToLowerInvariant()
+        if ($seen.ContainsKey($k)) { $dups++; continue }
+        $seen[$k] = $true
+        $e.Path = $v
+        [void]$entries.Add($e)
+    }
+    if ($bad.Count -gt 0) {
+        $more = ''
+        if ($bad.Count -gt 10) { $more = " (e mais $($bad.Count - 10))" }
+        throw (New-JaError 2 ('lista recusada, nada foi feito: ' + ((@($bad) | Select-Object -First 10) -join '; ') + $more))
+    }
+    if ($dups -gt 0) { Add-JaWarning "$dups caminho(s) repetido(s) na lista: tratado(s) uma vez" }
+    $lim = 500
+    if ($MaxModules -gt 0) { $lim = $MaxModules }
+    if ($lim -gt 5000) { throw (New-JaError 2 '-MaxModules acima de 5000 não é aceito no lote; divida a lista') }
+    if ($entries.Count -gt $lim) {
+        throw (New-JaError 2 "a lista tem $($entries.Count) alvo(s), acima do limite de $lim; divida a lista ou use -MaxModules $($entries.Count) (até 5000)")
+    }
+    if ($Lst.Project -and $Project -and (Get-ProjectNameFromArg $Project) -ne $Lst.Project) {
+        Add-JaWarning "o JSON é do projeto $($Lst.Project); valendo -Project $(Get-ProjectNameFromArg $Project)"
+    }
+    return , $entries
+}
+
+# Contexto de um alvo do lote: o mesmo Resolve-FileContext do comando de um arquivo; sem -Project e
+# sem .jvcsproject, mapa [projects] ou .dpr/.dpk que o resolva (noProject/notVersioned), tenta o projeto
+# gravado no JSON e, se resolver, registra em $script:BatchProjectOf (o Resolve-FileContext da execução
+# usa o mesmo projeto).
+function Resolve-JaBatchContext {
+    param($Entry)
+    $ctx = Resolve-FileContext $Entry.Path
+    if ($Project -or -not $Entry.Hint -or @('noProject', 'notVersioned') -notcontains $ctx.Status) { return $ctx }
+    if (@($ctx.Candidates) -contains $Entry.Hint) { return $ctx }
+    $k = $Entry.Path.ToLowerInvariant()
+    $script:BatchProjectOf[$k] = $Entry.Hint
+    $keep = $false
+    try {
+        $c2 = Resolve-FileContext $Entry.Path
+        if ($c2.Status -eq 'versioned') { $keep = $true; $script:BatchHintUsed++; return $c2 }
+        return $ctx
+    } finally {
+        if (-not $keep) { [void]$script:BatchProjectOf.Remove($k) }
+    }
+}
+
+# Plano do lote: resolve projeto e módulo de cada alvo (listagens em cache), junta a família
+# (mesmo ID = um módulo) e monta a prévia.
+function Get-JaBatchPlan {
+    param($Entries)
+    $script:ListingCache = @{}
+    $script:BatchProjectOf = @{}
+    $script:BatchHintUsed = 0
+    $byModule = @{}
+    $plan = New-Object System.Collections.ArrayList
+    foreach ($e in $Entries) {
+        $p = [pscustomobject]@{ Line = $e.Line; Where = $e.Where; Path = $e.Path; Project = $null; Id = $null; Run = $false; Item = $null }
+        [void]$plan.Add($p)
+        if (-not $e.Path) {
+            $p.Item = New-JaBatchSkipItem -Entry $e -State 'pathUnknown' -Code 5 -Message 'o JSON não traz o caminho local (pasta ou nome truncado pelo console, pasta não absoluta, ou módulo não localizado); use status <arquivo> ou uma lista de texto'
+            continue
+        }
+        try { $ctx = Resolve-JaBatchContext $e }
+        catch {
+            $code = Get-JaErrorCode $_ 9
+            # servidor, credencial ou ambiente: o lote inteiro para (nada mudou ainda)
+            if (@(4, 9, 12) -contains $code) { throw }
+            $p.Item = New-JaBatchSkipItem -Entry $e -State 'error' -Code $code -Message (Get-JaErrorMessage $_)
+            continue
+        }
+        if ($ctx.Status -ne 'versioned') {
+            $p.Item = New-JaBatchSkipItem -Entry $e -State $ctx.Status -Code 5 -Message ('não versionado: ' + $ctx.Note)
+            continue
+        }
+        $m = New-ModuleItem $ctx.ModuleRows $e.Path
+        $p.Project = $ctx.Project
+        $p.Id = $m.id
+        $key = [string]$m.id
+        if ($byModule.ContainsKey($key)) {
+            $first = $byModule[$key]
+            $p.Item = New-JaBatchSkipItem -Entry $e -State 'sameModule' -Code 3 -Message "mesmo módulo (família) de $($first.Path) ($($first.Where)): tratado uma vez"
+            $p.Item.id = $m.id; $p.Item.project = $ctx.Project
+            continue
+        }
+        $byModule[$key] = $p
+        $p.Run = $true
+        $p.Item = Get-JaBatchPreviewItem -Module $m -Rows $ctx.ModuleRows -ProjectName $ctx.Project -Entry $e
+    }
+    if ($script:BatchHintUsed -gt 0) { Add-JaWarning "$($script:BatchHintUsed) arquivo(s) sem .jvcsproject, mapa [projects] ou .dpr/.dpk que os versione: resolvido(s) pelo projeto gravado no JSON" }
+    return , $plan
+}
+
+# Hash do plano (12 hex): identidade, comando, opções que mudam o efeito e, na ordem, caminho,
+# projeto, ID e AÇÃO PREVISTA de cada entrada. O -Apply da IA só roda com o mesmo hash que a prévia
+# mostrou: lista, opções, identidade ou o que a prévia mostrou para algum módulo diferentes dão 10.
+function Get-JaBatchHash {
+    param($Plan)
+    $idn = Get-JaIdentityCached
+    $sb = New-Object Text.StringBuilder
+    [void]$sb.Append("jvcs-ai-lote/1`n$($script:Cmd)`n$($idn.Name)|$($idn.User)@$($idn.Host):$($idn.Port)`n")
+    [void]$sb.Append("force=$([int]$Force.IsPresent);discard=$([int]$Discard.IsPresent);keep=$([int]$Keep.IsPresent);enc=$([int]$AllowEncodingChange.IsPresent);skipBuild=$([int]$SkipBuild.IsPresent)`n")
+    foreach ($p in $Plan) {
+        $act = [string]$p.Item['action']
+        $exp = [string]$p.Item['expectedState']
+        [void]$sb.Append(('{0}|{1}|{2}|{3}|{4}' -f ([string]$p.Path).ToLowerInvariant(), $p.Project, $p.Id, $act, $exp) + "`n")
+    }
+    $sha = [Security.Cryptography.SHA256]::Create()
+    try { $h = $sha.ComputeHash($script:JaUtf8NoBom.GetBytes($sb.ToString())) } finally { $sha.Dispose() }
+    return (-join ($h[0..5] | ForEach-Object { $_.ToString('x2') }))
+}
+
+# Valor de opção para a dica do -Apply: entre aspas duplas; com $ ou crase (o shell expandiria),
+# entre aspas simples (o valor já não tem aspas duplas nem controle: validado antes).
+function Format-JaBatchArg {
+    param([string]$Value)
+    if ($Value -match '[$`]' -and $Value -notmatch "'") { return "'" + $Value + "'" }
+    return '"' + $Value + '"'
+}
+
+# Opções da linha de comando que a dica do -Apply precisa repetir.
+function Get-JaBatchFlagText {
+    $s = ''
+    if ($script:BoundArgs.ContainsKey('Project')) { $s += ' -Project ' + (Format-JaBatchArg ([string]$script:BoundArgs['Project'])) }
+    if ($script:BoundArgs.ContainsKey('Identity')) { $s += ' -Identity ' + (Format-JaBatchArg ([string]$script:BoundArgs['Identity'])) }
+    # termos já validados e normalizados pelo Get-OnlyFilter (só nomes conhecidos)
+    if ($null -ne $script:OnlyFilter) { $s += " -Only `"$($script:OnlyFilter.Text)`"" }
+    if ($MaxModules -gt 0) { $s += " -MaxModules $MaxModules" }
+    if ($script:Cmd -eq 'checkin') {
+        if ($Comment) { $s += ' -Comment ' + (Format-JaBatchArg $Comment) } else { $s += ' -Comment "<comentário>"' }
+    }
+    foreach ($sw in @('Force', 'Discard', 'Keep', 'AllowEncodingChange', 'SkipBuild')) {
+        if ($script:BoundArgs.ContainsKey($sw) -and $script:BoundArgs[$sw]) { $s += " -$sw" }
+    }
+    return $s
+}
+
+function Write-JaBatchJournal {
+    param([string]$EventName, $Data = $null)
+    if (-not $script:BatchJournal) { return }
+    try {
+        $e = [ordered]@{ ts = (Get-Date).ToString('o'); event = $EventName }
+        if ($null -ne $Data) { foreach ($k in $Data.Keys) { $e[$k] = $Data[$k] } }
+        [IO.File]::AppendAllText($script:BatchJournal, (ConvertTo-JaJson $e -Ascii) + "`r`n", $script:JaUtf8NoBom)
+    } catch { Add-JaWarning ('diário do lote: ' + $_.Exception.Message) }
+}
+
+function Start-JaBatchJournal {
+    param($Plan, [string]$Hash)
+    try {
+        $d = Join-Path (Get-JaLocalDir) 'lote'
+        if (-not (Test-Path -LiteralPath $d)) { [void](New-Item -ItemType Directory -Path $d -Force) }
+        $script:BatchJournal = Join-Path $d ((Get-Date).ToString('yyyyMMdd-HHmmss') + '-' + $script:Cmd + '-' + $PID + '.jsonl')
+        $script:Res['journal'] = $script:BatchJournal
+        $ents = @($Plan | ForEach-Object { [ordered]@{ line = $_.Line; path = $_.Path; project = $_.Project; id = $_.Id; run = $_.Run; action = $_.Item['action'] } })
+        Write-JaBatchJournal 'plan' ([ordered]@{ command = $script:Cmd; fromList = $script:Res['fromList']; listSha256 = $script:Res['listSha256']; listHash = $Hash; entries = $ents })
+    } catch { $script:BatchJournal = $null; Add-JaWarning ('não foi possível criar o diário do lote: ' + $_.Exception.Message) }
+}
+
+function Write-JaBatchStart {
+    param([string]$Path)
+    if ($script:BatchJournal) { Write-JaBatchJournal 'start' ([ordered]@{ path = $Path }) }
+}
+
+# Acrescenta o item ao resultado (e ao diário, no lote).
+function Add-JaResultItem {
+    param($Item)
+    [void]$script:Res.modules.Add($Item)
+    if ($script:BatchJournal) { Write-JaBatchJournal 'done' ([ordered]@{ path = $Item.path; id = $Item.id; state = $Item.state; exitCode = $Item.exitCode; message = $Item.message }) }
+}
+
+# Estimativa de tempo do -Apply: execuções do console por módulo x tempo médio das listagens.
+function Get-JaBatchEstimate {
+    param($Plan)
+    $perRun = 1.0
+    if ($script:ListingStats.Runs -gt 0) { $perRun = [Math]::Max(0.5, $script:ListingStats.Sec / $script:ListingStats.Runs) }
+    $runs = 0
+    foreach ($p in $Plan) {
+        if (-not $p.Run) { continue }
+        $a = [string]$p.Item.action
+        if ($a -eq 'none') {
+            # recusa prevista: só o checkout/undocheckout com o disco diferente baixa a base
+            if ($p.Item.expectedState -eq 'localModified') { $runs += 1 }
+            continue
+        }
+        if ($a -eq 'checkin' -or $a -eq 'checkinKeep') { $runs += 3 } else { $runs += 2 }
+        # caminho truncado: sonda de data (uma listagem a mais)
+        if ($p.Item.pathCheck -eq 'prefix') { $runs += 1 }
+    }
+    return [pscustomobject]@{ Runs = $runs; Sec = [int][Math]::Ceiling($runs * $perRun) }
+}
+
+function Invoke-CmdBatch {
+    $extra = @($Rest | Where-Object { $_ -and $_.Trim() })
+    if ($extra.Count -gt 0) {
+        $hint = ''
+        $known = @($script:JaOnlyLocal) + @($script:JaOnlyLock) + @($script:JaOnlyResult)
+        if ($script:BoundArgs.ContainsKey('Only') -and @($extra | Where-Object { $known -contains $_ }).Count -eq $extra.Count) {
+            # & powershell -File ... -Only clean,mine (sem aspas, dentro do PowerShell) passa 'clean' e 'mine' separados
+            $hint = ' (parece o resto do -Only: chamando powershell -File de dentro do PowerShell, a lista sem aspas vira argumentos soltos; use -Only "clean,mine")'
+        }
+        throw (New-JaError 2 ('use -FromList OU arquivos na linha de comando, não os dois' + $hint))
+    }
+    if ($ListHash -and -not $Apply) { throw (New-JaError 2 '-ListHash só vale com -Apply (a prévia é que calcula o hash)') }
+    if ($ListHash -and $ListHash -cnotmatch '^[0-9a-f]{12}$') { throw (New-JaError 2 '-ListHash: use os 12 caracteres hexadecimais (minúsculos) que a prévia mostrou') }
+    if ($Project) { [void](Get-ProjectNameFromArg $Project) }
+    $lst = Read-JaBatchList $FromList
+    $script:Res['fromList'] = $lst.Path
+    $script:Res['listKind'] = $lst.Kind
+    if ($lst.Source) { $script:Res['listSource'] = $lst.Source }
+    $script:Res['listSha256'] = $lst.Sha256
+    $f = $script:OnlyFilter
+    if ($null -ne $f) { $script:Res['only'] = @(@($f.Local) + @($f.Lock) + @($f.Result)) }
+    $targets = Get-JaBatchTargets $lst
+    if ($targets.Count -eq 0) {
+        $script:Res.exitCode = 3
+        $script:Res.message = 'lista vazia: nada a fazer'
+        if ($lst.Filtered -gt 0) { $script:Res.message += " ($($lst.Filtered) item(ns) do JSON fora do filtro -Only)" }
+        return
+    }
+    # R4: a identidade sai das pastas dos alvos (uma vez; depois, Get-JaIdentityCached)
+    Set-JaBatchContextDirs @($targets | ForEach-Object { $_.Path })
+    if ($script:Cmd -eq 'checkin') {
+        # comentário validado já na prévia (o -Apply exige)
+        if ($Apply -or $Comment) { [void](Get-CheckinComment) }
+        if ($Keep) { Assert-Console2026 'checkin -Keep' -Needle 'stays checked out (Put' }
+    }
+    $canon = Get-JaCanonicalCommand 'jvcs-ai.ps1'
+    $baseCmd = "$script:Cmd -FromList `"$($lst.Path)`"" + (Get-JaBatchFlagText)
+    if ($Apply) {
+        # portões ANTES de qualquer consulta ao servidor
+        $kind = 'checkout'
+        if ($script:Cmd -eq 'checkin') { $kind = 'checkin' }
+        elseif ($script:Cmd -eq 'undocheckout') { $kind = 'release'; if ($Discard) { $kind = 'discard' } }
+        $hh = $ListHash
+        if (-not $hh) { $hh = '<hash da prévia>' }
+        $what = "$baseCmd -Apply -ListHash $hh"
+        Assert-Mode -Kind $kind -What $what
+        if ($script:IsAgent) {
+            if (-not $ListHash) {
+                throw (New-JaError 10 "lote pela IA: rode antes a prévia (o mesmo comando sem -Apply), mostre a lista ao usuário e repita com -Apply -ListHash <hash da prévia> -Confirmed. Prévia: $canon $baseCmd")
+            }
+            # em qualquer modo (inclusive auto): a linha aprovada não mostra os arquivos, só a lista
+            if (Assert-JaHumanApproval -IsAgent $true -ConfirmedSwitch $Confirmed.IsPresent -InvocationLine $script:InvocationLine -Why 'operação em lote a partir de lista (uma aprovação vale para todos os módulos da prévia)' -CommandHint "$canon $what") {
+                $script:ConfirmedUsed = $true
+            }
+        }
+    }
+    Enter-JaLock
+    $plan = Get-JaBatchPlan $targets
+    $hash = Get-JaBatchHash $plan
+    $script:Res['listHash'] = $hash
+    $projs = @($plan | Where-Object { $_.Project } | ForEach-Object { $_.Project } | Sort-Object -Unique)
+    if (-not $Apply) {
+        foreach ($p in $plan) { [void]$script:Res.modules.Add($p.Item) }
+        if ($projs.Count -eq 1) { $script:Res.project = $projs[0] } elseif ($projs.Count -gt 1) { $script:Res['listProjects'] = $projs }
+        $todo = @($plan | Where-Object { $_.Item.action -ne 'none' })
+        $byAct = @($todo | Group-Object { $_.Item.action } | ForEach-Object { "$($_.Count) $($_.Name)" })
+        $byExp = @($plan | Where-Object { $_.Item.action -eq 'none' } | Group-Object { $_.Item.expectedState } | ForEach-Object { "$($_.Count) $($_.Name)" })
+        $est = Get-JaBatchEstimate $plan
+        $script:Res['estimatedSec'] = $est.Sec
+        $txt = "PRÉVIA do lote ($($plan.Count) entrada(s); nada foi alterado): a fazer: " + $(if ($byAct.Count) { $byAct -join ', ' } else { 'nada' })
+        if ($byExp.Count) { $txt += '; sem ação: ' + ($byExp -join ', ') }
+        if ($lst.Filtered -gt 0) { $txt += "; $($lst.Filtered) item(ns) do JSON fora do filtro -Only" }
+        $txt += "; hash $hash"
+        $script:Res.message = $txt
+        if ($todo.Count -eq 0) { $script:Res.exitCode = 3; return }
+        $script:Res['next'] = "$canon $baseCmd -Apply -ListHash $hash -Confirmed"
+        if ($est.Sec -gt 90) {
+            Add-JaWarning "o -Apply deve levar ~$($est.Sec) s ($($est.Runs) execuções do console): pela IA, rode com o tempo limite da ferramenta em 600000 ms (10 min) ou divida a lista; se o processo for morto no meio, o diário do lote (%LOCALAPPDATA%\JEDI\JVCS\lote) diz o que já foi feito"
+        }
+        if ($est.Sec -gt 540) { Add-JaWarning 'acima de ~9 min: divida a lista (o tempo limite máximo da ferramenta do Claude Code é 10 min)' }
+        return
+    }
+    if ($ListHash -and $ListHash -ne $hash) {
+        throw (New-JaError 10 "a lista, as opções, a identidade ou a ação prevista de algum módulo mudaram desde a prévia (hash aprovado $ListHash, agora $hash); nada foi feito. Rode a prévia de novo e mostre ao usuário")
+    }
+    $files = New-Object System.Collections.ArrayList
+    $lineOf = @{}
+    $projOf = @{}
+    $actOf = @{}
+    foreach ($p in $plan) {
+        if (-not $p.Run) { continue }
+        $k = $p.Path.ToLowerInvariant()
+        [void]$files.Add($p.Path); $lineOf[$k] = $p.Line; $projOf[$k] = $p.Project; $actOf[$k] = $p.Item['action']
+    }
+    Start-JaBatchJournal -Plan $plan -Hash $hash
+    # execução: listagens refeitas (cache novo) e mutex solto para a compilação do checkin rodar
+    # fora dele, como no checkin normal; cada comando volta a travar o mutex. $script:BatchProjectOf
+    # continua: o Resolve-FileContext da execução resolve como o plano.
+    $script:ListingCache = @{}
+    Exit-JaLock
+    if ($files.Count -gt 0) {
+        switch ($script:Cmd) {
+            'checkout' { Invoke-CmdCheckout -Ensure $false -FileList $files }
+            'checkin' { Invoke-CmdCheckin -FileList $files -WhatOverride "$baseCmd -Apply -ListHash $hash" }
+            'undocheckout' { Invoke-CmdUndo -FileList $files }
+        }
+    }
+    foreach ($p in $plan) { if (-not $p.Run) { Add-JaResultItem $p.Item } }
+    foreach ($it in $script:Res.modules) {
+        $k = ([string]$it.path).ToLowerInvariant()
+        if (-not $it.Contains('listLine')) {
+            $ln = 0
+            if ($lineOf.ContainsKey($k)) { $ln = $lineOf[$k] }
+            $it['listLine'] = $ln
+        }
+        if ((-not $it.Contains('project') -or -not $it['project']) -and $projOf.ContainsKey($k)) { $it['project'] = $projOf[$k] }
+        # a ação que a prévia mostrou (o state diz o que aconteceu de fato)
+        if (-not $it.Contains('action') -and $actOf.ContainsKey($k)) { $it['action'] = $actOf[$k] }
+    }
+    $sorted = @($script:Res.modules | Sort-Object { [int]$_['listLine'] })
+    $script:Res.modules.Clear()
+    foreach ($x in $sorted) { [void]$script:Res.modules.Add($x) }
+    $script:Res.project = $null
+    if ($projs.Count -eq 1) { $script:Res.project = $projs[0] } elseif ($projs.Count -gt 1) { $script:Res['listProjects'] = $projs }
+    $mods = @($script:Res.modules)
+    $okN = @($mods | Where-Object { [int]$_.exitCode -eq 0 }).Count
+    $nopN = @($mods | Where-Object { [int]$_.exitCode -eq 3 }).Count
+    $errN = $mods.Count - $okN - $nopN
+    $script:Res.message = "lote $($script:Cmd): $($mods.Count) módulo(s): $okN ok, $nopN sem nada a fazer, $errN com erro ou recusado (veja modules[].state)"
+    if ($errN -gt 0 -and ($okN + $nopN) -gt 0) { $script:Res.message += '; os que deram certo ficaram feitos: para repetir só os outros, use esta saída JSON como lista com -Only failed' }
+    Write-JaBatchJournal 'end' ([ordered]@{ ok = $okN; nothingToDo = $nopN; failed = $errN })
 }
 
 # ======================================================================= config
@@ -1559,8 +2736,8 @@ function Get-JaRevisionFiles {
 # linha normalizadas; diferenças de codificação/quebras vão para os avisos. $null sem git.
 function Get-JaUnifiedDiff {
     param([string]$BasePath, [string]$LocalPath, [string]$BaseLabel, [string]$LocalLabel)
-    $bi = Get-JaTextInfoFromFile $BasePath
-    $li = Get-JaTextInfoFromFile $LocalPath
+    $bi = Get-JaForcedTextInfo -FilePath $BasePath -Info (Get-JaTextInfoFromFile $BasePath)
+    $li = Get-JaForcedTextInfo -FilePath $LocalPath -Info (Get-JaTextInfoFromFile $LocalPath)
     if ($bi.Kind -eq 'binary' -or $li.Kind -eq 'binary') { return $null }
     $git = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
     if (-not $git) { return $null }
@@ -2451,7 +3628,9 @@ function Test-JaBuildOn {
 # Projeto compilável do arquivo: o .dpr/.dpk mais próximo (com -Project, o de mesmo nome).
 function Find-JaBuildProject {
     param([string]$FullPath)
-    $cands = @(Find-JaProjectFiles $FullPath)
+    # sem @(): Find-JaProjectFiles devolve a lista com "return ," e @() faria dela UM elemento (a lista
+    # inteira): sem .dpr dava Source nulo (erro 9 no check-in com buildCheck) e o filtro -Project não filtrava
+    $cands = Find-JaProjectFiles $FullPath
     if ($Project) { $pn = Get-ProjectNameFromArg $Project; $cands = @($cands | Where-Object { $_.Name -ieq $pn }) }
     if ($cands.Count -eq 0) { return $null }
     $c = $cands[0]
@@ -2546,6 +3725,12 @@ function Invoke-JaBuildGate {
         if ($p) { $projs[$p.Source.ToLowerInvariant()] = $p }
     }
     if ($projs.Count -eq 0) {
+        # acervo sem .dpr/.dpk (xHarbour...): sem fonte Delphi no check-in, não há o que compilar. Fonte Delphi
+        # sem .dpr continua bloqueado (um .jvcsproject não serve para pular a compilação).
+        if (@($Files | Where-Object { Test-JaDelphiSource $_ }).Count -eq 0) {
+            Add-JaWarning "buildCheck=$($mode): nenhum fonte Delphi no check-in e nenhum .dpr/.dpk acima; compilação não se aplica"
+            return $null
+        }
         $msg = 'buildCheck: nenhum .dpr/.dpk na pasta dos arquivos ou acima para compilar'
         if ($mode -eq 'block') { return [pscustomobject]@{ Message = $msg; ExitCode = 7 } }
         Add-JaWarning $msg
@@ -2598,28 +3783,49 @@ function Invoke-CmdSync {
     if ($ids.Count -eq 0) { $script:Res.message = 'projeto sem módulos'; $script:Res.exitCode = 3; return }
     $filter = Get-JaWritableFilter
     $backup = $null
-    $count = @{ none = 0; create = 0; update = 0; conflict = 0; keep = 0; unknown = 0; synced = 0 }
-    $base = Get-JvcsBase -ProjectName $name -Ids $ids
+    $count = @{ none = 0; create = 0; update = 0; conflict = 0; keep = 0; unknown = 0; synced = 0; error = 0 }
+    # 1a passada: arquivo local de cada módulo e recusa de pasta protegida ANTES de baixar ou gravar
+    $paths = @{}
+    foreach ($k in $groups.Keys) {
+        foreach ($r in $groups[$k]) {
+            $loc = Find-LocalMember -Row $r -ProjectDir $pdir
+            if ($loc.Path) { $paths[$k] = $loc.Path; break }
+        }
+        if ($paths.ContainsKey($k)) {
+            $why = Get-JaProtectedPathReason (Join-Path ([IO.Path]::GetDirectoryName($paths[$k])) 'x')
+            if ($why) { throw (New-JaError 7 "o módulo $((New-ModuleItem $groups[$k]).name) aponta para uma pasta protegida ($why); sync recusado, nada foi alterado") }
+        }
+    }
+    # R1: base tolerante por módulo; módulo sem base sai com state=error e nunca é gravado
+    $base = $null
+    $need = @($groups.Keys | Where-Object { $paths.ContainsKey($_) } | ForEach-Object { [int]$_ })
+    if ($need.Count -gt 0) { $base = Get-JvcsBase -ProjectName $name -Ids $need -Tolerant }
     try {
         foreach ($k in $groups.Keys) {
             $rows = $groups[$k]
             $item = New-ModuleItem $rows
             $mine = ($item.lockedBy -and (Test-IsMe $item.lockedBy))
             $localDir = $null
-            foreach ($r in $rows) {
-                $loc = Find-LocalMember -Row $r -ProjectDir $pdir
-                if ($loc.Path) { $localDir = [IO.Path]::GetDirectoryName($loc.Path); $item.path = $loc.Path; break }
-            }
+            if ($paths.ContainsKey($k)) { $localDir = [IO.Path]::GetDirectoryName($paths[$k]); $item.path = $paths[$k] }
             if (-not $localDir) {
                 $item.state = 'unknown'; $item['action'] = 'unknown'
-                $item.message = 'caminho do servidor truncado pelo console e arquivo não localizado sob a pasta do projeto'
+                $item.message = 'caminho do servidor truncado pelo console (ou não absoluto) e arquivo não localizado sob a pasta do projeto'
                 if ($Apply) { $item.exitCode = 7 }
                 $count.unknown++
                 [void]$script:Res.modules.Add($item)
                 continue
             }
-            $why = Get-JaProtectedPathReason (Join-Path $localDir 'x')
-            if ($why) { throw (New-JaError 7 "o módulo $($item.name) aponta para uma pasta protegida ($why); sync recusado") }
+            if (-not $base.Map.ContainsKey($k)) {
+                $pr = Get-LocalPresence -Rows $rows -LocalDir $localDir -Action 'error'
+                $why = [string]$base.Errors[$k]
+                if (-not $why) { $why = 'revisão não baixada do servidor' }
+                $item.localState = $pr.State; $item['files'] = $pr.Files
+                $item.state = 'error'; $item['action'] = 'error'; $item.exitCode = 9
+                $item.message = "não verificado ($why): nada será alterado neste módulo"
+                $count.error++
+                [void]$script:Res.modules.Add($item)
+                continue
+            }
             $cmp = Compare-WithBase -BaseFiles $base.Map[$k] -LocalDir $localDir
             $files = New-Object System.Collections.ArrayList
             $act = 'none'
@@ -2681,10 +3887,10 @@ function Invoke-CmdSync {
             $item['files'] = $files
             [void]$script:Res.modules.Add($item)
         }
-    } finally { Remove-JaTempDir $base.Root }
+    } finally { if ($base) { Remove-JaTempDir $base.Root } }
     $mode = 'prévia (nada foi alterado; use -Apply)'
     if ($Apply) { $mode = 'aplicado' }
-    $script:Res.message = "sync $($mode): $($count.none) igual(is), $($count.create) a baixar, $($count.update) a atualizar, $($count.conflict) conflito(s), $($count.keep) em checkout seu, $($count.unknown) sem caminho"
+    $script:Res.message = "sync $($mode): $($count.none) igual(is), $($count.create) a baixar, $($count.update) a atualizar, $($count.conflict) conflito(s), $($count.keep) em checkout seu, $($count.unknown) sem caminho, $($count.error) com erro"
     if ($backup) { $script:Res['backup'] = $backup; $script:Res.message += "; backup em $backup" }
     # -Apply: 3 = nada mudou; 8/7 = nada mudou por conflito/caminho; 11 = parte mudou e parte não
     if ($Apply -and $count.synced -eq 0) {
@@ -3177,18 +4383,22 @@ function Invoke-SyncToState {
         }
         $dirs[$k] = [pscustomobject]@{ Dir = $d; Path = $p }
     }
+    # a base só é baixada para módulo com pasta local (sem pasta: unknown, nada a comparar)
+    $need = @($ids | Where-Object { $dirs[[string]$_].Dir })
     $older = @{}
-    foreach ($id in $ids) {
+    foreach ($id in $need) {
         $lv = $St.ByModule[[string]$id].Version
         if ($lv -ne (New-ModuleItem $groups[[string]$id]).version) { $older[[string]$id] = $lv }
     }
     $filter = Get-JaWritableFilter
     $backup = $null
-    $count = @{ none = 0; create = 0; restore = 0; conflict = 0; keep = 0; unknown = 0; notIn = 0; hidden = 0; synced = 0 }
-    $latest = Get-JvcsBase -ProjectName $Name -Ids $ids
+    $count = @{ none = 0; create = 0; restore = 0; conflict = 0; keep = 0; unknown = 0; notIn = 0; hidden = 0; synced = 0; error = 0 }
+    # R1: tolerante por módulo; o que não baixar (última ou alvo) sai com state=error e nunca é gravado
+    $latest = $null
     $atTarget = $null
+    if ($need.Count -gt 0) { $latest = Get-JvcsBase -ProjectName $Name -Ids $need -Tolerant }
     try {
-        if ($older.Count -gt 0) { $atTarget = Get-JvcsBase -ProjectName $Name -Ids @($older.Keys | ForEach-Object { [int]$_ }) -Revs $older }
+        if ($older.Count -gt 0) { $atTarget = Get-JvcsBase -ProjectName $Name -Ids @($older.Keys | ForEach-Object { [int]$_ }) -Revs $older -Tolerant }
         foreach ($k in $groups.Keys) {
             $rows = $groups[$k]
             $item = New-ModuleItem $rows
@@ -3217,6 +4427,19 @@ function Invoke-SyncToState {
                 $item.message = 'caminho do servidor truncado, relativo ou vazio, e arquivo não localizado sob a pasta do projeto'
                 if ($Apply) { $item.exitCode = 7 }
                 $count.unknown++
+                [void]$script:Res.modules.Add($item)
+                continue
+            }
+            $why = $null
+            if (-not $latest.Map.ContainsKey($k)) { $why = [string]$latest.Errors[$k] }
+            elseif ($older.ContainsKey($k) -and -not $atTarget.Map.ContainsKey($k)) { $why = [string]$atTarget.Errors[$k] }
+            if ($null -ne $why) {
+                if (-not $why) { $why = 'revisão não baixada do servidor' }
+                $pr = Get-LocalPresence -Rows $rows -LocalDir $localDir -Action 'error'
+                $item.localState = $pr.State; $item['files'] = $pr.Files
+                $item.state = 'error'; $item['action'] = 'error'; $item.exitCode = 9
+                $item.message = "não verificado ($why): nada será alterado neste módulo"
+                $count.error++
                 [void]$script:Res.modules.Add($item)
                 continue
             }
@@ -3288,12 +4511,12 @@ function Invoke-SyncToState {
             [void]$script:Res.modules.Add($item)
         }
     } finally {
-        Remove-JaTempDir $latest.Root
+        if ($latest) { Remove-JaTempDir $latest.Root }
         if ($atTarget) { Remove-JaTempDir $atTarget.Root }
     }
     $mode = 'prévia (nada foi alterado; use -Apply)'
     if ($Apply) { $mode = 'aplicado' }
-    $script:Res.message = "sync $($Tg.Title) $($mode): $($count.none) igual(is), $($count.create) a baixar, $($count.restore) $($Tg.BackTo), $($count.conflict) conflito(s), $($count.keep) em checkout seu, $($count.notIn) $($Tg.NotInText), $($count.hidden) oculto(s), $($count.unknown) sem caminho"
+    $script:Res.message = "sync $($Tg.Title) $($mode): $($count.none) igual(is), $($count.create) a baixar, $($count.restore) $($Tg.BackTo), $($count.conflict) conflito(s), $($count.keep) em checkout seu, $($count.notIn) $($Tg.NotInText), $($count.hidden) oculto(s), $($count.unknown) sem caminho, $($count.error) com erro"
     if ($backup) { $script:Res['backup'] = $backup; $script:Res.message += "; backup em $backup" }
     if ($Apply -and $count.synced -gt 0) {
         Add-JaWarning "a cópia local ficou no estado $($Tg.Of) (mais antiga que a última revisão em parte dos módulos). Antes de checkout/edição, volte com: sync -Project $Name -Apply (sem $($Tg.Arg))"
@@ -3441,7 +4664,7 @@ function Invoke-CmdSyncDest {
     $script:Res['sourceRoot'] = $root
     $filter = Get-JaWritableFilter
     $plan = New-Object System.Collections.ArrayList
-    $count = @{ export = 0; noPath = 0; badPath = 0; exported = 0; files = 0 }
+    $count = @{ export = 0; noPath = 0; badPath = 0; exported = 0; files = 0; error = 0 }
     foreach ($x in @($st.ByModule.Values | Sort-Object { $_.Id })) {
         $k = [string]$x.Id
         $item = [ordered]@{ id = $x.Id; name = ([string]$x.Name).Trim(); path = $null; version = $x.Version; lockedBy = $null; localState = $null; state = 'export'; exitCode = 0; message = ''; revisionId = $x.RevisionId; targetFileDate = $x.FileDate; targetFiles = $x.Files; action = 'export' }
@@ -3489,8 +4712,24 @@ function Invoke-CmdSyncDest {
     }
     $revs = @{}
     foreach ($p in $plan) { $revs[[string]$p.X.Id] = [string]$p.X.Version }
-    $base = Get-JvcsBase -ProjectName $name -Ids @($plan | ForEach-Object { [int]$_.X.Id }) -Revs $revs
+    # R1: tolerante por módulo; o que não baixar sai com state=error e não é gravado nem entra no manifesto
+    $base = Get-JvcsBase -ProjectName $name -Ids @($plan | ForEach-Object { [int]$_.X.Id }) -Revs $revs -Tolerant
     try {
+        $okPlan = New-Object System.Collections.ArrayList
+        foreach ($p in $plan) {
+            $k = [string]$p.X.Id
+            if ($base.Map.ContainsKey($k)) { [void]$okPlan.Add($p); continue }
+            $why = [string]$base.Errors[$k]
+            if (-not $why) { $why = 'revisão não baixada do servidor' }
+            $p.Item.state = 'error'; $p.Item.action = 'error'; $p.Item.exitCode = 9
+            $p.Item.message = "não exportado: $why"
+            $count.error++
+        }
+        if ($okPlan.Count -eq 0) {
+            $script:Res.message = "sync -Dest ($($tg.Text)): nada foi gravado (nenhuma revisão baixou do servidor); $($count.error) com erro, $($count.noPath) sem pasta no servidor, $($count.badPath) com caminho fora do destino"
+            return
+        }
+        $plan = $okPlan
         $manifest = Join-Path $dest 'jvcs-export.json'
         $seen = @{ ($manifest.ToLowerInvariant()) = 'o manifesto' }
         $copies = New-Object System.Collections.ArrayList
@@ -3519,6 +4758,8 @@ function Invoke-CmdSyncDest {
             $count.files++
         }
         foreach ($p in $plan) { $p.Item.state = 'exported'; $p.Item.action = 'exported'; $p.Item.message = "revisão $($p.X.Version) gravada em $($p.Dir)"; $count.exported++ }
+        # quem usar a pasta depois só vê o manifesto (não o JSON do comando): o que ficou de fora vai nele
+        $skipped = @($script:Res.modules | Where-Object { @('noPath', 'badPath', 'error') -contains [string]$_['state'] } | ForEach-Object { [ordered]@{ id = $_['id']; state = $_['state']; message = $_['message'] } })
         $ident = Get-JaIdentityCached
         $man = [ordered]@{
             tool       = "jvcs-ai.ps1 $($script:JaVersion) sync -Dest"
@@ -3530,12 +4771,14 @@ function Invoke-CmdSyncDest {
             sourceRoot = $root
             note       = 'Cópia de leitura gerada pelo jvcs-ai. Não é pasta de trabalho do JEDI VCS: checkout e check-in continuam na pasta registrada de cada módulo.'
             modules    = @($plan | ForEach-Object { [ordered]@{ id = $_.X.Id; version = $_.X.Version; revisionId = $_.X.RevisionId; path = $_.Item.path } })
+            complete   = ($skipped.Count -eq 0)
+            skipped    = $skipped
         }
         [IO.File]::WriteAllText($manifest, (ConvertTo-JaJson $man -Pretty), $script:JaUtf8NoBom)
         $script:Res['manifest'] = $manifest
     } finally { Remove-JaTempDir $base.Root }
-    $script:Res.message = "sync -Dest ($($tg.Text)) aplicado: $($count.exported) módulo(s), $($count.files) arquivo(s) em $dest (cópia de leitura; manifesto jvcs-export.json); $($count.noPath) sem pasta no servidor, $($count.badPath) com caminho fora do destino"
-    # parcial (noPath/badPath + exportados): o Complete-Result junta os exitCode dos módulos (0 + 7 = 11)
+    $script:Res.message = "sync -Dest ($($tg.Text)) aplicado: $($count.exported) módulo(s), $($count.files) arquivo(s) em $dest (cópia de leitura; manifesto jvcs-export.json); $($count.noPath) sem pasta no servidor, $($count.badPath) com caminho fora do destino, $($count.error) com erro"
+    # parcial (noPath/badPath/error + exportados): o Complete-Result junta os exitCode dos módulos (0 + 7/9 = 11)
 }
 
 # ======================================================================= shared
@@ -3665,7 +4908,7 @@ function Get-UserArg {
 }
 
 function Invoke-CmdChanges {
-    if (@($Rest | Where-Object { $_ -and $_.Trim() }).Count -gt 0) { throw (New-JaError 2 'uso: jvcs-ai.ps1 changes [-Project p.dpr] [-Since data|7d|24h|today] [-User login] [-Max n]') }
+    if (@($Rest | Where-Object { $_ -and $_.Trim() }).Count -gt 0) { throw (New-JaError 2 'uso: jvcs-ai.ps1 changes [-Project p] [-Since data|7d|24h|today] [-User login] [-Max n]') }
     if ($Max -lt 0 -or $Max -gt 1000) { throw (New-JaError 2 '-Max deve ficar entre 1 e 1000 (0 = padrão 100)') }
     $limit = $Max
     if ($limit -eq 0) { $limit = 100 }
@@ -4667,7 +5910,7 @@ function Invoke-CmdBugLink {
     if ($acts.Count -gt 1) { throw (New-JaError 2 'use só um de -Remove, -Done, -Reopen') }
     $action = 'add'
     if ($Remove) { $action = 'remove' } elseif ($Done) { $action = 'done' } elseif ($Reopen) { $action = 'open' }
-    if (@($Rest | Where-Object { $_ -and $_.Trim() }).Count -eq 0 -and -not $Project) { throw (New-JaError 2 'informe o(s) arquivo(s) do(s) módulo(s) ou -Project <projeto.dpr>') }
+    if (@($Rest | Where-Object { $_ -and $_.Trim() }).Count -eq 0 -and -not $Project) { throw (New-JaError 2 'informe o(s) arquivo(s) do(s) módulo(s) ou -Project <projeto>') }
     Assert-Console2026 'bug-link' -Needle $script:BugNeedle
     Assert-Mode -Kind 'checkin' -What (Get-BugCmdHint)
     Enter-JaLock
@@ -4679,9 +5922,19 @@ function Invoke-CmdBugLink {
 
 function Invoke-CmdAddProject {
     $args1 = @($Rest | Where-Object { $_ -and $_.Trim() })
-    if ($args1.Count -ne 1) { throw (New-JaError 2 'informe o projeto: jvcs-ai.ps1 addproject <projeto.dpr> [-Comment "descrição"]') }
+    if ($args1.Count -ne 1) { throw (New-JaError 2 'informe o projeto: jvcs-ai.ps1 addproject <projeto.dpr | nome> [-Comment "descrição"]') }
     $name = Get-ProjectNameFromArg $args1[0]
-    if ($name -notmatch '\.(dpr|dpk)$') { throw (New-JaError 2 "use o nome do .dpr/.dpk do projeto (ex.: meuapp.dpr), como a IDE faz: '$name'") }
+    # R4: .dpr/.dpk (como a IDE) ou, em acervo sem .dpr (xHarbour...), um nome SEM extensão
+    $ext = [IO.Path]::GetExtension($name)
+    if ($ext -and $ext -ine '.dpr' -and $ext -ine '.dpk') {
+        throw (New-JaError 2 "use o nome do .dpr/.dpk do projeto (ex.: meuapp.dpr), como a IDE faz, ou, em acervo sem .dpr (xHarbour...), um nome sem extensão (ex.: sesis): '$name'")
+    }
+    $why = Test-JaProjectNameText $name
+    if ($why) { throw (New-JaError 2 "nome de projeto inválido ($why): '$name'") }
+    if (-not $ext) {
+        $dprHere = @(Get-ChildItem -LiteralPath (Get-Location).ProviderPath -File -ErrorAction SilentlyContinue | Where-Object { $_.Extension -ieq '.dpr' -or $_.Extension -ieq '.dpk' })
+        if ($dprHere.Count -gt 0) { Add-JaWarning "projeto sem extensão numa pasta com $($dprHere[0].Name): a IDE cadastra o projeto Delphi pelo nome do .dpr/.dpk" }
+    }
     $desc = Get-OptionalText $Comment 'descrição'
     $pfx = [string]$script:Cfg.commentPrefix
     if ($desc -and $script:IsAgent -and $pfx -and -not $desc.StartsWith($pfx)) { $desc = $pfx + ' ' + $desc }
@@ -4705,6 +5958,9 @@ function Invoke-CmdAddProject {
             else { $item.state = 'exists'; $item.exitCode = 3; $item.message = "o projeto $name já existe no servidor (ID $($item.id)); nada a fazer" }
         }
     }
+    if (-not $ext -and @('created', 'exists') -contains $item.state) {
+        $script:Res['next'] = "sem .dpr, marque a pasta do acervo: arquivo .jvcsproject com a linha project=$name (ou o usuário, no terminal dele: jvcs-ai.ps1 config set projectMap `"<pasta>`" $name)"
+    }
     [void]$script:Res.modules.Add($item)
 }
 
@@ -4724,18 +5980,31 @@ function Invoke-AddOne {
     }
     if ($ctx.Status -eq 'noProject') {
         $item.state = 'noProject'; $item.exitCode = 5
-        $item.message = $ctx.Note + '. Crie o projeto antes: jvcs-ai.ps1 addproject <projeto.dpr>'
+        $item.message = $ctx.Note + '. Crie o projeto antes (jvcs-ai.ps1 addproject <projeto.dpr | nome sem extensão>) e, sem .dpr, marque a pasta com .jvcsproject (project=<nome>) ou peça ao usuário o mapa (config set projectMap)'
         return $item
     }
     $cands = @($ctx.Candidates)
-    if ($cands.Count -ne 1) {
+    # R4: -Project, ou o .jvcsproject/mapa da pasta mais próxima; um .dpr/.dpk só se for o único candidato
+    $ci = @($ctx.CandidateInfo)
+    $proj = $null
+    if ($ci.Count -gt 0 -and $ci[0].Rank -lt 3) { $proj = $ci[0].Name }
+    elseif ($ci.Count -eq 1) { $proj = $ci[0].Name }
+    if (-not $proj) {
         $item.state = 'ambiguousProject'; $item.exitCode = 2
         $item.message = "mais de um projeto possível ($($cands -join ', ')): informe -Project"
         return $item
     }
-    $proj = $cands[0]
     $script:Res.project = $proj
-    if (-not (Test-ModeGate -Item $item -Kind 'checkin' -What ("add `"$FullPath`" -Comment `"$CommentText`""))) { return $item }
+    # a dica de aprovação mostra o projeto escolhido (pode vir de um .jvcsproject, que a IA/Git/sync gravam)
+    if ($ci.Count -gt 0 -and $ci[0].Source -ne '-Project') { Add-JaWarning "$($item.name): projeto $proj escolhido por $($ci[0].Source) ($($ci[0].Where))" }
+    # S0002 (N2): -Preview mostra o que seria feito, sem tocar no servidor
+    if ($Preview) {
+        $item.state = 'wouldAdd'
+        $item.exitCode = 0
+        $item.message = "seria cadastrado no projeto $proj (1º check-in 0.1; comentário: $CommentText); rode sem -Preview para cadastrar"
+        return $item
+    }
+    if (-not (Test-ModeGate -Item $item -Kind 'checkin' -What ("add `"$FullPath`" -Project `"$proj`" -Comment `"$CommentText`""))) { return $item }
     $r = Invoke-Jvcs @(('openproject "' + $proj + '"'), ('addmodule "' + $FullPath + '" "' + $CommentText + '"'), ('checkin "' + $FullPath + '" "' + $CommentText + '"'), ('listproject "' + $proj + '"'))
     $e0 = Get-SectionError $r.Sections[0]
     if ($e0) { throw (New-JaError 5 "openproject $($proj): $e0") }
@@ -4762,13 +6031,19 @@ function Invoke-AddOne {
     }
     $item.state = 'added'
     $item.message = "adicionado ao projeto $proj e check-in da versão $($item.version)"
-    $nb = Get-JvcsBase -ProjectName $proj -Ids @($item.id)
+    # o módulo JÁ foi cadastrado e a 0.1 entrou: falha na conferência vira aviso, não erro do item
+    $nb = $null
     try {
-        $cmp = Compare-WithBase -BaseFiles $nb.Map[[string]$item.id] -LocalDir ([IO.Path]::GetDirectoryName($FullPath))
+        $nb = Get-JvcsBase -ProjectName $proj -Ids @($item.id) -Tolerant
+        $kk = [string]$item.id
+        if (-not $nb.Map.ContainsKey($kk)) { throw (New-JaError 9 ([string]$nb.Errors[$kk])) }
+        $cmp = Compare-WithBase -BaseFiles $nb.Map[$kk] -LocalDir ([IO.Path]::GetDirectoryName($FullPath))
         $item.localState = $cmp.State
         $item['files'] = ConvertTo-FileItems $cmp
         if ($cmp.State -ne 'clean') { Add-JaWarning "$($item.name): depois do check-in o arquivo local difere da revisão $($item.version) do servidor" }
-    } finally { Remove-JaTempDir $nb.Root }
+    } catch {
+        Add-JaWarning "$($item.name): adicionado, mas não foi possível conferir o arquivo local contra a revisão $($item.version): $(Get-JaErrorMessage $_)"
+    } finally { if ($nb) { Remove-JaTempDir $nb.Root } }
     return $item
 }
 
@@ -4803,6 +6078,8 @@ function Get-AdminProjectArgs {
     if ($a.Count -ne $Count) { throw (New-JaError 2 "uso: jvcs-ai.ps1 $Usage") }
     $out = New-Object System.Collections.ArrayList
     foreach ($x in $a) {
+        # administração: o nome por extenso (uma pasta resolveria pelo .jvcsproject, que a IA pode gravar)
+        if ($x -match '[\\/]' -and (Test-Path -LiteralPath $x -PathType Container)) { throw (New-JaError 2 "informe o nome do projeto, não a pasta: '$x'") }
         $n = Get-ProjectNameFromArg $x
         if ($n -match '^\d+$') { throw (New-JaError 2 "informe o nome do projeto, não o ID: '$n'") }
         if ($n.Length -gt 50) { throw (New-JaError 2 "nome de projeto com mais de 50 caracteres: '$n'") }
@@ -5210,7 +6487,14 @@ function Invoke-CmdRenameProject {
     $item.message = "projeto renomeado no servidor: $old -> $new (ID $($info.id)); $($renamed.Count) módulo(s) renomeado(s)"
     $loc = @($files | Where-Object { $_.action -eq 'renamed' } | ForEach-Object { "$($_.localFrom) -> $($_.localTo)" })
     if ($loc.Count -gt 0) { Add-JaWarning ("os arquivos locais NÃO foram renomeados: " + ($loc -join '; ') + ". Renomeie pela IDE (Project > Save Project As) para atualizar o 'program' do .dpr e o MainSource do .dproj; até lá o servidor procura arquivos que não existem") }
-    else { Add-JaWarning "o .dpr local ainda se chama $($old): o jvcs-ai acha o projeto pelo nome do .dpr (use -Project $new ou renomeie pela IDE)" }
+    elseif ([IO.Path]::GetExtension($old)) { Add-JaWarning "o .dpr local ainda se chama $($old): o jvcs-ai acha o projeto pelo nome do .dpr (use -Project $new ou renomeie pela IDE)" }
+    else {
+        # R4: projeto sem .dpr - quem aponta para o nome antigo é o .jvcsproject e o mapa [projects]
+        $md = Get-JaMapDirsForProject -Map $script:CfgInfo.ProjectMap -ProjectName $old
+        $w = "o .jvcsproject (project=$old) das pastas do acervo precisa passar para project=$new"
+        if ($md.Count -gt 0) { $w += "; o mapa [projects] também aponta para $old em $($md -join ', ') (o usuário troca com: jvcs-ai.ps1 config set projectMap `"<pasta>`" $new)" }
+        Add-JaWarning $w
+    }
     if ($nShared -gt 0) { Add-JaWarning "$nShared módulo(s) compartilhado(s) com outros projetos ficaram com o nome antigo (o servidor não renomeia compartilhados)" }
     Add-JaWarning "a GUI guarda opções em HKCU\Software\JEDI\JEDIVCS\...\Projects\$old (o standalone oferece apagar); o wrapper não mexe no registro do Windows"
     $notRen = @($files | Where-Object { $_.action -eq 'notRenamed' })
@@ -5283,11 +6567,11 @@ function Assert-ModuleAdmin {
 function Resolve-ModuleTarget {
     param([int]$Expected = 1)
     $a = @($Rest | Where-Object { $_ -and $_.Trim() })
-    if ($a.Count -lt 1) { throw (New-JaError 2 "informe o módulo: jvcs-ai.ps1 $script:Cmd <arquivo> | id:<n> -Project <projeto.dpr>") }
+    if ($a.Count -lt 1) { throw (New-JaError 2 "informe o módulo: jvcs-ai.ps1 $script:Cmd <arquivo> | id:<n> -Project <projeto>") }
     if ($a.Count -ne $Expected) { throw (New-JaError 2 "$script:Cmd aceita $Expected argumento(s) posicional(is); recebeu $($a.Count): $($a -join ' ')") }
     $v = $a[0].Trim()
     if ($v -match '^id:(\d+)$') {
-        if (-not $Project) { throw (New-JaError 2 'com id:<n> informe -Project <projeto.dpr>') }
+        if (-not $Project) { throw (New-JaError 2 'com id:<n> informe -Project <projeto>') }
         return [pscustomobject]@{ Id = [int]$Matches[1]; Project = (Get-ProjectNameFromArg $Project); Path = $null }
     }
     if ($v -match '^#?\d+$') { throw (New-JaError 2 "use id:<n> para informar o módulo pelo ID (recebido '$v')") }
@@ -5399,7 +6683,7 @@ function Get-NextHint {
 # modules -Project p [-Deserted]: só leitura (listmodules / listdeserted).
 function Invoke-CmdModules {
     Assert-Console2026 'modules' -Needle 'listmodules [<project_name>'
-    if (-not $Project) { throw (New-JaError 2 'informe -Project <projeto.dpr>') }
+    if (-not $Project) { throw (New-JaError 2 'informe -Project <projeto>') }
     $proj = Get-ProjectNameFromArg $Project
     $script:Res.project = $proj
     Enter-JaLock
@@ -5470,7 +6754,8 @@ function Invoke-RemoveOne {
         Assert-RiskyOption '-Force' ("$script:Cmd id:$($Info.Id) -Project $ProjectName -Archive -Apply -Force")
     }
     $line = 'removemodule ' + $Info.Id
-    if ($ArchiveMode) { $line += ' archive' }
+    # console 2026 (beta 6): apagar do arquivo exige a palavra confirm
+    if ($ArchiveMode) { $line += ' archive confirm' }
     $verify = 'listmodules'
     if ($Info.FromDeserted) { $verify = 'listdeserted' }
     $r = Invoke-Jvcs @(('openproject "' + $ProjectName + '"'), $line, $verify)
@@ -5678,7 +6963,7 @@ function Invoke-CmdComment {
 # só nos IDs explícitos que forem candidatos na prévia recalculada agora.
 function Invoke-CmdCleanup {
     Assert-Console2026 'cleanup' -Needle 'listdeserted'
-    if (-not $Project) { throw (New-JaError 2 'informe -Project <projeto.dpr>') }
+    if (-not $Project) { throw (New-JaError 2 'informe -Project <projeto>') }
     $proj = Get-ProjectNameFromArg $Project
     $script:Res.project = $proj
     $ids = New-Object System.Collections.ArrayList
@@ -5795,21 +7080,31 @@ function Invoke-CmdConfig {
             $h = [ordered]@{}
             foreach ($k in $script:Cfg.Keys) { $h[$k] = [ordered]@{ value = $script:Cfg[$k]; source = $script:CfgInfo.Sources[$k] } }
             $script:Res['config'] = $h
+            $script:Res['projectMap'] = $script:CfgInfo.ProjectMap
+            $script:Res['identityMap'] = $script:CfgInfo.IdentityMap
             $script:Res['configPath'] = $script:CfgInfo.Path
             $script:Res.message = 'configuração efetiva (' + $script:CfgInfo.Path + ')'
         }
         'get' {
             if ($Rest.Count -lt 2) { throw (New-JaError 2 'uso: config get <chave>') }
+            if (@('projectMap', 'identityMap') -contains $Rest[1]) {
+                $mk = 'projectMap'; $map = $script:CfgInfo.ProjectMap
+                if ($Rest[1] -ieq 'identityMap') { $mk = 'identityMap'; $map = $script:CfgInfo.IdentityMap }
+                $script:Res[$mk] = $map
+                $script:Res.message = "${mk}: $($map.Count) pasta(s)"
+                return
+            }
             $name = Get-JaConfigKeyName $Rest[1]
             if (-not $name) { throw (New-JaError 2 "chave desconhecida: $($Rest[1])") }
             $script:Res['config'] = [ordered]@{ $name = [ordered]@{ value = $script:Cfg[$name]; source = $script:CfgInfo.Sources[$name] } }
             $script:Res.message = "$name=$($script:Cfg[$name])"
         }
         'set' {
-            if ($Rest.Count -lt 3) { throw (New-JaError 2 'uso: config set <chave> <valor>') }
+            if ($Rest.Count -lt 3) { throw (New-JaError 2 'uso: config set <chave> <valor> | config set projectMap|identityMap "<pasta>" <valor|none>') }
             if ($script:IsAgent) {
                 throw (New-JaError 10 'a configuração da automação é do usuário: a IA não pode alterá-la. Peça ao usuário para rodar config set no terminal dele (ou usar a interface).')
             }
+            if (@('projectMap', 'identityMap') -contains $Rest[1]) { Set-JaFolderMap; return }
             $value = (($Rest[2..($Rest.Count - 1)]) -join ' ')
             $name = Set-JaConfigValue -Key $Rest[1] -Value $value
             if ($name -eq 'buildCommand') {
@@ -5822,8 +7117,48 @@ function Invoke-CmdConfig {
             $script:Res['config'] = [ordered]@{ $name = [ordered]@{ value = $info.Values[$name]; source = $info.Sources[$name] } }
             $script:Res.message = "$name gravado em $($info.Path)"
         }
-        default { throw (New-JaError 2 'uso: config list | get <chave> | set <chave> <valor>') }
+        default { throw (New-JaError 2 'uso: config list | get <chave> | set <chave> <valor> | set projectMap|identityMap "<pasta>" <valor|none>') }
     }
+}
+
+# config set projectMap|identityMap "<pasta>" <valor|none> (R4). Só humano: Invoke-CmdConfig já recusou o
+# agente, e a regra deny "*jvcs-ai.ps1* config set*" do settings cobre estas formas.
+function Set-JaFolderMap {
+    $isProj = ($Rest[1] -ieq 'projectMap')
+    $mk = 'identityMap'; $section = 'identities'; $what = 'identidade'
+    if ($isProj) { $mk = 'projectMap'; $section = 'projects'; $what = 'projeto' }
+    if ($Rest.Count -ne 4) { throw (New-JaError 2 "uso: config set $mk `"<pasta>`" <$what|none>") }
+    $raw = [string]$Rest[2]
+    if ($raw -match '[=\x00-\x1f\x7f"]') { throw (New-JaError 2 "pasta com '=', aspas ou caractere de controle não cabe numa linha do config.ini") }
+    $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($raw)
+    $key = ConvertTo-JaDirKey $full
+    if (-not $key) { throw (New-JaError 2 "pasta inválida (caminho absoluto local d:\... ou UNC \\servidor\pasta): '$raw'") }
+    $value = ([string]$Rest[3]).Trim()
+    if ($value -ieq 'none') {
+        $n = Set-JaConfigMapValue -Section $section -DirKey $key -Value ''
+        if ($n -gt 0) { $script:Res.message = "${mk}: $key removida" } else { $script:Res.message = "${mk}: $key não estava no mapa"; $script:Res.exitCode = 3 }
+    } else {
+        if (-not (Test-Path -LiteralPath $full -PathType Container)) { throw (New-JaError 5 "pasta não encontrada: $full") }
+        if ($isProj) {
+            $why = Test-JaProjectNameText $value
+            if ($why) { throw (New-JaError 2 "nome de projeto inválido ($why): '$value'") }
+            $value = $value.ToLowerInvariant()
+        } else {
+            $why = Test-JaIdentityNameText $value
+            if ($why) { throw (New-JaError 2 "nome de identidade inválido ($why)") }
+            # só uma identidade SALVA; grava o nome como está no registro
+            $base = 'HKCU:\Software\JEDI\JEDIVCS\Identities'
+            $real = $null
+            if (Test-Path -LiteralPath $base) { $real = @((Get-Item -LiteralPath $base).GetSubKeyNames() | Where-Object { $_ -ieq $value }) | Select-Object -First 1 }
+            if (-not $real) { throw (New-JaError 4 "identidade '$value' não existe em HKCU\Software\JEDI\JEDIVCS\Identities (crie pela GUI/IDE com 'Store Password with identity')") }
+            $value = $real
+        }
+        [void](Set-JaConfigMapValue -Section $section -DirKey $key -Value $value)
+        $script:Res.message = "${mk}: $key = $value gravado em $(Get-JaConfigPath)"
+        if ($isProj) { $script:Res.message += ' (o nome não é conferido no servidor; teste com list)' }
+    }
+    $info = Read-JaConfig
+    if ($isProj) { $script:Res[$mk] = $info.ProjectMap } else { $script:Res[$mk] = $info.IdentityMap }
 }
 
 # ======================================================================= saída
@@ -5833,16 +7168,28 @@ function Get-HelpText {
 jvcs-ai.ps1 <comando> [argumentos] [opções]
   identity [-Test]                    identidade salva em uso (nunca a senha)
   projects                            projetos do servidor
-  list [-Project p]                   módulos do projeto
-  locks [-All]                        módulos em checkout (meus | todos)
-  status <arquivo...> | -Project p    estado local exato contra o servidor
+  list [-Project p] [-Only estados]   módulos do projeto
+  locks [-All] [-NoLocalState] [-Only estados]   módulos em checkout (meus | todos); nos meus, o estado local
+                                      (clean = lock sem alteração, undocheckout; modified = pede checkin)
+  status <arquivo...> | -Project p [-Only estados]   estado local exato contra o servidor; módulo que não
+                                      baixa sai com state=error e os outros seguem (exitCode 11)
+  -Only clean,modified,missing,unknown,notVersioned,error | locked,mine,others,unlocked   (status, list, locks;
+                                      com -FromList também ok,failed = resultado de lote anterior)
+                                      filtra a saída: OU dentro do grupo, E entre estado e lock; counts traz o total
   checkout <arquivo...> [-Force]      checkout seguro (-Force pela IA exige -Confirmed)
   ensure-checkout <arquivo> [-CheckOnly]   para hooks (idempotente)
   checkin <arquivo...> -Comment "..." [-AllowEncodingChange]   (esta opção pela IA exige -Confirmed)
   checkin <arquivo...> -Comment "..." -Keep   Put: revisão nova e o checkout continua (console 2026; modo checkin)
   undocheckout <arquivo...> [-Discard]   (-Discard pela IA exige -Confirmed)
+  checkout|checkin|undocheckout -FromList <arquivo> [-Only ...] [-MaxModules n] [opções do comando]
+                                      lote: caminhos absolutos (um por linha; # comenta) ou o JSON de status/list/
+                                      locks/lote anterior (-Only como no status, mais ok|failed: modified,unlocked |
+                                      clean,mine | failed); sem -Apply é prévia com hash; -Apply -ListHash <hash>
+                                      executa (pela IA sempre -Confirmed); até 500 (-MaxModules até 5000); 11 = misto
   diff <arquivo> [-Rev x.y]           diff do arquivo local contra a revisão do servidor (padrão: a última)
   diff <arquivo> -Rev x.y -Rev2 y.z   diff entre duas revisões do servidor
+  diff ... -Encoding oem|ansi|auto    code page dos lados ANSI sem BOM (oem = CP850 dos fontes xHarbour/Clipper)
+  checkin <arquivo...> -CommentFromGit   comentário = assunto do último commit do Git que mexeu nos arquivos
   history <arquivo> [-Max n]          revisões (data, usuário, comentário), mais recente primeiro (console 2026)
   changes [-Project p] [-Since d] [-User u] [-Max n]   check-ins do projeto desde a data (padrão 7d; aceita
                                       aaaa-mm-dd, aaaa-mm-ddThh:mm, 24h, today), mais recente primeiro (console 2026)
@@ -5851,8 +7198,20 @@ jvcs-ai.ps1 <comando> [argumentos] [opções]
   show <arquivo> -Rev x.y [-Dest d]   grava a revisão numa pasta de consulta (fora do projeto)
   sync [-Project p] [-Apply [-Force]] prévia do que muda; -Apply baixa/atualiza com backup (modo checkout;
                                       -Force sobrescreve alteração local sem checkout e pela IA exige -Confirmed)
-  addproject <projeto.dpr> [-Comment "descrição"]   cria o projeto no servidor (console 2026; modo checkin)
-  add <arquivo...> -Comment "..."     cadastra no projeto e faz o 1º check-in 0.1 (console 2026; modo checkin)
+  addproject <projeto.dpr | nome> [-Comment "descrição"]   cria o projeto no servidor (console 2026; modo checkin);
+                                      acervo sem .dpr (xHarbour...): nome SEM extensão (ex.: sesis)
+  add <arquivo...> -Comment "..." [-Preview]   cadastra no projeto e faz o 1º check-in 0.1 (console 2026; modo
+                                      checkin); -Preview só mostra o projeto escolhido e o que seria feito
+  untracked [-Path pasta] [-Pattern *.prg] [-Recurse] | untracked -FromXbp arq.xbp [-Base pasta] [-All]
+                                      arquivos locais que não são módulo de nenhum projeto (só leitura; -All
+                                      lista também os versionados; console 2026)
+  verify -FromGit <rev>[..<rev>] | verify -Since <data> [-Path pasta] [-Pattern p] [-Max n]
+                                      arquivos alterados no Git que estão atrás no JEDI: modifiedNoLock,
+                                      lockedByOther, pendingCheckin, notVersioned (só leitura; pendência = 7)
+  status -AllProjects [-Only ...]     status de todos os projetos do servidor, com resumo em projects[]
+  locks [-All] -OlderThan 7d|24h|aaaa-mm-dd   só locks mais antigos (a hora do lock vem em UTC; lockedAtLocal
+                                      e lockAgeDays no JSON)
+  doctor | ping                       config.ini, jvcs.exe, identidade, porta do servidor (latência) e login
   sync -Label <nome> [-Project p] [-Apply [-Force]]   prévia / volta a cópia local ao label, com backup (modo checkout)
   sync -Date <aaaa-mm-dd[Thh:mm]> [-Project p] [-Apply [-Force]]   prévia / volta a cópia local ao estado da data
                                       (data do ARQUIVO das revisões, como o Rollback do standalone), com backup
@@ -5897,24 +7256,154 @@ jvcs-ai.ps1 <comando> [argumentos] [opções]
   (administração: -Apply exige moduleAdmin=on|archive no config.ini e, pela IA, -Confirmed sempre;
    use id:<n>, não #n: no PowerShell #9 vira comentário)
   config list | get <chave> | set <chave> <valor>   (set: só humano)
+  config set projectMap "<pasta>" <projeto|none>      projeto padrão da pasta e subpastas (só humano)
+  config set identityMap "<pasta>" <identidade|none>  identidade SALVA da pasta e subpastas (só humano)
+  projeto padrão sem -Project: da pasta atual para cima, a mais próxima que declara; na mesma pasta
+  .jvcsproject (project=<nome>) > mapa [projects] > .dpr/.dpk (este só na pasta atual); -Project <nome | pasta>
   checkin: com buildCheck=warn|block compila antes com o script do usuário (buildCommand); -SkipBuild pela IA exige -Confirmed
 Opções (sempre por extenso): -Project -Identity -Rev -Rev2 -Max -MaxModules -InComments -Since -User -Dest -Label -Apply
   -Priority -Category -Due -IncludeDone -Reopen -All -Text -Agent -Confirmed -TimeoutSec -LockWaitSec -Raw
   -Bug -Title -Severity -Status -Keywords -ReportedBy -Description -DescriptionFile -Workaround -WorkaroundFile
   -Summary -OpenOnly -Remove -Done -Lines -Relink -RenameFiles -Checkin -SkipBuild -IgnoreWhitespace
-  -Archive -Unhide -OutComment -Deserted -Date -Keep
+  -Archive -Unhide -OutComment -Deserted -Date -Keep -Only -NoLocalState -FromList -ListHash
+  -Path -Pattern -Recurse -FromXbp -Base -FromGit -AllProjects -OlderThan -CommentFromGit -Encoding -Preview
+  (opção desconhecida = 2: o PowerShell a trataria como nome de arquivo)
 Códigos: 0 ok, 2 uso, 3 nada a fazer, 4 credencial, 5 não encontrado, 6 travado por outro,
          7 pré-condição, 8 conflito local, 9 servidor/console, 10 confirmação, 11 parcial, 12 ambiente
 '@
 }
 
+# ======================================================================= filtro -Only (R5)
+
+# Valores de -Only, em dois grupos: estado local (o localState; 'error' = state error, módulo não
+# verificado, que também conta no seu localState) e lock (lockedBy). Dentro do grupo vale OU, entre
+# os grupos, E: -Only modified,unlocked = alterado E sem checkout.
+$script:JaOnlyLocal = @('clean', 'modified', 'missing', 'unknown', 'notVersioned', 'error')
+$script:JaOnlyLock = @('locked', 'mine', 'others', 'unlocked')
+$script:JaOnlyResult = @('ok', 'failed')
+
+# Lê e valida -Only (lista separada por vírgula; aceita também vários valores). $null sem -Only.
+# status/list/locks: grupos estado local e lock. checkout/checkin/undocheckout -FromList (R7): os mesmos
+# e o grupo resultado (ok = exitCode 0 ou 3; failed = o resto), para repetir só o que falhou num lote.
+function Get-OnlyFilter {
+    $tokens = @($Only | ForEach-Object { ([string]$_) -split '[,;\s]+' } | Where-Object { $_ })
+    if ($tokens.Count -eq 0) {
+        # -Only dado, mas vazio ('' ou só separadores): erro de uso, não "sem filtro"
+        if ($script:BoundArgs.ContainsKey('Only')) { throw (New-JaError 2 '-Only vazio: informe os estados separados por vírgula (ex.: -Only modified,missing)') }
+        return $null
+    }
+    $batch = ($FromList -and @('checkout', 'checkin', 'undocheckout') -contains $script:Cmd)
+    if (-not $batch -and @('status', 'list', 'locks') -notcontains $script:Cmd) {
+        throw (New-JaError 2 '-Only vale só para status, list e locks, ou com -FromList (checkout, checkin, undocheckout)')
+    }
+    $valid = @($script:JaOnlyLocal) + @($script:JaOnlyLock)
+    if ($batch) { $valid += @($script:JaOnlyResult) }
+    $loc = New-Object System.Collections.ArrayList
+    $lck = New-Object System.Collections.ArrayList
+    $rsl = New-Object System.Collections.ArrayList
+    foreach ($t in $tokens) {
+        $c = @($valid | Where-Object { $_ -ieq $t })
+        if ($c.Count -ne 1) {
+            $shown = $t
+            if ($shown.Length -gt 40) { $shown = $shown.Substring(0, 40) + '...' }
+            throw (New-JaError 2 "valor inválido em -Only: '$shown' (aceitos, separados por vírgula: $($valid -join ', '))")
+        }
+        $v = [string]$c[0]
+        if ($script:JaOnlyLocal -contains $v) { if (-not $loc.Contains($v)) { [void]$loc.Add($v) } }
+        elseif ($script:JaOnlyResult -contains $v) { if (-not $rsl.Contains($v)) { [void]$rsl.Add($v) } }
+        elseif (-not $lck.Contains($v)) { [void]$lck.Add($v) }
+    }
+    # Result sempre presente (array vazio): @($null).Count seria 1 no PS 5.1
+    return [pscustomobject]@{ Local = [string[]]$loc.ToArray(); Lock = [string[]]$lck.ToArray(); Result = [string[]]$rsl.ToArray(); Text = ((@($loc) + @($lck) + @($rsl)) -join ',') }
+}
+
+# Chaves de um item para o filtro e as contagens: Local (localState e, se state=error, 'error'), Lock
+# e Result (ok = exitCode 0 ou 3; failed = o resto; usado só pelo -FromList). -NoOwner: lock com dono
+# vira 'locked', sem consultar a identidade (Test-IsMe); o lote usa antes de fixar as pastas do R4.
+function Get-ItemStateKeys {
+    param($Item, [switch]$NoOwner)
+    $loc = New-Object System.Collections.ArrayList
+    $ls = [string]$Item['localState']
+    if ($ls) { [void]$loc.Add($ls) }
+    if ([string]$Item['state'] -eq 'error') { [void]$loc.Add('error') }
+    $lck = 'unlocked'
+    $owner = [string]$Item['lockedBy']
+    if ($owner -and $NoOwner) { $lck = 'locked' }
+    elseif ($owner) { if (Test-IsMe $owner) { $lck = 'mine' } else { $lck = 'others' } }
+    $ec = 0
+    [void][int]::TryParse([string]$Item['exitCode'], [ref]$ec)
+    $rs = 'failed'
+    if ($ec -eq 0 -or $ec -eq 3) { $rs = 'ok' }
+    return [pscustomobject]@{ Local = [string[]]$loc.ToArray(); Lock = $lck; Result = $rs }
+}
+
+function Test-OnlyMatch {
+    param($Keys, $Filter)
+    if (@($Filter.Local).Count -gt 0) {
+        $hit = $false
+        foreach ($s in @($Keys.Local)) { if ($Filter.Local -contains $s) { $hit = $true } }
+        if (-not $hit) { return $false }
+    }
+    if (@($Filter.Lock).Count -gt 0) {
+        $ok = ($Filter.Lock -contains $Keys.Lock) -or ($Keys.Lock -ne 'unlocked' -and $Filter.Lock -contains 'locked')
+        if (-not $ok) { return $false }
+    }
+    if (@($Filter.Result).Count -gt 0) {
+        if ($Filter.Result -notcontains $Keys.Result) { return $false }
+    }
+    return $true
+}
+
+# Contagens de TODOS os módulos (antes do filtro). 'error' conta à parte: o módulo com erro também
+# conta no seu localState (missing/unknown); 'locked' = mine + others.
+function Get-StateCounts {
+    param($Mods)
+    $c = [ordered]@{ total = 0 }
+    foreach ($s in $script:JaOnlyLocal) { $c[$s] = 0 }
+    foreach ($s in $script:JaOnlyLock) { $c[$s] = 0 }
+    foreach ($m in $Mods) {
+        $c['total'] = $c['total'] + 1
+        $kz = Get-ItemStateKeys $m
+        foreach ($s in $kz.Local) { if ($script:JaOnlyLocal -contains $s) { $c[$s] = $c[$s] + 1 } }
+        $c[$kz.Lock] = $c[$kz.Lock] + 1
+        if ($kz.Lock -ne 'unlocked') { $c['locked'] = $c['locked'] + 1 }
+    }
+    return $c
+}
+
+# status/list/locks: contagens sempre (counts) e, com -Only, só os módulos que passam. O exitCode
+# sai de TODOS os módulos ANTES de filtrar: um erro escondido pelo -Only ainda dá 11.
+function Complete-StateFilter {
+    $allMods = @($script:Res.modules)
+    $cnt = Get-StateCounts $allMods
+    $sum = @($script:JaOnlyLocal | Where-Object { $cnt[$_] -gt 0 } | ForEach-Object { "$_ $($cnt[$_])" }) -join ', '
+    if ($sum) { $script:Res.message = ([string]$script:Res.message).TrimEnd() + " [$sum]" }
+    $f = $script:OnlyFilter
+    if ($null -ne $f) {
+        if ($script:Res.exitCode -eq 0 -and $allMods.Count -gt 0) { $script:Res.exitCode = Get-ModulesExitCode $allMods }
+        $kept = New-Object System.Collections.ArrayList
+        foreach ($m in $allMods) { if (Test-OnlyMatch -Keys (Get-ItemStateKeys $m) -Filter $f) { [void]$kept.Add($m) } }
+        $script:Res.modules = $kept
+        $script:Res['only'] = @(@($f.Local) + @($f.Lock))
+        $script:Res.message += "; -Only $($f.Text): $($kept.Count) de $($allMods.Count)"
+    }
+    $cnt['shown'] = @($script:Res.modules).Count
+    $script:Res['counts'] = $cnt
+}
+
+# exitCode do comando a partir dos itens: um código só -> ele; 0 com 3 -> 0; mistura -> 11 (parcial).
+function Get-ModulesExitCode {
+    param($Mods)
+    $codes = @($Mods | ForEach-Object { [int]$_.exitCode } | Sort-Object -Unique)
+    if ($codes.Count -eq 1) { return $codes[0] }
+    if ($codes.Count -eq 2 -and ($codes -contains 0) -and ($codes -contains 3)) { return 0 }
+    return 11
+}
+
 function Complete-Result {
     $mods = @($script:Res.modules)
     if ($script:Res.exitCode -eq 0 -and $mods.Count -gt 0) {
-        $codes = @($mods | ForEach-Object { [int]$_.exitCode } | Sort-Object -Unique)
-        if ($codes.Count -eq 1) { $script:Res.exitCode = $codes[0] }
-        elseif ($codes.Count -eq 2 -and ($codes -contains 0) -and ($codes -contains 3)) { $script:Res.exitCode = 0 }
-        else { $script:Res.exitCode = 11 }
+        $script:Res.exitCode = Get-ModulesExitCode $mods
         if (-not $script:Res.message) {
             if ($mods.Count -eq 1) { $script:Res.message = $mods[0].message }
             else { $script:Res.message = (@($mods | ForEach-Object { "$($_.name): $($_.message)" }) -join ' | ') }
@@ -5932,6 +7421,7 @@ function Format-Text {
     [void]$sb.AppendLine("[$tag $($script:Res.exitCode)] $($script:Res.command)" + $(if ($script:Res.project) { " ($($script:Res.project))" } else { '' }))
     foreach ($m in $script:Res.modules) {
         $line = '  '
+        if ($m.Contains('listLine') -and $m['listLine']) { $line += "[$($m['listLine'])] " }
         if ($null -ne $m.id) { $line += "#$($m.id) " }
         $line += [string]$m.name
         if ($m.version) { $line += " v$($m.version)" }
@@ -6011,6 +7501,10 @@ function Format-Text {
     if ($script:Res.Contains('identity')) { foreach ($k in $script:Res.identity.Keys) { [void]$sb.AppendLine("  $k = $($script:Res.identity[$k])") } }
     if ($script:Res.Contains('projects')) { foreach ($p in $script:Res.projects) { [void]$sb.AppendLine("  #$($p.id) $($p.name) $($p.description)") } }
     if ($script:Res.Contains('config')) { foreach ($k in $script:Res.config.Keys) { [void]$sb.AppendLine("  $k = $($script:Res.config[$k].value)   [$($script:Res.config[$k].source)]") } }
+    foreach ($mk in @('projectMap', 'identityMap')) {
+        if ($script:Res.Contains($mk) -and $null -ne $script:Res[$mk]) { foreach ($k in $script:Res[$mk].Keys) { [void]$sb.AppendLine("  $mk $k = $($script:Res[$mk][$k])") } }
+    }
+    if ($script:Res.Contains('projectSource')) { [void]$sb.AppendLine("  projeto pela pasta: $($script:Res.projectSource)") }
     if ($script:Res.Contains('labels')) {
         foreach ($lb in $script:Res.labels) {
             $l2 = "  #$($lb.id) $($lb.name)"
@@ -6022,6 +7516,12 @@ function Format-Text {
     if ($script:Res.Contains('label') -and $script:Res.label.name) { [void]$sb.AppendLine("  label: $($script:Res.label.name)" + $(if ($null -ne $script:Res.label.id) { " (#$($script:Res.label.id))" } else { '' })) }
     if ($script:Res.Contains('target') -and $script:Res.target.kind -ne 'latest') { [void]$sb.AppendLine("  alvo: $($script:Res.target.state)") }
     if ($script:Res.Contains('dest')) { [void]$sb.AppendLine("  destino: $($script:Res.dest)") }
+    if ($script:Res.Contains('listHash')) {
+        $lh = "  lista: $($script:Res['fromList']) ($($script:Res['listKind'])" + $(if ($script:Res.Contains('listSource')) { " de $($script:Res['listSource'])" } else { '' }) + "); hash $($script:Res['listHash'])"
+        if ($script:Res.Contains('estimatedSec')) { $lh += "; -Apply estimado em ~$($script:Res['estimatedSec']) s" }
+        [void]$sb.AppendLine($lh)
+    }
+    if ($script:Res.Contains('journal')) { [void]$sb.AppendLine("  diário do lote: $($script:Res['journal'])") }
     foreach ($tk in @('todos', 'todo')) {
         if (-not $script:Res.Contains($tk)) { continue }
         foreach ($t in @($script:Res[$tk])) {
@@ -6077,12 +7577,14 @@ function Write-AuditEntry {
         # administração de módulos: onde ficou o backup e, no comment, o texto antigo e o novo
         if ($m.Contains('backup')) { $am['backup'] = $m['backup'] }
         if ($m.Contains('oldComment')) { $am['revision'] = $m['revision']; $am['oldComment'] = $m['oldComment']; $am['newComment'] = $m['newComment'] }
+        if ($script:Res.Contains('fromList')) { $am['path'] = $m.path; if ($m.Contains('listLine')) { $am['listLine'] = $m['listLine'] } }
         [void]$mods.Add($am)
     }
     $e = [ordered]@{
         ts          = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ss.fffZ')
         winUser     = "$env:USERDOMAIN\$env:USERNAME"
         identity    = $(if ($id) { $id.Name } else { $null })
+        identitySource = $(if ($id) { $id.Source } else { $null })
         jvcsUser    = $(if ($id) { $id.User } else { $null })
         server      = $(if ($id) { "$($id.Host):$($id.Port)" } else { $null })
         command     = $script:Cmd
@@ -6098,11 +7600,14 @@ function Write-AuditEntry {
         modes       = $(if ($script:Cfg) { "checkout=$($script:Cfg.checkout);checkin=$($script:Cfg.checkin);buildCheck=$($script:Cfg.buildCheck);moduleAdmin=$($script:Cfg.moduleAdmin);projectAdmin=$($script:Cfg.projectAdmin)" } else { $null })
         pid         = $PID
     }
+    if ($script:Res.Contains('projectSource')) { $e['projectSource'] = $script:Res.projectSource }
     if ($script:Res.Contains('comment')) { $e['comment'] = $script:Res.comment }
     if ($script:Res.Contains('keep')) { $e['keep'] = $true }
     if ($script:Res.Contains('label')) { $e['label'] = $script:Res.label.name }
     if ($script:Res.Contains('target')) { $e['target'] = $script:Res.target }
     if ($script:Res.Contains('dest')) { $e['dest'] = $script:Res.dest }
+    # com -Only, os modules da auditoria saem filtrados: registra o filtro
+    if ($script:Res.Contains('only')) { $e['only'] = $script:Res['only'] }
     if ($script:Res.Contains('since')) { $e['since'] = $script:Res.since; $e['user'] = $script:Res.user }
     if ($script:Cmd -eq 'search' -and $script:Res.Contains('mode')) { $e['searchMode'] = $script:Res.mode }
     if ($script:Res.Contains('bugId')) { $e['bugId'] = $script:Res.bugId }
@@ -6111,7 +7616,489 @@ function Write-AuditEntry {
     if (@('bug-add', 'bug-update') -contains $script:Cmd -and $script:BoundArgs.ContainsKey('Title')) { $e['bugTitle'] = [string]$Title }
     if ($script:Res.Contains('build')) { $e['build'] = @($script:Res.build | ForEach-Object { [ordered]@{ project = $_.project; ok = $_.ok; exitCode = $_.exitCode; log = $_.log } }) }
     if ($script:Res.Contains('backup')) { $e['backup'] = $script:Res.backup }
+    if ($script:Res.Contains('fromList')) {
+        $e['fromList'] = $script:Res['fromList']; $e['listSha256'] = $script:Res['listSha256']; $e['listHash'] = $script:Res['listHash']; $e['apply'] = [bool]$Apply
+        if ($script:Res.Contains('journal')) { $e['journal'] = $script:Res['journal'] }
+    }
     Write-JaAudit $e
+}
+
+# ======================================================================= S0002 (acervo xHarbour)
+#
+# Pedido S0002 do PC remoto (18/10/2026): untracked, verify -FromGit|-Since, status -AllProjects,
+# locks -OlderThan e doctor. Todos só LEEM o servidor; no disco, só pastas temporárias.
+
+# Forma longa de um caminho: componentes 8.3 (C:\Users\EDMARF~1) expandidos quando existem. O servidor
+# guarda a pasta do módulo como ela foi dada (longa, 8.3 ou mista); as comparações usam a forma longa.
+$script:JaLongDirCache = @{}
+function Get-JaLongPath {
+    param([string]$Path)
+    if (-not $Path) { return '' }
+    $full = $Path
+    try { $full = [IO.Path]::GetFullPath($Path) } catch { return $Path }
+    if ($full.IndexOf('~') -lt 0) { return $full }
+    $root = [IO.Path]::GetPathRoot($full)
+    $cur = $root
+    foreach ($c in @($full.Substring($root.Length).Split([char[]]@('\', '/')) | Where-Object { $_ })) {
+        $key = ($cur + '|' + $c).ToLowerInvariant()
+        if ($script:JaLongDirCache.ContainsKey($key)) { $cur = $script:JaLongDirCache[$key]; continue }
+        $next = Join-Path $cur $c
+        if ($c.IndexOf('~') -ge 0 -and $c.IndexOfAny([char[]]@('*', '?')) -lt 0) {
+            try {
+                $hit = @((New-Object IO.DirectoryInfo($cur)).GetFileSystemInfos($c))
+                if ($hit.Count -eq 1) { $next = Join-Path $cur $hit[0].Name }
+            } catch { }
+        }
+        $script:JaLongDirCache[$key] = $next
+        $cur = $next
+    }
+    return $cur
+}
+
+# Chave de comparação de caminhos: forma longa, sem barra final, em minúsculas (o servidor devolve minúsculas).
+function Get-JaPathKey { param([string]$Path) return (Get-JaLongPath $Path).TrimEnd('\').ToLowerInvariant() }
+
+function Get-JaPathArg {
+    param([string]$Value)
+    return $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($Value)
+}
+
+# --------------------------------------------------------------------- N1 untracked
+
+# Fontes de um projeto do xBuild (.xbp): cada bloco [caminho\fonte.ext]. Caminho relativo: -Base, senão a
+# pasta do .xbp e as de cima (a primeira em que o arquivo existe). O bloco do alvo ([SESIAG.exe]) e os de
+# binários (.exe .dll .lib .obj .res) não contam.
+function Get-JaXbpSources {
+    param([string]$XbpPath, [string]$BaseDir)
+    $full = Get-JaPathArg $XbpPath
+    if (-not (Test-Path -LiteralPath $full -PathType Leaf)) { throw (New-JaError 5 "arquivo .xbp não encontrado: $full") }
+    $self = [IO.Path]::GetFileNameWithoutExtension($full)
+    $skip = @('.exe', '.dll', '.lib', '.obj', '.res', '.a', '.o')
+    $bases = New-Object System.Collections.ArrayList
+    if ($BaseDir) { [void]$bases.Add((Get-JaPathArg $BaseDir)) }
+    else {
+        $d = [IO.Path]::GetDirectoryName($full)
+        while ($d) {
+            [void]$bases.Add($d)
+            $p = [IO.Path]::GetDirectoryName($d)
+            if (-not $p -or $p -eq $d) { break }
+            $d = $p
+        }
+    }
+    $out = New-Object System.Collections.ArrayList
+    $seen = @{}
+    foreach ($ln in [IO.File]::ReadAllLines($full, $script:JaEnc1252)) {
+        $m = [regex]::Match($ln, '^\s*\[([^\]\[]+)\]\s*$')
+        if (-not $m.Success) { continue }
+        $rel = $m.Groups[1].Value.Trim()
+        $ext = [IO.Path]::GetExtension($rel).ToLowerInvariant()
+        if (-not $ext -or $skip -contains $ext -or $rel -ieq $self) { continue }
+        $k = $rel.ToLowerInvariant()
+        if ($seen.ContainsKey($k)) { continue }
+        $seen[$k] = $true
+        $hit = $null
+        if ([IO.Path]::IsPathRooted($rel)) { if (Test-Path -LiteralPath $rel -PathType Leaf) { $hit = [IO.Path]::GetFullPath($rel) } }
+        else {
+            foreach ($b in $bases) {
+                $c = Join-Path $b $rel
+                if (Test-Path -LiteralPath $c -PathType Leaf) { $hit = [IO.Path]::GetFullPath($c); break }
+            }
+        }
+        [void]$out.Add([pscustomobject]@{ Entry = $rel; Path = $hit })
+    }
+    return , $out
+}
+
+# Arquivos locais que não são módulo de nenhum projeto do servidor. Uma busca SEARCH_MODULES por
+# extensão (todos os projetos, inclusive os excluídos), comparada pela forma longa do caminho.
+function Invoke-CmdUntracked {
+    if ($FromXbp -and $Path) { throw (New-JaError 2 'untracked: use -Path <pasta> ou -FromXbp <arquivo.xbp>, não os dois') }
+    Assert-Console2026 'untracked' -Needle 'SEARCH_MODULES, all projects'
+    $locals = New-Object System.Collections.ArrayList
+    $missing = New-Object System.Collections.ArrayList
+    if ($FromXbp) {
+        foreach ($s in (Get-JaXbpSources -XbpPath $FromXbp -BaseDir $Base)) {
+            if ($s.Path) { [void]$locals.Add($s.Path) } else { [void]$missing.Add($s.Entry) }
+        }
+        $script:Res['source'] = [ordered]@{ fromXbp = (Get-JaPathArg $FromXbp); entries = ($locals.Count + $missing.Count) }
+    } else {
+        $dir = (Get-Location).ProviderPath
+        if ($Path) { $dir = Get-JaPathArg $Path }
+        if (-not (Test-Path -LiteralPath $dir -PathType Container)) { throw (New-JaError 5 "pasta não encontrada: $dir") }
+        $pat = '*'
+        if ($Pattern) { $pat = $Pattern }
+        $gci = @{ LiteralPath = $dir; File = $true; Filter = $pat; Force = $true; ErrorAction = 'SilentlyContinue' }
+        if ($Recurse) { $gci['Recurse'] = $true }
+        foreach ($f in @(Get-ChildItem @gci)) { [void]$locals.Add($f.FullName) }
+        $script:Res['source'] = [ordered]@{ path = $dir; pattern = $pat; recurse = [bool]$Recurse }
+    }
+    if ($locals.Count -eq 0 -and $missing.Count -eq 0) {
+        $script:Res.exitCode = 3
+        $script:Res.message = 'nenhum arquivo local para conferir'
+        return
+    }
+    $cap = 20000
+    if ($locals.Count -gt $cap) { throw (New-JaError 2 "untracked: $($locals.Count) arquivos (máximo $cap); restrinja o -Pattern ou tire o -Recurse") }
+    $masks = New-Object System.Collections.ArrayList
+    foreach ($e in @($locals | ForEach-Object { [IO.Path]::GetExtension($_).ToLowerInvariant() } | Sort-Object -Unique)) {
+        if ($e -match '^\.[a-z0-9_\-]{1,20}$') { [void]$masks.Add('*' + $e) }
+    }
+    $known = @{}
+    if ($masks.Count -gt 0) {
+        Enter-JaLock
+        $r = Invoke-Jvcs @($masks | ForEach-Object { 'searchmodules "' + $_ + '"' })
+        for ($i = 0; $i -lt $masks.Count; $i++) {
+            $err = Get-SectionError $r.Sections[$i]
+            if ($err) { throw (New-JaError 9 "searchmodules $($masks[$i]): $err") }
+            foreach ($row in (ConvertFrom-SearchModules $r.Sections[$i])) {
+                if (-not $row.Dir) { continue }
+                $k = Get-JaPathKey ($row.Dir + $row.File)
+                if (-not $known.ContainsKey($k)) { $known[$k] = New-Object System.Collections.ArrayList }
+                [void]$known[$k].Add($row)
+            }
+        }
+    }
+    $nUn = 0; $nVer = 0; $nUnk = 0
+    foreach ($lp in @($locals | Sort-Object)) {
+        $ext = [IO.Path]::GetExtension($lp).ToLowerInvariant()
+        $k = Get-JaPathKey $lp
+        $it = [ordered]@{ id = $null; name = [IO.Path]::GetFileName($lp); path = $lp; projects = @(); state = 'untracked'; exitCode = 0; message = 'não é módulo de nenhum projeto do servidor' }
+        if ($known.ContainsKey($k)) {
+            $nVer++
+            if (-not $All) { continue }
+            $h = @($known[$k])
+            $it.id = $h[0].Id
+            $it.projects = @($h | ForEach-Object { $_.Project } | Sort-Object -Unique)
+            $it.state = 'versioned'
+            $it.message = "módulo $($h[0].Id) em $(@($it.projects).Count) projeto(s)"
+        } elseif ($masks -notcontains ('*' + $ext)) {
+            $nUnk++
+            $it.state = 'unknown'
+            $it.message = 'sem extensão (ou extensão fora do padrão): não conferido no servidor'
+        } else { $nUn++ }
+        [void]$script:Res.modules.Add($it)
+    }
+    foreach ($m in $missing) {
+        [void]$script:Res.modules.Add([ordered]@{ id = $null; name = [IO.Path]::GetFileName($m); path = $m; projects = @(); state = 'localMissing'; exitCode = 0; message = 'listado no .xbp, mas o arquivo não foi encontrado (use -Base <pasta raiz do acervo>)' })
+    }
+    $script:Res['counts'] = [ordered]@{ local = $locals.Count; untracked = $nUn; versioned = $nVer; unknown = $nUnk; localMissing = $missing.Count }
+    $script:Res.message = "$nUn de $($locals.Count) arquivo(s) fora do JEDI VCS (não são módulo de nenhum projeto)"
+    if ($nUnk -gt 0) { $script:Res.message += "; $nUnk sem extensão conferível" }
+    if ($missing.Count -gt 0) { $script:Res.message += "; $($missing.Count) entrada(s) do .xbp sem arquivo" }
+    if ($nUn -eq 0 -and $nUnk -eq 0 -and $missing.Count -eq 0) {
+        $script:Res.exitCode = 3
+        $script:Res.message = "nenhum arquivo fora do JEDI VCS ($($locals.Count) conferido(s))"
+    }
+}
+
+# --------------------------------------------------------------------- N3 verify -FromGit | -Since
+
+# Roda o git.exe (sem shell) e devolve as linhas da saída padrão; erro do git -> 7.
+function Invoke-JaGit {
+    param([string]$Dir, [string[]]$GitArgs)
+    $git = Get-Command git.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+    if (-not $git) { throw (New-JaError 12 'git.exe não encontrado no PATH (verify e -CommentFromGit precisam do Git)') }
+    $all = @('-c', 'core.quotepath=off') + @($GitArgs)
+    $psi = New-Object Diagnostics.ProcessStartInfo $git.Source
+    $psi.Arguments = (@($all | ForEach-Object { if ($_ -match '[\s"]') { '"' + $_.Replace('"', '\"') + '"' } else { $_ } }) -join ' ')
+    $psi.WorkingDirectory = $Dir
+    $psi.UseShellExecute = $false
+    $psi.CreateNoWindow = $true
+    $psi.RedirectStandardOutput = $true
+    $psi.RedirectStandardError = $true
+    $u8 = New-Object Text.UTF8Encoding $false
+    $psi.StandardOutputEncoding = $u8
+    $psi.StandardErrorEncoding = $u8
+    $p = [Diagnostics.Process]::Start($psi)
+    try {
+        $eTask = $p.StandardError.ReadToEndAsync()
+        $out = $p.StandardOutput.ReadToEnd()
+        $p.WaitForExit()
+        $err = [string]$eTask.Result
+        if ($p.ExitCode -ne 0) { throw (New-JaError 7 ('git ' + ($GitArgs -join ' ') + ': ' + (($err.Trim() -split "`r?`n")[0]))) }
+        return , @($out -split "`r?`n" | Where-Object { $_ -ne '' })
+    } finally { $p.Dispose() }
+}
+
+# Arquivos alterados no Git (commits do intervalo -FromGit, ou desde -Since) que estão atrás no JEDI VCS:
+# modificados sem checkout, em checkout de outro, em checkout seu sem check-in, ou que não são módulo.
+# Só leitura (status exato de cada arquivo contra a última revisão do servidor). Pendência -> 7.
+function Invoke-CmdVerify {
+    if (-not $FromGit -and -not $Since) { throw (New-JaError 2 'verify: informe -FromGit <rev>[..<rev>] ou -Since <data> (commits do Git nesse intervalo)') }
+    if ($FromGit -and $Since) { throw (New-JaError 2 'verify: use -FromGit ou -Since, não os dois') }
+    $dir = (Get-Location).ProviderPath
+    if ($Path) { $dir = Get-JaPathArg $Path }
+    if (-not (Test-Path -LiteralPath $dir -PathType Container)) { throw (New-JaError 5 "pasta não encontrada: $dir") }
+    $top = @(Invoke-JaGit -Dir $dir -GitArgs @('rev-parse', '--show-toplevel'))[0]
+    if (-not $top) { throw (New-JaError 7 "$dir não está num repositório Git") }
+    $top = [IO.Path]::GetFullPath($top.Replace('/', '\'))
+    if ($FromGit) {
+        $range = $FromGit.Trim()
+        if ($range.StartsWith('-') -or $range -notmatch '^[A-Za-z0-9._/@{}~^-]+(\.\.\.?[A-Za-z0-9._/@{}~^-]*)?$') {
+            throw (New-JaError 2 "intervalo inválido em -FromGit: '$range' (ex.: v1.2..HEAD, abc1234, HEAD~10)")
+        }
+        if ($range -notmatch '\.\.') { $range = $range + '..HEAD' }
+        $names = Invoke-JaGit -Dir $top -GitArgs @('diff', '--name-only', '--diff-filter=ACMR', $range, '--')
+        $script:Res['range'] = $range
+    } else {
+        $dt = Get-SinceArg $Since
+        $names = Invoke-JaGit -Dir $top -GitArgs @('log', ('--since=' + $dt.ToString('yyyy-MM-ddTHH:mm:ss')), '--name-only', '--diff-filter=ACMR', '--pretty=format:')
+        $script:Res['since'] = $dt.ToString('yyyy-MM-dd HH:mm:ss')
+    }
+    $files = @($names | ForEach-Object { $_.Trim() } | Where-Object { $_ } | Sort-Object -Unique)
+    if ($Pattern) { $files = @($files | Where-Object { [IO.Path]::GetFileName($_) -like $Pattern }) }
+    $under = $dir.TrimEnd('\') + '\'
+    $full = @($files | ForEach-Object { [IO.Path]::GetFullPath((Join-Path $top ($_.Replace('/', '\')))) } |
+            Where-Object { $_.StartsWith($under, [StringComparison]::OrdinalIgnoreCase) })
+    $script:Res['git'] = [ordered]@{ repo = $top; files = $full.Count }
+    if ($full.Count -eq 0) {
+        $script:Res.exitCode = 3
+        $script:Res.message = 'nenhum arquivo alterado no Git nesse intervalo (sob a pasta)'
+        return
+    }
+    $cap = 500
+    if ($Max -gt 0) { $cap = $Max }
+    if ($full.Count -gt $cap) { throw (New-JaError 2 "verify: $($full.Count) arquivos alterados no Git (máximo $cap; use -Max ou -Pattern)") }
+    Enter-JaLock
+    $problems = 0
+    foreach ($f in $full) {
+        $it = $null
+        if (-not (Test-Path -LiteralPath $f -PathType Leaf)) {
+            $it = [ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = 'missing'; state = 'localMissing'; exitCode = 0; message = '' }
+        } else {
+            try { $it = Get-FileStatusItem $f }
+            catch {
+                $code = Get-JaErrorCode $_
+                if ($code -eq 4 -or $code -eq 12 -or (Test-JaTimeoutError $_)) { throw }
+                $it = [ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = 'unknown'; state = 'error'; exitCode = $code; message = (Get-JaErrorMessage $_) }
+            }
+        }
+        $ls = [string]$it['localState']
+        $lb = [string]$it['lockedBy']
+        $v = 'ok'; $why = 'igual à última revisão do servidor'
+        if ([string]$it['state'] -eq 'error') { $v = 'error'; $why = [string]$it['message'] }
+        elseif ($ls -eq 'notVersioned') { $v = 'notVersioned'; $why = 'não é módulo do JEDI VCS (veja untracked e add)' }
+        elseif ([string]$it['state'] -eq 'localMissing') { $v = 'localMissing'; $why = 'alterado no Git, mas não existe no disco' }
+        elseif ($ls -eq 'modified' -and -not $lb) { $v = 'modifiedNoLock'; $why = 'diferente do servidor e sem checkout: o JEDI VCS está atrás do Git' }
+        elseif ($ls -eq 'modified' -and -not (Test-IsMe $lb)) { $v = 'lockedByOther'; $why = "diferente do servidor e em checkout de $lb" }
+        elseif ($ls -eq 'modified') { $v = 'pendingCheckin'; $why = 'diferente do servidor e em checkout seu: falta o check-in' }
+        elseif ($ls -eq 'missing') { $v = 'localMissing'; $why = 'arquivo do módulo não existe no disco' }
+        $it['verify'] = $v
+        if ($v -ne 'ok') { $problems++ }
+        $it['message'] = $why
+        [void]$script:Res.modules.Add($it)
+    }
+    $script:Res.project = $null
+    $script:Res['counts'] = [ordered]@{ files = $full.Count; problems = $problems }
+    $script:Res.message = "$($full.Count) arquivo(s) alterado(s) no Git; $problems com pendência no JEDI VCS"
+    if ($problems -gt 0) { $script:Res.exitCode = 7 } else { $script:Res.exitCode = 0 }
+}
+
+# --------------------------------------------------------------------- N4 status -AllProjects
+
+# Status de todos os projetos não excluídos do servidor, com um resumo por projeto. A falha de um
+# projeto (ou de um módulo, R1) não para os outros; credencial, ambiente e timeout derrubam o comando.
+function Invoke-StatusAllProjects {
+    if ($Project) { throw (New-JaError 2 '-AllProjects não combina com -Project') }
+    Enter-JaLock
+    $r = Invoke-Jvcs @('listprojects')
+    $e = Get-SectionError $r.Sections[0]
+    if ($e) { throw (New-JaError 9 "listprojects: $e") }
+    # os ConvertFrom-* devolvem o ArrayList com 'return ,': guardar antes de filtrar (o pipe direto passaria a lista inteira como 1 item)
+    $plist = ConvertFrom-ListProjects $r.Sections[0]
+    $all = @($plist | Where-Object { -not $_.Deleted })
+    $sum = New-Object System.Collections.ArrayList
+    $names = New-Object System.Collections.ArrayList
+    foreach ($p in $all) {
+        if ($p.Name.Length -eq 30 -and $p.Name.EndsWith('...')) {
+            [void]$sum.Add([ordered]@{ name = $p.Name; state = 'error'; message = 'nome cortado em 30 caracteres pelo console: rode status -Project <nome completo>'; total = 0 })
+            continue
+        }
+        [void]$names.Add($p.Name)
+    }
+    $listing = @{}
+    if ($names.Count -gt 0) { $listing = Get-ProjectListing -Names @($names) }
+    $failed = 0
+    foreach ($n in $names) {
+        $before = $script:Res.modules.Count
+        $s = [ordered]@{ name = $n; state = 'ok'; message = ''; total = 0 }
+        try {
+            if ($null -eq $listing[$n]) { throw (New-JaError 5 "projeto '$n' não listado pelo servidor") }
+            $x = Invoke-StatusOneProject -Name $n -Listing $listing[$n]
+            $s.message = $x.Message
+        } catch {
+            $code = Get-JaErrorCode $_
+            if ($code -eq 4 -or $code -eq 12 -or (Test-JaTimeoutError $_)) { throw }
+            $s.state = 'error'
+            $s.message = Get-JaErrorMessage $_
+            $failed++
+        }
+        $mine = @()
+        for ($i = $before; $i -lt $script:Res.modules.Count; $i++) { $script:Res.modules[$i]['project'] = $n; $mine += , $script:Res.modules[$i] }
+        $s.total = $mine.Count
+        foreach ($st in @('clean', 'modified', 'missing', 'unknown', 'error')) {
+            $s[$st] = @($mine | Where-Object { [string]$_['localState'] -eq $st -or ($st -eq 'error' -and [string]$_['state'] -eq 'error') }).Count
+        }
+        $s['locked'] = @($mine | Where-Object { [string]$_['lockedBy'] }).Count
+        [void]$sum.Add($s)
+    }
+    $script:Res.project = $null
+    $script:Res['projects'] = $sum
+    $mods = $script:Res.modules.Count
+    $mod = @($script:Res.modules | Where-Object { [string]$_['localState'] -eq 'modified' }).Count
+    $script:Res.message = "$($sum.Count) projeto(s), $mods módulo(s), $mod modificado(s)"
+    if ($failed -gt 0) {
+        $script:Res.message += "; $failed projeto(s) não verificado(s) (ver projects[].state=error)"
+        [void]$script:Res.modules.Add([ordered]@{ id = $null; name = '(projetos)'; path = $null; version = $null; lockedBy = $null; localState = 'unknown'; state = 'error'; exitCode = 9; message = "$failed projeto(s) com erro"; project = $null })
+    }
+}
+
+# --------------------------------------------------------------------- N5 locks -OlderThan
+
+# Hora do lock do listlocks: o servidor grava e o console mostra em UTC (conferido em 18/10/2026 com o
+# console 2026 e o 2.5.0.1030). Devolve [datetime] UTC ou $null.
+function ConvertFrom-JaLockTime {
+    param([string]$Text)
+    $t = ([string]$Text).Trim()
+    if (-not $t) { return $null }
+    $fmts = [string[]]@('dd.MM.yyyy HH:mm:ss', 'dd/MM/yyyy HH:mm:ss', 'yyyy-MM-dd HH:mm:ss', 'dd.MM.yyyy HH:mm', 'dd/MM/yyyy HH:mm', 'd.M.yyyy H:mm:ss')
+    $p = [datetime]::MinValue
+    if ([datetime]::TryParseExact($t, $fmts, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$p)) {
+        return [datetime]::SpecifyKind($p, [DateTimeKind]::Utc)
+    }
+    return $null
+}
+
+# -OlderThan: 7d, 24h ou aaaa-mm-dd[Thh:mm] (hora local). Devolve o limite em UTC.
+function Get-OlderThanLimit {
+    param([string]$Value)
+    $t = ([string]$Value).Trim()
+    $now = Get-Date
+    if ($t -match '^(\d{1,4})d$') { return $now.AddDays(-1 * [int]$Matches[1]).ToUniversalTime() }
+    if ($t -match '^(\d{1,5})h$') { return $now.AddHours(-1 * [int]$Matches[1]).ToUniversalTime() }
+    $fmts = [string[]]@('yyyy-MM-dd', "yyyy-MM-dd'T'HH:mm", 'yyyy-MM-dd HH:mm')
+    $p = [datetime]::MinValue
+    if ([datetime]::TryParseExact($t, $fmts, [Globalization.CultureInfo]::InvariantCulture, [Globalization.DateTimeStyles]::None, [ref]$p)) {
+        if ($p -gt $now) { throw (New-JaError 2 "-OlderThan no futuro: '$t'") }
+        return $p.ToUniversalTime()
+    }
+    throw (New-JaError 2 "valor inválido em -OlderThan: '$t' (use 7d, 24h ou aaaa-mm-dd[Thh:mm])")
+}
+
+# --------------------------------------------------------------------- N6 doctor / ping
+
+function Test-JaTcpPort {
+    param([string]$HostName, [int]$Port, [int]$TimeoutMs = 3000)
+    $c = New-Object Net.Sockets.TcpClient
+    $sw = [Diagnostics.Stopwatch]::StartNew()
+    try {
+        $ar = $c.BeginConnect($HostName, $Port, $null, $null)
+        if (-not $ar.AsyncWaitHandle.WaitOne($TimeoutMs)) {
+            return [pscustomobject]@{ Open = $false; Ms = $null; Error = "sem resposta em $([int]($TimeoutMs / 1000)) s (rede, firewall ou máquina desligada)" }
+        }
+        $c.EndConnect($ar)
+        return [pscustomobject]@{ Open = $true; Ms = [int]$sw.Elapsed.TotalMilliseconds; Error = '' }
+    } catch {
+        $x = $_.Exception
+        while ($x.InnerException) { $x = $x.InnerException }
+        return [pscustomobject]@{ Open = $false; Ms = $null; Error = $x.Message }
+    } finally { $c.Close() }
+}
+
+# Mensagem para um console que não conectou: diz se a porta do servidor responde.
+function Get-JaConnectHint {
+    try {
+        $id = Get-JaIdentityCached
+        $t = Test-JaTcpPort -HostName $id.Host -Port ([int]$id.Port) -TimeoutMs 2000
+        if ($t.Open) { return "a porta $($id.Host):$($id.Port) responde ($($t.Ms) ms); o servidor JEDI VCS recusou ou falhou" }
+        return "servidor $($id.Host):$($id.Port) não responde ($($t.Error)): JVCSSrv parado, porta fechada ou rede"
+    } catch { return '' }
+}
+
+# Diagnóstico do ambiente: config.ini, jvcs.exe, identidade, porta do servidor (latência) e login.
+function Invoke-CmdDoctor {
+    $checks = New-Object System.Collections.ArrayList
+    $worst = 0
+    $add = {
+        param([string]$Name, [bool]$Ok, [string]$Detail, [int]$Code)
+        [void]$checks.Add([ordered]@{ check = $Name; ok = $Ok; detail = $Detail })
+        if (-not $Ok -and $Code -gt $script:DoctorWorst) { $script:DoctorWorst = $Code }
+    }
+    $script:DoctorWorst = 0
+    & $add 'config' $true ("$($script:CfgInfo.Path): checkout=$($script:Cfg.checkout), checkin=$($script:Cfg.checkin), moduleAdmin=$($script:Cfg.moduleAdmin), projectAdmin=$($script:Cfg.projectAdmin), buildCheck=$($script:Cfg.buildCheck)") 0
+    $exe = [string]$script:Cfg.jvcsExe
+    $exeOk = $false
+    if (Test-Path -LiteralPath $exe -PathType Leaf) {
+        $vi = (Get-Item -LiteralPath $exe).VersionInfo
+        $is26 = $true
+        try { Assert-Console2026 'doctor' } catch { $is26 = $false }
+        $exeOk = ([string]$vi.OriginalFilename -ieq 'jvcs.exe')
+        $kind = 'original (sem os comandos 2026)'
+        if ($is26) { $kind = 'console 2026' }
+        & $add 'jvcsExe' $exeOk "$exe - $($vi.FileVersion), $kind" 12
+        $crypt = Join-Path ([IO.Path]::GetDirectoryName($exe)) 'fvcscrypt.dll'
+        & $add 'fvcscrypt.dll' (Test-Path -LiteralPath $crypt -PathType Leaf) $crypt 12
+    } else { & $add 'jvcsExe' $false "não encontrado: $exe (config set jvcsExe <caminho>)" 12 }
+    $id = $null
+    try {
+        $id = Get-JaIdentityCached
+        $script:Res['identity'] = [ordered]@{ name = $id.Name; host = $id.Host; port = $id.Port; user = $id.User; hasPassword = $id.HasPassword; source = $id.Source }
+        & $add 'identity' ([bool]$id.HasPassword) "'$($id.Name)': $($id.User)@$($id.Host):$($id.Port) ($($id.Source)); senha salva: $($id.HasPassword)" 4
+    } catch { & $add 'identity' $false (Get-JaErrorMessage $_) 4 }
+    if ($id) {
+        $t = Test-JaTcpPort -HostName $id.Host -Port ([int]$id.Port) -TimeoutMs 3000
+        if ($t.Open) { & $add 'port' $true "$($id.Host):$($id.Port) responde em $($t.Ms) ms" 9 }
+        else { & $add 'port' $false "servidor $($id.Host):$($id.Port) não responde: $($t.Error)" 9 }
+        if ($t.Open -and $exeOk -and $id.HasPassword) {
+            try {
+                Enter-JaLock
+                $sw = [Diagnostics.Stopwatch]::StartNew()
+                $r = Invoke-Jvcs @('listlocks')
+                $srv = [regex]::Match($r.Out, 'JEDI VCS Server: (.+)').Groups[1].Value.Trim()
+                $acc = [regex]::Match($r.Out, 'Access level: (.+)').Groups[1].Value.Trim()
+                $br = [regex]::Match($r.Out, 'Branch: (.+)').Groups[1].Value.Trim()
+                $script:Res['identity']['server'] = $srv
+                $script:Res['identity']['accessLevel'] = $acc
+                $txt = "login ok em $([int]$sw.Elapsed.TotalMilliseconds) ms: $srv; nível $acc"
+                if ($br) { $txt += "; branch $br (servidor com ramos)" } else { $txt += '; servidor sem ramos' }
+                & $add 'login' $true $txt 9
+            } catch { & $add 'login' $false (Get-JaErrorMessage $_) (Get-JaErrorCode $_ 9) }
+        }
+    }
+    $script:Res['checks'] = $checks
+    $bad = @($checks | Where-Object { -not $_.ok })
+    if ($bad.Count -eq 0) { $script:Res.message = "tudo ok ($($checks.Count) verificações)" }
+    else {
+        $script:Res.exitCode = $script:DoctorWorst
+        if ($script:Res.exitCode -eq 0) { $script:Res.exitCode = 9 }
+        $script:Res.message = "$($bad.Count) problema(s): " + (@($bad | ForEach-Object { "$($_.check): $($_.detail)" }) -join ' | ')
+    }
+}
+
+# --------------------------------------------------------------------- -CommentFromGit, diff -Encoding
+
+# Comentário do check-in a partir do último commit do Git que mexeu nos arquivos: o assunto (1a linha),
+# sem aspas duplas (o console 2.5 não tem escape) e só com caracteres cp1252.
+function Get-JaCommentFromGit {
+    param([string[]]$Files)
+    $f = @($Files)[0]
+    $dir = [IO.Path]::GetDirectoryName($f)
+    $lines = Invoke-JaGit -Dir $dir -GitArgs (@('log', '-1', '--format=%s', '--') + @($Files))
+    $s = ([string](@($lines)[0])).Trim()
+    if (-not $s) { throw (New-JaError 7 'nenhum commit do Git mexe nesses arquivos: use -Comment "texto"') }
+    $s = $s.Replace('"', "'") -replace '[\x00-\x1f\x7f]', ' '
+    $s = $script:JaEnc1252.GetString($script:JaEnc1252.GetBytes($s))
+    if ($s.Length -gt 2000) { $s = $s.Substring(0, 2000) }
+    return $s
+}
+
+# diff -Encoding oem|ansi: força a code page dos lados ANSI (fontes xHarbour/Clipper em CP850 ou cp1252
+# sem BOM). Os lados UTF-8/UTF-16/ASCII não mudam.
+function Get-JaForcedTextInfo {
+    param([string]$FilePath, $Info)
+    if (-not $script:JaDiffEncoding -or $Info.Kind -ne 'ansi') { return $Info }
+    $Info.Text = $script:JaDiffEncoding.GetString([IO.File]::ReadAllBytes($FilePath))
+    return $Info
 }
 
 # ======================================================================= principal
@@ -6120,8 +8107,40 @@ $script:InvocationLine = $MyInvocation.Line
 try {
     $script:CfgInfo = Read-JaConfig
     $script:Cfg = $script:CfgInfo.Values
+    foreach ($w in $script:CfgInfo.MapWarnings) { Add-JaWarning $w }
     if ($Keep -and $script:Cmd -ne 'checkin') { throw (New-JaError 2 '-Keep vale só para checkin') }
     if ($Date -and $script:Cmd -ne 'sync') { throw (New-JaError 2 '-Date vale só para sync (use -Since em changes e -Due em todo)') }
+    # lote (-FromList, R7); o -Only fora de status/list/locks é validado pelo Get-OnlyFilter (R5)
+    if ($FromList -and @('checkout', 'checkin', 'undocheckout') -notcontains $script:Cmd) { throw (New-JaError 2 '-FromList vale só para checkout, checkin e undocheckout (ensure-checkout é dos hooks: um arquivo por vez)') }
+    if (-not $FromList -and ($ListHash -or ($Apply -and @('checkout', 'checkin', 'undocheckout') -contains $script:Cmd))) { throw (New-JaError 2 '-ListHash só vale com -FromList, e -Apply em checkout/checkin/undocheckout também (lote)') }
+    if ($NoLocalState -and $script:Cmd -ne 'locks') { throw (New-JaError 2 '-NoLocalState vale só para locks') }
+    # S0002: parâmetro desconhecido (o PowerShell o deixaria em $Rest, como se fosse um arquivo) é erro de uso
+    $badOpts = @($Rest | Where-Object { [string]$_ -match '^-[A-Za-z][A-Za-z0-9]*$' })
+    if ($badOpts.Count -gt 0) { throw (New-JaError 2 ('parâmetro desconhecido: ' + ($badOpts -join ', ') + ' (as opções vão por extenso; veja jvcs-ai.ps1 help)')) }
+    if ($AllProjects -and $script:Cmd -ne 'status') { throw (New-JaError 2 '-AllProjects vale só para status') }
+    if ($OlderThan -and $script:Cmd -ne 'locks') { throw (New-JaError 2 '-OlderThan vale só para locks') }
+    if ($CommentFromGit -and $script:Cmd -ne 'checkin') { throw (New-JaError 2 '-CommentFromGit vale só para checkin') }
+    if ($CommentFromGit -and $Comment) { throw (New-JaError 2 'use -Comment ou -CommentFromGit, não os dois') }
+    if ($CommentFromGit -and $FromList) { throw (New-JaError 2 '-CommentFromGit não vale com -FromList (um comentário por lote: use -Comment)') }
+    if ($Preview -and $script:Cmd -ne 'add') { throw (New-JaError 2 '-Preview vale só para add (os outros comandos já têm prévia sem -Apply)') }
+    if (($FromXbp -or $Base -or $Recurse) -and $script:Cmd -ne 'untracked') { throw (New-JaError 2 '-FromXbp, -Base e -Recurse valem só para untracked') }
+    if ($FromGit -and $script:Cmd -ne 'verify') { throw (New-JaError 2 '-FromGit vale só para verify') }
+    if (($Path -or $Pattern) -and @('untracked', 'verify') -notcontains $script:Cmd) { throw (New-JaError 2 '-Path e -Pattern valem só para untracked e verify') }
+    $script:JaDiffEncoding = $null
+    if ($Encoding) {
+        if ($script:Cmd -ne 'diff') { throw (New-JaError 2 '-Encoding vale só para diff') }
+        switch ($Encoding.ToLowerInvariant()) {
+            'auto' { }
+            'oem' { $script:JaDiffEncoding = [Text.Encoding]::GetEncoding([Globalization.CultureInfo]::CurrentCulture.TextInfo.OEMCodePage) }
+            'ansi' { $script:JaDiffEncoding = $script:JaEnc1252 }
+            default { throw (New-JaError 2 "-Encoding inválido: '$Encoding' (use auto, oem ou ansi)") }
+        }
+    }
+    $script:OnlyFilter = Get-OnlyFilter
+    # R4: administração exige o NOME do projeto; uma pasta resolveria pelo .jvcsproject (que a IA, o Git ou o sync gravam)
+    if ($Project -and $Project -match '[\\/]' -and @('rm-project', 'restore-project', 'rename-project', 'modules', 'rm-module', 'rename-module', 'hide', 'comment', 'cleanup') -contains $script:Cmd -and (Test-Path -LiteralPath $Project -PathType Container)) {
+        throw (New-JaError 2 "administração: informe -Project <nome do projeto>, não a pasta: '$Project'")
+    }
     switch -Exact ($script:Cmd) {
         'help' { $script:Res.message = (Get-HelpText) }
         'identity' { Invoke-CmdIdentity }
@@ -6129,10 +8148,10 @@ try {
         'list' { Invoke-CmdList }
         'locks' { Invoke-CmdLocks }
         'status' { Invoke-CmdStatus }
-        'checkout' { Invoke-CmdCheckout -Ensure $false }
+        'checkout' { if ($FromList) { Invoke-CmdBatch } else { Invoke-CmdCheckout -Ensure $false } }
         'ensure-checkout' { Invoke-CmdCheckout -Ensure $true }
-        'checkin' { Invoke-CmdCheckin }
-        'undocheckout' { Invoke-CmdUndo }
+        'checkin' { if ($FromList) { Invoke-CmdBatch } else { Invoke-CmdCheckin } }
+        'undocheckout' { if ($FromList) { Invoke-CmdBatch } else { Invoke-CmdUndo } }
         'diff' { Invoke-CmdDiff }
         'history' { Invoke-CmdHistory }
         'changes' { Invoke-CmdChanges }
@@ -6164,8 +8183,13 @@ try {
         'comment' { Invoke-CmdComment }
         'cleanup' { Invoke-CmdCleanup }
         'config' { Invoke-CmdConfig }
+        'untracked' { Invoke-CmdUntracked }
+        'verify' { Invoke-CmdVerify }
+        'doctor' { Invoke-CmdDoctor }
+        'ping' { Invoke-CmdDoctor }
         default { throw (New-JaError 2 "comando desconhecido: '$Command'. Use: jvcs-ai.ps1 help") }
     }
+    if (@('status', 'list', 'locks') -contains $script:Cmd) { Complete-StateFilter }
     Complete-Result
 } catch {
     $script:Res.exitCode = Get-JaErrorCode $_ 9

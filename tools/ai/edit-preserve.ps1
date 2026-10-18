@@ -127,8 +127,9 @@ function Invoke-JvcsGate {
     if ($NoCheckout) { return 'skipped' }
     $extL = [IO.Path]::GetExtension($Full).ToLowerInvariant()
     if (-not (Test-JaDelphiSource $Full) -and $script:JaExtraTextExtensions -notcontains $extL) { return 'notDelphiSource' }
-    if ((Find-JaProjectFiles $Full).Count -eq 0) { return 'noProject' }
-    $cfg = (Read-JaConfig).Values
+    $cfgInfo = Read-JaConfig
+    if (-not (Test-JaProjectContext -FullPath $Full -ConfigInfo $cfgInfo)) { return 'noProject' }
+    $cfg = $cfgInfo.Values
     $wrapper = Join-Path $PSScriptRoot 'jvcs-ai.ps1'
     $mode = $cfg.checkout
     $out = $null
