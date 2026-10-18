@@ -12,7 +12,9 @@ portado para o Delphi moderno (servidor 2.5 Beta 3 sem alterações, protocolo i
 
 | Versão | Data | Situação | Destaques |
 |---|---|---|---|
-| [Beta 5](2026-10-13-beta5.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5) | **build 2050**: AV do XE3 corrigido; versão visível (título, About, Painel de Controle); docs e skills pt/en |(https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) | escolha por Delphi; IDEs antigas (7 a 10.4); skill de IA; docs pt/en — XE3: AV na barra (próxima beta) |
+| [Beta 6](2026-10-17-beta6.md) | 17/10/2026 | em teste | **build 2060**: console `jvcs.exe` 2026 no instalador (projeto e módulos sem IDE, histórico, busca, labels, ToDo, bugs, administração); wrapper da IA 1.4.0; a IA usa o console novo por padrão |
+| [Beta 5](2026-10-13-beta5.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5) | **build 2050**: AV do XE3 corrigido; versão visível (título, About, Painel de Controle); docs e skills pt/en |
+| [Beta 4](2026-10-13-beta4.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) | escolha por Delphi; IDEs antigas (7 a 10.4); skill de IA; docs pt/en — XE3: AV na barra (próxima beta) |
 | [Beta 2](2026-10-13-beta2.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2) | Delphi 11, 12 e 13 (qualquer atualização), tema escuro, correções, opções de aparência e IA |
 | [Beta 1](2026-10-13-beta1.md) | 13/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1) — substituída pela beta 2 | Primeiro instalador: cliente, Diff, console e expert do Delphi 13.2 |
 

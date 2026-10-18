@@ -4,7 +4,7 @@ Instalador do **JEDI VCS 2.5 Beta 2026** (Inno Setup 6) e arquivos `.reg` de des
 
 | Arquivo | O que é |
 |---|---|
-| `JediVCS2026.iss` | Script do instalador (gera `Output\JediVCS-2.5.0-Beta5-build2050-Setup.exe`) |
+| `JediVCS2026.iss` | Script do instalador (gera `Output\JediVCS-2.5.0-Beta6-build2060-Setup.exe`) |
 | `Output\` | Saída do ISCC (fora do git, `.gitignore`) |
 | `Delphi13-JVCS-v2026.reg` | **Só desenvolvimento** (esta máquina): SynEdit/VTV em `Known Packages`, Library Path, PATH da IDE e o expert apontando para `bin\ideclient\Win32` |
 | `Delphi13-JVCS-DLL-nova.reg` | **Só desenvolvimento**: só o valor `JVCSIDEClient` → `bin\ideclient\Win32\JvcsExpertBDS37.dll` |
@@ -18,7 +18,7 @@ tools\gerar-instalador.bat --sem-build  (só empacota o que já está em bin\)
 
 Sem `--sem-build` o script chama, nesta ordem, `tools\compilar.bat exe|dll|diff|console Release Win32` e
 `tools\compilar-expert.bat Release nova` (feche o Delphi antes: o expert em uso não é sobrescrito).
-Depois confere que existem e têm **FileVersion 2.5.0.<Build>** (`tools\versao.ini`; beta 5 = 2.5.0.2050) `Jedivcs.exe`, `JEDIVCSDiff.exe`, `jvcs.exe`
+Depois confere que existem e têm **FileVersion 2.5.0.<Build>** (`tools\versao.ini`; beta 6 = 2.5.0.2060) `Jedivcs.exe`, `JEDIVCSDiff.exe`, `jvcs.exe`
 (`bin\client\Win32`), `JvcsExternalDll.dll` e `JvcsExpertBDS<nn>.dll` (`bin\ideclient\Win32`), confere o
 runtime em `3rdparty` e roda o ISCC. Avisos (não bloqueiam): último build Debug mais novo que o Release
 (pelos logs de `tools\compilar.bat`), `.map` ausente, e `bin\ideclient\Win32\JvcsExternalDll.dll`
@@ -30,7 +30,7 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 - Experts: entra no pacote todo `bin\ideclient\Win32\JvcsExpertBDS22.dll` / `23` / `37` que existir
   (pré-processador `#if FileExists`), **sem editar o `.iss`**. O `gerar-instalador.bat` compila o 22/23 só se
   o Delphi 11/12 estiver instalado e confere cada expert com `tools\verificar-expert.ps1` (só `rtl`/`vcl`/`xmlrtl`
-  importados, todos os símbolos resolvidos). Em 13/10/2026: 37 (Delphi 13.2) e 22 (Delphi 11.3).
+  importados, todos os símbolos resolvidos). Em 17/10/2026: 22 (Delphi 11.3), 23 (Delphi 12) e 37 (Delphi 13.2).
 - O expert é registrado só em `HKCU\...\BDS\<v>\Experts` (IDE de 32 bits); um valor nosso em `Experts x64`
   (IDE de 64 bits do 12.3/13) é removido na instalação.
 - IDEs antigas (Delphi 7 a 10.4): os 21 experts **originais** 2.5.0.1030 vêm de
@@ -40,7 +40,7 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 
 ## 2. Instalar, reinstalar/reparar, desinstalar
 
-- **Instalar:** feche o Delphi e execute `JediVCS-2.5.0-Beta5-build2050-Setup.exe`. Idioma: português (Brasil)
+- **Instalar:** feche o Delphi e execute `JediVCS-2.5.0-Beta6-build2060-Setup.exe`. Idioma: português (Brasil)
   ou inglês. Pede administrador; a primeira tela permite instalar **só para o usuário atual**
   (`PrivilegesRequiredOverridesAllowed=dialog`, ou `/CURRENTUSER` na linha de comando).
 - Pasta padrão: `C:\Program Files (x86)\JEDI\JVCS 2026` (por usuário:
@@ -53,7 +53,7 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
   Desmarcar o expert ou a tarefa da IA numa reinstalação **desfaz** o registro/a gravação correspondentes.
 - **Desinstalar:** Painel de Controle → Programas → "JEDI VCS 2.5 Beta 2026", ou o atalho no Menu
   Iniciar, ou `unins000.exe` na pasta. Feche o Delphi antes.
-- Silencioso: `JediVCS-2.5.0-Beta5-build2050-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR=...]
+- Silencioso: `JediVCS-2.5.0-Beta6-build2060-Setup.exe /VERYSILENT /SUPPRESSMSGBOXES [/CURRENTUSER] [/DIR=...]
   [/COMPONENTS=client,ide,ideold\bds10,ideold\bds21,maps,ai] [/TASKS=desktopicon,aiconsole] [/LOG=arquivo]`;
   os nomes das IDEs antigas são `ideold\d7` e `ideold\bds<n>` (n = 1…12, 14…21). Sem `/COMPONENTS`, a
   reinstalação repete a seleção da vez anterior;
@@ -62,7 +62,8 @@ diferente da de `bin\client\Win32` (o pacote usa a de `bin\ideclient`, que é a 
 
 ## 3. Componentes e tarefas
 
-Tudo marcado por padrão, exceto a tarefa "Usar o console novo na IA".
+Tudo marcado por padrão. A tarefa "Usar o console novo na IA" vem marcada desde o beta 6 (até o beta 5
+vinha desmarcada).
 
 | Componente / tarefa | Instala ou faz |
 |---|---|
@@ -72,7 +73,7 @@ Tudo marcado por padrão, exceto a tarefa "Usar o console novo na IA".
 | **IDEs antigas** (`ideold`, com subcomponentes `ideold\d7`, `ideold\bds1` … `ideold\bds21`) | Aparece só se alguma IDE antiga for detectada, com um subcomponente por IDE detectada (todos marcados). Instala o `JvcsExpertD7.dll`/`JvcsExpertBDS<n>.dll` **original** 2.5.0.1030 de cada IDE marcada, mais a `JvcsExternalDll.dll` **nova** e o runtime, e registra o expert na IDE (seção 4A) |
 | **.map** (`maps`) | `Jedivcs.map` e `JvcsExternalDll.map` ao lado dos módulos: o log de erros (`%LOCALAPPDATA%\JEDI\JVCS\logs\jvcs-exe|dll-*.log`, JclDebug) passa a mostrar unit/rotina/linha. ~14 MB cada sem compressão, poucos MB no setup (texto comprime bem). Diff, console e expert não usam `.map` |
 | **Ferramentas da IA** (`ai`) | `tools\ai` inteiro em `{app}\tools\ai`, byte a byte (os `.ps1` continuam UTF-8 com BOM e CRLF). Menu Iniciar: atalho para a pasta. Para usar num projeto: `{app}\tools\ai\instalar-no-projeto.ps1 -ProjectDir ...` (ver `tools\ai\LEIAME.md`). Também instala a **skill distribuível** nos dois idiomas, `skills\pt\jedi-vcs` e `skills\en\jedi-vcs` (SKILL.md, README.md, `references\`, `scripts\`), byte a byte, em `{app}\tools\ai\skills\pt\jedi-vcs` e `{app}\tools\ai\skills\en\jedi-vcs`; numa atualização, a pasta antiga `{app}\tools\ai\skills\jedi-vcs` (beta 4) é removida (ver "Skill do Claude Code" abaixo) |
-| tarefa `aiconsole` (desmarcada) | Grava `jvcsExe={app}\jvcs.exe` na seção `[ai]` de `%APPDATA%\JEDI\JVCS\config.ini`, com o mesmo algoritmo do `jvcs-ai.ps1 config set` (UTF-8 com BOM, CRLF, resto do arquivo preservado; `checkout=`/`checkin=` intactos). O valor anterior é guardado e volta na desinstalação (ou se a tarefa for desmarcada numa reinstalação); se o `config.ini` foi criado pelo instalador e ficou vazio, ele é apagado |
+| tarefa `aiconsole` (marcada desde o beta 6) | Grava `jvcsExe={app}\jvcs.exe` na seção `[ai]` de `%APPDATA%\JEDI\JVCS\config.ini`, com o mesmo algoritmo do `jvcs-ai.ps1 config set` (UTF-8 com BOM, CRLF, resto do arquivo preservado; `checkout=`/`checkin=` intactos). O valor anterior é guardado e volta na desinstalação (ou se a tarefa for desmarcada numa reinstalação); se o `config.ini` foi criado pelo instalador e ficou vazio, ele é apagado. Numa **atualização** de uma versão anterior ao build 2060 (betas 1 a 5, em que a tarefa vinha desmarcada e o Inno reaproveitaria essa escolha), ela é marcada uma vez ao entrar na página de tarefas, e pode ser desmarcada ali (voltar e avançar não a marca de novo). Com `/TASKS=`, `/MERGETASKS=` ou `/LOADINF=` na linha de comando, vale o que foi pedido. A atualização é reconhecida pela entrada de desinstalação (a mesma de onde o Inno tira as tarefas anteriores): a partir do beta 6, ela guarda o valor `AiTaskBuild`, e por isso a regra vale mesmo se a pasta mudar |
 
 **Skill do Claude Code:** o instalador **não** copia a skill para o perfil do usuário. Para que o Claude
 Code a use em todos os projetos, copie a pasta de **um** idioma (as duas se chamam `jedi-vcs`; feche o Claude
@@ -191,8 +192,10 @@ Limitações herdadas do expert original, que a DLL nova não corrige:
   instalada e devolve o valor de desenvolvimento ao desinstalar. Para voltar ao de desenvolvimento sem
   desinstalar: rode o setup de novo desmarcando o Expert, ou importe `Delphi13-JVCS-DLL-nova.reg`
   (Delphi fechado).
-- **Automação por IA:** sem a tarefa `aiconsole`, o wrapper continua com o `jvcs.exe` que estiver no
-  `config.ini` (padrão: o original 2.5.0.1030). O `jvcs.exe` novo tem `OriginalFilename=jvcs.exe` e
+- **Automação por IA:** com a tarefa `aiconsole` (padrão desde o beta 6), o wrapper usa o `jvcs.exe`
+  2026 desta instalação, que tem os comandos novos (`add`, `addproject`, `history`, labels, bugs, ToDo,
+  administração etc.). Sem a tarefa, o wrapper continua com o `jvcs.exe` que estiver no
+  `config.ini` (padrão: o original 2.5.0.1030, sem esses comandos). O `jvcs.exe` novo tem `OriginalFilename=jvcs.exe` e
   `ProductName` com "JEDI", como o wrapper exige.
 - **Usuário de outro perfil:** em instalação para todos os usuários, as gravações em `HKCU` e
   `%APPDATA%` (expert e `config.ini`) valem para a conta que executou o setup elevado. Se o UAC pedir a
@@ -260,6 +263,27 @@ silêncio com `/CURRENTUSER /DIR=<scratchpad> /COMPONENTS="client,ai"`, `/AICONF
 `/OLDIDEROOT` numa chave de teste: `tools\ai\skills\pt\jedi-vcs` e `tools\ai\skills\en\jedi-vcs` com hash
 igual ao do repositório; reinstalado por cima de uma pasta `tools\ai\skills\jedi-vcs` simulada (beta 4),
 que o `[InstallDelete]` removeu; desinstalado sem sobras (pasta, entrada de desinstalação e chave de teste).
+
+### 6.2 Tarefa `aiconsole` e atualização (17/10/2026, beta 6)
+
+Roteiro `teste-beta6.ps1` (scratchpad da sessão), no mesmo esquema da seção 6: instalação silenciosa com
+`/CURRENTUSER`, pasta do scratchpad, `/BDSKEY`, `/OLDIDEROOT` e `/AICONFIG` numa cópia do `config.ini`
+real. Usa o setup do beta 5 (`JediVCS-2.5.0-Beta5-build2050-Setup.exe`) para criar a instalação anterior.
+Resultado com o setup final (SHA-256 `98D837B7…`): 40 verificações, 0 falhas.
+
+| Cenário | Resultado |
+|---|---|
+| Beta 5 sem a tarefa → beta 6 por cima, sem `/TASKS` | tarefa marcada (log `tarefa aiconsole marcada`), `jvcsExe={app}\jvcs.exe`; `tools\ai` e skills iguais ao repositório |
+| Reinstalar o beta 6 sem `/TASKS` | não força de novo (`AiTaskBuild=2060`); `jvcsExe` mantido |
+| Reinstalar com `/TASKS=` e depois sem `/TASKS` | `jvcsExe` volta ao valor anterior (`config.ini` com o hash original); a escolha "desmarcada" é respeitada |
+| `/MERGETASKS=aiconsole` e desinstalar | grava; a desinstalação restaura o `config.ini` (hash original) e remove os arquivos |
+| Instalação nova | tarefa marcada pelo padrão, sem forçar |
+| Beta 5 numa pasta → beta 6 em outra pasta | tarefa marcada; `jvcsExe` aponta para a pasta nova |
+| Beta 5 → beta 6 com `/LOADINF` (`Tasks=`) | não força; vale o `.inf` |
+
+Instalação real pelo Explorer, para todos os usuários (UAC), por cima do beta 5: tarefa marcada,
+`config.ini` com `jvcsExe=C:\Program Files (x86)\JEDI\JVCS 2026\jvcs.exe`, e o expert 2.5.0.2060 carregado
+dessa pasta no Delphi 11.3, 12 e 13.2 (log do expert, menu com 27 itens).
 
 ## Escolha por Delphi
 

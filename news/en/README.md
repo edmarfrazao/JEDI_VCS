@@ -11,13 +11,23 @@ Each release has an English page in this folder.
 
 | Version | Date | Status | Highlights |
 |---|---|---|---|
-| [Beta 5](2026-10-13-beta5.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5) (pre-release) | **build 2050**: XE3 crash fixed; installed version visible (title, About, Control Panel); pt/en docs and skills | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) (pre-release) | choose each Delphi; older IDEs (7 to 10.4); AI skill; pt/en docs — XE3: toolbar crash (next beta) |
+| [Beta 6](2026-10-17-beta6.md) | 2026-10-17 | being tested | **build 2060**: the 2026 `jvcs.exe` console in the installer (projects and modules without the IDE, history, search, labels, ToDo, bugs, administration); AI wrapper 1.4.0; the AI uses the new console by default |
+| [Beta 5](2026-10-13-beta5.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5) (pre-release) | **build 2050**: XE3 crash fixed; installed version visible (title, About, Control Panel); pt/en docs and skills |
+| [Beta 4](2026-10-13-beta4.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) (pre-release) | choose each Delphi; older IDEs (7 to 10.4); AI skill; pt/en docs — XE3: toolbar crash (next beta) |
 | [Beta 2](2026-10-13-beta2.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2) (pre-release) | Delphi 11, 12 and 13 (any update), fixed dark theme, appearance and AI options, many fixes |
 | [Beta 1](2026-10-13-beta1.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta1) — replaced by Beta 2 | First installer: client, Diff, console and expert for Delphi 13.2 |
 
 ## Summaries
 
-### Beta 4 (being tested)
+### Beta 6 (being tested)
+
+- **Console:** the installer now ships the 2026 `jvcs.exe` console, with about 50 commands: projects and
+  modules without the IDE, history, search, labels, ToDo, milestones, bugs and administration.
+- **AI:** wrapper 1.4.0 (`diff`, `sync`, `changes`, `search`, `blame`, `revert`, labels, ToDo, bugs and
+  administration with preview and approval). The installer task that points the AI to the new console is now
+  checked by default.
+
+### Beta 4 (2026-10-13)
 
 - **Older IDEs:** every Delphi supported by the original 2.5.0.1030 (Delphi 7 to 10.4 Sydney) gets the new
   core through its original thin expert. Each detected IDE can be selected in the installer; uninstall

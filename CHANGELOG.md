@@ -8,6 +8,22 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 ## [Não publicado]
 
 ### Adicionado
+- Wrapper da IA (S0002 do PC remoto, depois do beta 6; ainda 1.4.0). Ver `tools/ai/LEIAME.md` §19.
+  - `untracked` (fontes fora do JEDI, por pasta ou pelo `.xbp` do xBuild) e `verify -FromGit|-Since` (o que mudou no Git
+    e está atrás no JEDI).
+  - `status -AllProjects`, `locks -OlderThan` (com `lockedAtLocal`/`lockAgeDays`; a hora do lock vem em UTC) e
+    `doctor`/`ping`.
+  - `add -Preview`, `checkin -CommentFromGit` e `diff -Encoding oem|ansi`.
+
+### Alterado
+- Wrapper: opção desconhecida vira erro de uso (2), em vez de ser lida como nome de arquivo; a falha de conexão diz se a
+  porta do servidor responde.
+
+## [Beta 6] — 2026-10-17 (build 2060)
+
+### Adicionado
+- Instalador com o console `jvcs.exe` 2026 (os comandos novos abaixo) e o wrapper da IA 1.4.0; versão
+  `2.5.0.2060` (`tools/versao.ini`). Novidades: [`news/pt/2026-10-17-beta6.md`](news/pt/2026-10-17-beta6.md).
 - Console `jvcs.exe`: criar projeto e módulos **sem IDE** — `addproject`, `addmodule` (grava também a
   pasta local) e `setmodulepath`; `checkin` faz o 1º check-in (0.1) de módulo recém-criado. Ver
   `doc/pt/client/Port-Console.md` §5.
@@ -42,12 +58,28 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Grupo E: `sync -Date` (rollback ao estado de uma data, como a aba Rollback), `sync -Dest` (exporta o estado
   para uma pasta nova, como cópia de leitura) e `checkin -Keep` (Put: revisão nova mantendo o checkout).
   Console: `projectrevs` e `checkin ... keep`. Ver §17.
+- Pedido do PC remoto (S0001, acervo xHarbour), ainda no wrapper 1.4.0. Ver §18.
+  - R1: `status`/`sync` toleram falha por módulo: o módulo sai com `error`, os outros seguem, código 11 parcial e
+    manifesto `complete`/`skipped`.
+  - R4: projeto e identidade por pasta sem `.dpr`, por `.jvcsproject` ou pelos mapas `projectMap`/`identityMap`
+    do `config.ini`; `addproject` aceita nome sem extensão.
+  - R5: filtro `-Only` em `status`, `list` e `locks`.
+  - R6: `locks` com `localState` (`-NoLocalState` desliga).
+  - R7: operação em lote com `-FromList`, com prévia, `-ListHash` e um único `-Confirmed`.
 - Skills pt/en (bloco "Mais recursos"), referências do console e guias `doc/pt/ia` atualizados; modelo de
   settings 1.3.0 com regras `ask` para a administração.
 
 ### Alterado
+- Instalador: a tarefa "Usar o console novo na automação por IA" (`aiconsole`) vem **marcada** e grava
+  `jvcsExe` no `config.ini` da IA. Numa atualização de versão anterior ao build 2060 (em que vinha desmarcada)
+  ela é marcada uma vez e pode ser desmarcada, mesmo que a pasta mude; com `/TASKS=`, `/MERGETASKS=` ou `/LOADINF=` vale o
+  que foi pedido.
 - Console: check-in recusado pelo servidor deixa de passar em silêncio e vira erro com o motivo
   (`refused by server: ...`); `labelproject` mostra `added` ou `kept x.y` por módulo.
+- Console: `removemodule <módulo> archive` passa a exigir a palavra `confirm` (`removemodule <módulo> archive confirm`),
+  como `removeproject` e `renameproject`: apagar do arquivo não tem volta.
+- Console: o `/input` sem BOM é lido em cp1252 (a code page do fio) em qualquer ACP do Windows, como no 2.5.0.1030;
+  com "UTF-8 beta" (ACP 65001) os acentos chegavam trocados ao servidor. Com BOM, vale o BOM.
 
 ### Problemas conhecidos (servidor 2.5)
 - Com ramos (Firebird), `REMOVE_MODULE` com `archive` só apaga módulo **sem revisão**: com revisão responde 400 e
@@ -62,6 +94,15 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 ### Corrigido
 - Console: `getmodule` recusava `rev=` + `dest=` + `noprompt` juntos (bug do original).
 - Console: `checkin`/`checkout`/`undocheckout`/`getmodule` pelo nome curto de módulo com pasta gravada.
+- Console: `addmodule` de um arquivo que já é módulo (mesma pasta, na forma longa, 8.3 ou mista) criava um módulo
+  duplicado sem revisão. Agora avisa `Module already in project`; se o módulo é de outro projeto, liga-o ao projeto
+  aberto (`Module linked`).
+- Console: 1º check-in recusado pelo servidor, `addproject` de projeto que já existe e pasta não gravada (`addmodule`,
+  `setmodulepath`) mostravam a ajuda do comando e saíam com código 0. Agora o 1º check-in recusado é erro com o motivo
+  (`refused by server: ...`), o projeto existente é avisado sem a ajuda e a pasta não gravada é erro.
+- Console: `removemodule` com resposta `False` sem a lista de projetos anunciava "project link removed"; agora é erro.
+- Console: `getmodule ... dest=` recusava qualquer nome com `..` no meio (ex.: `a..b.pas`); agora recusa só um segmento
+  `..`.
 
 ## [Beta 5] — 2026-10-13 (build 2050)
 
@@ -119,6 +160,7 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Expert do Delphi 13.2; instalador Inno Setup; ferramentas de IA (`tools/ai`).
 - Aviso de licença do MidWare no About e no console.
 
+[Beta 6]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6
 [Beta 5]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5
 [Beta 4]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4
 [Beta 2]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta2

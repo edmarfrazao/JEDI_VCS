@@ -240,7 +240,9 @@ Name: "ai"; Description: "{cm:CompAi}"; Types: full custom
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Components: client
-Name: "aiconsole"; Description: "{cm:TaskAiConsole}"; GroupDescription: "{cm:TaskAiGroup}"; Components: client and ai; Flags: unchecked
+; aiconsole vem marcada desde a beta 6; numa atualizacao de versao anterior (em que vinha
+; desmarcada) o CurPageChanged a marca uma vez: ver AiTaskDefaultBuild
+Name: "aiconsole"; Description: "{cm:TaskAiConsole}"; GroupDescription: "{cm:TaskAiGroup}"; Components: client and ai
 
 [Files]
 ; ---- cliente standalone, Diff e console ----
@@ -333,11 +335,14 @@ const
   OldIdeIds = 'd7,1,2,3,4,5,6,7,8,9,10,11,12,14,15,16,17,18,19,20,21,';
   DefaultOldRoot = 'Software';
   AiKeyJvcsExe = 'jvcsExe';
+  { build a partir do qual a tarefa aiconsole vem marcada (beta 6) }
+  AiTaskDefaultBuild = 2060;
 
 var
   State: TStringList;
   StateLoaded: Boolean;
   IdeNotes: String;
+  AiTaskDefaultDone: Boolean;
 
 { ---------------------------------------------------------------- utilitarios }
 
@@ -1229,6 +1234,64 @@ begin
             FileExists(D + '\server\JVCSSrv.exe') or FileExists(D + '\JVCSSrv.exe');
   if not Result and FileExists(D + '\jedivcs.exe') then
     Result := GetVersionNumbersString(D + '\jedivcs.exe', V) and not IsV2026Version(V);
+end;
+
+{ ---------------------------------------------------------------- tarefa da IA }
+
+{ /TASKS=, /MERGETASKS= ou /LOADINF= na linha de comando: vale o que foi pedido }
+function TasksOnCommandLine: Boolean;
+var
+  I: Integer;
+  S: String;
+begin
+  Result := False;
+  for I := 1 to ParamCount do
+  begin
+    S := Lowercase(ParamStr(I));
+    if (Pos('/tasks=', S) = 1) or (Pos('/mergetasks=', S) = 1) or (Pos('/loadinf=', S) = 1) then
+    begin
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
+
+{ True numa atualizacao em que as tarefas lembradas pelo Inno vieram de uma instalacao
+  anterior a AiTaskDefaultBuild (betas 1 a 5, em que a tarefa aiconsole vinha desmarcada).
+  Mesma fonte que o Inno usa para lembrar as tarefas (a entrada de desinstalacao do
+  AppId): PrevAppDir diz se ha instalacao anterior, e o valor AiTaskBuild gravado por
+  RegisterPreviousData diz a partir de que build ela ja nasceu com a tarefa marcada. Vale
+  mesmo se o usuario escolher outra pasta. }
+function UpgradeFromAiTaskOff: Boolean;
+begin
+  Result := (WizardForm.PrevAppDir <> '') and
+            (StrToIntDef(GetPreviousData('AiTaskBuild', '0'), 0) < AiTaskDefaultBuild);
+end;
+
+{ O Inno reaproveita as tarefas da instalacao anterior (UsePreviousTasks) e, ate a
+  beta 5, a aiconsole vinha desmarcada: numa atualizacao dessas versoes ela e
+  marcada uma vez, ao entrar na pagina de tarefas (o usuario pode desmarcar; voltar
+  e avancar de novo nao a marca outra vez). Se na 1a visita as condicoes nao valem
+  (ex.: Ferramentas da IA desmarcadas), a flag fica desligada e a proxima visita
+  avalia de novo. }
+procedure CurPageChanged(CurPageID: Integer);
+begin
+  if (CurPageID = wpSelectTasks) and not AiTaskDefaultDone then
+    if WizardIsComponentSelected('client') and WizardIsComponentSelected('ai') and
+       UpgradeFromAiTaskOff and not TasksOnCommandLine then
+    begin
+      AiTaskDefaultDone := True;
+      WizardSelectTasks('aiconsole');
+      Log('IA: atualizacao de versao anterior ao build ' + IntToStr(AiTaskDefaultBuild) +
+          '; tarefa aiconsole marcada (padrao desde a beta 6)');
+    end;
+end;
+
+{ grava na entrada de desinstalacao que esta instalacao ja nasceu com a tarefa marcada
+  (ver UpgradeFromAiTaskOff) }
+procedure RegisterPreviousData(PreviousDataKey: Integer);
+begin
+  SetPreviousData(PreviousDataKey, 'AiTaskBuild', IntToStr(AiTaskDefaultBuild));
 end;
 
 { ---------------------------------------------------------------- eventos do assistente }
