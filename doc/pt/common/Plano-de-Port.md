@@ -64,6 +64,7 @@ Estas decisões foram propostas pelo inventário ou pelo crítico e precisam de 
 | **F4** | EXE standalone (JVCL visual → nativo, DFS → nativo, SynEdit, VT V8) | F3 | `Jedivcs.exe` sem JVCL/DFS |
 | **F5** | DLL da IDE + novo expert ToolsAPI (BDS 22/23/37) + setup | F4 (DLL); o expert corre em paralelo desde a F0 | `jedivcsdll.dll`, `JvcsExpertBDS22/23/37.dll`, instalador |
 | **F6** | Win64 / ARM64EC (opcional) | F5 + reimplementação ou isolamento da FVCSCrypt | binários Win64 e expert "Experts x64" |
+| **F7** | IDE de 64 bits do Delphi 13.2 (expert Win64; agente de 32 bits ou cifra reimplementada) | F5; viabilidade da FVCSCrypt (7.1) | menu JEDI VCS na IDE de 64 bits e setup com `Experts x64` |
 
 **Ordem em relação ao esboço inicial.** O Diff vem **antes** do EXE, como propõe o crítico: ele é menor, depende de um subconjunto da infraestrutura comum, usa SynEdit e a status bar DFS, e serve de piloto para a migração de DFM e SynEdit. O EXE também o usa como ferramenta de comparação.
 
@@ -77,7 +78,7 @@ Correspondência com a ordem do crítico:
 | Fases 4 e 5 | F3 |
 | Fase 6 | F4 |
 | Fases 7, 8 e 9 | F5 |
-| Fase 10 | F6 |
+| Fase 10 | F6 e F7 |
 
 ---
 
@@ -609,7 +610,7 @@ Falta só conferir, no registro da instalação ou no script do instalador, o va
 
 ## F6 — Win64 / ARM64EC (opcional)
 
-**Objetivo.** Gerar binários Win64 (e, se desejado, Win ARM64EC, alvo desde o 13.1) e um expert para a IDE de 64 bits.
+**Objetivo.** Gerar binários Win64 do EXE, do Diff e do console (e, se desejado, Win ARM64EC, alvo desde o 13.1). O expert para a IDE de 64 bits passou para a **F7** (18/10/2026).
 
 **Pré-condição bloqueante:** substituir a `FVCSCrypt.dll` (crítico C6), por um destes caminhos:
 - **(a)** reimplementar `fvcs_Encrypt1/2` por caixa-preta, validando que o servidor aceita o login (`fvcs_CryptCompare` da `ServerCrypt.dll`) com a suíte golden;
@@ -644,6 +645,97 @@ Falta só conferir, no registro da instalação ou no script do instalador, o va
 - **Cifra de login sem fonte:** reimplementação por caixa-preta.
 - **Diferenças numéricas** de `Extended` em Win64.
 - **Dupla manutenção** de expert 32/64 bits.
+
+---
+
+## F7 — IDE de 64 bits (Delphi 13.2 Win64)
+
+**Objetivo.** Ter o menu JEDI VCS na IDE de 64 bits (`bin64\bds.exe`) do Delphi 13.2 (e do 12.3), com o mesmo
+protocolo e o mesmo servidor 2.5 Beta 3, sem mexer no servidor.
+
+**Situação em 18/10/2026.** O beta 6 (2.5.0.2060) funciona no Delphi 11, 12 e 13 na IDE de 32 bits (teste do
+usuário). A IDE de 64 bits não carrega o expert: ela só aceita DLL de 64 bits, e o expert, a `JvcsExternalDll.dll` e
+a `FVCSCrypt.dll` são de 32 bits. A F7 pega da F6 a parte da IDE de 64 bits; a F6 fica com os binários Win64 do EXE,
+do Diff e do console e com o ARM64EC.
+
+### 7.1 FVCSCrypt: viabilidade de obter os fontes
+
+O que o cliente usa da DLL (`src\common\client\JVCSCrypt.pas`) são só duas funções:
+
+- `fvcs_Encrypt1(Value: ShortString): ShortString`: a senha ao cadastrar ou trocar (`MaintainUsers.pas`);
+- `fvcs_Encrypt2(Value: ShortString; Key: TDateTime): ShortString`: a senha do LOGIN, com a hora do servidor
+  (`Create.pas`, `JVCSConnect.pas`); o cliente passa `Key - 1/86400`.
+
+O servidor usa a `ServerCrypt.dll` (`fvcs_CryptCompare`, `fvcs_SrvDeCrypt`, `fvcs_SrvEnCrypt`, versão 101), que
+também é fechada e de 32 bits, mas não precisa mudar.
+
+Pesquisa de 18/10/2026:
+
+| Onde | Resultado |
+|---|---|
+| Fontes locais: clone `Libaud/JediVCS` (base do port) e fontes 2.5 (`D:\Delphi\JediVCS\Fontes_JediVCS_2.5`) | só as units de interface (`JVCSCrypt.pas`, `ServerCryptInt.pas`); nenhuma implementação |
+| `ServerCryptInt.pas` | prevê uma `ServerCrypt.so` para Unix (Free Pascal, USchuster, 2005) e o modo `SRVCRYPTINTERNALDUMMY` (stub). É sinal de que o fonte circulou entre os mantenedores |
+| `credits.txt` dos fontes 2.5 | "Basics of password encryption (FVCSCrypt.dll/ ServerCrypt.dll): TEncrypt © 1996 by F. Millenaar", um componente freeware da época do Delphi 1/2 |
+| Site e guia de build do JEDI VCS no SourceForge | não citam as duas DLLs: elas sempre foram distribuídas só como binário |
+| GitHub (`Libaud/JediVCS`) e busca geral | nada publicado com `fvcs_Encrypt1`, `fvcs_CryptCompare` ou TEncrypt de Millenaar |
+| Internet Archive | um CD de componentes Delphi 1–3 (`delphi98`) lista "TEncrypt & Decrypt ASCii Strings", sem autor: talvez seja o componente de base |
+| JCL, JVCL e demais projetos JEDI | não têm a FVCSCrypt; a JCL só tem criptografia e hashes genéricos, sem relação |
+
+Pistas que restam, em ordem:
+
+1. O SVN oficial do `jedivcs` no SourceForge (histórico completo, `jedivcs_3rdparty`) e cópias do antigo
+   `vcs.delphi-jedi.org`: procurar `FVCSCrypt`, `ServerCrypt` e `TEncrypt`.
+2. Contato com os mantenedores: Thomas Hensle (FreeVCS, autor das duas DLLs), Uwe Schuster (port Free Pascal do
+   `ServerCrypt.so`) e Holger Dors.
+3. Internet Archive: o CD `delphi98` e espelhos antigos de `freevcs.de` e das Torry's Delphi Pages.
+4. **Sem o fonte: caracterização por caixa-preta.**
+   - Chamar a DLL de 32 bits com muitas entradas (senhas de vários tamanhos e caracteres, horas diferentes) e
+     reproduzir o algoritmo em Pascal.
+   - Validar com a `fvcs_CryptCompare` da `ServerCrypt.dll` e com LOGIN real no servidor de teste.
+   - É trabalho de interoperabilidade (o mesmo formato, sem copiar código): registrar o método.
+   - Risco: algoritmo dependente de estado ou da hora. Mitigação: uma suíte de vetores na suíte golden.
+
+### 7.2 Arquitetura (decidir depois da 7.1)
+
+- **(A) Agente de 32 bits, sem depender da 7.1.** Um expert Win64 fino (menus, notifiers, tema da IDE) fala por pipe
+  nomeado com um `jvcs-agent.exe` de 32 bits. O agente carrega a `JvcsExternalDll.dll` e a `FVCSCrypt.dll` atuais,
+  sem mudança. As janelas do JEDI VCS abrem no agente, com dono = janela da IDE (como já é hoje com a DLL). É o item
+  C3 das pendências.
+- **(B) Tudo em 64 bits, se a cifra for reimplementada** (fonte achado ou caixa-preta validada): `JvcsExternalDll.dll`
+  e expert Win64, sem DLL de cifra. Também libera a F6 (EXE, Diff e console Win64).
+
+### 7.3 Tarefas
+
+- Plataforma Win64 no `tools\compilar.bat` e no `compilar-expert.bat`: `dcc64`, as JCL, JVCL, ICS, SynEdit e VTV
+  Win64 (`lib\win64`).
+- Revisão de código para 64 bits: os itens da F6 (ponteiros em `TList`, casts `Integer(Pointer)`, `mdMailSlot`, floats).
+- Expert `JvcsExpertBDS37` Win64: ToolsAPI de 64 bits; `tools\verificar-expert.ps1` com os `.bpl` de `bin64`.
+- (A) agente, protocolo do pipe e ciclo de vida (um agente por IDE; encerra junto com ela). (B) DLL Win64.
+- Setup: componente "Delphi 13 (IDE de 64 bits)", registrando em `Experts x64`. A IDE de 32 e a de 64 ficam lado a
+  lado, com listas separadas.
+- Suíte golden: LOGIN e fio idênticos aos do Win32 e, em (B), os vetores da cifra.
+
+### 7.4 Testes (Delphi 13.2 64 bits)
+
+- Aqui, no Delphi 13.2:
+  - o expert carrega na IDE de 64 bits (log do expert, menu com 27 itens, tema);
+  - check-in e check-out, Get, History, Project Manager e Compare (o Diff continua sendo um `.exe` à parte);
+  - a IDE de 32 bits continua funcionando com o mesmo setup.
+- Instalador: instalar, reparar e desinstalar com e sem o componente de 64 bits; `Experts x64` restaurado na
+  desinstalação.
+- PC remoto (pelo canal): servidor da empresa. Confirmar se o Delphi 13.1 de lá tem a IDE de 64 bits.
+
+### Critério de pronto
+
+- [ ] Menu JEDI VCS funcionando na IDE de 64 bits do 13.2, com os mesmos testes da F5.
+- [ ] LOGIN no servidor 2.5 Beta 3 sem nenhuma mudança no servidor; golden igual ao Win32.
+- [ ] Setup com a IDE de 32 e a de 64 bits, testado aqui e no PC remoto.
+
+### Riscos
+
+- **Cifra sem fonte:** na (A) o risco some; na (B) depende da 7.1.
+- **ToolsAPI de 64 bits:** diferenças de notifiers e de pacotes entre `bin` e `bin64`.
+- **Dois processos (A):** latência, janelas modais e foco entre a IDE e o agente.
 
 ---
 
