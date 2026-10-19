@@ -122,6 +122,19 @@ try {
             Exit-Deny ("JEDI VCS/codificação: o Write gravaria '$full' em UTF-8 sem BOM, que o compilador Delphi lê como ANSI (acentos corrompidos). " +
                 "Grave o conteúdo num arquivo temporário UTF-8 e crie o fonte com: $ep -Path `"$full`" -ContentFile <tmp> -NewFileEncoding Ansi (ou Utf8Bom).")
         }
+        # revisão Fable (8): apagar um módulo (Remove-Item -Force) e recriá-lo pelo Write contornaria o
+        # somente leitura/checkout. Arquivo novo que já é módulo do projeto: só com checkout (ou já seu).
+        if (Test-JaProjectContext -FullPath $full -ConfigInfo $cfgInfo) {
+            $out = & $wrapper 'ensure-checkout' $full -CheckOnly -TimeoutSec 45 -LockWaitSec 30
+            $code = $LASTEXITCODE
+            $res = $null
+            try { $res = (@($out) -join "`n") | ConvertFrom-Json } catch { Exit-Fail ("JEDI VCS hook: resposta inválida do jvcs-ai.ps1; edição bloqueada. Saída: " + (@($out) -join ' ')) }
+            $state = ''
+            if ($res.modules -and @($res.modules).Count -gt 0) { $state = [string]@($res.modules)[0].state }
+            if ($code -eq 0 -and ($state -eq 'notVersioned' -or $state -eq 'alreadyMine')) { exit 0 }
+            Exit-Deny ("JEDI VCS: '$full' não existe no disco, mas é módulo do JEDI VCS (estado '$state', código ${code}: " + [string]$res.message + "). " +
+                "Recriar o arquivo pelo Write contornaria o checkout: rode $wr checkout `"$full`" (baixa a última revisão) e edite depois, ou pergunte ao usuário.")
+        }
         exit 0
     }
     $info = Get-JaTextInfoFromFile $full

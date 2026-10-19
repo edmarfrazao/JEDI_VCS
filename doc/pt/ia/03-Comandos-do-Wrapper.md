@@ -221,7 +221,7 @@ jvcs-ai.ps1 config set checkin confirm     # só no seu terminal
 ### Fontes fora do JEDI, Git, todos os projetos e diagnóstico (S0002)
 
 - `untracked -Path <pasta> -Pattern *.prg -Recurse` ou `untracked -FromXbp <arq.xbp>`: fontes que não são módulo de nenhum projeto.
-- `verify -FromGit <rev>..HEAD` ou `verify -Since 7d`: o que mudou no Git e está atrás no JEDI (`modifiedNoLock`, `notVersioned`...); 7 = pendência.
+- `verify -FromGit <rev>..HEAD` ou `verify -Since 7d`: o que mudou no Git e está atrás no JEDI (`modifiedNoLock`, `notVersioned`, `ambiguous`...); 7 = pendência. Sem projeto definido, procura o módulo em todos os projetos; arquivos que só vivem no Git (`.md`, `.ps1`...) são ignorados (`verifyExtensions`). `verify <arquivo>...` confere arquivos avulsos, sem o Git e sem o filtro.
 - `status -AllProjects`, `locks -OlderThan 7d` (a hora do lock vem em UTC), `doctor`/`ping`.
 - `add -Preview`, `checkin -CommentFromGit` e `diff -Encoding oem`.
 

@@ -41,6 +41,8 @@ $script:JaConfigDefaults = [ordered]@{
     buildPlatform      = 'Win32'
     buildTimeoutSec    = '600'
     buildCommandSha256 = ''
+    verifyExtensions   = ''
+    jvcsExeSha256      = ''
 }
 
 # Codificações. 1252 estrita (exceção em caractere não representável) para gravar;
@@ -527,20 +529,56 @@ function Test-JaAgentContext {
     return $false
 }
 
+# config set (só humano). A detecção de agente acima é heurística: um script da IA pode limpar as
+# variáveis e abrir o wrapper num console novo, sem stdin redirecionado (revisão Fable, 1). Por isso a
+# gravação também exige que alguém DIGITE "SIM" no console (até 120 s). Num console oculto ou sem
+# ninguém, não há quem digite: recusa com 10 e nada é gravado.
+function Assert-JaInteractiveConfirm {
+    param([string]$What)
+    $ok = $false
+    try {
+        if (-not [Console]::IsInputRedirected -and [Environment]::UserInteractive) {
+            [Console]::Error.Write("Gravar no config.ini: $What`r`nDigite SIM e Enter para confirmar (120 s): ")
+            $task = [Console]::In.ReadLineAsync()
+            if ($task.Wait(120000)) { $ok = ([string]$task.Result).Trim() -ieq 'SIM' }
+            [Console]::Error.WriteLine('')
+        }
+    } catch { $ok = $false }
+    if (-not $ok) { throw (New-JaError 10 "config set não confirmado: digite SIM no terminal para gravar ($What); nada foi gravado") }
+}
+
 # Exige aprovação humana explícita em contexto de agente: o switch -Confirmed E o texto
 # "-Confirmed" (exatamente assim, C maiúsculo) na linha de comando. O texto é o que aciona a
 # regra "ask" PowerShell(*-Confirmed*)/Bash(*-Confirmed*) do settings; as regras Bash
 # diferenciam maiúsculas, por isso a checagem é sensível a maiúsculas.
+#
+# A linha de invocação ($MyInvocation.Line) só vale quando o wrapper foi chamado direto da linha de
+# comando (InvocationScript vazio) ou por um script do próprio tools\ai: num script chamador (go.ps1 com
+# "& jvcs-ai.ps1 ... -Confirmed", rodado por "powershell -File go.ps1") a regra "ask" não vê o -Confirmed,
+# então só a linha de comando do processo conta (revisão Fable, 2).
 function Assert-JaHumanApproval {
-    param([bool]$IsAgent, [bool]$ConfirmedSwitch, [string]$InvocationLine, [string]$Why, [string]$CommandHint)
+    param([bool]$IsAgent, [bool]$ConfirmedSwitch, [string]$InvocationLine, [string]$InvocationScript = '', [string]$Why, [string]$CommandHint)
     if (-not $IsAgent) { return $false }
     if (-not $ConfirmedSwitch) {
         $msg = "$Why exige aprovação humana: repita o mesmo comando acrescentando -Confirmed (exatamente assim); o Claude Code pedirá a confirmação ao usuário."
         if ($CommandHint) { $msg += " Comando: $CommandHint -Confirmed" }
         throw (New-JaError 10 $msg)
     }
-    $line = [Environment]::CommandLine + ' ' + [string]$InvocationLine
+    $inv = [string]$InvocationLine
+    if ($InvocationScript) {
+        $own = $false
+        try {
+            $sd = [IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($InvocationScript)).TrimEnd('\') + '\'
+            $td = [IO.Path]::GetFullPath($script:JaToolsDir).TrimEnd('\') + '\'
+            $own = $sd.StartsWith($td, [StringComparison]::OrdinalIgnoreCase)
+        } catch { }
+        if (-not $own) { $inv = '' }
+    }
+    $line = [Environment]::CommandLine + ' ' + $inv
     if ($line -cnotmatch '-Confirmed\b') {
+        if ($ConfirmedSwitch -and $InvocationScript -and -not $inv) {
+            throw (New-JaError 10 "-Confirmed vindo de um script chamador ($InvocationScript) não vale como aprovação: rode o jvcs-ai.ps1 direto, com -Confirmed na própria linha de comando")
+        }
         throw (New-JaError 10 'escreva -Confirmed exatamente assim, por extenso e com C maiúsculo (abreviação, outra capitalização ou splatting não acionam a regra de aprovação do Claude Code)')
     }
     return $true
@@ -713,6 +751,11 @@ function Test-JaConfigValue {
         'blameMaxRevisions' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 1 -or $n -gt 5000) { return 'inteiro entre 1 e 5000' } }
         'cacheMaxMB' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 10 -or $n -gt 100000) { return 'inteiro entre 10 e 100000' } }
         'buildCommandSha256' { return 'gravado automaticamente por config set buildCommand' }
+        'jvcsExeSha256' { return 'gravado automaticamente por config set jvcsExe' }
+        'verifyExtensions' {
+            # vazio/auto = extensões com módulo no servidor; all = todas; ou lista: .prg;.ch;.pas
+            if ($Value -and $Value -inotmatch '^(auto|all|(\.?[A-Za-z0-9_\-]{1,20})([;,\s]+\.?[A-Za-z0-9_\-]{1,20})*)$') { return 'auto, all ou lista de extensões (ex.: .prg;.ch;.pas)' }
+        }
     }
     return ''
 }

@@ -21,7 +21,7 @@ Forma: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.
 | `checkout\|checkin\|undocheckout -FromList <arq> [-Only ...] [-MaxModules n]` | lote a partir de lista (caminhos absolutos, um por linha, `#` comenta) ou do JSON de `status`/`list`/`locks`/lote anterior (`-Only "modified,unlocked"`, `"clean,mine"`, `failed`...; vale sobre o retrato do JSON); sem `-Apply` é **prévia** com `listHash`, `action` e `expectedState` por módulo (nada muda); até 500 (`-MaxModules` até 5000); família conta uma vez (`sameModule`); projeto: `-Project`, senão o de cada arquivo, e o do JSON só como último recurso | não (prévia) |
 | `... -FromList <arq> -Apply -ListHash <hash>` | executa pelos comandos de um arquivo (modos, `-Force`, `-Discard`, codificação, por módulo); pela IA **sempre** com `-ListHash` e `-Confirmed`; lista, opções, identidade ou ação prevista diferentes → 10; saída por módulo (`listLine`), 11 misto (repita só os outros com a saída e `-Only failed`); diário em `%LOCALAPPDATA%\JEDI\JVCS\lote` | sim |
 | `untracked [-Path pasta] [-Pattern *.prg] [-Recurse]` / `untracked -FromXbp arq.xbp [-Base pasta]` | arquivos locais que **não são módulo de nenhum projeto** do servidor (uma busca por extensão em todos os projetos; pasta comparada na forma longa, então 8.3 e mista casam); `-All` lista também os versionados; do `.xbp`, cada bloco `[caminho\fonte]` (relativo à pasta do `.xbp` e às de cima, ou ao `-Base`), com `localMissing` para entrada sem arquivo; nada fora → 3 (console 2026) | não |
-| `verify -FromGit <rev>[..<rev>]` / `verify -Since <data> [-Path pasta] [-Pattern p] [-Max n]` | arquivos alterados nos commits do Git que estão **atrás no JEDI**: `verify` = `modifiedNoLock` (diferente do servidor, sem checkout), `lockedByOther`, `pendingCheckin`, `notVersioned`, `localMissing`, `ok`; status exato de cada um; pendência → 7 (para rodar antes do deploy); até 500 arquivos | não |
+| `verify -FromGit <rev>[..<rev>]` / `verify -Since <data> [-Path pasta] [-Pattern p] [-Max n]` / `verify <arquivo>...` (avulsos, sem filtro de extensões) | arquivos alterados nos commits do Git que estão **atrás no JEDI**: `verify` = `modifiedNoLock` (diferente do servidor, sem checkout), `lockedByOther`, `pendingCheckin`, `notVersioned`, `localMissing`, `ambiguous` (sem projeto definido e em 2+ projetos: use `-Project`), `ok`; sem projeto definido, procura o módulo em todos os projetos; só confere extensões que têm módulo no servidor (`verifyExtensions`; o resto vai em `counts.ignored`, `-All` lista); pendência → 7, só sem projeto definido → 11; até 500 arquivos | não |
 | `status -AllProjects [-Only ...]` | status de **todos** os projetos não excluídos, com `projects[]` (total, clean, modified, missing, unknown, error, locked por projeto); falha de um projeto ou módulo não para os outros (11) | não |
 | `locks [-All] -OlderThan 7d\|24h\|aaaa-mm-dd` | só locks mais antigos; todo lock traz `lockedAt` (UTC, como o servidor grava), `lockedAtLocal` e `lockAgeDays` | não |
 | `doctor` (ou `ping`) | diagnóstico: `config.ini`, `jvcs.exe` (2026 ou original), `fvcscrypt.dll`, identidade, **porta do servidor** (latência) e login (versão do Firebird, nível, com ou sem ramos); falha de conexão nos outros comandos agora diz se a porta responde | não |
@@ -230,3 +230,14 @@ Saída `{ok, path, encoding, eol, replacements, bytesBefore, bytesAfter, checkou
 Códigos: 0 ok · 2 uso · 3 nada mudou · 4 `-Old` ausente · 5 `-Old` não único · 6 caractere fora da
 codificação · 7 E/S ou somente leitura · 8 arquivo não suportado · 9 checkout falhou · 10 confirmação,
 modo manual ou caminho proibido.
+
+### Estados que faltavam e código 1 (build 2063)
+
+- `add`/`addproject`: `added`; `wouldAdd` (prévia do `-Preview`); `alreadyVersioned` (já é módulo, 3); `ambiguousProject`
+  (o arquivo cabe em mais de um projeto: informe `-Project`, 2); `exists` (o projeto já existe, 3).
+- Administração de projetos: `removed`, `alreadyDeleted` (3) no `rm-project`; `restored`, `relinked`, `nothing` (3),
+  `notDeleted` (3), `noRecord` (sem o registro gravado antes da exclusão, 7) e `partial` (11) no `restore-project`;
+  `nameInUse` (7) e `partial` (11) no `rename-project`.
+- `sync -Apply`: `synced` (atualizado); `diff`: `identical` / `different`; `verify`: `ignored` (com `-All`).
+- **Código 1, saída que não é JSON:** erro de parâmetro antes do wrapper começar (nome de opção ambíguo como `-Pr`,
+  `-Confirm` no lugar de `-Confirmed`, opção repetida). Corrija o comando; não é falha do servidor.

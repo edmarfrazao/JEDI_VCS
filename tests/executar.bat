@@ -30,6 +30,12 @@ if /i "%ALVO%"=="console" goto fim
 echo ==== ia\teste-s0002.ps1
 %PS% "%T%ia\teste-s0002.ps1"
 if errorlevel 1 set FALHOU=1
+echo ==== ia\teste-verify.ps1
+%PS% "%T%ia\teste-verify.ps1"
+if errorlevel 1 set FALHOU=1
+echo ==== ia\teste-seguranca.ps1
+%PS% "%T%ia\teste-seguranca.ps1"
+if errorlevel 1 set FALHOU=1
 if /i not "%ALVO%"=="tudo" goto fim
 
 :instalador

@@ -21,7 +21,7 @@ Form: `powershell -NoProfile -ExecutionPolicy Bypass -File "<tools/ai>/jvcs-ai.p
 | `checkout\|checkin\|undocheckout -FromList <file> [-Only ...] [-MaxModules n]` | batch from a list (absolute paths, one per line, `#` comments) or from the JSON of `status`/`list`/`locks`/a previous batch (`-Only "modified,unlocked"`, `"clean,mine"`, `failed`...; applied to the JSON snapshot); without `-Apply` it is a **preview** with `listHash`, `action` and `expectedState` per module (nothing changes); up to 500 (`-MaxModules` up to 5000); a family counts once (`sameModule`); project: `-Project`, otherwise each file's own, and the JSON's only as a last resort | no (preview) |
 | `... -FromList <file> -Apply -ListHash <hash>` | runs through the single-file commands (modes, `-Force`, `-Discard`, encoding, per module); by the AI **always** with `-ListHash` and `-Confirmed`; a different list, options, identity or expected action → 10; per-module output (`listLine`), 11 mixed (repeat only the others with the output and `-Only failed`); journal in `%LOCALAPPDATA%\JEDI\JVCS\lote` | yes |
 | `untracked [-Path folder] [-Pattern *.prg] [-Recurse]` / `untracked -FromXbp file.xbp [-Base folder]` | local files that are **not a module of any project** on the server (one search per extension in all projects; folders compared in their long form, so 8.3 and mixed forms match); `-All` also lists the versioned ones; from the `.xbp`, each `[path\source]` block (relative to the `.xbp` folder and the ones above it, or to `-Base`), with `localMissing` for an entry without a file; nothing outside → 3 (2026 console) | no |
-| `verify -FromGit <rev>[..<rev>]` / `verify -Since <date> [-Path folder] [-Pattern p] [-Max n]` | files changed in the Git commits that are **behind in JEDI**: `verify` = `modifiedNoLock` (differs from the server, no check-out), `lockedByOther`, `pendingCheckin`, `notVersioned`, `localMissing`, `ok`; exact status of each; anything pending → 7 (run it before a deploy); up to 500 files | no |
+| `verify -FromGit <rev>[..<rev>]` / `verify -Since <date> [-Path folder] [-Pattern p] [-Max n]` / `verify <file>...` (single files, no extension filter) | files changed in the Git commits that are **behind in JEDI**: `verify` = `modifiedNoLock` (differs from the server, no check-out), `lockedByOther`, `pendingCheckin`, `notVersioned`, `localMissing`, `ambiguous` (no project set and in 2+ projects: use `-Project`), `ok`; with no project set, the module is searched in all projects; only extensions that have modules on the server are checked (`verifyExtensions`; the rest goes to `counts.ignored`, `-All` lists them); anything pending → 7, only unresolved projects → 11; up to 500 files | no |
 | `status -AllProjects [-Only ...]` | status of **all** non-deleted projects, with `projects[]` (total, clean, modified, missing, unknown, error, locked per project); a failing project or module does not stop the others (11) | no |
 | `locks [-All] -OlderThan 7d\|24h\|yyyy-mm-dd` | only older locks; every lock has `lockedAt` (UTC, as the server stores it), `lockedAtLocal` and `lockAgeDays` | no |
 | `doctor` (or `ping`) | diagnosis: `config.ini`, `jvcs.exe` (2026 or original), `fvcscrypt.dll`, identity, **server port** (latency) and login (Firebird version, level, with or without branches); a connection failure in the other commands now says whether the port answers | no |
@@ -235,3 +235,14 @@ Output `{ok, path, encoding, eol, replacements, bytesBefore, bytesAfter, checkou
 Exit codes: 0 ok · 2 usage · 3 nothing changed · 4 `-Old` not found · 5 `-Old` not unique · 6 character
 outside the encoding · 7 I/O or read-only · 8 unsupported file · 9 check-out failed · 10 confirmation,
 manual mode or forbidden path.
+
+### Missing states and exit code 1 (build 2063)
+
+- `add`/`addproject`: `added`; `wouldAdd` (`-Preview`); `alreadyVersioned` (already a module, 3); `ambiguousProject`
+  (the file fits more than one project: pass `-Project`, 2); `exists` (the project already exists, 3).
+- Project administration: `removed`, `alreadyDeleted` (3) in `rm-project`; `restored`, `relinked`, `nothing` (3),
+  `notDeleted` (3), `noRecord` (no record saved before the deletion, 7) and `partial` (11) in `restore-project`;
+  `nameInUse` (7) and `partial` (11) in `rename-project`.
+- `sync -Apply`: `synced`; `diff`: `identical` / `different`; `verify`: `ignored` (with `-All`).
+- **Exit code 1, output is not JSON:** a parameter error before the wrapper starts (an ambiguous option name such as
+  `-Pr`, `-Confirm` instead of `-Confirmed`, a repeated option). Fix the command; it is not a server failure.

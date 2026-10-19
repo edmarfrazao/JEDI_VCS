@@ -93,6 +93,8 @@ buildCommand=         ; script .bat/.cmd/.ps1 do usuário; o SHA-256 vai em buil
 buildConfig=Debug
 buildPlatform=Win32   ; Win32 | Win64
 buildTimeoutSec=600   ; 30 a 7200
+verifyExtensions=     ; extensões que o verify confere: vazio/auto = as que têm módulo no servidor; all; ou .prg;.ch
+jvcsExeSha256=        ; gravado pelo config set jvcsExe quando o exe fica fora de Arquivos de Programas (não edite)
 
 ; projeto e identidade por pasta (seção 18, R4); grave com config set projectMap|identityMap
 [projects]
@@ -451,6 +453,9 @@ menos itens que arquivos), **nada sai do registro** e a mensagem diz `(status fa
 - **Injeção no `/input`:** o `TStringList.LoadFromFile` do console quebra linha em CR ou LF. Qualquer
   linha do `/input` com caractere de controle é recusada (2), e `-Project`/`-Identity` com CR/LF/aspas
   também. Antes disso, `list -Project "x.dpr<LF>undocheckout 4 noprompt"` executava comandos extras.
+- **Build 2063:** as correções de segurança da revisão de 17/10 estão na seção 20 (config set com "SIM" digitado,
+  `-Confirmed` de script chamador, `-Identity`, SHA-256 do `jvcs.exe`, `undocheckout` no modo manual, `sync`, hook e
+  regras novas do template 1.4.0).
 - **`jvcsExe`:** como recebe a senha, o wrapper só aceita um `.exe` cujo recurso de versão diga
   `OriginalFilename=jvcs.exe` e `ProductName` com "JEDI".
 - **Regras do settings:**
@@ -1943,11 +1948,25 @@ Tudo aqui **só lê** o servidor; no disco, só pastas temporárias. A versão c
     - `notVersioned`;
     - `localMissing`;
     - `error`;
+    - `ambiguous`: sem projeto definido, o módulo está em mais de um projeto (use `-Project`);
+    - `noProject`: sem projeto definido e o console não tem a busca em todos os projetos (console anterior ao 2026);
+    - `ignored`: extensão que não vai ao JEDI VCS (só aparece com `-All`);
     - `ok`.
-  - Algum diferente de `ok` → 7, para rodar antes do deploy.
+  - **Sem projeto definido** (sem `-Project`, `.jvcsproject`, mapa `[projects]` nem `.dpr`/`.dpk` na pasta ou acima,
+    ou com um projeto que não tem o arquivo), o módulo é procurado em **todos os projetos** não excluídos, pela
+    mesma busca `SEARCH_MODULES` do `untracked` (forma longa do caminho). Em 1 projeto, usa esse (`project` e
+    `projectFrom` no item); em mais de 1, `ambiguous` com os `projects`; em nenhum, `notVersioned`.
+  - **Filtro de extensões** (`verifyExtensions` do `config.ini`): por padrão só confere as extensões que existem como
+    módulo no servidor; `.md`, `.ps1` e outros arquivos que só vivem no Git ficam em `counts.ignored`. `all` confere
+    todas; uma lista (`.prg;.ch;.pas`) só essas. Só arquivos ignorados → 3.
+  - `counts`: `files`, `checked`, `problems`, `unresolved` (`ambiguous`/`noProject`) e `ignored`.
+  - Alguma pendência → 7, para rodar antes do deploy; sem pendência, mas com arquivo sem projeto definido → 11.
   - O intervalo só aceita nomes de revisão (nada que comece com `-`). Limite de 500 arquivos (`-Max`).
 - **`status -AllProjects`.** Usa o mesmo status do `-Project`, projeto por projeto. Cada módulo ganha `project`, e
   `projects[]` traz `total`, `clean`, `modified`, `missing`, `unknown`, `error` e `locked`.
+  - `error` é exclusivo (build 2062): o módulo com erro conta só em `error`, não no seu estado local, e a soma bate com
+    o `total`. O mesmo vale para o resumo `[clean n, ...]` e o `counts` de `status`, `list` e `locks`; o
+    `-Only missing` ainda acha o módulo com erro cujo estado local é `missing`.
   - A falha de um projeto (ou de um módulo, R1) não para os outros e o comando sai 11.
   - Projeto com nome cortado em 30 caracteres pelo `listprojects` é listado como erro: rode `status -Project`.
 - **Hora do lock.** O servidor grava e os dois consoles (2026 e 2.5.0.1030) mostram a hora do lock em **UTC**:
@@ -1991,3 +2010,58 @@ Roteiro `teste-s0002.ps1` (local, não versionado), com o wrapper chamado como p
   comportamento do R4 (`.dpr` nas pastas de cima); no teste, `-Project` resolveu.
 - **Não testado:** `.xbp` real do acervo (o formato veio da descrição do pedido); `verify` com milhares de commits; porta
   fechada pelo comando inteiro (exigiria parar o servidor ou alterar uma identidade salva).
+
+### 19.3 Correções do build 2062 (19/10/2026, teste do PC de testes)
+
+- **`verify` sem projeto definido:** numa pasta sem `-Project` nem mapa, todos os arquivos saíam `notVersioned`,
+  inclusive módulos de verdade em checkout. Agora o módulo é procurado em todos os projetos, `ambiguous` aponta o
+  caso de mais de um projeto, e os arquivos que nunca vão ao JEDI VCS são ignorados (seção 19.1, `verify`).
+- **Resumo do `status`:** a soma passava do total (705 para 634 módulos) porque o módulo com erro contava duas
+  vezes. Agora `error` é exclusivo.
+- **Testes:** `tests\ia\teste-verify.ps1` (17 verificações: contagem, busca em todos os projetos, `ambiguous`,
+  `-All`, `-Project`, `verifyExtensions`) e a bateria `tests\executar.bat` sem falhas: console 15 + 1, IA 35 + 17.
+
+## 20. Build 2063: verify avulso, saída -Text do verify e segurança
+
+### 20.1 verify
+
+- **Arquivos avulsos:** `verify <arquivo>...`, sem `-FromGit`/`-Since`, confere os arquivos pedidos com a mesma lógica
+  (busca em todos os projetos, `ambiguous`, `-Project`). O filtro de extensões **não** vale para eles: quem pede o
+  arquivo pelo nome quer o veredito dele (um `.md` sai `notVersioned`, não `ignored`). Arquivo que não existe →
+  `localMissing`. Não combina com `-FromGit`/`-Since`, `-Path` nem `-Pattern` (2). Até 500 arquivos (`-Max`).
+- **`-Text`:** a linha de cada arquivo mostra o veredito (`-> ambiguous`, `-> notVersioned`, `-> modifiedNoLock`...), não
+  o `state` do status por baixo; e `projetos:` aceita a lista de nomes do `ambiguous` (antes saía `projetos: , `). O
+  mesmo vale para o `projects[]` do `untracked -All`.
+
+### 20.2 Segurança (revisão do wrapper de 17/10/2026)
+
+| # | Achado | Correção |
+|---|---|---|
+| 1 | a detecção de IA é heurística: um script da IA podia limpar as variáveis e abrir o wrapper num console novo para fazer `config set` | o `config set` (todas as chaves e os mapas) também exige que alguém **digite SIM** no console, em até 120 s; sem console interativo (stdin redirecionado, janela oculta) recusa com 10 e nada é gravado |
+| 2 | `-Confirmed` era aceito pela linha de um script chamador (`go.ps1` com `& jvcs-ai.ps1 ... -Confirmed`), que a regra `ask` não vê | a linha de invocação só vale quando o wrapper foi chamado direto da linha de comando ou por um script de `tools\ai`; de outro script, só a linha de comando do processo conta (10 com a explicação) |
+| 3 | `-Identity <outra>` sem portão (ex.: identidade de administrador salva) | pela IA, `-Identity` diferente da padrão (`identity` do config.ini, senão `LastUsedID`) exige `-Confirmed`; o template ganhou `ask` para `*-Identity*` |
+| 4 | o `jvcsExe` era conferido só pelo recurso de versão | `config set jvcsExe` grava `jvcsExeSha256` quando o exe fica fora de Arquivos de Programas (pasta gravável); se o arquivo mudar, a senha não é enviada (12) até o usuário registrar de novo. Em Arquivos de Programas (o caminho do instalador) não há pino: a pasta só muda com elevação |
+| 5 | com `checkin=manual`, o `undocheckout` sem alteração era recusado, mas o hook manda usá-lo | o `undocheckout` que só solta o lock (arquivo sem alteração) vale em qualquer modo; com `-Discard` continua exigindo aprovação, e `manual` continua recusando |
+| 6 | `sync -Apply` decidia "update" só pela data (Stamp `O`): uma edição sem checkout anterior ao check-in de um colega era sobrescrita | arquivo mais antigo, mas **sem somente leitura** e diferente do servidor, vira `conflict` (só com `-Force`); somente leitura continua `update`. Os tipos sempre graváveis (`.dpr`, `.res`...) seguem a regra antiga |
+| 7 | as regras `deny` não cobriam `reg query HKCU\Software\JEDI /s` nem `reg export` | `deny` para `*Software*JEDI*` (e maiúsculas/minúsculas) e `*reg export*` |
+| 8 | apagar um módulo (`Remove-Item -Force`) e recriá-lo pelo `Write` contornava o somente leitura | o hook confere o `Write` de arquivo inexistente: se já é módulo do projeto (e não está em checkout seu), nega e manda fazer o checkout; `ask` para `Copy-Item`/`Move-Item`/`Remove-Item -Force` e `cp/mv/rm -f` |
+| 9 | skills mostravam `sync -Dest` sem `-Apply` (só prévia) | as skills pt/en e a do projeto mostram `-Apply` |
+| 10 | `show -Dest` aceitava pasta dentro do projeto | como no `sync -Dest`: recusa (7) destino que seja, fique dentro de ou contenha a pasta do projeto ou de um módulo |
+| 11 | erro de parâmetro antes do script sai com 1 e sem JSON | documentado nas referências das skills (código 1 = parâmetro inválido, saída não é JSON) |
+| 12 | estados do JSON sem documentação | `added`, `wouldAdd`, `alreadyVersioned`, `ambiguousProject`, `exists`, `synced`, `identical`/`different`, os da administração de projetos e `ignored` nas referências das skills |
+
+O template de permissões passou para a **1.4.0**: rode de novo `instalar-no-projeto.ps1` nos projetos para mesclar as
+regras novas (as existentes são mantidas).
+
+**Mudança de uso:** `config set` agora pede "SIM" no terminal. Scripts do usuário que gravavam a configuração sem
+console devem editar o `config.ini` direto.
+
+### 20.3 Testes (19/10/2026, servidor de teste)
+
+- `tests\ia\teste-verify.ps1`: 25 verificações (inclui `-Text`, arquivos avulsos, `-Project`, combinações inválidas).
+- `tests\ia\teste-seguranca.ps1`: 22 verificações, uma ou mais por achado (go.ps1 real em contexto de agente,
+  `-Identity`, SHA-256 do exe, `undocheckout` em `manual`, `sync` com arquivo gravável, `show -Dest`, hook do `Write`
+  de módulo apagado e de unit nova, regras do template).
+- Bateria `tests\executar.bat` sem falhas e teste isolado do instalador.
+- **Não testado:** a confirmação "SIM" digitada por uma pessoa num console real (o teste só confere a recusa sem
+  console interativo); as regras novas do template dentro do Claude Code (conferidas só no JSON).

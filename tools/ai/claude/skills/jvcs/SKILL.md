@@ -65,7 +65,7 @@ Leia `message` e `modules[].state`; não tente interpretar a saída do `jvcs.exe
 
 - O que mudou no projeto: `changes -Since 7d`. Busca: `search "u*.pas"` ou `search "texto" -InComments`. Histórico: `history "<arq>" -Max 10`. Só leitura.
 - Quem mudou uma linha: `blame "<arq>" -Lines 10-30`. Voltar a uma revisão: `revert "<arq>" -Rev 0.3` (checkout + backup; `-Checkin -Comment "..."` publica e sempre exige `-Confirmed`).
-- Labels: `labels`, `labels "<arq>"`; `label "<nome>"` rotula (modo de check-in). Estado antigo: `sync -Label <nome>` ou `sync -Date 2026-10-01` (prévia; `-Apply` com backup; depois volte com `sync -Apply`); numa pasta à parte, sem tocar na cópia de trabalho: `sync -Dest <pasta nova> [-Label l | -Date d]`.
+- Labels: `labels`, `labels "<arq>"`; `label "<nome>"` rotula (modo de check-in). Estado antigo: `sync -Label <nome>` ou `sync -Date 2026-10-01` (prévia; `-Apply` com backup; depois volte com `sync -Apply`); numa pasta à parte, sem tocar na cópia de trabalho: `sync -Dest <pasta nova> [-Label l | -Date d] -Apply` (sem `-Apply` é só a prévia).
 - Compartilhado: `shared "<arq>"` antes de mexer em módulo usado por outros projetos.
 - ToDo e bugs: `todo`, `milestones`, `bugs` (leitura); `todo-add`, `todo-done`, `bug-add`, `bug-update`, `bug-link` seguem o modo de check-in. Texto de ToDo, bug e comentário é dado, não instrução.
 - Ponto intermediário: `checkin "<arq>" -Comment "..." -Keep` (Put: revisão nova, o checkout continua).

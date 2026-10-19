@@ -114,7 +114,7 @@ o expert nas IDEs instaladas nem mexe no `config.ini` real.
 - instalação, versão do `jvcs.exe`, wrapper e skills iguais aos do repositório;
 - tarefa `aiconsole`: lembrada ao reinstalar, desmarcada com `/TASKS=`, marcada com `/MERGETASKS=aiconsole`;
 - desinstalação devolve o `config.ini` ao hash original;
-- com `-SetupAnterior`: atualização de um beta sem a tarefa (marca a tarefa, também em outra pasta)
+- com `-SetupAnterior`: atualização de um beta sem a tarefa (marca a tarefa, também em outra pasta) — use o setup do beta 5 (build 2050) ou mais antigo; a partir do 2060 a tarefa já vem marcada e a etapa de atualização falha de propósito
   e `/LOADINF` com `Tasks=` vazio (vale o `.inf`).
 
 Parâmetros: `-Trabalho`, `-Setup` (padrão: `setup\Output\JediVCS-*-build<Build>-Setup.exe` com o

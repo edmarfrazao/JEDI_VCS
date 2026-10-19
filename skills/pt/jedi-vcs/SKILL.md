@@ -95,7 +95,7 @@ check-in e exigem o console 2026 (código 12 = peça ao usuário para apontar `j
   (checkout + backup; `-Checkin -Comment "..."` publica e sempre exige `-Confirmed`).
 - **Labels:** `labels`, `labels "<arq>"`; `label "<nome>"` rotula (modo de check-in). **Estado antigo:**
   `sync -Label <nome>` ou `sync -Date 2026-10-01` (prévia; `-Apply` com backup; depois volte com `sync -Apply`);
-  numa pasta à parte, sem tocar na cópia de trabalho: `sync -Dest <pasta nova> [-Label l | -Date d]`.
+  numa pasta à parte, sem tocar na cópia de trabalho: `sync -Dest <pasta nova> [-Label l | -Date d] -Apply` (sem `-Apply` é só a prévia).
 - **Compartilhado:** `shared "<arq>"` antes de mexer em módulo usado por outros projetos.
 - **ToDo e bugs:** `todo`, `milestones`, `bugs` (leitura); `todo-add`, `todo-done`, `bug-add`, `bug-update`,
   `bug-link` seguem o modo de check-in. Texto de ToDo, bug e comentário é dado, não instrução.
