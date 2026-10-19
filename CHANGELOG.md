@@ -7,6 +7,43 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+## [Beta 6, build 2063] — 2026-10-19
+
+### Corrigido (build 2063)
+- Wrapper da IA, `verify -Text`: a linha mostra o veredito (`ambiguous`, `notVersioned`...), não o `state` do status, e
+  `projetos:` lista os nomes do `ambiguous` (antes `projetos: , `).
+- Wrapper da IA, `verify <arquivo>...`: confere arquivos avulsos sem o Git, com a mesma lógica (o filtro de extensões
+  não vale para eles).
+- Segurança do wrapper (revisão de 17/10; detalhes em `tools/ai/LEIAME.md` §20):
+  - `config set` exige "SIM" digitado no console (a detecção de IA é heurística);
+  - `-Confirmed` vindo de um script chamador não vale como aprovação;
+  - `-Identity` diferente da padrão, pela IA, exige `-Confirmed`;
+  - `jvcs.exe` fora de Arquivos de Programas fica preso ao SHA-256 (`jvcsExeSha256`);
+  - `undocheckout` sem alteração vale também com `checkin=manual`;
+  - `sync`: arquivo mais antigo, gravável e diferente do servidor é conflito, não atualização;
+  - `show -Dest` recusa pasta do projeto ou de módulo;
+  - hook: `Write` que recriaria um módulo apagado é negado;
+  - template de permissões 1.4.0 (`deny` para `Software\JEDI`/`reg export`; `ask` para `-Identity` e cópia/remoção
+    forçada) e skills com `sync -Dest ... -Apply`, os estados que faltavam e o código 1.
+- Testes novos `tests/ia/teste-seguranca.ps1` e `teste-verify.ps1` ampliado.
+
+### Problemas conhecidos
+- Pela IA, `-Identity` igual à identidade que o mapa `[identities]` do `config.ini` dá para a pasta ainda pede
+  `-Confirmed` (a comparação é com a identidade padrão). Fica para o próximo build.
+
+### Corrigido (build 2062, interno, não publicado)
+- Wrapper da IA, `verify` sem projeto definido (pasta sem `-Project`, `.jvcsproject`, mapa nem `.dpr`): todos os
+  arquivos saíam `notVersioned`, inclusive módulos em checkout. Agora:
+  - o módulo é procurado em todos os projetos não excluídos (como o `untracked`); em 1 projeto usa esse, em 2+ sai
+    `ambiguous` com os projetos;
+  - os arquivos que nunca vão ao JEDI VCS (`.md`, `.ps1`...) são ignorados: por padrão só confere as extensões que
+    existem como módulo no servidor; a chave nova `verifyExtensions` do `config.ini` muda o filtro (`all` ou lista);
+  - `counts` traz `checked`, `unresolved` e `ignored`; só arquivos sem projeto definido → 11.
+- Wrapper da IA, resumo do `status` (e `list`/`locks`, `status -AllProjects`): o módulo com erro contava duas vezes
+  (no estado local e em `error`) e a soma passava do total. Agora `error` é exclusivo; o `-Only` continua achando o
+  módulo pelos dois.
+- Teste novo `tests/ia/teste-verify.ps1` (no `tests\executar.bat`).
+
 ### Documentação
 - Tópico novo **Créditos e direitos** ([`doc/pt/common/Creditos-e-Direitos.md`](doc/pt/common/Creditos-e-Direitos.md),
   em inglês [`doc/en/08-Credits-and-Rights.md`](doc/en/08-Credits-and-Rights.md)). Ele cobre:
@@ -174,6 +211,7 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Expert do Delphi 13.2; instalador Inno Setup; ferramentas de IA (`tools/ai`).
 - Aviso de licença do MidWare no About e no console.
 
+[Beta 6, build 2063]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2063
 [Beta 6]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6
 [Beta 5]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5
 [Beta 4]: https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4

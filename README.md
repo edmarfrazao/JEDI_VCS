@@ -49,7 +49,7 @@ The server itself is not ported and does not need any change.
 
 | Item | Status |
 |---|---|
-| Version | **2.5 Beta 2026** (`2.5.0.2026`), sixth public beta, **build 2061** (`2.5.0.2061`, tag `v2.5.0.2026-beta6`); Delphi 7 to 13 supported |
+| Version | **2.5 Beta 2026** (`2.5.0.2026`), sixth public beta, **build 2063** (`2.5.0.2063`, tag `v2.5.0.2026-beta6-build2063`); Delphi 7 to 13 supported |
 | Delphi | tested on **Delphi 11, 12 and 13** (32-bit IDE) |
 | Platform | Win32 (runs on Windows x64 and ARM64 through emulation) |
 | Server | JEDI VCS **2.5 Beta 3** (Firebird), not ported, unchanged |

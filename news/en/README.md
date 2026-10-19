@@ -11,6 +11,7 @@ Each release has an English page in this folder.
 
 | Version | Date | Status | Highlights |
 |---|---|---|---|
+| [Beta 6, build 2063](2026-10-19-build2063.md) | 2026-10-19 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2063) | **build 2063**: `verify` with no project (search in all projects, `ambiguous`, extension filter, single files); `status` sum; wrapper security fixes; template 1.4.0 |
 | [Beta 6](2026-10-17-beta6.md) | 2026-10-17 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6) (pre-release) | **build 2061**: the 2026 `jvcs.exe` console in the installer (projects and modules without the IDE, history, search, labels, ToDo, bugs, administration); AI wrapper 1.4.0; the AI uses the new console by default; S0002 (untracked, verify, doctor) |
 | [Beta 5](2026-10-13-beta5.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta5) (pre-release) | **build 2050**: XE3 crash fixed; installed version visible (title, About, Control Panel); pt/en docs and skills |
 | [Beta 4](2026-10-13-beta4.md) | 2026-10-13 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta4) (pre-release) | choose each Delphi; older IDEs (7 to 10.4); AI skill; pt/en docs — XE3: toolbar crash (next beta) |
