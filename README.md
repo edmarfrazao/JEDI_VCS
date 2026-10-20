@@ -9,7 +9,7 @@ The **JEDI VCS** client (client/server version control for Delphi teams) ported 
 **exactly the same protocol** as the existing JEDI VCS **2.5 Beta 3** server (Firebird), which is not
 changed.
 
-[Download](https://github.com/edmarfrazao/JEDI_VCS/releases) ·
+[Download](https://github.com/edmarfrazao/JEDI_VCS/releases/latest) ·
 [What's new](news/en/README.md) ·
 [User guide (English)](doc/en/README.md) ·
 [Full documentation (Portuguese)](doc/pt/README.md) ·
@@ -58,8 +58,8 @@ This is a **beta**. Use it with a test server, or back up your database before y
 
 ## Download
 
-Download `JediVCS-2.5-Beta2026-Setup.exe` from the
-[Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) page. Each release page and each
+Download the installer of the [latest release](https://github.com/edmarfrazao/JEDI_VCS/releases/latest) (today `JediVCS-2.5.0-Beta6-build2063-Setup.exe`;
+older betas are on the [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) page). Each release page and each
 [news page](news/en/README.md) shows the SHA-256 of the installer; check it before you install.
 
 ## Features
@@ -82,13 +82,13 @@ Download `JediVCS-2.5-Beta2026-Setup.exe` from the
 
 ## Supported Delphi versions
 
-| Delphi | How | Since | Status |
+| Delphi | How | Since (2026 beta) | Status |
 |---|---|---|---|
-| Delphi 7, 2005, 2006, 2007, 2009, 2010, XE–XE8, 10 Seattle, 10.1 Berlin, 10.2 Tokyo, 10.3 Rio, 10.4 Sydney (also C#Builder 1 and Delphi 8 for .NET) | **original** thin expert from 2.5.0.1030 + **new** core `JvcsExternalDll.dll` | Beta 3 | **being tested** (installer tested; not yet tested in a real old IDE) |
-| Delphi 11 Alexandria, 12 Athens, 13 Florence — **any update** | new expert `JvcsExpertBDS22/23/37.dll` + new core | Beta 2 | tested on 11.3, 12, 13.1 and 13.2 |
+| Delphi 7, 2005, 2006, 2007, 2009, 2010, XE–XE8, 10 Seattle, 10.1 Berlin, 10.2 Tokyo, 10.3 Rio, 10.4 Sydney (also C#Builder 1 and Delphi 8 for .NET) | **original** thin expert from 2.5.0.1030 + **new** core `JvcsExternalDll.dll` | 2026 beta 3 | **being tested** (installer tested; not yet tested in a real old IDE) |
+| Delphi 11 Alexandria, 12 Athens, 13 Florence — **any update** | new expert `JvcsExpertBDS22/23/37.dll` + new core | 2026 beta 2 | tested on 11.3, 12, 13.1 and 13.2 |
 | Delphi 5 and 6 (and C++Builder 5/6) | not supported (the original used a different full client) | — | keep the original installer |
 | 64-bit IDE (`bin64\bds.exe`, Delphi 12.3+/13) | not supported (the core and `fvcscrypt.dll` are 32-bit) | — | use the 32-bit IDE |
-| No IDE | standalone client, Diff and console | Beta 1 | Windows 10/11 |
+| No IDE | standalone client, Diff and console | 2026 beta 1 | Windows 10/11 |
 
 No third-party components need to be installed in the target IDE: JCL, JVCL, ICS, Abbrevia, SynEdit and
 VirtualTreeView are compiled into the core DLL.
@@ -115,8 +115,8 @@ VirtualTreeView are compiled into the core DLL.
 ## Quick install
 
 1. Close Delphi.
-2. Download `JediVCS-2.5-Beta2026-Setup.exe` from
-   [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) and run it **from Explorer, as your own
+2. Download the installer of the [latest release](https://github.com/edmarfrazao/JEDI_VCS/releases/latest)
+   (`JediVCS-2.5.0-Beta6-build2063-Setup.exe`) and run it **from Explorer, as your own
    Windows user** (English or Portuguese; you can install for the current user only).
 3. Start Delphi: the splash screen shows "JEDI Version Control System 2.5 Beta 2026" and the
    **JEDI VCS** menu appears.

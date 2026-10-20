@@ -9,7 +9,7 @@ Cliente do **JEDI VCS** (controle de versão cliente/servidor para equipes Delph
 IA. Fala **exatamente o mesmo protocolo** do servidor JEDI VCS **2.5 Beta 3** (Firebird), que continua o
 mesmo.
 
-[Download](https://github.com/edmarfrazao/JEDI_VCS/releases) ·
+[Download](https://github.com/edmarfrazao/JEDI_VCS/releases/latest) ·
 [Novidades](news/pt/README.md) ·
 [Manual](doc/pt/manual/README.md) ·
 [Documentação](doc/pt/README.md) ·
@@ -25,8 +25,8 @@ verified by golden traffic captures against the original 2.5.0.1030 client. High
 ToolsAPI expert per Delphi version that loads in every update (it imports only `rtl`, `vcl` and `xmlrtl`),
 one shared client core, UI scaling (100–200%), light/dark theme following Windows or the IDE, an Inno
 Setup installer, and a safe workflow for AI coding agents (Claude Code). Status: **public beta (beta 6, build 2063)**,
-Win32 only. Download the installer from
-[Releases](https://github.com/edmarfrazao/JEDI_VCS/releases). Documentation is in Brazilian Portuguese.
+Win32 only. Download the installer from the
+[latest release](https://github.com/edmarfrazao/JEDI_VCS/releases/latest). Documentation is in Brazilian Portuguese.
 License: MPL 1.1; the MidWare transport is free for **non-commercial use only** (see below).
 Full English version: [README.md](README.md) · English user guide: [doc/en](doc/en/README.md).
 
@@ -71,8 +71,8 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 ## Instalação rápida
 
 1. Feche o Delphi.
-2. Baixe `JediVCS-2.5-Beta2026-Setup.exe` em
-   [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) e execute (português ou inglês; dá para
+2. Baixe o instalador da [versão mais recente](https://github.com/edmarfrazao/JEDI_VCS/releases/latest)
+   (`JediVCS-2.5.0-Beta6-build2063-Setup.exe`) e execute (português ou inglês; dá para
    instalar só para o usuário atual).
 3. Abra o Delphi: o splash mostra "JEDI Version Control System 2.5 Beta 2026" e aparece o menu
    **JEDI VCS**.
