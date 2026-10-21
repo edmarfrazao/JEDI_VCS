@@ -138,3 +138,7 @@ check-in e exigem o console 2026 (código 12 = peça ao usuário para apontar `j
 | 12 ambiente (`jvcs.exe`, mutex) | avisar; ver `references/solucao-de-problemas.md` |
 
 Leia `exitCode`, `message` e `modules[].state` do JSON; não interprete a saída do `jvcs.exe`.
+
+## Exportar para o Git (migração única)
+
+Para levar um projeto inteiro do JEDI VCS para um repositório Git com todo o histórico, não use este wrapper: use o **jvcs2git** (https://github.com/edmarfrazao/jvcs2git), que tem skill própria (`skills/pt/jvcs2git`) e um CLI com `-json`. Peça ao usuário para instalar o jvcs2git e a skill dele; depois siga aquela skill.

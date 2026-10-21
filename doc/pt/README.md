@@ -13,6 +13,7 @@ protocolo. Visão geral do projeto, download e licenças: [README.pt-BR.md](../.
 |---|---|
 | Instalar e usar | [Manual](manual/README.md) — comece pelo [09 Instalador](manual/09-Instalador-do-Cliente.md) |
 | Usar com um assistente de IA | [IA](ia/README.md) e a skill [skills/pt/jedi-vcs](../../skills/pt/jedi-vcs/) |
+| Migrar os projetos para o Git com todo o histórico | [jvcs2git](https://github.com/edmarfrazao/jvcs2git) (projeto separado: janela, CLI e skill para IA) |
 | Entender o código ou compilar | [Fontes](fontes/README.md) |
 | Saber por que e como o port foi feito | [Processo](processo/README.md) |
 | Saber onde o projeto está | [CHANGELOG](../../CHANGELOG.md), [novidades](../../news/pt/README.md) e [decisões de arquitetura](processo/03-Decisoes-de-Arquitetura.md) |

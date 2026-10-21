@@ -7,6 +7,9 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+### Adicionado
+- Links para o **jvcs2git** (https://github.com/edmarfrazao/jvcs2git), exportador dos projetos para Git com todo o histórico, no README (en/pt), nos índices de `doc/pt` e `doc/en` e nas skills `jedi-vcs` (pt/en).
+
 ## [Beta 6, build 2063] — 2026-10-19
 
 ### Corrigido (build 2063)

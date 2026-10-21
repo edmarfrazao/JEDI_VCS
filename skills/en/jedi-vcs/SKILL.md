@@ -140,3 +140,7 @@ mode and need the 2026 console (exit 12 = ask the user to point `jvcsExe` to it)
 | 12 environment (`jvcs.exe`, mutex) | warn; see `references/troubleshooting.md` |
 
 Read `exitCode`, `message` and `modules[].state` from the JSON; do not interpret the `jvcs.exe` output.
+
+## Export to Git (one-time migration)
+
+To move a whole JEDI VCS project to a Git repository with the full history, do not use this wrapper: use **jvcs2git** (https://github.com/edmarfrazao/jvcs2git), which has its own skill (`skills/en/jvcs2git`) and a CLI with `-json`. Ask the user to install jvcs2git and its skill, then follow that skill.

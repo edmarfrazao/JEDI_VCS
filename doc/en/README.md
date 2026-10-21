@@ -30,6 +30,7 @@ ported to Delphi 11, 12 and 13, fully compatible with the existing **JEDI VCS 2.
 | Install the client on your PC and use it from Delphi | [02](02-Installation.md) → [03](03-Delphi-IDE-Integration.md) |
 | Understand how JEDI VCS works | [01](01-Overview.md) |
 | Let an AI assistant check out and check in files | [05](05-Using-with-AI.md) |
+| Migrate the projects to Git with the full history | [jvcs2git](https://github.com/edmarfrazao/jvcs2git) (separate project: GUI, CLI and AI skill) |
 | Fix a problem | [07](07-FAQ-and-Troubleshooting.md) |
 | Know what changed in each version | [What's new](../../news/en/README.md) |
 

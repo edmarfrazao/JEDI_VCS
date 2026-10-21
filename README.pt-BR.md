@@ -143,6 +143,10 @@ segurança: checkout automático só quando o arquivo local é igual ao servidor
 prefixo `[IA]`, e edição que preserva a codificação Windows-1252. Comece por
 [doc/pt/ia/README.md](doc/pt/ia/README.md); a skill está em [skills/pt/jedi-vcs](skills/pt/jedi-vcs/) (versão em inglês: [skills/en/jedi-vcs](skills/en/jedi-vcs/); ver [skills](skills/README.md)).
 
+## Migrar para Git
+
+Vai levar o arquivo do JEDI VCS para o Git? O **[jvcs2git](https://github.com/edmarfrazao/jvcs2git)** exporta cada projeto com todo o histórico (revisões, autores, datas, comentários e labels como tags) pelo protocolo do servidor, então funciona com qualquer banco do JEDI VCS. Tem janela, linha de comando com JSON para scripts e assistentes de IA, e skill própria. Download: [releases do jvcs2git](https://github.com/edmarfrazao/jvcs2git/releases/latest).
+
 ## Licenças
 
 - O código do JEDI VCS é distribuído sob a **Mozilla Public License 1.1** — ver [LICENSE](LICENSE) e

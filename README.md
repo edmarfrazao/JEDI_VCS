@@ -137,6 +137,10 @@ approval and an `[IA]` comment prefix, and editing that keeps the Windows-1252 e
 [Using JEDI VCS with AI](doc/en/05-Using-with-AI.md). The skill is in
 [skills](skills/README.md) (English: [skills/en/jedi-vcs](skills/en/jedi-vcs/README.md)).
 
+## Migrating to Git
+
+Moving a JEDI VCS archive to Git? **[jvcs2git](https://github.com/edmarfrazao/jvcs2git)** exports every project with the full history (revisions, authors, dates, comments, labels as tags) through the server protocol, so it works with any JEDI VCS database. It has a GUI, a CLI with JSON output for scripts and AI assistants, and its own skill. Download: [jvcs2git releases](https://github.com/edmarfrazao/jvcs2git/releases/latest).
+
 ## Building from source
 
 ```
