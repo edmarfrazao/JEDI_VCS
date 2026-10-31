@@ -174,8 +174,8 @@ object VCSOptions: TVCSOptions
       Height = 21
       ButtonKind = bkStandard
       MaxValue = 5000.000000000000000000
-      MinValue = 500.000000000000000000
-      Value = 500.000000000000000000
+      MinValue = 100.000000000000000000
+      Value = 300.000000000000000000
       TabOrder = 1
       OnChange = edArchLimitChange
     end

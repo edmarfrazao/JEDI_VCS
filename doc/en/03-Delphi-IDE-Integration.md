@@ -83,7 +83,7 @@ Other naming rules: avoid accents and the characters `" / \ < > [ ] : ; | { } * 
 
 **VCS Properties > Appearance** sets the scale, fonts and theme. **Follow Delphi** uses the real IDE theme
 (Light, Dark, Mountain Mist), also when you change the theme with the IDE open. JEDI VCS menus and windows
-follow the IDE in Alt+Tab. See [04 Standalone client](04-Standalone-Client.md#2-appearance).
+follow the IDE in Alt+Tab. See [04 Standalone client](04-Standalone-Client.md#3-appearance).
 
 ## 6. Logs
 

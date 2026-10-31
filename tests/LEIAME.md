@@ -1,8 +1,9 @@
 # Testes do JEDI VCS 2026
 
-Scripts PowerShell que conferem o console `jvcs.exe`, o wrapper da IA (`tools\ai\jvcs-ai.ps1`) e o
-instalador. Rodam sem a IDE. Todos os caminhos do repositório saem da pasta do próprio script; os
-arquivos de trabalho ficam em `-Trabalho` (padrão `%TEMP%\jvcs-testes`).
+Scripts PowerShell que conferem a pesquisa de módulos do cliente (`cliente\teste-pesquisa.ps1`:
+compila com o dcc32 do Delphi 13 e não usa servidor), o console `jvcs.exe`, o wrapper da IA
+(`tools\ai\jvcs-ai.ps1`) e o instalador. Rodam sem a IDE. Todos os caminhos do repositório saem da
+pasta do próprio script; os arquivos de trabalho ficam em `-Trabalho` (padrão `%TEMP%\jvcs-testes`).
 
 > **Só rode contra um servidor de TESTE.** Os testes do console e da IA criam projetos e módulos de
 > verdade no servidor (nomes com o prefixo `zz-teste-`), fazem checkout/checkin e apagam módulos do
@@ -22,7 +23,8 @@ arquivos de trabalho ficam em `-Trabalho` (padrão `%TEMP%\jvcs-testes`).
 ## Como rodar
 
 ```
-tests\executar.bat              console e ia
+tests\executar.bat              cliente, console e ia
+tests\executar.bat cliente      só a pesquisa de módulos do cliente (sem servidor)
 tests\executar.bat console      só o console
 tests\executar.bat ia           só a IA
 tests\executar.bat instalador   só o instalador
@@ -50,6 +52,18 @@ As saídas do console ficam em `<Trabalho>\console\<nome>.txt` (cp1252) e o rote
 `<nome>.in.txt`; os logs do setup em `<Trabalho>\setup\*.log`. Comece por eles ao investigar uma falha.
 
 ## Scripts
+
+### cliente\teste-pesquisa.ps1
+
+Compila `teste-pesquisa.dpr` com o dcc32 do Delphi 13 e confere `src\common\client\JVCSModuleSearch.pas`, sem
+servidor:
+
+- relevância do campo **Find** dos módulos (texto contido, começo de parte do nome, máscaras `*` e `?`, pasta com `\`,
+  acentos);
+- filtro da **árvore de projetos** (`JVCSFilterMatch`): texto contido, várias palavras, máscaras e as letras que
+  ficam em negrito.
+
+Parâmetro: `-Dcc` (caminho do `dcc32.exe`).
 
 ### console\golden.ps1
 

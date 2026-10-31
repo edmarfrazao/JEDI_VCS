@@ -19,6 +19,7 @@ opens first (see [03, section 3](03-Delphi-IDE-Integration.md#3-first-login)). A
 
   | Menu | Typical commands |
   |---|---|
+  | **Edit** | Find Module (`Ctrl+F`), Find Next/Previous (`F3`/`Shift+F3`), Filter Projects, Search Modules in All Projects, Copy, Copy Full Path, Select All (see [section 2](#2-finding-modules-and-projects)) |
   | **Project** | New, Open, Synchronize/Restore, History, labels, backup |
   | **Module** | Add, Check In, Check Out, Undo Check Out, Get, Compare, History, Line History |
   | **Server** | Connect, Whoami, Administration (users, groups, project rights, server properties) |
@@ -30,7 +31,42 @@ opens first (see [03, section 3](03-Delphi-IDE-Integration.md#3-first-login)). A
 - The same rules as in the IDE apply: check out before editing, never remove the read-only flag by hand,
   same folder and drive letter on every PC.
 
-## 2. Appearance
+## 2. Finding modules and projects
+
+Since build 2064. Full details (Portuguese): [manual 11](../pt/manual/11-Pesquisa-e-Menu-Edit.md).
+
+| To find | Where | Shortcut |
+|---|---|---|
+| A module of the open project | **Find** field on the Module toolbar | `Ctrl+F` |
+| A project | Filter field above the **project tree** | `Ctrl+Shift+P` |
+| A module in every project on the server | **Edit > Search Modules in All Projects...** | `Ctrl+Shift+F` |
+
+Both the Find field and the project filter use the same rule, case-insensitive:
+
+- plain text: the name **contains** the text (`01` finds `Exemplo01.dpr`); in the project filter, several
+  words must all appear, in any order;
+- `*` and `?`: a mask (`u*.pas`, `ex*.dpr`); `[` is literal;
+- Find only: text with `\` also searches the module folder. Exact names come first, then names where the text
+  starts the name or a part of it, then names that only contain it.
+
+Keys in the **Find** field: `Enter`/`F3` next, `Shift+Enter`/`Shift+F3` previous, `Ctrl+Enter` selects every
+match, `Esc` clears (when empty, back to the module list). The search starts 300 ms after the last key
+(**Options > Properties**, 100 to 5000 ms).
+
+Keys in the **project filter**: `Enter` opens the best match (it does not reopen the current project), `Down`
+goes to the tree without opening, `Esc` clears. While a filter is active, groups with matches open by
+themselves, and the matched text is shown in bold. Clearing the filter restores the groups you had open.
+
+**Edit** menu: `Ctrl+C` copies the selected text in a text field, the names of the selected modules (one per
+line) in the module list, or the project/group name in the project tree. `Ctrl+Shift+C` copies folder and
+name of the selected modules. `Ctrl+A` selects the text in a text field, or every module elsewhere. In the
+**Line History** tab, `Ctrl+F`/`F3` keep searching inside the file. In the IDE's Project Manager the Filter
+Projects item is hidden and `Ctrl+Shift+P` stays the expert shortcut.
+
+Module list **context menu**: **Copy Full Path** (`Ctrl+Shift+C`), **Copy Path** (each folder once), **Open in Explorer** (folder opened, file selected) and
+**Search in All Projects...** (opens Search Modules already searching the selected module name).
+
+## 3. Appearance
 
 **VCS Properties > Appearance** (or **View → Appearance / Font Size...**). Applies to all open windows
 when you click **OK** or **Apply**, without restarting. The settings are shared by the standalone client and
@@ -53,7 +89,7 @@ the JEDI VCS windows in the IDE (`HKCU\Software\JEDI\JEDIVCS\Options`).
   Diff/Line History do not change; in the standalone client, the main menu bar does not grow with the scale
   (only the submenus do).
 
-## 3. VCS Properties pages
+## 4. VCS Properties pages
 
 Open with **Options > Properties** (standalone) or **JEDI VCS > VCS Properties...** (IDE). The options are
 shared by the standalone client and the IDE; the console `jvcs.exe` does not use them. An administrator can

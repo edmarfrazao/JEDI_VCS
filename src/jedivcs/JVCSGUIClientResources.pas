@@ -227,6 +227,20 @@ resourcestring
     'JEDI Version Control System - Project Manager %s';
   JVCSRES_Search_for_3437s34_45_Success = 'Search for "%s" - Success';
   JVCSRES_Search_for_3437s34_45_not_found = 'Search for "%s" - not found';
+  JVCSRES_Find_37d_of_37d = 'Find: %d of %d';
+  JVCSRES_Find_37d_matches_selected = 'Find: %d selected';
+  JVCSRES_Find_hint =
+    'Find module (Ctrl+F)'#13#10 +
+    'Text: name contains the text (exact and prefix matches first)'#13#10 +
+    'Wildcards * and ?: name.pas mask, e.g. u*.pas'#13#10 +
+    'With \: also searches the path'#13#10 +
+    'Enter/F3: next  Shift+Enter/Shift+F3: previous'#13#10 +
+    'Ctrl+Enter: select all matches  Esc: clear';
+  JVCSRES_Project_filter_hint =
+    'Filter projects (Ctrl+Shift+P)'#13#10 +
+    'Text: name contains the text; several words: all of them, in any order'#13#10 +
+    'Wildcards * and ?: e.g. ex*.dpr'#13#10 +
+    'Enter: open the best match  Down: go to the list  Esc: clear';
   JVCSRES_The_module_is_checked_out46 = 'The module is checked out.';
   JVCSRES_You_cannot_hide_modules_while_they_are_checked_out46 =
     'You cannot hide modules while they are checked out.';

@@ -28,6 +28,7 @@ Público: o administrador do JEDI VCS (você) e os colegas da empresa que vão u
 | [08 Solução de problemas](08-Solucao-de-Problemas.md) | Sintoma → causa → solução |
 | [09 Instalador do cliente](09-Instalador-do-Cliente.md) | Setup do JEDI VCS 2.5 Beta 2026: instalar, reparar, desinstalar, componentes, o que muda no Delphi, convivência com o cliente original |
 | [10 Delphi 11 e 12](10-Delphi-11-e-12.md) | Checklist depois de instalar o Delphi 11/12: GetIt, SynEdit/VTV fixados, compilar com `/delphi:NN`, expert por versão e por atualização |
+| [11 Pesquisa e menu Edit](11-Pesquisa-e-Menu-Edit.md) | Campo Find dos módulos (`Ctrl+F`, `F3`, máscaras), filtro da árvore de projetos (`Ctrl+Shift+P`) e menu Edit (copiar, selecionar, pesquisar em todos os projetos) |
 
 ## Como ler este manual
 

@@ -59,12 +59,17 @@ inherited JVCSDockProjectTree: TJVCSDockProjectTree
     BevelOuter = bvNone
     TabOrder = 2
     object edFilterText: TEdit
-      Left = 120
+      Left = 122
       Top = 0
-      Width = 121
+      Width = 440
       Height = 21
+      Anchors = [akLeft, akTop, akRight]
+      ParentShowHint = False
+      ShowHint = True
       TabOrder = 0
       OnChange = FilterChange
+      OnKeyDown = edFilterTextKeyDown
+      OnKeyPress = edFilterTextKeyPress
     end
     object cboxFilterKind: TComboBox
       Left = 0

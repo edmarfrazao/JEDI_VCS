@@ -139,6 +139,7 @@ type
     FSelectedProjectName: string;
     FShowLineHistorySelected: Boolean;    
     FOpenProjectSelected: Boolean;
+    FInitialMask: string; // v2026: texto inicial da pesquisa (menu de contexto do Project Manager)
     procedure AddModules(ModuleName: string);
     function GetListViewString: string;
     function GetSelectedModule(var AModuleID: Integer): Boolean;
@@ -152,6 +153,8 @@ type
     property SelectedProjectName: string read FSelectedProjectName;
     property ShowLineHistorySelected: Boolean read FShowLineHistorySelected;    
     property OpenProjectSelected: Boolean read FOpenProjectSelected;
+    // v2026: preenche o campo e ja pesquisa ao abrir
+    property InitialMask: string read FInitialMask write FInitialMask;
   end;
 
 var
@@ -230,6 +233,11 @@ begin
     Exit;
   FCreating := False;
   rcbxMask.SetFocus;
+  if FInitialMask <> '' then
+  begin
+    rcbxMask.Text := FInitialMask;
+    btnSearchClick(Self);
+  end;
 end;
 
 //------------------------------------------------------------------------------

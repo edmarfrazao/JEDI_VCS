@@ -35,6 +35,7 @@ Manual prático para instalar o servidor 2.5 Beta 3, configurar o cliente e inte
 | [08 Solução de problemas](manual/08-Solucao-de-Problemas.md) | Sintoma → causa → solução |
 | [09 Instalador do cliente](manual/09-Instalador-do-Cliente.md) | Instalar, reparar, desinstalar, componentes, convivência com o original |
 | [10 Delphi 11 e 12](manual/10-Delphi-11-e-12.md) | Checklist depois de instalar o Delphi 11/12 |
+| [11 Pesquisa e menu Edit](manual/11-Pesquisa-e-Menu-Edit.md) | Find dos módulos, filtro de projetos e menu Edit com atalhos |
 
 ## IA (`ia`)
 

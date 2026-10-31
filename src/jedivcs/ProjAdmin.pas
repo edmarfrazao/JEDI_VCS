@@ -459,6 +459,25 @@ type
     ToolButton30: TToolButton;
     Toolbars1: TMenuItem;
     mmiTBModule: TMenuItem;
+    // v2026: menu Edit
+    mmiEdit: TMenuItem;
+    mmiEditFind: TMenuItem;
+    mmiEditFindNext: TMenuItem;
+    mmiEditFindPrevious: TMenuItem;
+    mmiEditSelectMatches: TMenuItem;
+    mmiEditN1: TMenuItem;
+    mmiEditFilterProjects: TMenuItem;
+    mmiEditSearchAllProjects: TMenuItem;
+    mmiEditN2: TMenuItem;
+    mmiEditCopy: TMenuItem;
+    mmiEditCopyPath: TMenuItem;
+    mmiEditN3: TMenuItem;
+    mmiEditSelectAll: TMenuItem;
+    // v2026: menu de contexto da lista de modulos
+    pmiCopyFullPath: TMenuItem;
+    pmiCopyFolder: TMenuItem;
+    pmiSearchInAllProjects: TMenuItem;
+    pmiOpenInExplorer: TMenuItem;
     mmiTBTools: TMenuItem;
     mmiTBWindow: TMenuItem;
     mmiChckoutbycurruser: TMenuItem;
@@ -756,8 +775,11 @@ type
     procedure LoadAll1Click(Sender: TObject);
     procedure UnloadAll1Click(Sender: TObject);
     procedure edSearchClick(Sender: TObject);
-    procedure edSearchKeyUp(Sender: TObject; var Key: Word;
+    procedure edSearchChange(Sender: TObject);
+    procedure edSearchKeyDown(Sender: TObject; var Key: Word;
       Shift: TShiftState);
+    procedure edSearchKeyPress(Sender: TObject; var Key: Char);
+    procedure edSearchExit(Sender: TObject);
     procedure elvModulesDrawItem(Control: TWinControl;
       var ACanvas: TCanvas; Index: Integer; ARect: TRect;
       State: TOwnerDrawState; var DefaultDrawing, FullRowSelect: Boolean);
@@ -933,8 +955,25 @@ type
     procedure acCopyModulenameClipboardExecute(Sender: TObject);
     procedure acDiff1Execute(Sender: TObject);
     procedure acCompareAllLocalArchiveExecute(Sender: TObject);
+    // v2026: menu Edit
+    procedure mmiEditClick(Sender: TObject);
+    procedure mmiEditFindClick(Sender: TObject);
+    procedure mmiEditFindNextClick(Sender: TObject);
+    procedure mmiEditFindPreviousClick(Sender: TObject);
+    procedure mmiEditSelectMatchesClick(Sender: TObject);
+    procedure mmiEditFilterProjectsClick(Sender: TObject);
+    procedure mmiEditCopyClick(Sender: TObject);
+    procedure mmiEditCopyPathClick(Sender: TObject);
+    procedure mmiEditSelectAllClick(Sender: TObject);
+    procedure PopupMenu1Popup(Sender: TObject);
+    procedure pmiCopyFolderClick(Sender: TObject);
+    procedure pmiSearchInAllProjectsClick(Sender: TObject);
+    procedure pmiOpenInExplorerClick(Sender: TObject);
   private
     { Private-Deklarationen }
+    // v2026: pesquisa de modulos (campo Find): ultimo texto avisado como nao encontrado
+    FSearchNotFoundText: string;
+    FSearchNotFound: Boolean;
     FInitialized,
     bStopRefresh,
     bLVReady,
@@ -1092,7 +1131,21 @@ type
       procedure WMActivate(var Message: TWMActivate);
       {$ENDIF ~DELPHI2007_UP}
     {$ENDIF ~IDEDLL}
+    // v2026: pesquisa de modulos (campo Find)
+    function ModuleSearchRank(Item: TListItem; const S: string): Integer;
+    procedure ModuleSearch(Mode: Integer);
+    procedure SetSearchFeedback(Found: Boolean);
+    function FlushModuleSearch: Boolean;
+    // v2026: menu Edit
+    procedure FocusModuleSearch;
+    procedure FindModuleNext(APrevious: Boolean);
+    function FocusedTextControl: TWinControl;
+    function IsSearchField(AControl: TWinControl): Boolean;
+    function SelectedModulesText(AWithPath: Boolean): string;
+    procedure SearchModulesDialog(const AMask: string);
+    procedure CMStyleChanged(var Message: TMessage); message CM_STYLECHANGED;
   public
+    function IsShortCut(var Message: TWMKey): Boolean; override;
     { Public-Deklarationen }
     function GetSelectedModuleID: Integer; //IJVCSProjectManager
     function GetSelectedModuleName: string; //IJVCSProjectManager
@@ -1138,7 +1191,7 @@ uses
   {$IFDEF BRANCHING}
   JVCSSelectBranchDialog, JVCSBranchClientObj, JVCSCreateBranchDialog, WaitforServer,
   {$ENDIF BRANCHING}
-  VCSBase, ShellAPI, VCSProcBase, Yes2AllDlg, ModuleInfo, FileCtrl, JVCSDialogs,
+  VCSBase, ShellAPI, VCSProcBase, Yes2AllDlg, ModuleInfo, FileCtrl, JVCSDialogs, JVCSModuleSearch,
   TextComp, CustViewFilter, HandleBlob, History, ChkInSingle, ChkOutSingle, ToDo,
   Touch, Checksum, Backup, Printers, ShowTimeLog, FileFamilies, IniFiles,
   ProjectHist, WCViewFilter, NtfySend, CrossRefList, CheckfBuild, MoveModules,
@@ -1739,7 +1792,13 @@ begin
     [RefreshTimer.Interval div 60000]);
 
   SearchTimer.Interval :=
-    jvcsReadInteger(sBaseRegistryKey + crbOptions, 'SearchTime', 750);
+    jvcsReadInteger(sBaseRegistryKey + crbOptions, 'SearchTime', 300);
+  edSearch.Hint := JVCSRES_Find_hint;
+  {$IFDEF IDEDLL}
+  // v2026: na IDE nao ha arvore de projetos; Ctrl+Shift+P fica com o atalho do expert (Project Manager)
+  mmiEditFilterProjects.Visible := False;
+  {$ENDIF IDEDLL}
+  edSearch.ShowHint := True;
 
   LVColorNew :=
     jvcsReadInteger(sBaseRegistryKey + crbOptions, 'ModuleListColor_New', clWindowText);
@@ -2069,8 +2128,10 @@ begin
         elvModules.Items[0].Selected := True;
       ShowSelectedLVItem;
     end;
+    // v2026: nao troca o que o usuario esta digitando no campo Find
+    if not (edSearch.Focused and (edSearch.Text <> '')) then
+      edSearch.Text := CurrentFile;
     elvModules.SetFocus;
-    edSearch.Text := CurrentFile;
     bLVReady := True;
     dfsStatusBar.Panels[0].Text := Format(JVCSRES_Selected58_37d, [elvModules.SelCount]);
     SetMenuState;
@@ -2307,7 +2368,9 @@ begin
       if bPJM_TopWindow then
         {$ENDIF IDEDLL}
         elvModules.SetFocus;
-      edSearch.Text := LastItem;
+      // v2026: nao troca o que o usuario esta digitando no campo Find
+      if not (edSearch.Focused and (edSearch.Text <> '')) then
+        edSearch.Text := LastItem;
     finally
       FIsInacRefreshModuleList := False;
     end;
@@ -5676,6 +5739,27 @@ end;
 procedure TVCSProjAdmin.FormKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
+  // v2026: pesquisa de modulos - Ctrl+F vai ao campo Find, F3/Shift+F3 proximo/anterior,
+  // Esc no campo Find limpa o texto (sem fechar a janela)
+  // (com o menu Edit, Ctrl+F e F3 chegam pelo atalho do menu; isto fica para quando o menu nao processa)
+  if (Key = Ord('F')) and (Shift = [ssCtrl]) then
+  begin
+    FocusModuleSearch;
+    Key := 0;
+    Exit;
+  end;
+  if (Key = VK_F3) and ((Shift = []) or (Shift = [ssShift])) and (Trim(edSearch.Text) <> '') then
+  begin
+    FindModuleNext(ssShift in Shift);
+    Key := 0;
+    Exit;
+  end;
+  if (Key = VK_ESCAPE) and (ActiveControl = edSearch) and (edSearch.Text <> '') then
+  begin
+    edSearch.Text := '';
+    Key := 0;
+    Exit;
+  end;
   {$IFDEF IDEDLL}
   if Key = VK_ESCAPE then
   begin
@@ -6189,6 +6273,7 @@ begin
   Administration1.Enabled := ServerConnected;
   CountSpace1.Enabled := ServerConnected;
   mmiSearchmodules.Enabled := ServerConnected;
+  mmiEditSearchAllProjects.Enabled := ServerConnected; // v2026: o mesmo item no menu Edit
   Showdesertedmodules1.Enabled := ServerConnected;
   Deletedprojects1.Enabled := ServerConnected;
   acSynchronize.Enabled := ServerConnected;
@@ -6304,59 +6389,280 @@ end;
 
 //------------------------------------------------------------------------------
 
-procedure TVCSProjAdmin.edSearchKeyUp(Sender: TObject; var Key: Word;
+
+//------------------------------------------------------------------------------
+
+procedure TVCSProjAdmin.edSearchChange(Sender: TObject);
+begin
+  // v2026: qualquer caractere (digitos inclusive) dispara a pesquisa, com espera curta
+  SearchTimer.Enabled := False;
+  if Trim(edSearch.Text) = '' then
+  begin
+    SetSearchFeedback(True);
+    if bLVReady then
+      dfsStatusBar.Panels[0].Text := Format(JVCSRES_Selected58_37d, [elvModules.SelCount]);
+    Exit;
+  end;
+  // texto gravado pelo programa (nome do modulo atual apos atualizar a lista): nao pesquisa
+  if not edSearch.Focused then
+  begin
+    SetSearchFeedback(True);
+    Exit;
+  end;
+  SearchTimer.Enabled := True;
+end;
+
+//------------------------------------------------------------------------------
+// v2026: pesquisa ainda pendente (o usuario digitou e nao esperou): roda agora
+// o "melhor resultado". Devolve True se rodou.
+
+function TVCSProjAdmin.FlushModuleSearch: Boolean;
+begin
+  Result := SearchTimer.Enabled;
+  if Result then
+  begin
+    SearchTimer.Enabled := False;
+    ModuleSearch(0);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TVCSProjAdmin.edSearchKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  if (ssAlt in Shift) or (ssCtrl in Shift) then 
-    Exit;
-  if (Key = VK_DOWN) then
-    elvModules.SetFocus;
-  if not ((Key = VK_BACK) or
-    (Key = VK_DELETE) or
-    (Chr(Key) in ['a'..'z', 'A'..'Z', '.', '-', '_'])) then 
-    Exit;
-  SearchTimer.Enabled := True;
+  case Key of
+    VK_RETURN:
+      begin
+        if ssCtrl in Shift then
+        begin
+          SearchTimer.Enabled := False;
+          ModuleSearch(3);
+        end
+        else
+        // Enter logo depois de digitar = melhor resultado; os seguintes = proximo/anterior
+        if not FlushModuleSearch then
+        begin
+          if ssShift in Shift then
+            ModuleSearch(2)
+          else
+            ModuleSearch(1);
+        end;
+        Key := 0;
+      end;
+    VK_DOWN:
+      if (Shift = []) and (elvModules.Items.Count > 0) and elvModules.CanFocus then
+      begin
+        FlushModuleSearch;
+        elvModules.SetFocus;
+        Key := 0;
+      end;
+  end;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TVCSProjAdmin.edSearchKeyPress(Sender: TObject; var Key: Char);
+begin
+  // sem o "beep" do TEdit no Enter (#13), Ctrl+Enter (#10) e Esc (#27)
+  if CharInSet(Key, [#10, #13, #27]) then
+    Key := #0;
+end;
+
+//------------------------------------------------------------------------------
+
+procedure TVCSProjAdmin.edSearchExit(Sender: TObject);
+begin
+  // saiu do campo (clique na lista, Tab...): a pesquisa pendente nao roda mais, para nao
+  // desfazer a selecao que o usuario fizer na lista
+  SearchTimer.Enabled := False;
 end;
 
 //------------------------------------------------------------------------------
 
 procedure TVCSProjAdmin.SearchTimerTimer(Sender: TObject);
-var 
-  SearchLVItem: TListItem;
-  I: Integer;
 begin
   SearchTimer.Enabled := False;
-
-  if (elvModules.Items.Count = 0) then 
+  if not edSearch.Focused then
     Exit;
-  with elvModules do 
+  // lista sendo (re)montada: tenta de novo depois, para nao pesquisar numa lista parcial
+  if FIsInFillListView or FIsInacRefreshModuleList or not bLVReady then
   begin
-    elvModules.Selected := nil;
+    SearchTimer.Enabled := True;
+    Exit;
+  end;
+  ModuleSearch(0);
+end;
+
+//------------------------------------------------------------------------------
+// v2026: relevancia de um item para o texto pesquisado (ver JVCSModuleSearch).
+
+function TVCSProjAdmin.ModuleSearchRank(Item: TListItem; const S: string): Integer;
+var
+  Path: string;
+begin
+  Path := '';
+  if Item.SubItems.Count > sitPath then
+    Path := Item.SubItems[sitPath];
+  Result := JVCSModuleSearchRank(Item.Caption, Path, S);
+end;
+
+//------------------------------------------------------------------------------
+// v2026: pesquisa de modulos do campo Find.
+// Mode: 0 = melhor resultado (ao digitar), 1 = proximo, 2 = anterior, 3 = selecionar todos.
+
+procedure TVCSProjAdmin.ModuleSearch(Mode: Integer);
+var
+  S: string;
+  I, R, BestRank, Pick, Current, Count: Integer;
+  Matches: array of Integer;
+  Ranks: array of Integer;
+begin
+  S := AnsiLowerCase(Trim(edSearch.Text));
+  if S = '' then
+  begin
+    SetSearchFeedback(True);
+    Exit;
+  end;
+  if FIsInFillListView or FIsInacRefreshModuleList then
+    Exit;
+  with elvModules do
+  begin
+    Count := 0;
+    SetLength(Matches, Items.Count);
+    SetLength(Ranks, Items.Count);
     for I := 0 to Items.Count - 1 do
-      Items[I].Focused := False;
-    if edSearch.Text = '' then 
     begin
-      Selected := Items[0];
-      Items[0].Focused := True;
-      ShowSelectedLVItem;
+      R := ModuleSearchRank(Items[I], S);
+      if R > 0 then
+      begin
+        Matches[Count] := I;
+        Ranks[Count] := R;
+        Inc(Count);
+      end;
+    end;
+    if Count = 0 then
+    begin
+      SetSearchFeedback(False);
+      dfsStatusBar.Panels[0].Text := Format(JVCSRES_Find_37d_of_37d, [0, 0]);
+      // uma mensagem por texto (nao repete enquanto o texto nao muda)
+      if FSearchNotFoundText <> S then
+      begin
+        FSearchNotFoundText := S;
+        AddMessage(Format(JVCSRES_Search_for_3437s34_45_not_found, [edSearch.Text]), msclNormal);
+      end;
       Exit;
     end;
-    SearchLVItem :=
-      FindCaption(0, AnsiLowerCase(edSearch.Text), True, True, False);
-    if SearchLVItem <> nil then
+    FSearchNotFoundText := '';
+    SetSearchFeedback(True);
+
+    if Mode = 3 then
     begin
-      // Message Window
-      AddMessage(Format(JVCSRES_Search_for_3437s34_45_Success, [edSearch.Text]), msclNormal);
-      Selected := SearchLVItem;
-      SearchLVItem.Focused := True;
-      ShowSelectedLVItem;
+      Items.BeginUpdate;
+      try
+        Selected := nil;
+        for I := 0 to Count - 1 do
+          Items[Matches[I]].Selected := True;
+      finally
+        Items.EndUpdate;
+      end;
+      Items[Matches[0]].Focused := True;
+      Items[Matches[0]].MakeVisible(False);
+      dfsStatusBar.Panels[0].Text := Format(JVCSRES_Find_37d_matches_selected, [Count]);
+      Exit;
+    end;
+
+    Current := -1;
+    if ItemFocused <> nil then
+      Current := ItemFocused.Index
+    else
+    if Selected <> nil then
+      Current := Selected.Index;
+
+    Pick := 0;
+    case Mode of
+      1:
+        begin
+          // proximo depois do atual, dando a volta
+          Pick := 0;
+          for I := 0 to Count - 1 do
+            if Matches[I] > Current then
+            begin
+              Pick := I;
+              Break;
+            end;
+        end;
+      2:
+        begin
+          // anterior ao atual, dando a volta
+          Pick := Count - 1;
+          for I := Count - 1 downto 0 do
+            if Matches[I] < Current then
+            begin
+              Pick := I;
+              Break;
+            end;
+        end;
+    else
+      begin
+        // ao digitar: o mais relevante (igual > comeca o nome ou uma parte > contem), na ordem da lista
+        BestRank := 0;
+        for I := 0 to Count - 1 do
+          if Ranks[I] > BestRank then
+          begin
+            BestRank := Ranks[I];
+            Pick := I;
+          end;
+      end;
+    end;
+
+    Selected := nil;
+    for I := 0 to Items.Count - 1 do
+      Items[I].Focused := False;
+    Selected := Items[Matches[Pick]];
+    Items[Matches[Pick]].Focused := True;
+    Items[Matches[Pick]].MakeVisible(False);
+    // posicao na ordem da lista (a mesma que F3/Shift+F3 percorrem)
+    dfsStatusBar.Panels[0].Text := Format(JVCSRES_Find_37d_of_37d, [Pick + 1, Count]);
+  end;
+end;
+
+//------------------------------------------------------------------------------
+// v2026: fundo avermelhado no campo Find quando nada casa (claro e escuro).
+
+procedure TVCSProjAdmin.SetSearchFeedback(Found: Boolean);
+begin
+  FSearchNotFound := not Found;
+  if Found then
+  begin
+    edSearch.StyleElements := edSearch.StyleElements + [seClient, seFont];
+    edSearch.Color := clWindow;
+    edSearch.Font.Color := clWindowText;
+  end
+  else
+  begin
+    edSearch.StyleElements := edSearch.StyleElements - [seClient, seFont];
+    if JVCSUIIsDark then
+    begin
+      edSearch.Color := $002A2A6E;
+      edSearch.Font.Color := clWhite;
     end
     else
     begin
-      // Message Window
-      AddMessage(Format(JVCSRES_Search_for_3437s34_45_not_found, [edSearch.Text]), msclNormal);
+      edSearch.Color := $00C8C8FF;
+      edSearch.Font.Color := clBlack;
     end;
-  end; // with elvModules do begin
+  end;
+end;
+
+//------------------------------------------------------------------------------
+// v2026: troca de tema (VCL Style) com o campo Find avermelhado: refaz as cores no tema novo.
+
+procedure TVCSProjAdmin.CMStyleChanged(var Message: TMessage);
+begin
+  inherited;
+  if FSearchNotFound then
+    SetSearchFeedback(False);
 end;
 
 //------------------------------------------------------------------------------
@@ -9447,11 +9753,18 @@ end;
 
 procedure TVCSProjAdmin.mmiSearchmodulesClick(Sender: TObject);
 begin
+  SearchModulesDialog('');
+end;
+
+// v2026: AMask preenche o campo da pesquisa e ja pesquisa (menu de contexto da lista)
+procedure TVCSProjAdmin.SearchModulesDialog(const AMask: string);
+begin
   bStopRefresh := True;
   VCSSearchModules := TVCSSearchModules.Create(Application);
   try
     VCSSearchModules.Left := Left + 60;
     VCSSearchModules.Top := Top + 60;
+    VCSSearchModules.InitialMask := AMask;
     VCSSearchModules.ShowModal;
     {$IFNDEF IDEDLL}
     if VCSSearchModules.OpenProjectSelected then
@@ -12272,6 +12585,312 @@ begin
 
     ClipBoard.AsText := sModuleNames;
   end;
+end;
+
+//------------------------------------------------------------------------------
+// v2026: menu Edit - Find de modulos, filtro de projetos, copiar e selecionar.
+// Ctrl+C e Ctrl+A respeitam o foco: num campo de texto agem no texto; na lista
+// de modulos, nos modulos.
+
+procedure TVCSProjAdmin.FocusModuleSearch;
+begin
+  // campo na barra Module: se ela estiver oculta, mostra antes de focar
+  if not TBModule.Visible then
+  begin
+    TBModule.Visible := True;
+    mmiTBModule.Checked := True;
+  end;
+  if edSearch.CanFocus then
+  begin
+    edSearch.SetFocus;
+    edSearch.SelectAll;
+  end;
+end;
+
+procedure TVCSProjAdmin.FindModuleNext(APrevious: Boolean);
+begin
+  // sem texto, F3 vai ao campo Find (como nos editores)
+  if Trim(edSearch.Text) = '' then
+  begin
+    FocusModuleSearch;
+    Exit;
+  end;
+  if not FlushModuleSearch then
+    if APrevious then
+      ModuleSearch(2)
+    else
+      ModuleSearch(1);
+end;
+
+// Campo de texto com o foco, em qualquer janela do programa (inclusive as acopladas);
+// nil se o foco nao esta num texto. O edit interno de um combo editavel devolve o combo.
+function TVCSProjAdmin.FocusedTextControl: TWinControl;
+var
+  Wnd: HWND;
+  Ctl: TWinControl;
+begin
+  Result := nil;
+  Wnd := GetFocus;
+  if Wnd = 0 then
+    Exit;
+  Ctl := FindControl(Wnd);
+  if Ctl is TCustomEdit then
+    Result := Ctl
+  else
+  if Ctl = nil then
+  begin
+    Ctl := FindControl(GetParent(Wnd));
+    if Ctl is TCustomCombo then
+      Result := Ctl;
+  end;
+end;
+
+function TVCSProjAdmin.IsSearchField(AControl: TWinControl): Boolean;
+begin
+  Result := Assigned(AControl) and (AControl = edSearch);
+  {$IFNDEF IDEDLL}
+  if not Result and Assigned(AControl) and Assigned(JVCSDockProjectTree) then
+    Result := AControl = JVCSDockProjectTree.edFilterText;
+  {$ENDIF ~IDEDLL}
+end;
+
+function TVCSProjAdmin.IsShortCut(var Message: TWMKey): Boolean;
+var
+  Ctl: TWinControl;
+  I: Integer;
+  SC: TShortCut;
+begin
+  // v2026: com uma janela modal na frente (ex.: Server Login, onde Ctrl+A e Add/Update Identity),
+  // nada do menu Edit; a modal trata as proprias teclas
+  if Assigned(Screen.ActiveForm) and (Screen.ActiveForm <> Self) and
+    (fsModal in Screen.ActiveForm.FormState) then
+  begin
+    Result := inherited IsShortCut(Message);
+    Exit;
+  end;
+  // v2026: com o foco dentro de um frame (ex.: aba Line History, que tem Ctrl+F/F3 proprios),
+  // as acoes do frame valem antes do menu principal (o menu Edit tambem usa Ctrl+F/F3)
+  Ctl := FindControl(GetFocus);
+  while Assigned(Ctl) and (Ctl <> Self) do
+  begin
+    if Ctl is TCustomFrame then
+      for I := 0 to Ctl.ComponentCount - 1 do
+        if (Ctl.Components[I] is TCustomActionList) and
+          TCustomActionList(Ctl.Components[I]).IsShortCut(Message) then
+        begin
+          Result := True;
+          Exit;
+        end;
+    Ctl := Ctl.Parent;
+  end;
+  // v2026: o MainMenu1 aparece pelo MenuBar1 (TJvToolBar.Menu) e nao e o Menu do form, entao
+  // a VCL nunca despacha os atalhos dos itens de menu (so os das TActionList). Os do menu Edit
+  // sao despachados aqui; os demais itens continuam como sempre foram (sem atalho efetivo).
+  SC := ShortCutFromMessage(Message);
+  if SC <> 0 then
+    for I := 0 to mmiEdit.Count - 1 do
+      if (mmiEdit[I].ShortCut = SC) and mmiEdit[I].Visible and mmiEdit[I].Enabled then
+      begin
+        mmiEdit[I].Click;
+        Result := True;
+        Exit;
+      end;
+  // v2026: Esc num campo de pesquisa (Find, filtro de projetos): com texto limpa o campo,
+  // vazio volta para a lista de modulos.
+  if (Message.CharCode = VK_ESCAPE) and (KeyDataToShiftState(Message.KeyData) = []) then
+  begin
+    Ctl := FocusedTextControl;
+    if IsSearchField(Ctl) then
+    begin
+      // com texto: limpa; ja vazio: volta para a lista ao lado (modulos ou arvore de projetos)
+      if TCustomEdit(Ctl).Text <> '' then
+        TCustomEdit(Ctl).Text := ''
+      else
+      if Ctl = edSearch then
+      begin
+        if elvModules.CanFocus then
+          elvModules.SetFocus;
+      end
+      {$IFNDEF IDEDLL}
+      else
+      if Assigned(JVCSDockProjectTree) and JVCSDockProjectTree.VSTHierarchy.CanFocus then
+        JVCSDockProjectTree.VSTHierarchy.SetFocus
+      {$ENDIF ~IDEDLL}
+      ;
+      Result := True;
+      Exit;
+    end;
+  end;
+  Result := inherited IsShortCut(Message);
+end;
+
+// Modulos selecionados, um por linha (com a pasta, se AWithPath).
+function TVCSProjAdmin.SelectedModulesText(AWithPath: Boolean): string;
+var
+  I: Integer;
+  Lines: TStringList;
+begin
+  Lines := TStringList.Create;
+  try
+    for I := 0 to elvModules.Items.Count - 1 do
+      if elvModules.Items[I].Selected then
+        if AWithPath then
+          Lines.Add(elvModules.Items[I].SubItems[sitPath] + elvModules.Items[I].Caption)
+        else
+          Lines.Add(elvModules.Items[I].Caption);
+    Result := TrimRight(Lines.Text);
+  finally
+    Lines.Free;
+  end;
+end;
+
+procedure TVCSProjAdmin.mmiEditClick(Sender: TObject);
+begin
+  // so itens sem atalho mudam de estado aqui: um item desabilitado nao recebe o atalho depois
+  mmiEditSelectMatches.Enabled := Trim(edSearch.Text) <> '';
+end;
+
+procedure TVCSProjAdmin.mmiEditFindClick(Sender: TObject);
+begin
+  FocusModuleSearch;
+end;
+
+procedure TVCSProjAdmin.mmiEditFindNextClick(Sender: TObject);
+begin
+  FindModuleNext(False);
+end;
+
+procedure TVCSProjAdmin.mmiEditFindPreviousClick(Sender: TObject);
+begin
+  FindModuleNext(True);
+end;
+
+procedure TVCSProjAdmin.mmiEditSelectMatchesClick(Sender: TObject);
+begin
+  if Trim(edSearch.Text) = '' then
+  begin
+    FocusModuleSearch;
+    Exit;
+  end;
+  FlushModuleSearch;
+  ModuleSearch(3);
+end;
+
+procedure TVCSProjAdmin.mmiEditFilterProjectsClick(Sender: TObject);
+begin
+  {$IFNDEF IDEDLL}
+  // a arvore de projetos aparece se estiver oculta (e fica lembrada, como em View)
+  if not acProjectTree.Checked then
+    acProjectTreeExecute(Self);
+  if Assigned(JVCSDockProjectTree) then
+    JVCSDockProjectTree.FocusFilter;
+  {$ENDIF ~IDEDLL}
+end;
+
+procedure TVCSProjAdmin.mmiEditCopyClick(Sender: TObject);
+var
+  Wnd: HWND;
+  S: string;
+begin
+  Wnd := GetFocus;
+  if FocusedTextControl <> nil then
+  begin
+    SendMessage(Wnd, WM_COPY, 0, 0);
+    Exit;
+  end;
+  S := '';
+  if FindControl(Wnd) = elvModules then
+    S := SelectedModulesText(False)
+  {$IFNDEF IDEDLL}
+  else
+  if Assigned(JVCSDockProjectTree) and (FindControl(Wnd) = JVCSDockProjectTree.VSTHierarchy) then
+    S := JVCSDockProjectTree.FocusedItemName
+  {$ENDIF ~IDEDLL}
+  else
+  begin
+    // outra lista/janela: o que ela souber copiar
+    if Wnd <> 0 then
+      SendMessage(Wnd, WM_COPY, 0, 0);
+    Exit;
+  end;
+  if S <> '' then
+    Clipboard.AsText := S
+  else
+    MessageBeep(MB_ICONASTERISK);
+end;
+
+procedure TVCSProjAdmin.mmiEditCopyPathClick(Sender: TObject);
+begin
+  if elvModules.SelCount = 0 then
+  begin
+    MessageBeep(MB_ICONASTERISK);
+    Exit;
+  end;
+  Clipboard.AsText := SelectedModulesText(True);
+end;
+
+procedure TVCSProjAdmin.mmiEditSelectAllClick(Sender: TObject);
+var
+  Ctl: TWinControl;
+begin
+  Ctl := FocusedTextControl;
+  if Ctl is TCustomEdit then
+    TCustomEdit(Ctl).SelectAll
+  else
+  if Ctl is TCustomCombo then
+    TCustomCombo(Ctl).SelectAll
+  else
+    acSelectAllClick(Sender);
+end;
+
+//------------------------------------------------------------------------------
+// v2026: menu de contexto da lista de modulos (Copy Full Path, Copy Folder,
+// Search in All Projects)
+
+procedure TVCSProjAdmin.PopupMenu1Popup(Sender: TObject);
+begin
+  pmiCopyFullPath.Enabled := elvModules.SelCount > 0;
+  pmiCopyFolder.Enabled := pmiCopyFullPath.Enabled;
+  pmiOpenInExplorer.Enabled := Assigned(elvModules.Selected);
+  // um modulo, com servidor (o mesmo estado de Server > Search Modules)
+  pmiSearchInAllProjects.Enabled := (elvModules.SelCount = 1) and mmiSearchmodules.Enabled;
+end;
+
+procedure TVCSProjAdmin.pmiCopyFolderClick(Sender: TObject);
+var
+  I: Integer;
+  Folders: TStringList;
+begin
+  if elvModules.SelCount = 0 then
+  begin
+    MessageBeep(MB_ICONASTERISK);
+    Exit;
+  end;
+  Folders := TStringList.Create;
+  try
+    // cada pasta uma vez, na ordem da lista
+    for I := 0 to elvModules.Items.Count - 1 do
+      if elvModules.Items[I].Selected and
+        (Folders.IndexOf(elvModules.Items[I].SubItems[sitPath]) < 0) then
+        Folders.Add(elvModules.Items[I].SubItems[sitPath]);
+    Clipboard.AsText := TrimRight(Folders.Text);
+  finally
+    Folders.Free;
+  end;
+end;
+
+procedure TVCSProjAdmin.pmiSearchInAllProjectsClick(Sender: TObject);
+begin
+  if elvModules.SelCount <> 1 then
+    Exit;
+  SearchModulesDialog(elvModules.Selected.Caption);
+end;
+
+// Explorer na pasta do modulo focado, com o arquivo selecionado (o mesmo de Open Parent Folder, F6)
+procedure TVCSProjAdmin.pmiOpenInExplorerClick(Sender: TObject);
+begin
+  if Assigned(elvModules.Selected) then
+    acOpenParentFolderExecute(Sender);
 end;
 
 end.

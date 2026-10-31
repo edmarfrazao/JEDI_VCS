@@ -8,8 +8,32 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 ## [Não publicado]
 
 ### Adicionado
+- Cliente (standalone e Project Manager da IDE), **menu Edit** novo: Find Module (`Ctrl+F`), Find Next/Previous
+  (`F3`/`Shift+F3`), Select All Matches, Filter Projects (`Ctrl+Shift+P`, só no standalone), Search Modules in
+  All Projects (`Ctrl+Shift+F`), Copy (`Ctrl+C`), Copy Full Path (`Ctrl+Shift+C`) e Select All (`Ctrl+A`).
+  `Ctrl+C` e `Ctrl+A` agem no texto quando o foco está num campo. Detalhes: `doc/pt/manual/11-Pesquisa-e-Menu-Edit.md`.
+- Menu de contexto da lista de módulos: **Copy Full Path**, **Copy Path** (pasta), **Open in Explorer** e **Search in All Projects...** (abre
+  Search Modules já pesquisando o nome do módulo).
+- Campo **Find** dos módulos: texto contido, máscara com `*` e `?`, pasta com `\`, relevância (nome igual >
+  começo do nome ou de uma parte > contém), `Enter`/`F3` próximo, `Shift+Enter`/`Shift+F3` anterior,
+  `Ctrl+Enter` seleciona todos, `Esc` limpa, contador na barra de status. Espera padrão de 300 ms (100 a 5000).
+- Filtro da **árvore de projetos** com a mesma regra do Find (texto contido, várias palavras, `*` e `?`), trecho
+  em negrito, grupos abertos durante o filtro, `Enter` abre o projeto mais parecido, seta para baixo vai à árvore
+  sem abrir, `Esc` limpa.
+- Wrapper da IA (S0003): `id:<n> -Project p` no lugar do arquivo em `status`, `checkout`, `checkin`,
+  `undocheckout`, `diff`, `history` e afins.
 - Links para o **jvcs2git** (https://github.com/edmarfrazao/jvcs2git), exportador dos projetos para Git com todo o histórico, no README (en/pt), nos índices de `doc/pt` e `doc/en` e nas skills `jedi-vcs` (pt/en).
 
+### Corrigido
+- Campo **Find**: `01` (ou qualquer texto começado por dígito) não pesquisava; a pesquisa agora roda em qualquer
+  caractere.
+- Filtro da árvore de projetos: aceitava só o nome inteiro (`01` não achava `exemplo01.dpr`) e diferenciava
+  maiúsculas no nome do projeto.
+- `Esc` num campo de pesquisa limpa o campo; com o campo vazio, volta para a lista.
+- Wrapper da IA (S0003): módulos cujo nome o console corta em 30 caracteres (`Estrutura.Firma.Sesiag.NotaFiscal...`)
+  eram recusados como homônimos; agora o wrapper desempata pelo nome completo. Arquivo não versionado com o mesmo
+  prefixo deixou de ser tomado pelo módulo vizinho. Módulo `.pas` + `.dfm` de nome longo com pasta cortada faz
+  checkout verificado. Teste novo `tests/ia/teste-s0003.ps1`.
 ## [Beta 6, build 2063] — 2026-10-19
 
 ### Corrigido (build 2063)

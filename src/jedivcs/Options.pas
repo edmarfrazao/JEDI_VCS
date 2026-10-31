@@ -1024,7 +1024,7 @@ begin
     cbxChkOutDate.ItemIndex :=
       jvcsReadInteger(sBaseRegistryKey + crbOptions, 'ChkOutDate', 0);
     speSearchTime.Value :=
-      jvcsReadInteger(sBaseRegistryKey + crbOptions, 'SearchTime', 750);
+      jvcsReadInteger(sBaseRegistryKey + crbOptions, 'SearchTime', 300);
     cbDisableGraphDC.Checked :=
       jvcsReadBool(sBaseRegistryKey + crbOptions, 'DisableCtrl', False);
     cbUseOnlyShellExt.Checked :=
@@ -1709,7 +1709,7 @@ var
 begin
   Result := False;
 
-  if (speSearchTime.Value < 500) or (speSearchTime.Value > 5000) then
+  if (speSearchTime.Value < 100) or (speSearchTime.Value > 5000) then
   begin
     lbSelectSheet.ItemIndex := cspInterface;
     lbSelectSheetClick(Self);
@@ -1717,7 +1717,7 @@ begin
     speSearchTime.SelectAll;
     BeepIfSet;
     WarnMessageBox( Format( JVCSRES_Integer_between_6037d62_and_6037d62_expected46
-                          , [500, 5000]
+                          , [100, 5000]
                           )
                   );
     Exit;

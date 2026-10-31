@@ -117,8 +117,11 @@ object VCSProjAdmin: TVCSProjAdmin
         AutoSize = False
         CharCase = ecLowerCase
         TabOrder = 0
+        OnChange = edSearchChange
         OnClick = edSearchClick
-        OnKeyUp = edSearchKeyUp
+        OnExit = edSearchExit
+        OnKeyDown = edSearchKeyDown
+        OnKeyPress = edSearchKeyPress
       end
       object ToolButton1: TToolButton
         Left = 115
@@ -635,6 +638,7 @@ object VCSProjAdmin: TVCSProjAdmin
   object PopupMenu1: TPopupMenu
     AutoHotkeys = maManual
     AutoLineReduction = maManual
+    OnPopup = PopupMenu1Popup
     Left = 8
     Top = 78
     object miOpenFile: TMenuItem
@@ -700,6 +704,22 @@ object VCSProjAdmin: TVCSProjAdmin
     object Copymodulenametoclipboard1: TMenuItem
       Action = acCopyModulenameClipboard
     end
+    object pmiCopyFullPath: TMenuItem
+      Caption = 'Copy Full &Path'
+      Hint = 'Copy path and name of the selected modules, one per line'
+      ShortCut = 24643
+      OnClick = mmiEditCopyPathClick
+    end
+    object pmiCopyFolder: TMenuItem
+      Caption = 'Copy Pat&h'
+      Hint = 'Copy the path (folder) of the selected modules, each folder once'
+      OnClick = pmiCopyFolderClick
+    end
+    object pmiOpenInExplorer: TMenuItem
+      Caption = 'Open in E&xplorer'
+      Hint = 'Open the folder in Windows Explorer with the module selected'
+      OnClick = pmiOpenInExplorerClick
+    end
     object N15: TMenuItem
       Tag = 9000
       Caption = '-'
@@ -708,6 +728,12 @@ object VCSProjAdmin: TVCSProjAdmin
       Tag = 12000
       Action = acShowSharedBy
       Caption = 'Show shared &by...'
+    end
+    object pmiSearchInAllProjects: TMenuItem
+      Tag = 12000
+      Caption = 'Search in All Pro&jects...'
+      Hint = 'Search this module name in every project of the server'
+      OnClick = pmiSearchInAllProjectsClick
     end
     object N6: TMenuItem
       Tag = 12000
@@ -1319,6 +1345,73 @@ object VCSProjAdmin: TVCSProjAdmin
         Tag = 9000
         Action = acFormClose
         ShortCut = 27
+      end
+    end
+    object mmiEdit: TMenuItem
+      Caption = '&Edit'
+      OnClick = mmiEditClick
+      object mmiEditFind: TMenuItem
+        Caption = '&Find Module'
+        Hint = 'Find a module of the current project (Find field)'
+        ShortCut = 16454
+        OnClick = mmiEditFindClick
+      end
+      object mmiEditFindNext: TMenuItem
+        Caption = 'Find &Next'
+        Hint = 'Next module that matches the Find text'
+        ShortCut = 114
+        OnClick = mmiEditFindNextClick
+      end
+      object mmiEditFindPrevious: TMenuItem
+        Caption = 'Find P&revious'
+        Hint = 'Previous module that matches the Find text'
+        ShortCut = 8306
+        OnClick = mmiEditFindPreviousClick
+      end
+      object mmiEditSelectMatches: TMenuItem
+        Caption = 'Select All &Matches'
+        Hint = 'Select every module that matches the Find text (Ctrl+Enter in the Find field)'
+        OnClick = mmiEditSelectMatchesClick
+      end
+      object mmiEditN1: TMenuItem
+        Caption = '-'
+      end
+      object mmiEditFilterProjects: TMenuItem
+        Caption = 'Filter Pro&jects'
+        Hint = 'Filter the project tree'
+        ShortCut = 24656
+        OnClick = mmiEditFilterProjectsClick
+      end
+      object mmiEditSearchAllProjects: TMenuItem
+        Tag = 12000
+        Caption = '&Search Modules in All Projects...'
+        Hint = 'Search modules in the whole archive'
+        ShortCut = 24646
+        OnClick = mmiSearchmodulesClick
+      end
+      object mmiEditN2: TMenuItem
+        Caption = '-'
+      end
+      object mmiEditCopy: TMenuItem
+        Caption = '&Copy'
+        Hint = 'Copy the selected text, or the names of the selected modules'
+        ShortCut = 16451
+        OnClick = mmiEditCopyClick
+      end
+      object mmiEditCopyPath: TMenuItem
+        Caption = 'Copy Full &Path'
+        Hint = 'Copy path and name of the selected modules'
+        ShortCut = 24643
+        OnClick = mmiEditCopyPathClick
+      end
+      object mmiEditN3: TMenuItem
+        Caption = '-'
+      end
+      object mmiEditSelectAll: TMenuItem
+        Caption = 'Select &All'
+        Hint = 'Select all text in the focused field, or all modules'
+        ShortCut = 16449
+        OnClick = mmiEditSelectAllClick
       end
     end
     object Branch1: TMenuItem
@@ -2362,7 +2455,6 @@ object VCSProjAdmin: TVCSProjAdmin
     end
     object acSelectAll: TAction
       Caption = '&Select All'
-      ShortCut = 16449
       OnExecute = acSelectAllClick
     end
     object acCopyModulenameClipboard: TAction
@@ -4491,7 +4583,7 @@ object VCSProjAdmin: TVCSProjAdmin
   end
   object SearchTimer: TTimer
     Enabled = False
-    Interval = 750
+    Interval = 300
     OnTimer = SearchTimerTimer
     Left = 136
     Top = 110

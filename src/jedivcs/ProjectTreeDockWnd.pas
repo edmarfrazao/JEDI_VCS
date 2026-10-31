@@ -124,6 +124,9 @@ type
       Node: PVirtualNode);
     procedure VSTHierarchyCollapsed(Sender: TBaseVirtualTree;
       Node: PVirtualNode);
+    procedure edFilterTextKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure edFilterTextKeyPress(Sender: TObject; var Key: Char);
   private
     { Private declarations }
     OpenProjectBusy: Boolean;
@@ -149,9 +152,14 @@ type
     procedure ThreadFillTreeView(AThreadJob: TJVCSThreadJob);
     procedure UpdateVST(ASetContainer: Boolean = False; AContainer: TProjectTreeContainer = nil);
     procedure VCLThreadSyncProc;
+    function FirstProjectNode(ABestMatch: Boolean): PVirtualNode;
+    procedure OpenTreeProject(AProject: TProjectTreeProject);
+    procedure SelectNodeWithoutOpening(ANode: PVirtualNode);
   public
     { Public declarations }
     procedure SimpleRefresh(ARefreshType: TJVCSRefreshType);
+    procedure FocusFilter;
+    function FocusedItemName: string;
     property ProjectManager: IJVCSProjectManager read FProjectManager write FProjectManager;
   end;
 
@@ -165,7 +173,7 @@ uses
   JvGnugettext,
   {$ENDIF LANGUAGE}
   DBModule, SelectProjectID, VCSBase, JVCSMruList, JVCSClientObj, JVCSGUIClientResources,
-  JVCSTypes, ConfigStorage, JvJCLUtils, JVCSUITheme;
+  JVCSTypes, ConfigStorage, JvJCLUtils, JVCSUITheme, JVCSModuleSearch;
 
 {$R *.dfm}
 
@@ -346,7 +354,10 @@ begin
     tvHierachy.Visible := True;
   end
   else
+  begin
     cboxFilterKind.ItemIndex := 1;
+    edFilterText.Hint := JVCSRES_Project_filter_hint;
+  end;
 end;
 
 procedure TJVCSDockProjectTree.FormShow(Sender: TObject);
@@ -615,10 +626,6 @@ procedure TJVCSDockProjectTree.VSTHierarchyFocusChanged(
   Sender: TBaseVirtualTree; Node: PVirtualNode; Column: TColumnIndex);
 var
   Data: ^TVSTTreeItem;
-  SelectedProjectID: Integer;
-  SelectedProjectName: string;
-  RecentProjectList: TJVCSMruList;
-  Project: TProjectTreeProject;
 begin
   inherited;
   // which one is selected, set as active project when not Open Project
@@ -626,22 +633,170 @@ begin
   begin
     Data := Sender.GetNodeData(Node);
     if Data^.LinkedItem is TProjectTreeProject then
-    begin
-      Project := TProjectTreeProject(Data^.LinkedItem);
-      SelectedProjectID := Project.ProjectData.ProjectID;
-      SelectedProjectName := Project.ProjectName;
-      RecentProjectList := TJVCSMruList.CreateEx(sBaseRegistryKey + crbMRU + '22');
-      RecentProjectList.AddString(SelectedProjectName);
-      RecentProjectList.Free;
-      DoOpenProject(SelectedProjectID, SelectedProjectName);
-    end;
+      OpenTreeProject(TProjectTreeProject(Data^.LinkedItem));
   end;
+end;
+
+// Abre o projeto da arvore e o grava na lista de recentes (clique, setas, Enter no filtro).
+procedure TJVCSDockProjectTree.OpenTreeProject(AProject: TProjectTreeProject);
+var
+  RecentProjectList: TJVCSMruList;
+begin
+  RecentProjectList := TJVCSMruList.CreateEx(sBaseRegistryKey + crbMRU + '22');
+  try
+    RecentProjectList.AddString(AProject.ProjectName);
+  finally
+    RecentProjectList.Free;
+  end;
+  DoOpenProject(AProject.ProjectData.ProjectID, AProject.ProjectName);
 end;
 
 procedure TJVCSDockProjectTree.FilterChange(Sender: TObject);
 begin
   inherited;
   UpdateVST;
+end;
+
+//------------------------------------------------------------------------------
+// v2026: filtro da arvore de projetos (mesma regra do campo Find dos modulos).
+// No campo: Enter abre o projeto mais parecido, seta para baixo vai para a lista
+// (sem abrir), Esc limpa o filtro.
+
+// Primeiro projeto visivel na arvore; com ABestMatch, o de maior relevancia para o
+// texto do filtro (nome igual > comeca o nome ou uma parte > contem), na ordem da arvore.
+function TJVCSDockProjectTree.FirstProjectNode(ABestMatch: Boolean): PVirtualNode;
+var
+  Node: PVirtualNode;
+  Data: ^TVSTTreeItem;
+  Rank, BestRank: Integer;
+begin
+  Result := nil;
+  BestRank := -1;
+  Node := VSTHierarchy.GetFirst;
+  while Assigned(Node) do
+  begin
+    Data := VSTHierarchy.GetNodeData(Node);
+    if Assigned(Data) and Assigned(Data^) and (Data^.LinkedItem is TProjectTreeProject) then
+    begin
+      if not ABestMatch then
+        Exit(Node);
+      Rank := JVCSModuleSearchRank(TProjectTreeProject(Data^.LinkedItem).ProjectName, '', edFilterText.Text);
+      if Rank > BestRank then
+      begin
+        BestRank := Rank;
+        Result := Node;
+        if Rank = msrExact then
+          Break;
+      end;
+    end;
+    Node := VSTHierarchy.GetNext(Node);
+  end;
+end;
+
+procedure TJVCSDockProjectTree.SelectNodeWithoutOpening(ANode: PVirtualNode);
+begin
+  if not Assigned(ANode) then
+    Exit;
+  FInFocusActiveProject := True;
+  try
+    VSTHierarchy.ClearSelection;
+    VSTHierarchy.FocusedNode := ANode;
+    VSTHierarchy.Selected[ANode] := True;
+    VSTHierarchy.ScrollIntoView(ANode, False);
+  finally
+    FInFocusActiveProject := False;
+  end;
+end;
+
+procedure TJVCSDockProjectTree.FocusFilter;
+begin
+  if FOldTree then
+    Exit;
+  if not pnlFilter.Visible then
+    pnlFilter.Visible := True;
+  if edFilterText.CanFocus then
+  begin
+    edFilterText.SetFocus;
+    edFilterText.SelectAll;
+  end;
+end;
+
+// Nome do projeto ou grupo focado na arvore (Edit > Copy), sem o negrito do filtro.
+function TJVCSDockProjectTree.FocusedItemName: string;
+var
+  Data: ^TVSTTreeItem;
+begin
+  Result := '';
+  if FOldTree or not Assigned(VSTHierarchy.FocusedNode) then
+    Exit;
+  Data := VSTHierarchy.GetNodeData(VSTHierarchy.FocusedNode);
+  if not (Assigned(Data) and Assigned(Data^)) then
+    Exit;
+  if Data^.LinkedItem is TProjectTreeProject then
+    Result := TProjectTreeProject(Data^.LinkedItem).ProjectName
+  else
+  if Data^.LinkedItem is TProjectTreeGroup then
+    Result := TProjectTreeGroup(Data^.LinkedItem).GroupName;
+end;
+
+procedure TJVCSDockProjectTree.edFilterTextKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+var
+  Node: PVirtualNode;
+  Data: ^TVSTTreeItem;
+  Project: TProjectTreeProject;
+begin
+  if Shift <> [] then
+    Exit;
+  case Key of
+    VK_RETURN:
+      begin
+        Key := 0;
+        if Trim(edFilterText.Text) = '' then
+          Exit;
+        Node := FirstProjectNode(True);
+        if not Assigned(Node) then
+        begin
+          MessageBeep(MB_ICONASTERISK);
+          Exit;
+        end;
+        SelectNodeWithoutOpening(Node);
+        Data := VSTHierarchy.GetNodeData(Node);
+        Project := TProjectTreeProject(Data^.LinkedItem);
+        // o projeto ja aberto nao e fechado e reaberto
+        if Project.ProjectData.ProjectID <> ServerProjectID then
+          OpenTreeProject(Project);
+      end;
+    VK_DOWN:
+      begin
+        Key := 0;
+        // com filtro: o projeto mais parecido; sem filtro: o primeiro item (grupo ou projeto)
+        if Trim(edFilterText.Text) <> '' then
+          Node := FirstProjectNode(True)
+        else
+          Node := nil;
+        if not Assigned(Node) then
+          Node := VSTHierarchy.GetFirstVisible;
+        if Assigned(Node) and VSTHierarchy.CanFocus then
+        begin
+          VSTHierarchy.SetFocus;
+          SelectNodeWithoutOpening(Node);
+        end;
+      end;
+    VK_ESCAPE:
+      if edFilterText.Text <> '' then
+      begin
+        Key := 0;
+        edFilterText.Text := '';
+      end;
+  end;
+end;
+
+procedure TJVCSDockProjectTree.edFilterTextKeyPress(Sender: TObject; var Key: Char);
+begin
+  // sem o "beep" do TEdit no Enter e no Esc
+  if CharInSet(Key, [#13, #27]) then
+    Key := #0;
 end;
 
 procedure TJVCSDockProjectTree.VSTHierarchyDrawNode(

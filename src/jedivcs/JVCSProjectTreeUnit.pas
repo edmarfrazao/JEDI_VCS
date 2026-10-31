@@ -152,6 +152,7 @@ type
     FSelectedGroupID: Integer;
     FSelectedProjectID: Integer;
     FSelectedItemIsProject: Boolean;
+    FFilterActive: Boolean;             // v2026: a arvore atual foi montada com filtro
     procedure SetProjectTreeContainer(AValue: TProjectTreeContainer);
   public
     constructor Create;
@@ -240,7 +241,7 @@ type
 implementation
 
 uses
-  JVCSClientObj, JVCSTypes, JVCSGUIClientResources;
+  JVCSClientObj, JVCSTypes, JVCSGUIClientResources, JVCSModuleSearch;
 
 constructor TProjectTreeProjectData.Create(AProjectID: Integer; AProjectName: string; ADeleted: Boolean);
 begin
@@ -645,10 +646,8 @@ begin
     Result := True
   else
   begin
-    if ACaseInSensitive then
-      Result := StrMatches(UpperCase(AFilter), UpperCase(AGroup.GroupName), 1, AOutputStr)
-    else
-      Result := StrMatches(AFilter, AGroup.GroupName, 1, AOutputStr);
+    // v2026: mesma regra do campo Find (contem, palavras, * e ?), sempre sem diferenciar maiusculas
+    Result := JVCSFilterMatch(AGroup.GroupName, AFilter, AOutputStr);
     if not Result then
       for I := 0 to Pred(AGroup.GetCount) do
       begin
@@ -678,10 +677,7 @@ begin
     if not Result then
       for I := 0 to Pred(AGroup.ProjectCount) do
       begin
-        if ACaseInSensitive then
-          Result := StrMatches(UpperCase(AFilter), UpperCase(AGroup.Projects[I].ProjectName), 1, S)
-        else
-          Result := StrMatches(AFilter, AGroup.Projects[I].ProjectName, 1, S);
+        Result := JVCSFilterMatch(AGroup.Projects[I].ProjectName, AFilter, S);
         if Result then
           Break;
       end;
@@ -689,6 +685,8 @@ begin
 end;
 
 procedure TVSTContainer.FilterItems(ACaseInSensitive: Boolean; const AGroupFilter: string = ''; AProjectFilter: string = ''; AOrFilter: Boolean = False);
+var
+  FilterActive: Boolean;
 
   function EncodeText(const ATextStr, AFoundStr: string): string;
   var
@@ -761,12 +759,13 @@ procedure TVSTContainer.FilterItems(ACaseInSensitive: Boolean; const AGroupFilte
           TempTreeItem.Text := EncodeText(ATreeGroup.GroupItems[I].GroupName, S)
         else
           TempTreeItem.Text := ATreeGroup.GroupItems[I].GroupName;
-        TempTreeItem.Expanded := FOpenGroups.IndexOf(ATreeGroup.GroupItems[I].GroupID) <> -1;
+        // v2026: com filtro, o grupo abre para mostrar o que foi encontrado
+        TempTreeItem.Expanded := FilterActive or (FOpenGroups.IndexOf(ATreeGroup.GroupItems[I].GroupID) <> -1);
         AddItems(TempTreeItem, ATreeGroup.GroupItems[I]);
       end;
     end;
     for I := 0 to Pred(ATreeGroup.ProjectCount) do
-      if (AProjectFilter = '') or (StrMatches(AProjectFilter, ATreeGroup.Projects[I].ProjectName, 1, S)) then
+      if (AProjectFilter = '') or JVCSFilterMatch(ATreeGroup.Projects[I].ProjectName, AProjectFilter, S) then
       begin
         TempTreeItem := ATreeItem.Add;
         TempTreeItem.LinkedItem := ATreeGroup.Projects[I];
@@ -780,7 +779,11 @@ procedure TVSTContainer.FilterItems(ACaseInSensitive: Boolean; const AGroupFilte
   end;
 
 begin
-  SaveExpandedGroups(FRootTreeItem);
+  FilterActive := (Trim(AGroupFilter) <> '') or (Trim(AProjectFilter) <> '');
+  // grupos abertos pelo usuario: so da arvore sem filtro (os abertos pelo filtro nao ficam gravados)
+  if not FFilterActive then
+    SaveExpandedGroups(FRootTreeItem);
+  FFilterActive := FilterActive;
   FRootTreeItem.Clear;
   AddItems(FRootTreeItem, FProjectTreeContainer.RootTreeItem);
 end;
@@ -946,7 +949,9 @@ procedure TVSTContainer.SetProjectTreeContainer(AValue: TProjectTreeContainer);
   end;
 
 begin
-  SaveExpandedGroups(FRootTreeItem);
+  // v2026: com filtro ativo os grupos foram abertos pelo filtro; nao grava (como em FilterItems)
+  if not FFilterActive then
+    SaveExpandedGroups(FRootTreeItem);
   FRootTreeItem.Clear;
   FProjectTreeContainer.Assign(AValue);
   AddItems(FRootTreeItem, FProjectTreeContainer.RootTreeItem);
