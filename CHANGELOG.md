@@ -7,6 +7,10 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+## [Beta 6, build 2065] — 2026-10-31
+
+Recompilação de correção do Beta 6, sobre o build 2063. O build 2064 foi interno e não foi publicado.
+
 ### Adicionado
 - Cliente (standalone e Project Manager da IDE), **menu Edit** novo: Find Module (`Ctrl+F`), Find Next/Previous
   (`F3`/`Shift+F3`), Select All Matches, Filter Projects (`Ctrl+Shift+P`, só no standalone), Search Modules in

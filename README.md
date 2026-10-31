@@ -49,7 +49,7 @@ The server itself is not ported and does not need any change.
 
 | Item | Status |
 |---|---|
-| Version | **2.5 Beta 2026** (`2.5.0.2026`), sixth public beta, **build 2063** (`2.5.0.2063`, tag `v2.5.0.2026-beta6-build2063`); Delphi 7 to 13 supported |
+| Version | **2.5 Beta 2026** (`2.5.0.2026`), sixth public beta, **build 2065** (`2.5.0.2065`, tag `v2.5.0.2026-beta6-build2065`); Delphi 7 to 13 supported |
 | Delphi | tested on **Delphi 11, 12 and 13** (32-bit IDE) |
 | Platform | Win32 (runs on Windows x64 and ARM64 through emulation) |
 | Server | JEDI VCS **2.5 Beta 3** (Firebird), not ported, unchanged |
@@ -58,7 +58,7 @@ This is a **beta**. Use it with a test server, or back up your database before y
 
 ## Download
 
-Download the installer of the [latest release](https://github.com/edmarfrazao/JEDI_VCS/releases/latest) (today `JediVCS-2.5.0-Beta6-build2063-Setup.exe`;
+Download the installer of the [latest release](https://github.com/edmarfrazao/JEDI_VCS/releases/latest) (today `JediVCS-2.5.0-Beta6-build2065-Setup.exe`;
 older betas are on the [Releases](https://github.com/edmarfrazao/JEDI_VCS/releases) page). Each release page and each
 [news page](news/en/README.md) shows the SHA-256 of the installer; check it before you install.
 
@@ -116,7 +116,7 @@ VirtualTreeView are compiled into the core DLL.
 
 1. Close Delphi.
 2. Download the installer of the [latest release](https://github.com/edmarfrazao/JEDI_VCS/releases/latest)
-   (`JediVCS-2.5.0-Beta6-build2063-Setup.exe`) and run it **from Explorer, as your own
+   (`JediVCS-2.5.0-Beta6-build2065-Setup.exe`) and run it **from Explorer, as your own
    Windows user** (English or Portuguese; you can install for the current user only).
 3. Start Delphi: the splash screen shows "JEDI Version Control System 2.5 Beta 2026" and the
    **JEDI VCS** menu appears.
