@@ -36,6 +36,9 @@ if errorlevel 1 set FALHOU=1
 echo ==== ia\teste-seguranca.ps1
 %PS% "%T%ia\teste-seguranca.ps1"
 if errorlevel 1 set FALHOU=1
+echo ==== ia\teste-s0003.ps1
+%PS% "%T%ia\teste-s0003.ps1"
+if errorlevel 1 set FALHOU=1
 if /i not "%ALVO%"=="tudo" goto fim
 
 :instalador

@@ -105,6 +105,20 @@ módulos), `-PastaExemplo`, `-UnitNaoVersionada`, `-UnitVersionada` (pasta local
 `.pas` dela, um fora e um dentro do servidor), `-PastaModulos` (padrão: a pasta mais recente do
 `teste-modulos.ps1` com nomes 8.3), `-PortaFechada`.
 
+### ia\teste-s0003.ps1
+
+Solicitação S0003 (módulos homônimos pelo nome que o console corta em 30 caracteres). Cria o projeto
+`zz-teste-s0003<Sufixo>.dpr` com `Estrutura.Firma.Sesiag.NotaFiscalEntrada.pas` e
+`Estrutura.Firma.Sesiag.NotaFiscalSaida.pas` na mesma pasta longa (o console corta também a pasta):
+
+- `add` do segundo com o primeiro já no projeto;
+- `status`, `checkout`, `checkin`, `undocheckout`, `ensure-checkout` e `history` de cada um caem no ID certo;
+- um `.pas` não versionado com o mesmo prefixo sai `notVersioned`;
+- módulo `.pas` + `.dfm` de nome longo: checkout verificado pela sonda dupla, checkin e cópia em pasta irmã recusada;
+- `id:<n> -Project` em `status`, `checkout`, `undocheckout` e `diff`; sem `-Project`, ID fora do projeto, `add id:` e `#id:` são recusados.
+
+Parâmetros: `-Trabalho`, `-Console`, `-Sufixo`.
+
 ### instalador\teste-setup.ps1
 
 Teste isolado do setup: tudo com `/CURRENTUSER` numa pasta temporária, `/BDSKEY` e `/OLDIDEROOT`

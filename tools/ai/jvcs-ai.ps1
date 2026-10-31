@@ -15,6 +15,7 @@
       ensure-checkout <arquivo> [-CheckOnly]   para hooks: idempotente
       checkin <arquivo...> -Comment "texto" [-Keep]   check-in (sem mudança -> undocheckout); -Keep = Put (o checkout continua)
       undocheckout <arquivo> [-Discard] desfaz checkout (só com local = base, ou -Discard)
+      (nos comandos de arquivo, id:<n> -Project p no lugar do arquivo: o módulo pelo ID, na pasta do servidor)
       checkout|checkin|undocheckout -FromList <arquivo> [-Only ...] [-Apply -ListHash h]   lote a partir de lista/JSON (prévia por padrão)
       diff <arquivo> [-Rev x.y [-Rev2 y.z]]   diff local x servidor, ou entre duas revisões
       history <arquivo> [-Max n]        revisões do módulo com data, usuário e comentário (console 2026)
@@ -176,6 +177,8 @@ $script:ListingCache = $null                       # @{} só durante um lote (-F
 $script:ListingStats = @{ Runs = 0; Sec = 0.0 }    # tempo das listagens (estimativa do lote)
 $script:BatchJournal = $null                       # diário do -Apply do lote
 $script:BatchProjectOf = $null                     # lote: caminho (minúsculas) -> projeto vindo do JSON (fallback)
+$script:FullNamesCache = @{}                       # S0003: projeto (minúsculas) -> linhas do listmodules (nomes sem corte)
+$script:ForcedIdOf = @{}                           # S0003: caminho (minúsculas) -> ID dado com id:<n> -Project
 $script:OnlyFilter = $null
 $script:JaDefaultProject = $null   # R4: {Name, Source, Where, Dir} do projeto padrão já resolvido
 $script:JaContextDirs = $null      # R4: pastas que decidem a identidade por pasta (dos arquivos, ou a atual)
@@ -190,8 +193,37 @@ function Get-FileArgs {
     if ($files.Count -lt $Min) { throw (New-JaError 2 "informe o(s) arquivo(s): jvcs-ai.ps1 $script:Cmd <arquivo>") }
     if ($files.Count -gt $Max) { throw (New-JaError 2 "o comando $script:Cmd aceita no máximo $Max arquivo(s)") }
     $out = New-Object System.Collections.ArrayList
-    foreach ($f in $files) { [void]$out.Add($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($f)) }
+    foreach ($f in $files) {
+        if ($f.Trim() -match '^#?id:(\d+)$|^#\d+$') { [void]$out.Add((Resolve-IdFileArg $f.Trim())); continue }
+        [void]$out.Add($ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($f))
+    }
     return , $out
+}
+
+# S0003: id:<n> -Project p num comando de arquivo (status, checkout, checkin, undocheckout, diff...) vira o
+# caminho registrado no servidor (pasta + nome completos do listmodules) e fixa o ID para o
+# Resolve-FileContext (que confere que o ID casa com esse arquivo no projeto). Serve para homônimos
+# que o nome truncado do listproject não separa.
+function Resolve-IdFileArg {
+    param([string]$Value)
+    if ($Value -notmatch '^id:(\d+)$') { throw (New-JaError 2 "use id:<n> para informar o módulo pelo ID (recebido '$Value')") }
+    $id = [int]$Matches[1]
+    if ($script:Cmd -eq 'add') { throw (New-JaError 2 'add recebe arquivos, não id:<n> (o módulo ainda não existe no servidor)') }
+    if (-not $Project) { throw (New-JaError 2 "com id:<n> informe -Project <projeto> (ex.: jvcs-ai.ps1 $script:Cmd id:$id -Project p.dpr)") }
+    $proj = Get-ProjectNameFromArg $Project
+    $rows = Get-ModuleFullNames -ProjectName $proj
+    if ($null -eq $rows) { throw (New-JaError 12 "id:<n> em $script:Cmd exige o console jvcs.exe 2026 (listmodules); ajuste: jvcs-ai.ps1 config set jvcsExe <jvcs.exe 2026>") }
+    $row = @($rows | Where-Object { $_.Id -eq $id })
+    if ($row.Count -eq 0) { throw (New-JaError 5 "módulo $id não pertence ao projeto $proj (veja jvcs-ai.ps1 modules -Project $proj)") }
+    $m = $row[0]
+    if (-not $m.Dir -or $m.NoPath -or $m.NameHasPath -or $m.File -match '[\\/:]') {
+        throw (New-JaError 5 "o módulo $id ($($m.File)) não tem pasta registrada no servidor (flags '$($m.Flags)'); um comando de arquivo precisa de pasta. Veja jvcs-ai.ps1 modules -Project $proj")
+    }
+    $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath((Join-Path $m.Dir $m.File))
+    # o servidor guarda em minúsculas: com o arquivo presente, usa a grafia do disco
+    if (Test-Path -LiteralPath $full -PathType Leaf) { $full = (Get-Item -LiteralPath $full).FullName }
+    $script:ForcedIdOf[$full.ToLowerInvariant()] = $id
+    return $full
 }
 
 function Get-ProjectNameFromArg {
@@ -781,6 +813,49 @@ function Get-ProjectListingCached {
     return $out
 }
 
+# Célula da tabela cortada pelo StrAlign (largura cheia terminando em "...").
+function Test-TruncatedCell {
+    param([string]$Shown, [int]$Width)
+    return ($Shown.Length -eq $Width -and $Shown.EndsWith('...'))
+}
+
+# S0003: módulos do projeto com pasta e nome COMPLETOS (openproject + listmodules), em cache na execução.
+# $null quando o jvcs.exe configurado não tem o listmodules (console original).
+function Get-ModuleFullNames {
+    param([string]$ProjectName)
+    $k = $ProjectName.ToLowerInvariant()
+    if ($script:FullNamesCache.ContainsKey($k)) { return , $script:FullNamesCache[$k] }
+    $rows = $null
+    if (Test-Console2026 -Needle 'listmodules [<project_name>') {
+        $r = Invoke-Jvcs @(('openproject "' + $ProjectName + '"'), 'listmodules')
+        $e0 = Get-SectionError $r.Sections[0]
+        if ($e0) { throw (New-JaError 5 "openproject $($ProjectName): $e0") }
+        $e1 = Get-SectionError $r.Sections[1]
+        if ($e1) { throw (New-JaError 9 "listmodules: $e1") }
+        $rows = ConvertFrom-ListModules $r.Sections[1]
+    }
+    $script:FullNamesCache[$k] = $rows
+    return , $rows
+}
+
+# S0003: dos IDs que o listproject casou só pelo prefixo do nome, os que têm de fato este nome e esta
+# pasta no listmodules: nome igual; senão nome-base igual (o .dfm/.res de um módulo .pas). Devolve
+# {Known; Ids}; Known=$false sem console 2026 (quem chama decide).
+function Select-IdsByFullName {
+    param([string]$ProjectName, [int[]]$Ids, [string]$NameL, [string]$DirL)
+    $full = Get-ModuleFullNames -ProjectName $ProjectName
+    if ($null -eq $full) { return [pscustomobject]@{ Known = $false; Ids = @() } }
+    $dirKey = Get-JaPathKey $DirL
+    $cand = @($full | Where-Object { ($Ids -contains $_.Id) -and $_.Dir -and -not $_.NameHasPath -and
+            (($_.Dir -ieq $DirL) -or ((Get-JaPathKey $_.Dir) -eq $dirKey)) })
+    $hit = @($cand | Where-Object { $_.File -ieq $NameL })
+    if ($hit.Count -eq 0) {
+        $base = [IO.Path]::GetFileNameWithoutExtension($NameL)
+        $hit = @($cand | Where-Object { [IO.Path]::GetFileNameWithoutExtension($_.File) -ieq $base })
+    }
+    return [pscustomobject]@{ Known = $true; Ids = @($hit | ForEach-Object { [int]$_.Id } | Sort-Object -Unique) }
+}
+
 # Resolve o projeto e o módulo de um arquivo local.
 # Status: versioned | notVersioned | noProject
 function Resolve-FileContext {
@@ -812,8 +887,23 @@ function Resolve-FileContext {
         $match = @($byName | Where-Object { Test-TableMatch -Shown $_.Dir -Actual $dirL -Width 50 })
         if ($byName.Count -gt 0 -and $match.Count -eq 0) { [void]$sameName.Add($c.Name) }
         $ids = @($match | ForEach-Object Id | Sort-Object -Unique)
+        $forced = $script:ForcedIdOf[$FullPath.ToLowerInvariant()]
+        if ($null -ne $forced) {
+            # id:<n> -Project: o caminho veio do listmodules desse ID (nome e pasta completos); só confere que ele casou
+            if ($ids -notcontains $forced) { throw (New-JaError 5 "o módulo id:$forced não aparece no projeto $($c.Name) com este arquivo ($FullPath); confira com: jvcs-ai.ps1 modules -Project $($c.Name)") }
+            $ids = @($forced)
+        } elseif ($ids.Count -gt 0 -and @($match | Where-Object { Test-TruncatedCell $_.File 30 }).Count -gt 0) {
+            # S0003: o nome aparece cortado em 30 ("estrutura.firma.sesiag.nota..."); o prefixo não
+            # prova nada (homônimos, ou arquivo não versionado com o mesmo começo): desempata pelo listmodules
+            $full = Select-IdsByFullName -ProjectName $c.Name -Ids $ids -NameL $nameL -DirL $dirL
+            if (-not $full.Known) {
+                if ($ids.Count -gt 1) {
+                    throw (New-JaError 5 "módulos homônimos no projeto $($c.Name) (IDs $($ids -join ', ')): o console mostra o nome truncado e o jvcs.exe configurado não tem o listmodules (console 2026) para desempatar. Use o console 2026 (jvcs-ai.ps1 config set jvcsExe <jvcs.exe 2026>) ou faça pelo cliente")
+                }
+            } else { $ids = @($full.Ids) }
+        }
         if ($ids.Count -gt 1) {
-            throw (New-JaError 5 "módulos homônimos no projeto $($c.Name) (IDs $($ids -join ', ')) e o caminho exibido pelo console está truncado; não dá para escolher com segurança")
+            throw (New-JaError 5 "módulos homônimos no projeto $($c.Name) (IDs $($ids -join ', ')) com o mesmo nome completo e a mesma pasta; não dá para escolher com segurança. Escolha o ID: jvcs-ai.ps1 modules -Project $($c.Name) e repita com id:<n> -Project $($c.Name)")
         }
         if ($ids.Count -eq 1) {
             [void]$found.Add([pscustomobject]@{ Name = $c.Name; Level = $c.Level; Rank = $c.Rank; Source = $c.Source; Rows = $rows; ModuleRows = @($rows | Where-Object { $_.Id -eq $ids[0] }) })
@@ -1025,45 +1115,75 @@ function Set-LocalWriteTimeUtc {
 #     coluna CRC incoerente com a comparação de bytes contra a base -> é outro arquivo;
 #  2. sonda: muda a data do arquivo local em +-6 h (o console tolera 10 s, cTimeConvErr), roda
 #     listproject e exige que o Stamp do membro mude para o valor previsto ('N' ou 'O'); a data
-#     original é restaurada em seguida (finally).
+#     original é restaurada em seguida (finally). Membros de nome longo cortados iguais (x.pas e
+#     x.dfm) não se separam na tabela: duas sondas (+6 h e -6 h) e exige que só uma linha mude de N para O.
 # Devolve 'exact' (caminho visível inteiro) ou 'verified'; lança 5 quando não é o mesmo arquivo.
 function Assert-ServerPath {
     param($Ctx, [string]$FullPath, $Cmp)
     $trunc = @($Ctx.ModuleRows | Where-Object { $_.Dir.Length -eq 50 -and $_.Dir.EndsWith('...') })
     if ($trunc.Count -eq 0) { return 'exact' }
     $nameL = [IO.Path]::GetFileName($FullPath).ToLowerInvariant()
-    $pairs = New-Object System.Collections.ArrayList
+    # membros agrupados pela célula do nome: nomes longos que o console corta iguais (x.pas e x.dfm,
+    # S0003) caem nas mesmas linhas e são conferidos em conjunto. O grupo só serve de prova com uma
+    # linha por membro presente aqui (linha a mais = membro que falta aqui; não dá para separar).
+    $groups = [ordered]@{}
     foreach ($mem in $Cmp.Members) {
         if ($mem.State -eq 'missing') { continue }
-        $row = @($Ctx.ModuleRows | Where-Object { Test-TableMatch -Shown $_.File -Actual $mem.Name.ToLowerInvariant() -Width 30 })
-        if ($row.Count -ne 1) { continue }
-        $pair = [pscustomobject]@{ Row = $row[0]; Member = $mem }
-        if ($mem.Name.ToLowerInvariant() -eq $nameL) { $pairs.Insert(0, $pair) } else { [void]$pairs.Add($pair) }
+        $rows = @($Ctx.ModuleRows | Where-Object { Test-TableMatch -Shown $_.File -Actual $mem.Name.ToLowerInvariant() -Width 30 })
+        if ($rows.Count -eq 0) { continue }
+        $k = $rows[0].File
+        if (-not $groups.Contains($k)) { $groups[$k] = [pscustomobject]@{ Rows = $rows; Members = (New-Object System.Collections.ArrayList); Main = $false } }
+        if ($mem.Name.ToLowerInvariant() -eq $nameL) { $groups[$k].Members.Insert(0, $mem); $groups[$k].Main = $true }
+        else { [void]$groups[$k].Members.Add($mem) }
     }
-    if ($pairs.Count -eq 0) {
+    $usable = @(@($groups.Values) | Where-Object { $_.Rows.Count -eq $_.Members.Count } | Sort-Object -Property @{ Expression = { -not $_.Main } })
+    if ($usable.Count -eq 0) {
         throw (New-JaError 5 "o console mostra o caminho do servidor truncado ('$($trunc[0].Dir)') e nenhum arquivo do módulo existe aqui para provar que é o mesmo caminho; nada foi feito")
     }
-    $mismatch = "o caminho registrado no servidor (truncado: '$($pairs[0].Row.Dir)') não é o deste arquivo ($FullPath): o console leria/gravaria outra cópia. Nada foi feito; trabalhe na pasta registrada no JEDI VCS"
-    foreach ($p in $pairs) {
-        if ($p.Row.Stamp -eq 'N/A') { throw (New-JaError 5 ($mismatch + " ($($p.Member.Name) não existe no caminho do servidor)")) }
-        $expCrc = ''
-        if ($p.Member.State -eq 'modified') { $expCrc = '*' }
-        if ($p.Row.Crc -ne $expCrc) { throw (New-JaError 5 ($mismatch + " (o CRC de $($p.Member.Name) no caminho do servidor não bate com o arquivo local)")) }
+    $mismatch = "o caminho registrado no servidor (truncado: '$($usable[0].Rows[0].Dir)') não é o deste arquivo ($FullPath): o console leria/gravaria outra cópia. Nada foi feito; trabalhe na pasta registrada no JEDI VCS"
+    foreach ($g in $usable) {
+        $names = @($g.Members | ForEach-Object { $_.Name }) -join ', '
+        if (@($g.Rows | Where-Object { $_.Stamp -eq 'N/A' }).Count -gt 0) { throw (New-JaError 5 ($mismatch + " ($names não existe no caminho do servidor)")) }
+        $exp = @($g.Members | ForEach-Object { if ($_.State -eq 'modified') { '*' } else { '-' } } | Sort-Object) -join ''
+        $got = @($g.Rows | ForEach-Object { if ([string]$_.Crc -eq '*') { '*' } elseif ([string]$_.Crc -eq '') { '-' } else { '?' } } | Sort-Object) -join ''
+        if ($exp -ne $got) { throw (New-JaError 5 ($mismatch + " (o CRC de $names no caminho do servidor não bate com o arquivo local)")) }
     }
-    $pr = $pairs[0]
-    $orig = (New-Object IO.FileInfo $pr.Member.Local).LastWriteTimeUtc
-    $expect = 'N'; $probeTime = $pr.Member.BaseTimeUtc.AddHours(6)
-    if ($pr.Row.Stamp -eq 'N') { $expect = 'O'; $probeTime = $pr.Member.BaseTimeUtc.AddHours(-6) }
-    $seen = '(linha não encontrada)'
+    $g = $usable[0]
+    $mem = $g.Members[0]
+    $orig = (New-Object IO.FileInfo $mem.Local).LastWriteTimeUtc
+    if ($g.Rows.Count -eq 1) {
+        $row = $g.Rows[0]
+        $expect = 'N'; $probeTime = $mem.BaseTimeUtc.AddHours(6)
+        if ($row.Stamp -eq 'N') { $expect = 'O'; $probeTime = $mem.BaseTimeUtc.AddHours(-6) }
+        $seen = '(linha não encontrada)'
+        try {
+            Set-LocalWriteTimeUtc -Path $mem.Local -TimeUtc $probeTime
+            $l2 = Get-ProjectListing -Names @($Ctx.Project)
+            $r2 = @($l2[$Ctx.Project] | Where-Object { $_.Id -eq $row.Id -and $_.File -eq $row.File })
+            if ($r2.Count -eq 1) { $seen = $r2[0].Stamp }
+        } finally {
+            Set-LocalWriteTimeUtc -Path $mem.Local -TimeUtc $orig
+        }
+        if ($seen -ne $expect) { throw (New-JaError 5 ($mismatch + " (sonda de data: esperado '$expect', o console viu '$seen')")) }
+        return 'verified'
+    }
+    # várias linhas com a mesma célula: duas sondas (+6 h e -6 h) no mesmo arquivo. Entre as duas
+    # listagens só a linha dele muda, de 'N' para 'O'; qualquer outra diferença = não é este arquivo.
+    $k = $g.Rows[0].File; $id = $g.Rows[0].Id
+    $a = $null; $b = $null
     try {
-        Set-LocalWriteTimeUtc -Path $pr.Member.Local -TimeUtc $probeTime
-        $l2 = Get-ProjectListing -Names @($Ctx.Project)
-        $r2 = @($l2[$Ctx.Project] | Where-Object { $_.Id -eq $pr.Row.Id -and $_.File -eq $pr.Row.File })
-        if ($r2.Count -eq 1) { $seen = $r2[0].Stamp }
+        Set-LocalWriteTimeUtc -Path $mem.Local -TimeUtc $mem.BaseTimeUtc.AddHours(6)
+        $a = @((Get-ProjectListing -Names @($Ctx.Project))[$Ctx.Project] | Where-Object { $_.Id -eq $id -and $_.File -eq $k } | ForEach-Object { [string]$_.Stamp })
+        Set-LocalWriteTimeUtc -Path $mem.Local -TimeUtc $mem.BaseTimeUtc.AddHours(-6)
+        $b = @((Get-ProjectListing -Names @($Ctx.Project))[$Ctx.Project] | Where-Object { $_.Id -eq $id -and $_.File -eq $k } | ForEach-Object { [string]$_.Stamp })
     } finally {
-        Set-LocalWriteTimeUtc -Path $pr.Member.Local -TimeUtc $orig
+        Set-LocalWriteTimeUtc -Path $mem.Local -TimeUtc $orig
     }
-    if ($seen -ne $expect) { throw (New-JaError 5 ($mismatch + " (sonda de data: esperado '$expect', o console viu '$seen')")) }
+    $nA = @($a | Where-Object { $_ -eq 'N' }).Count; $oA = @($a | Where-Object { $_ -eq 'O' }).Count
+    $nB = @($b | Where-Object { $_ -eq 'N' }).Count; $oB = @($b | Where-Object { $_ -eq 'O' }).Count
+    if ($a.Count -ne $g.Rows.Count -or $b.Count -ne $g.Rows.Count -or ($nA - $nB) -ne 1 -or ($oB - $oA) -ne 1) {
+        throw (New-JaError 5 ($mismatch + " (sonda de data em $($mem.Name): +6 h '$($a -join ',')', -6 h '$($b -join ',')'; esperado que uma linha passasse de 'N' para 'O')"))
+    }
     return 'verified'
 }
 
@@ -2718,18 +2838,23 @@ function Invoke-CmdBatch {
 
 # ======================================================================= diff e criação (console 2026)
 
+# $true se o jvcs.exe configurado tem o texto $Needle (comando do console 2026); jvcs.exe ausente = erro 12.
+function Test-Console2026 {
+    param([string]$Needle = 'setmodulepath')
+    $exe = [string]$script:Cfg.jvcsExe
+    if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw (New-JaError 12 "jvcs.exe não encontrado: $exe") }
+    $bytes = [IO.File]::ReadAllBytes($exe)
+    return ([Text.Encoding]::Unicode.GetString($bytes).Contains($Needle) -or
+        [Text.Encoding]::Unicode.GetString($bytes, 1, $bytes.Length - 1).Contains($Needle) -or
+        $script:JaLatin1.GetString($bytes).Contains($Needle))
+}
+
 # addproject/add usam comandos que só o console 2026 tem (src\jvcs: addproject, addmodule,
 # setmodulepath e o 1º check-in); o original 2.5.0.1030 não cria projeto nem módulo.
 function Assert-Console2026 {
     param([string]$What, [string]$Needle = 'setmodulepath')
     $exe = [string]$script:Cfg.jvcsExe
-    if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw (New-JaError 12 "jvcs.exe não encontrado: $exe") }
-    $bytes = [IO.File]::ReadAllBytes($exe)
-    $needle = $Needle
-    $has = [Text.Encoding]::Unicode.GetString($bytes).Contains($needle) -or
-        [Text.Encoding]::Unicode.GetString($bytes, 1, $bytes.Length - 1).Contains($needle) -or
-        $script:JaLatin1.GetString($bytes).Contains($needle)
-    if (-not $has) {
+    if (-not (Test-Console2026 -Needle $Needle)) {
         throw (New-JaError 12 "$What exige o console jvcs.exe 2026 (com addproject/addmodule/history); o configurado ($exe) não tem. Ajuste: jvcs-ai.ps1 config set jvcsExe <caminho do jvcs.exe 2026>")
     }
 }
@@ -3887,7 +4012,9 @@ function Invoke-CmdSync {
                 elseif ($m.State -eq 'modified') {
                     $row = @($rows | Where-Object { Test-TableMatch -Shown $_.File -Actual $m.Name.ToLowerInvariant() -Width 30 })
                     $stamp = ''
-                    if ($row.Count -ge 1) { $stamp = $row[0].Stamp }
+                    # nomes longos cortados iguais (x.pas e x.dfm): só vale se todas as linhas concordam; senão conflito
+                    $st = @($row | ForEach-Object { [string]$_.Stamp } | Sort-Object -Unique)
+                    if ($st.Count -eq 1) { $stamp = $st[0] }
                     if ($stamp -eq 'O') { $a = 'update' } else { $a = 'conflict' }
                     # revisão Fable (6): 'O' só diz que a data local é mais antiga. Uma edição sem checkout ANTERIOR ao
                     # check-in de um colega também é 'O'; o sinal dela é o arquivo sem somente leitura (o cliente deixa
@@ -7253,6 +7380,8 @@ jvcs-ai.ps1 <comando> [argumentos] [opções]
   checkin <arquivo...> -Comment "..." [-AllowEncodingChange]   (esta opção pela IA exige -Confirmed)
   checkin <arquivo...> -Comment "..." -Keep   Put: revisão nova e o checkout continua (console 2026; modo checkin)
   undocheckout <arquivo...> [-Discard]   (-Discard pela IA exige -Confirmed)
+  id:<n> -Project p no lugar de <arquivo> (status, checkout, checkin, undocheckout, diff, history...): o módulo
+                                      pelo ID, no caminho registrado no servidor (homônimos de nome longo, S0003)
   checkout|checkin|undocheckout -FromList <arquivo> [-Only ...] [-MaxModules n] [opções do comando]
                                       lote: caminhos absolutos (um por linha; # comenta) ou o JSON de status/list/
                                       locks/lote anterior (-Only como no status, mais ok|failed: modified,unlocked |
