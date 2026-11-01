@@ -7,7 +7,11 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
-### Corrigido (build 2066, revisão do build 2065)
+## [Beta 6, build 2066] — 2026-11-01
+
+Recompilação de correção do Beta 6, sobre o build 2065, com as correções da revisão do 2065.
+
+### Corrigido
 - Wrapper da IA (S0003):
   - `add` de `.pas` + `.dfm` de nome longo numa execução só podia cadastrar o `.dfm` como módulo avulso
     (cache do `listmodules` desatualizado depois do `addmodule`);

@@ -11,6 +11,7 @@ Each release has an English page in this folder.
 
 | Version | Date | Status | Highlights |
 |---|---|---|---|
+| [Beta 6, build 2066](2026-11-01-build2066.md) | 2026-11-01 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2066) | **build 2066**: fixes from the 2065 review (S0003 wrapper: .pas+.dfm add, base name, `id:<n>` identity; client: Select All Matches, Find on refresh, filter Enter, Esc, F3; version table) |
 | [Beta 6, build 2065](2026-10-31-build2065.md) | 2026-10-31 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2065) | **build 2065**: new module Find, Edit menu, project tree filter, context menu (Copy Full Path, Open in Explorer...); wrapper: long look-alike names and `id:<n>` (S0003) |
 | [Beta 6, build 2063](2026-10-19-build2063.md) | 2026-10-19 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2063) | **build 2063**: `verify` with no project (search in all projects, `ambiguous`, extension filter, single files); `status` sum; wrapper security fixes; template 1.4.0 |
 | [Beta 6](2026-10-17-beta6.md) | 2026-10-17 | [released](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6) (pre-release) | **build 2061**: the 2026 `jvcs.exe` console in the installer (projects and modules without the IDE, history, search, labels, ToDo, bugs, administration); AI wrapper 1.4.0; the AI uses the new console by default; S0002 (untracked, verify, doctor) |

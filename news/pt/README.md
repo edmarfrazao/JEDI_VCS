@@ -12,6 +12,7 @@ portado para o Delphi moderno (servidor 2.5 Beta 3 sem alterações, protocolo i
 
 | Versão | Data | Situação | Destaques |
 |---|---|---|---|
+| [Beta 6, build 2066](2026-11-01-build2066.md) | 01/11/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2066) | **build 2066**: correções da revisão do 2065 (wrapper S0003: add .pas+.dfm, nome-base, identidade do `id:<n>`; cliente: Select All Matches, Find no refresh, Enter do filtro, Esc, F3; Versoes.md) |
 | [Beta 6, build 2065](2026-10-31-build2065.md) | 31/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2065) | **build 2065**: pesquisa Find refeita, menu Edit, filtro da árvore de projetos, menu de contexto (Copy Full Path, Open in Explorer...); wrapper: homônimos de nome longo e `id:<n>` (S0003) |
 | [Beta 6, build 2063](2026-10-19-build2063.md) | 19/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6-build2063) | **build 2063**: `verify` sem projeto (busca em todos os projetos, `ambiguous`, filtro de extensões, arquivos avulsos); soma do `status`; correções de segurança do wrapper; template 1.4.0 |
 | [Beta 6](2026-10-17-beta6.md) | 17/10/2026 | [publicada](https://github.com/edmarfrazao/JEDI_VCS/releases/tag/v2.5.0.2026-beta6) | **build 2061**: console `jvcs.exe` 2026 no instalador (projeto e módulos sem IDE, histórico, busca, labels, ToDo, bugs, administração); wrapper da IA 1.4.0; a IA usa o console novo por padrão; S0002 (untracked, verify, doctor) |

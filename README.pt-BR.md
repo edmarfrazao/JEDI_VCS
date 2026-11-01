@@ -24,7 +24,7 @@ the unchanged **JEDI VCS 2.5 Beta 3 server** (Firebird): the new client sends by
 verified by golden traffic captures against the original 2.5.0.1030 client. Highlights: a thin
 ToolsAPI expert per Delphi version that loads in every update (it imports only `rtl`, `vcl` and `xmlrtl`),
 one shared client core, UI scaling (100–200%), light/dark theme following Windows or the IDE, an Inno
-Setup installer, and a safe workflow for AI coding agents (Claude Code). Status: **public beta (beta 6, build 2065)**,
+Setup installer, and a safe workflow for AI coding agents (Claude Code). Status: **public beta (beta 6, build 2066)**,
 Win32 only. Download the installer from the
 [latest release](https://github.com/edmarfrazao/JEDI_VCS/releases/latest). Documentation is in Brazilian Portuguese.
 License: MPL 1.1; the MidWare transport is free for **non-commercial use only** (see below).
@@ -34,7 +34,7 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 
 | Item | Situação |
 |---|---|
-| Versão | **2.5 Beta 2026** (`2.5.0.2026`), sexta beta pública, **build 2065** (`2.5.0.2065`, tag `v2.5.0.2026-beta6-build2065`), Delphi 7 a 13 |
+| Versão | **2.5 Beta 2026** (`2.5.0.2026`), sexta beta pública, **build 2066** (`2.5.0.2066`, tag `v2.5.0.2026-beta6-build2066`), Delphi 7 a 13 |
 | Delphi | testado em **Delphi 11, 12 e 13** (IDE de 32 bits) |
 | Plataforma | Win32 (roda em Windows x64 e ARM64 por emulação) |
 | Servidor | JEDI VCS **2.5 Beta 3** (Firebird) — não portado, sem alteração |
@@ -72,7 +72,7 @@ Full English version: [README.md](README.md) · English user guide: [doc/en](doc
 
 1. Feche o Delphi.
 2. Baixe o instalador da [versão mais recente](https://github.com/edmarfrazao/JEDI_VCS/releases/latest)
-   (`JediVCS-2.5.0-Beta6-build2065-Setup.exe`) e execute (português ou inglês; dá para
+   (`JediVCS-2.5.0-Beta6-build2066-Setup.exe`) e execute (português ou inglês; dá para
    instalar só para o usuário atual).
 3. Abra o Delphi: o splash mostra "JEDI Version Control System 2.5 Beta 2026" e aparece o menu
    **JEDI VCS**.
