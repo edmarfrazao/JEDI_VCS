@@ -11,6 +11,14 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 - Wrapper da IA: escolha da identidade explicada em `tools/ai/LEIAME.md` (seção 18, R4), com o problema conhecido do
   `-Identity` igual ao mapa `[identities]` (exemplo, contorno e correção prevista) e a conferência do `id:<n>`.
   Item de homônimos da seção 7 atualizado para a S0003. Skills: linha nova em solução de problemas.
+- Licenças (revisão de 01/11/2026), sem mudança de código:
+  - a tela de licença do instalador (`setup/aviso-pt.txt`, `aviso-en.txt`) passa a citar a MPL 1.1, a restrição
+    do MidWare (uso pessoal/não comercial) e a `fvcscrypt.dll` sem licença declarada; o instalador grava também
+    `LICENSE.txt` e `DISCLAIMER.md` na pasta do programa;
+  - `README`, `LICENSE`, `DISCLAIMER`, `Licencas.md` e Créditos: uma formulação única para o MidWare, aviso de que
+    os executáveis herdam a restrição, e a `fvcscrypt.dll` descrita como "licença não declarada";
+  - `CBroker.pas`, `RFormat.pas` e `ApsCli.pas` marcados como versão alterada ("JVCS edition") no cabeçalho;
+    aba License do About com o aviso do MidWare; `src/comp/_legacy/LEIAME.md` novo.
 
 ## [Beta 6, build 2066] — 2026-11-01
 

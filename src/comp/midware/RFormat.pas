@@ -3,7 +3,7 @@
 Author:       François PIETTE
 Description:  Buffer handling
 Creation:     February 17, 1998
-Version:      1.47
+Version:      1.48 - JVCS edition (port Unicode para Delphi 13, JEDI VCS 2.5 Beta 2026)
 EMail:        francois.piette@overbyte.be  http://www.overbyte.be
 Support:      Use the mailing list midware@elists.org
               Follow "support" link at http://www.overbyte.be for subscription.
@@ -143,6 +143,8 @@ Mar 16, 2006  V1.46 Added a check for null variant in AppendFields. Thanks to
 Apr 11, 2006  V1.47 Pitko_Miroslav@teko.sk found a bug is Assign
 Aug 08, 2006  V1.48 Save/restore current position in GetRecordCount
                     Fixed GetStreamField to skip metadata
+Oct 2026      JVCS edition: port Unicode (buffer PAnsiChar, MWCodePage), versao
+              ALTERADA para o JEDI VCS 2.5 Beta 2026; ver os comentarios 'JVCS'.
 
 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}

@@ -23,6 +23,10 @@ declara "MPL 1.1" na caixa About da IDE. O texto da licença está em `doc\origi
 instalador grava esse arquivo como `license.txt` em `{app}`. Os experts são redistribuídos sem
 modificação.
 
+O fonte destes experts não está disponível: não faz parte dos fontes públicos (SourceForge, port de
+F. Libaud) e se perdeu com a infraestrutura antiga do projeto. Por isso não há fonte a oferecer junto
+com eles; são redistribuídos byte a byte, como no instalador oficial do Project JEDI.
+
 ## Mapeamento confirmado: DLL → IDE → chave de registro
 
 Como o mapeamento foi confirmado, por duas fontes independentes:

@@ -82,6 +82,8 @@ Nov 05, 2005  V3.04 Uwe Schuster <jedivcs@bitcommander.de> updated the timeout
                     detection mechanism to avoid timeout while still transmitting
 Dec 08, 2005  V3.05 Fixed TAppSrvClient.SetRequest for nil value
 Feb 18, 2007  V3.06 Added SetName and related.
+Oct 2026      V3.06-JVCS port Unicode para Delphi 11-13 e ICS 9, versao ALTERADA
+              para o JEDI VCS 2.5 Beta 2026 (ver os comentarios 'JVCS').
 
 
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *}

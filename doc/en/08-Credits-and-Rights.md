@@ -45,7 +45,7 @@ The full component credits are in `doc/original/credits.txt`. The main ones:
 
 | Component | License |
 |---|---|
-| Midware (François Piette) | freeware for **non-commercial use only**; company use needs a license |
+| Midware (François Piette) | freeware for **personal/non-commercial use only**; use inside companies is not clearly covered and depends on the author's consent. The client executables contain MidWare and are subject to the same restriction |
 | ICS (Overbyte) | freeware |
 | JCL and JVCL (Project JEDI) | MPL 1.1 |
 | SynEdit | MPL 1.1 / GPL 2 |
@@ -66,8 +66,10 @@ The full component credits are in `doc/original/credits.txt`. The main ones:
 - **Consequences:** the client is **32-bit** (a 32-bit DLL cannot load into a 64-bit process); the 64-bit Delphi 13 IDE
   uses the standalone client. The installer always puts the DLL next to `Jedivcs.exe`, `jvcs.exe` and
   `JvcsExternalDll.dll`.
-- **Rights:** the DLL belongs to its authors; it is redistributed as part of the JEDI VCS runtime, as in the official
-  installers, without changes.
+- **Rights:** the DLL belongs to its authors. **License: not declared.** No file of the official installer or of the
+  public sources assigns a license to it. It is redistributed unchanged as part of the JEDI VCS runtime, as Project
+  JEDI did since 2003, on the assumption that the author consented when donating FreeVCS to JEDI. If the author
+  objects, the DLL will be removed and login will stop working until an own implementation exists.
 
 ## 5. Why there is no 64-bit client
 

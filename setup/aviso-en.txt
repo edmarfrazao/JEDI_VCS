@@ -11,6 +11,8 @@ This is a BETA release. Before using it in production:
 
 The authors and contributors accept no liability for data loss, work interruption or any damages arising from the use of this product. Use it at your own risk.
 
+LICENSES: the JEDI VCS code is distributed under the Mozilla Public License 1.1 (LICENSE.txt in the installation folder). The network transport is derived from MidWare (Francois Piette, overbyte.be), which is freeware for personal/non-commercial use only; because of it, the installed programs are subject to the same restriction until the transport is replaced. Use inside companies is not clearly covered by the MidWare license and depends on the author's consent. fvcscrypt.dll is the original binary from the JEDI VCS 2.50 Beta 3 installer, redistributed unchanged; it has no declared license. This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.
+
 By selecting "I accept the agreement" you confirm that you are aware that you must test and validate the product before deciding whether it can be used in production.
 
 Close Delphi before continuing.

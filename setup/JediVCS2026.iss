@@ -257,6 +257,9 @@ Source: "{#RtSrc}\jedivcsdiff.chm"; DestDir: "{app}"; Components: client ide ide
 Source: "{#RtSrc}\htm_rep.htm"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
 Source: "{#RtSrc}\*.jvcs"; DestDir: "{app}"; Components: client ide ideold; Flags: ignoreversion
 Source: "{#Root}\doc\original\license.txt"; DestDir: "{app}"; Flags: ignoreversion
+; licenca do port (MPL 1.1 + aviso do MidWare) e isencao de garantia
+Source: "{#Root}\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "{#Root}\DISCLAIMER.md"; DestDir: "{app}"; Flags: ignoreversion
 ; ---- expert da IDE + DLL (mesma pasta: o expert so carrega a JvcsExternalDll.dll da propria pasta) ----
 Source: "{#IdeSrc}\JvcsExternalDll.dll"; DestDir: "{app}"; Components: ide ideold; Flags: ignoreversion
 ; ---- experts ORIGINAIS 2.5.0.1030 (IDEs antigas), byte a byte; carregam a JvcsExternalDll.dll nova acima ----

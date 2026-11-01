@@ -49,7 +49,7 @@ Os pontos de licença que afetam este port estão em [Licencas.md](Licencas.md).
 
 | Componente | Autor / projeto | Licença |
 |---|---|---|
-| Midware (ApsCli, RFormat, CBroker) | François Piette | freeware **só para uso não comercial**; uso em empresa exige licença |
+| Midware (ApsCli, RFormat, CBroker) | François Piette | freeware **somente para uso pessoal/não comercial**; o uso dentro de empresas não está claramente coberto e depende de autorização do autor. Os executáveis do cliente contêm o MidWare e ficam sujeitos à mesma restrição |
 | ICS (Internet Component Suite) | François Piette / Overbyte | freeware |
 | JCL e JVCL | Project JEDI | MPL 1.1 |
 | SynEdit | projeto SynEdit (base: mwEdit) | MPL 1.1 / GPL 2 |
@@ -70,7 +70,7 @@ Os pontos de licença que afetam este port estão em [Licencas.md](Licencas.md).
 | Versão usada | 1.0.0.19, **o mesmo binário** do instalador oficial JVCS 2.50 Beta 3, sem nenhuma modificação (`3rdparty\fvcscrypt.dll`) |
 | Por que é obrigatória | **Sem ela não há login.** O standalone, a DLL da IDE e o console a carregam da própria pasta para cifrar a senha antes de mandá-la ao servidor 2.5. Não há outra implementação compatível com a `ServerCrypt.dll` |
 | Consequências | O cliente é de **32 bits** (uma DLL de 32 bits não carrega num processo de 64 bits). A IDE de 64 bits do Delphi 13 usa o cliente standalone. O instalador sempre instala a DLL ao lado do `Jedivcs.exe`, do `jvcs.exe` e da `JvcsExternalDll.dll` |
-| Direitos | A DLL pertence aos seus autores. Ela é redistribuída como parte do runtime do JEDI VCS, como nos instaladores oficiais, sem alteração |
+| Direitos | A DLL pertence aos seus autores. **Licença: não declarada.** Nenhum arquivo do instalador oficial nem dos fontes públicos atribui licença a ela. É redistribuída sem alteração, como parte do runtime do JEDI VCS, como o Project JEDI fez desde 2003, na presunção de que o autor consentiu ao doar o FreeVCS ao JEDI. Se o autor se opuser, a DLL será removida e o login deixará de funcionar até existir uma implementação própria |
 
 ## 5. Por que não há cliente de 64 bits
 

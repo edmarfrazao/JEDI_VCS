@@ -1,5 +1,12 @@
 Unit CBroker;
 
+{ MidWare TResponseBroker 1.07a (c) Francois Piette - JVCS edition           }
+{ (JEDI VCS 2.5 Beta 2026): versao ALTERADA para Delphi 13 (UserData como    }
+{ NativeInt, Windows no uses da interface). Licenca: ver o aviso 'Legal      }
+{ issues' em ApsCli.pas (freeware somente para uso pessoal/nao comercial).    }
+{ This product is based on MidWare. Freeware source code is available at     }
+{ http://www.overbyte.be.                                                     }
+
 {$ifdef FPC}
   {$MODE DELPHI}
 {$endif}

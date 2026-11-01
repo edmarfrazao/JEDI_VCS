@@ -5,7 +5,7 @@ instalado em `C:\Program Files (x86)\JEDI\JVCS` em 12/10/2026).
 
 | Arquivo | Uso | Distribuir com o cliente novo? |
 |---|---|---|
-| `fvcscrypt.dll` (1.0.0.19, 32 bits, fechada) | cifra a senha no login (`JVCSCrypt.pas`); o servidor compara via ServerCrypt.dll | **Sim** — copiar para `bin\client\Win32` ao lado do EXE/DLL |
+| `fvcscrypt.dll` (1.0.0.19, 32 bits, fechada; licença não declarada, redistribuída sem alteração, ver `doc\pt\common\Creditos-e-Direitos.md` §4) | cifra a senha no login (`JVCSCrypt.pas`); o servidor compara via ServerCrypt.dll | **Sim** — copiar para `bin\client\Win32` ao lado do EXE/DLL |
 | `ffdef.jvcs`, `ulist.jvcs`, `vcllist.jvcs`, `vcllistbcb.jvcs`, `verinf.jvcs` | listas/definições padrão do cliente | Sim |
 | `htm_rep.htm` | modelo de relatório HTML | Sim |
 | `jedivcs.chm`, `jedivcsdiff.chm` | ajuda (F1) | Sim |

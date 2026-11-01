@@ -192,16 +192,19 @@ documentation is in Brazilian Portuguese.
 - JEDI VCS code is distributed under the **Mozilla Public License 1.1** — see [LICENSE](LICENSE) and
   [doc/original/license.txt](doc/original/license.txt). Some parts are donations or derived works with
   their own license, stated in the header of each file. Read the full notice before you reuse any code.
-- **MidWare (François Piette) — non-commercial use only.** The client transport
-  (`src/comp/midware`: `ApsCli`, `CBroker`, `RFormat`) is a **modified** version (Unicode port for
-  Delphi 13 / ICS 9) of MidWare, which is freeware **for non-commercial use only**. The original notice is
-  kept in each file. Use in a commercial application requires an agreement with the author. A replacement
-  transport is planned.
+- **MidWare (François Piette) — personal/non-commercial use only.** The client transport
+  (`src/comp/midware`: `ApsCli`, `CBroker`, `RFormat`) is a **modified** version ("JVCS edition", Unicode
+  port for Delphi 13 / ICS 9) of MidWare, which is freeware **for personal/non-commercial use only**
+  ("excluding commercial applications"). The original notice is kept in each file. Use inside companies
+  is not clearly covered and depends on the author's consent. A replacement transport is planned.
+- **Note on the binaries:** because the client transport is derived from MidWare, the compiled programs
+  (`Jedivcs.exe`, `JvcsExternalDll.dll`, `jvcs.exe`) are subject to the same restriction until the
+  transport is replaced. The MPL code in this repository can be reused without it.
 
   This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.
 - Components: JCL/JVCL (MPL 1.1), SynEdit (MPL 1.1/GPL 2), VirtualTreeView (MPL 1.1/LGPL 2.1), ICS
-  (freeware), Abbrevia (MPL 1.1). `fvcscrypt.dll` is the original binary redistributed from the 2.50 Beta 3
-  installer. Summary (Portuguese): [Licenças](doc/pt/common/Licencas.md) and
+  (freeware), Abbrevia (MPL 1.1). `fvcscrypt.dll` is the original binary redistributed unchanged from the
+  2.50 Beta 3 installer; it has no declared license. Summary (Portuguese): [Licenças](doc/pt/common/Licencas.md) and
   [Componentes](doc/pt/common/Componentes.md).
 - **Creators, rights and `fvcscrypt.dll`:** who created and maintained JEDI VCS, the license rights, why
   `fvcscrypt.dll` is required and why there is no 64-bit client: [Credits and rights](doc/en/08-Credits-and-Rights.md).

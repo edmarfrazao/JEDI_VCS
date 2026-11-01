@@ -152,16 +152,20 @@ Vai levar o arquivo do JEDI VCS para o Git? O **[jvcs2git](https://github.com/ed
 - O código do JEDI VCS é distribuído sob a **Mozilla Public License 1.1** — ver [LICENSE](LICENSE) e
   [doc/original/license.txt](doc/original/license.txt). Algumas partes são doações ou derivações com
   licença própria, indicada no cabeçalho de cada arquivo; leia o aviso completo antes de reutilizar.
-- **MidWare (François Piette) — somente uso não comercial.** O transporte do cliente
-  (`src/comp/midware`: `ApsCli`, `CBroker`, `RFormat`) é uma versão **alterada** (port Unicode para
-  Delphi 13 / ICS 9) do MidWare, freeware **somente para uso não comercial**; o aviso original foi mantido
-  em cada arquivo. Uso em aplicação comercial exige acordo com o autor. A substituição por um transporte
+- **MidWare (François Piette) — somente uso pessoal/não comercial.** O transporte do cliente
+  (`src/comp/midware`: `ApsCli`, `CBroker`, `RFormat`) é uma versão **alterada** ("JVCS edition", port
+  Unicode para Delphi 13 / ICS 9) do MidWare, freeware **somente para uso pessoal/não comercial**
+  ("excluding commercial applications"); o aviso original foi mantido em cada arquivo. O uso dentro de
+  empresas não está claramente coberto e depende de autorização do autor. A substituição por um transporte
   próprio está planejada.
+- **Sobre os executáveis:** como o transporte do cliente deriva do MidWare, os programas compilados
+  (`Jedivcs.exe`, `JvcsExternalDll.dll`, `jvcs.exe`) ficam sujeitos à mesma restrição até a troca do
+  transporte. O código MPL deste repositório pode ser reutilizado sem ela.
 
   This product is based on MidWare. Freeware source code is available at http://www.overbyte.be.
 - Componentes: JCL/JVCL (MPL 1.1), SynEdit (MPL 1.1/GPL 2), VirtualTreeView (MPL 1.1/LGPL 2.1), ICS
-  (freeware), Abbrevia (MPL 1.1); `fvcscrypt.dll` é o binário original redistribuído do instalador 2.50
-  Beta 3. Resumo: [Licenças](doc/pt/common/Licencas.md) e [Componentes](doc/pt/common/Componentes.md).
+  (freeware), Abbrevia (MPL 1.1); `fvcscrypt.dll` é o binário original redistribuído sem alteração do
+  instalador 2.50 Beta 3, sem licença declarada. Resumo: [Licenças](doc/pt/common/Licencas.md) e [Componentes](doc/pt/common/Componentes.md).
 - **Criadores, direitos e `fvcscrypt.dll`:** quem criou e manteve o JEDI VCS, os direitos da licença, por que a
   `fvcscrypt.dll` é obrigatória e por que não há cliente de 64 bits: [Créditos e direitos](doc/pt/common/Creditos-e-Direitos.md).
 

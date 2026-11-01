@@ -24,7 +24,9 @@ indiretos, ou quaisquer outras consequências decorrentes do uso, da instalaçã
 O uso é por conta e risco de quem o instala.
 
 Os termos de garantia e responsabilidade das licenças aplicáveis (Mozilla Public License 1.1 e demais licenças de
-componentes, ver [`LICENSE`](LICENSE)) continuam valendo integralmente.
+componentes, ver [`LICENSE`](LICENSE)) continuam valendo integralmente. Em especial, o transporte de rede deriva do
+MidWare (François Piette), freeware somente para uso pessoal/não comercial; os executáveis ficam sujeitos a essa
+restrição até a troca do transporte, e o uso dentro de empresas depende de autorização do autor do MidWare.
 
 ---
 
@@ -52,4 +54,6 @@ The authors and contributors **accept no liability** for data loss, work interru
 other consequences arising from the use, installation or inability to use this product. Use it at your own risk.
 
 The warranty and liability terms of the applicable licenses (Mozilla Public License 1.1 and the licenses of the bundled
-components, see [`LICENSE`](LICENSE)) remain fully in effect.
+components, see [`LICENSE`](LICENSE)) remain fully in effect. In particular, the network transport is derived from
+MidWare (François Piette), freeware for personal/non-commercial use only; the executables are subject to that
+restriction until the transport is replaced, and use inside companies depends on the MidWare author's consent.

@@ -2393,6 +2393,12 @@ object JVCSBaseAboutDlg: TJVCSBaseAboutDlg
             'ly'
           'stated to be copyright of the respective author(s).'
           ''
+          'The network transport is derived from MidWare'
+          '(c) Francois Piette - freeware for personal/'
+          'non-commercial use only. The executables are subject'
+          'to that restriction until the transport is replaced.'
+          'This product is based on MidWare. Freeware source'
+          'code is available at http://www.overbyte.be.'
           '')
         ParentFont = False
         ReadOnly = True
