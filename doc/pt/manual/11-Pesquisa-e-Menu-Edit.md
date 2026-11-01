@@ -1,7 +1,7 @@
 # 11. Pesquisa de módulos, filtro de projetos e menu Edit
 
 Capítulo do cliente standalone (`Jedivcs.exe`) e da janela Project Manager do expert. Vale a partir do
-build 2064 (Beta 6). Anterior: [10 Delphi 11 e 12](10-Delphi-11-e-12.md). Volta ao [índice](README.md).
+build 2065 (Beta 6). Anterior: [10 Delphi 11 e 12](10-Delphi-11-e-12.md). Volta ao [índice](README.md).
 
 Há três formas de achar alguma coisa:
 
@@ -68,7 +68,7 @@ O filtro usa a mesma regra do Find, sem diferenciar maiúsculas:
 > **Atenção:** na árvore, mudar a seleção com o mouse ou com as setas abre o projeto selecionado. Esse é
 > o comportamento original do JEDI VCS. Para só olhar, use o filtro.
 
-Antes do build 2064 o filtro aceitava só o nome inteiro (`01` não achava `exemplo01.dpr`) e diferenciava
+Antes do build 2065 o filtro aceitava só o nome inteiro (`01` não achava `exemplo01.dpr`) e diferenciava
 maiúsculas no nome do projeto.
 
 ## 3. Menu Edit
@@ -93,7 +93,7 @@ Regras dos atalhos:
   Windows.
 - Na aba **Line History**, `Ctrl+F`, `F3` e `Shift+F3` continuam sendo a pesquisa dentro do arquivo
   (as ações da aba valem antes do menu).
-- O menu antigo **Module > Copy to clipboard** (`Ctrl+F2`) continua: copia os nomes separados por espaço.
+- O item antigo **Copy to clipboard** (`Ctrl+F2`) do menu de contexto da lista de módulos continua: copia os nomes separados por espaço.
 - No Project Manager do expert, dentro do Delphi, o item Filter Projects não aparece. `Ctrl+Shift+P`
   continua sendo o atalho do expert para abrir o Project Manager
   ([04, seção 12](04-Opcoes-do-Cliente.md#12-shortcut-keys)).

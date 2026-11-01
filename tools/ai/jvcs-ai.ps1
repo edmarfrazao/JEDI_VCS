@@ -179,6 +179,8 @@ $script:BatchJournal = $null                       # diário do -Apply do lote
 $script:BatchProjectOf = $null                     # lote: caminho (minúsculas) -> projeto vindo do JSON (fallback)
 $script:FullNamesCache = @{}                       # S0003: projeto (minúsculas) -> linhas do listmodules (nomes sem corte)
 $script:ForcedIdOf = @{}                           # S0003: caminho (minúsculas) -> ID dado com id:<n> -Project
+# S0003: extensões de membro de família (acompanham o .pas/.dpr/.cpp com o mesmo nome-base)
+$script:JaMemberExtensions = @('.dfm', '.fmx', '.xfm', '.nfm', '.lfm', '.res', '.dcr', '.todo', '.ddp', '.h', '.hpp')
 $script:OnlyFilter = $null
 $script:JaDefaultProject = $null   # R4: {Name, Source, Where, Dir} do projeto padrão já resolvido
 $script:JaContextDirs = $null      # R4: pastas que decidem a identidade por pasta (dos arquivos, ou a atual)
@@ -211,6 +213,9 @@ function Resolve-IdFileArg {
     if ($script:Cmd -eq 'add') { throw (New-JaError 2 'add recebe arquivos, não id:<n> (o módulo ainda não existe no servidor)') }
     if (-not $Project) { throw (New-JaError 2 "com id:<n> informe -Project <projeto> (ex.: jvcs-ai.ps1 $script:Cmd id:$id -Project p.dpr)") }
     $proj = Get-ProjectNameFromArg $Project
+    # revisão Fable: a consulta ao servidor é feita sob o mutex da identidade, como os outros acessos
+    # (Enter-JaLock é idempotente; o checkin com compilação o solta durante o build)
+    Enter-JaLock
     $rows = Get-ModuleFullNames -ProjectName $proj
     if ($null -eq $rows) { throw (New-JaError 12 "id:<n> em $script:Cmd exige o console jvcs.exe 2026 (listmodules); ajuste: jvcs-ai.ps1 config set jvcsExe <jvcs.exe 2026>") }
     $row = @($rows | Where-Object { $_.Id -eq $id })
@@ -222,8 +227,34 @@ function Resolve-IdFileArg {
     $full = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath((Join-Path $m.Dir $m.File))
     # o servidor guarda em minúsculas: com o arquivo presente, usa a grafia do disco
     if (Test-Path -LiteralPath $full -PathType Leaf) { $full = (Get-Item -LiteralPath $full).FullName }
+    Assert-IdFolderIdentity -Id $id -Dir ([IO.Path]::GetDirectoryName($full))
     $script:ForcedIdOf[$full.ToLowerInvariant()] = $id
     return $full
+}
+
+# revisão Fable: com id:<n> a identidade foi decidida pela pasta atual (a do módulo só aparece depois da
+# consulta ao servidor). Confere a pasta do módulo com a mesma regra do caminho por arquivo: o mapa
+# [identities] do config.ini manda (sair dele pela IA exige aprovação) e o identity= do .jvcsproject confere.
+function Assert-IdFolderIdentity {
+    param([int]$Id, [string]$Dir)
+    $used = Get-JaIdentityCached
+    $explicit = [bool]$Identity
+    $e = Find-JaMapEntry -Map $script:CfgInfo.IdentityMap -Dir $Dir
+    if ($e -and $e.Value -ine $used.Name) {
+        if (-not $explicit) {
+            throw (New-JaError 2 "o módulo id:$Id está em $Dir, pasta que o mapa [identities] liga à identidade '$($e.Value)'; esta chamada usa '$($used.Name)' ($($used.Source)). Rode com o caminho do arquivo (ou de dentro da pasta dele), ou com -Identity $($e.Value)")
+        }
+        if ($script:IsAgent) {
+            $hint = (Get-JaCanonicalCommand 'jvcs-ai.ps1') + " $script:Cmd id:$Id -Project ... -Identity $($used.Name)"
+            if (Assert-JaHumanApproval -IsAgent $true -ConfirmedSwitch $Confirmed.IsPresent -InvocationLine $script:InvocationLine -InvocationScript $script:InvocationScript -Why "-Identity $($used.Name), diferente da identidade registrada pelo usuário para a pasta do módulo ($($e.Value) em $($e.Dir))," -CommandHint $hint) { $script:ConfirmedUsed = $true }
+        }
+        Add-JaWarning "pasta do módulo id:$Id mapeada para a identidade '$($e.Value)'; usando -Identity $($used.Name) (explícito)"
+    }
+    foreach ($mk in (Find-JaProjectMarkers $Dir)) {
+        if (-not $mk.Identity -or $mk.Identity -ieq $used.Name) { continue }
+        if ($explicit) { Add-JaWarning "$($mk.Path) declara identity=$($mk.Identity); usando -Identity $($used.Name) (explícito)"; continue }
+        throw (New-JaError 4 "a pasta do módulo id:$Id declara identity=$($mk.Identity) em $($mk.Path), mas a identidade em uso é '$($used.Name)' ($($used.Source)). Rode com o caminho do arquivo ou com -Identity $($mk.Identity)")
+    }
 }
 
 function Get-ProjectNameFromArg {
@@ -849,9 +880,12 @@ function Select-IdsByFullName {
     $cand = @($full | Where-Object { ($Ids -contains $_.Id) -and $_.Dir -and -not $_.NameHasPath -and
             (($_.Dir -ieq $DirL) -or ((Get-JaPathKey $_.Dir) -eq $dirKey)) })
     $hit = @($cand | Where-Object { $_.File -ieq $NameL })
-    if ($hit.Count -eq 0) {
+    # nome-base igual só para extensão de membro de família (o .dfm/.res de um .pas). Um .~pas, .bak, .sql
+    # ou .pas.orig com o mesmo nome-base NÃO é do módulo (revisão Fable): sai notVersioned, como com nome curto
+    if ($hit.Count -eq 0 -and $script:JaMemberExtensions -contains [IO.Path]::GetExtension($NameL)) {
         $base = [IO.Path]::GetFileNameWithoutExtension($NameL)
-        $hit = @($cand | Where-Object { [IO.Path]::GetFileNameWithoutExtension($_.File) -ieq $base })
+        $hit = @($cand | Where-Object { [IO.Path]::GetFileNameWithoutExtension($_.File) -ieq $base -and
+                [IO.Path]::GetExtension($_.File) -ine [IO.Path]::GetExtension($NameL) })
     }
     return [pscustomobject]@{ Known = $true; Ids = @($hit | ForEach-Object { [int]$_.Id } | Sort-Object -Unique) }
 }
@@ -2107,7 +2141,10 @@ function Invoke-CmdCheckin {
             }
             return
         }
-        $gate = Invoke-JaBuildGate -Files $files
+        # a compilação roda fora do mutex (o id:<n> já o toma ao resolver o arquivo)
+        $hadLock = $null -ne $script:Mutex
+        Exit-JaLock
+        try { $gate = Invoke-JaBuildGate -Files $files } finally { if ($hadLock) { Enter-JaLock } }
         if ($gate) {
             foreach ($f in $files) {
                 Add-JaResultItem ([ordered]@{ id = $null; name = [IO.Path]::GetFileName($f); path = $f; version = $null; lockedBy = $null; localState = $null; state = 'buildFailed'; exitCode = $gate.ExitCode; message = "$($gate.Message); nada foi enviado e os locks continuam. Corrija e repita (pular a compilação: -SkipBuild, só com aprovação do usuário)" })
@@ -6197,6 +6234,9 @@ function Invoke-AddOne {
     }
     if (-not (Test-ModeGate -Item $item -Kind 'checkin' -What ("add `"$FullPath`" -Project `"$proj`" -Comment `"$CommentText`""))) { return $item }
     $r = Invoke-Jvcs @(('openproject "' + $proj + '"'), ('addmodule "' + $FullPath + '" "' + $CommentText + '"'), ('checkin "' + $FullPath + '" "' + $CommentText + '"'), ('listproject "' + $proj + '"'))
+    # S0003 (revisão Fable): a lista de módulos mudou (mesmo se o addmodule falhou no meio): o próximo
+    # arquivo desta execução (ex.: o .dfm do .pas recém-cadastrado) relê o listmodules
+    [void]$script:FullNamesCache.Remove($proj.ToLowerInvariant())
     $e0 = Get-SectionError $r.Sections[0]
     if ($e0) { throw (New-JaError 5 "openproject $($proj): $e0") }
     $t1 = $r.Sections[1].Lines -join "`n"

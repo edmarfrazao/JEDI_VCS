@@ -33,7 +33,7 @@ opens first (see [03, section 3](03-Delphi-IDE-Integration.md#3-first-login)). A
 
 ## 2. Finding modules and projects
 
-Since build 2064. Full details (Portuguese): [manual 11](../pt/manual/11-Pesquisa-e-Menu-Edit.md).
+Since build 2065. Full details (Portuguese): [manual 11](../pt/manual/11-Pesquisa-e-Menu-Edit.md).
 
 | To find | Where | Shortcut |
 |---|---|---|

@@ -102,7 +102,9 @@ begin
   Caso('Exemplo01.res', P, 'exemplo??.res', msrExact);
   Caso('Exemplo01.res', P, 'plo*', msrContains);
   Caso('uPrincipal.pas', P, '*.res', msrNone);
-  Caso('uPrincipal.pas', P, '[abc', msrNone); // mascara invalida nao estoura
+  Caso('uPrincipal.pas', P, '[abc', msrNone); // colchete em texto simples e literal (nao ha sintaxe de colchetes)
+  Caso('uPrincipal.pas', P, '[abc*', msrNone); // colchete numa mascara que nao casa
+  Caso('form[x.pas', P, 'form[y*', msrNone);
   // colchete e literal (so * e ? sao curinga)
   Caso('Relatorio[old].pas', P, 'relatorio[old]*', msrExact);
   Caso('Relatorio[old].pas', P, 'relatorio[old]', msrWord);

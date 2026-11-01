@@ -669,6 +669,7 @@ var
   Node: PVirtualNode;
   Data: ^TVSTTreeItem;
   Rank, BestRank: Integer;
+  Dummy: string;
 begin
   Result := nil;
   BestRank := -1;
@@ -680,6 +681,13 @@ begin
     begin
       if not ABestMatch then
         Exit(Node);
+      // revisao Fable: so projeto que casa com o texto (a regra do filtro: palavras, mascaras). No
+      // "group filter" a arvore mostra todos os projetos do grupo encontrado, e nenhum precisa casar
+      if not JVCSFilterMatch(TProjectTreeProject(Data^.LinkedItem).ProjectName, edFilterText.Text, Dummy) then
+      begin
+        Node := VSTHierarchy.GetNext(Node);
+        Continue;
+      end;
       Rank := JVCSModuleSearchRank(TProjectTreeProject(Data^.LinkedItem).ProjectName, '', edFilterText.Text);
       if Rank > BestRank then
       begin

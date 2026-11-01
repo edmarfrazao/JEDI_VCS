@@ -2318,7 +2318,9 @@ procedure TVCSProjAdmin.acRefreshModuleList(Sender: TObject);
 var
   LastItem: string;
   I: Integer;
+  KeepSearch: Boolean;
 begin
+  KeepSearch := False;
   if not FIsInacRefreshModuleList then
   begin
     if pgMain.ActivePage <> tsDefault then
@@ -2333,6 +2335,10 @@ begin
         Exit;
       {$ENDIF IDEDLL}
       bPJM_NeedRefresh := False;
+
+      // v2026 (revisão Fable): o usuário estava digitando no Find? O FillListView e o SetFocus abaixo
+      // tiram o foco do campo; guarda antes, para não trocar o texto e refazer a pesquisa no fim
+      KeepSearch := edSearch.Focused and (edSearch.Text <> '');
 
       LastItem := '';
       if elvModules.SelCount = 1 then
@@ -2364,16 +2370,29 @@ begin
           elvModules.Items[0].Selected := True;
         ShowSelectedLVItem;
       end;
-      {$IFDEF IDEDLL}
-      if bPJM_TopWindow then
-        {$ENDIF IDEDLL}
-        elvModules.SetFocus;
-      // v2026: nao troca o que o usuario esta digitando no campo Find
-      if not (edSearch.Focused and (edSearch.Text <> '')) then
+      if KeepSearch then
+      begin
+        // v2026: nao troca o que o usuario esta digitando no campo Find
+        if edSearch.CanFocus then
+        begin
+          edSearch.SetFocus;
+          edSearch.SelStart := Length(edSearch.Text);
+        end;
+      end
+      else
+      begin
+        {$IFDEF IDEDLL}
+        if bPJM_TopWindow then
+          {$ENDIF IDEDLL}
+          elvModules.SetFocus;
         edSearch.Text := LastItem;
+      end;
     finally
       FIsInacRefreshModuleList := False;
     end;
+    // a pesquisa do texto digitado roda de novo na lista recem-montada
+    if KeepSearch then
+      SearchTimer.Enabled := True;
   end;
 end;
 
@@ -5754,7 +5773,9 @@ begin
     Key := 0;
     Exit;
   end;
-  if (Key = VK_ESCAPE) and (ActiveControl = edSearch) and (edSearch.Text <> '') then
+  // (durante a carga da lista o Esc segue abaixo e marca FPressedESC: interrompe a carga)
+  if (Key = VK_ESCAPE) and (ActiveControl = edSearch) and (edSearch.Text <> '') and
+    not (FIsInFillListView or FIsInacRefreshModuleList) then
   begin
     edSearch.Text := '';
     Key := 0;
@@ -6517,6 +6538,8 @@ var
   I, R, BestRank, Pick, Current, Count: Integer;
   Matches: array of Integer;
   Ranks: array of Integer;
+  OldSelectItem: TLVSelectItemEvent;
+  OldChange: TLVChangeEvent;
 begin
   S := AnsiLowerCase(Trim(edSearch.Text));
   if S = '' then
@@ -6558,6 +6581,12 @@ begin
 
     if Mode = 3 then
     begin
+      // revisao Fable: como em SelectionOfModules, sem OnSelectItem/OnChange por item (cada um avisa as
+      // janelas acopladas, ex.: Module History consulta o servidor); um aviso so, no fim
+      OldSelectItem := OnSelectItem;
+      OldChange := OnChange;
+      OnSelectItem := nil;
+      OnChange := nil;
       Items.BeginUpdate;
       try
         Selected := nil;
@@ -6565,9 +6594,15 @@ begin
           Items[Matches[I]].Selected := True;
       finally
         Items.EndUpdate;
+        OnSelectItem := OldSelectItem;
+        OnChange := OldChange;
       end;
       Items[Matches[0]].Focused := True;
       Items[Matches[0]].MakeVisible(False);
+      if Assigned(OnSelectItem) then
+        OnSelectItem(elvModules, Items[Matches[0]], True);
+      if Assigned(OnChange) then
+        OnChange(elvModules, Items[Matches[0]], ctState);
       dfsStatusBar.Panels[0].Text := Format(JVCSRES_Find_37d_matches_selected, [Count]);
       Exit;
     end;
@@ -12654,6 +12689,22 @@ begin
   {$ENDIF ~IDEDLL}
 end;
 
+// Alguma acao da lista tem este atalho (principal ou secundario), mesmo desabilitada?
+function FrameActionHasShortCut(AList: TCustomActionList; AShortCut: TShortCut): Boolean;
+var
+  I: Integer;
+  A: TBasicAction;
+begin
+  Result := False;
+  for I := 0 to AList.ActionCount - 1 do
+  begin
+    A := AList.Actions[I];
+    if (A is TCustomAction) and ((TCustomAction(A).ShortCut = AShortCut) or
+      (TCustomAction(A).SecondaryShortCuts.IndexOfShortCut(AShortCut) >= 0)) then
+      Exit(True);
+  end;
+end;
+
 function TVCSProjAdmin.IsShortCut(var Message: TWMKey): Boolean;
 var
   Ctl: TWinControl;
@@ -12670,23 +12721,32 @@ begin
   end;
   // v2026: com o foco dentro de um frame (ex.: aba Line History, que tem Ctrl+F/F3 proprios),
   // as acoes do frame valem antes do menu principal (o menu Edit tambem usa Ctrl+F/F3)
+  SC := ShortCutFromMessage(Message);
   Ctl := FindControl(GetFocus);
   while Assigned(Ctl) and (Ctl <> Self) do
   begin
     if Ctl is TCustomFrame then
       for I := 0 to Ctl.ComponentCount - 1 do
-        if (Ctl.Components[I] is TCustomActionList) and
-          TCustomActionList(Ctl.Components[I]).IsShortCut(Message) then
+        if Ctl.Components[I] is TCustomActionList then
         begin
-          Result := True;
-          Exit;
+          if TCustomActionList(Ctl.Components[I]).IsShortCut(Message) then
+          begin
+            Result := True;
+            Exit;
+          end;
+          // revisao Fable: o atalho e do frame mesmo com a acao desabilitada (ex.: F3 do Line History antes
+          // da 1a pesquisa): a tecla fica com o frame e nao cai no menu Edit
+          if (SC <> 0) and FrameActionHasShortCut(TCustomActionList(Ctl.Components[I]), SC) then
+          begin
+            Result := True;
+            Exit;
+          end;
         end;
     Ctl := Ctl.Parent;
   end;
   // v2026: o MainMenu1 aparece pelo MenuBar1 (TJvToolBar.Menu) e nao e o Menu do form, entao
   // a VCL nunca despacha os atalhos dos itens de menu (so os das TActionList). Os do menu Edit
   // sao despachados aqui; os demais itens continuam como sempre foram (sem atalho efetivo).
-  SC := ShortCutFromMessage(Message);
   if SC <> 0 then
     for I := 0 to mmiEdit.Count - 1 do
       if (mmiEdit[I].ShortCut = SC) and mmiEdit[I].Visible and mmiEdit[I].Enabled then
@@ -12697,7 +12757,10 @@ begin
       end;
   // v2026: Esc num campo de pesquisa (Find, filtro de projetos): com texto limpa o campo,
   // vazio volta para a lista de modulos.
-  if (Message.CharCode = VK_ESCAPE) and (KeyDataToShiftState(Message.KeyData) = []) then
+  // (revisao Fable: durante a carga da lista o Esc nao e consumido aqui; chega ao FormKeyDown, que marca
+  // FPressedESC e oferece interromper a carga, como antes)
+  if (Message.CharCode = VK_ESCAPE) and (KeyDataToShiftState(Message.KeyData) = []) and
+    not (FIsInFillListView or FIsInacRefreshModuleList) then
   begin
     Ctl := FocusedTextControl;
     if IsSearchField(Ctl) then
@@ -12851,7 +12914,8 @@ procedure TVCSProjAdmin.PopupMenu1Popup(Sender: TObject);
 begin
   pmiCopyFullPath.Enabled := elvModules.SelCount > 0;
   pmiCopyFolder.Enabled := pmiCopyFullPath.Enabled;
-  pmiOpenInExplorer.Enabled := Assigned(elvModules.Selected);
+  // um modulo so (como Open Parent Folder, F6): com varios, Selected seria o 1o da lista, nao o clicado
+  pmiOpenInExplorer.Enabled := elvModules.SelCount = 1;
   // um modulo, com servidor (o mesmo estado de Server > Search Modules)
   pmiSearchInAllProjects.Enabled := (elvModules.SelCount = 1) and mmiSearchmodules.Enabled;
 end;
@@ -12889,7 +12953,7 @@ end;
 // Explorer na pasta do modulo focado, com o arquivo selecionado (o mesmo de Open Parent Folder, F6)
 procedure TVCSProjAdmin.pmiOpenInExplorerClick(Sender: TObject);
 begin
-  if Assigned(elvModules.Selected) then
+  if elvModules.SelCount = 1 then
     acOpenParentFolderExecute(Sender);
 end;
 

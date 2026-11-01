@@ -24,7 +24,7 @@ As 19 páginas do código-fonte (v2026) são: User Interface, Common Options, Co
 | Opção | O que faz | Recomendação |
 |---|---|---|
 | On module double click do | Ação do duplo clique num módulo no Project Manager: nothing, View module, Check In module, Check Out module, Get module, Compare module, Show history, Maintain labels, Open parent folder | `Show history` ou `nothing`. Evite Check In/Out para não agir por engano |
-| Find module timer interval | Atraso (ms) entre a tecla e a busca no Project Manager (padrão da tela: 750) | Manter |
+| Find module timer interval | Atraso (ms) entre a última tecla e a busca do campo Find no Project Manager (padrão 300, de 100 a 5000; ver [manual 11](11-Pesquisa-e-Menu-Edit.md)) | Manter |
 | Show local info (Original name/ Size/ Attr...) | Mostra nome, tamanho, data e atributos locais | **Desligue** em projetos grandes ou em pasta de rede: acelera muito a abertura |
 | Show detailed file type information | Mostra o tipo do Windows ("Delphi Unit") em vez da extensão | Desligue pelo mesmo motivo |
 | Show tooltips / Beep on error | Dicas e bipe de erro | Preferência pessoal |

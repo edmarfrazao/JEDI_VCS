@@ -7,6 +7,26 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+### Corrigido (build 2066, revisão do build 2065)
+- Wrapper da IA (S0003):
+  - `add` de `.pas` + `.dfm` de nome longo numa execução só podia cadastrar o `.dfm` como módulo avulso
+    (cache do `listmodules` desatualizado depois do `addmodule`);
+  - arquivo com o mesmo nome-base de um módulo longo, mas que não é membro (`.~pas`, `.sql`, `.bak`), saía
+    como versionado; agora o nome-base só vale para extensões de membro (`.dfm`, `.fmx`, `.res`...);
+  - `id:<n>` confere a identidade da pasta do módulo (mapa `[identities]` e `.jvcsproject`), não só a da
+    pasta atual, e consulta o servidor dentro do mutex da identidade;
+  - `checkin` com `buildCheck`: a compilação continua fora do mutex também com `id:<n>`.
+- Cliente:
+  - **Select All Matches** (`Ctrl+Enter`) avisava as janelas acopladas uma vez por módulo (lento com
+    Module History aberto); agora avisa uma vez;
+  - o refresh da lista sobrescrevia o texto que você digitava no **Find** e tirava o foco do campo;
+  - `Enter` no filtro da árvore, nos modos de grupo, podia abrir um projeto que não casa com o texto;
+  - **Open in Explorer** só fica habilitado com um módulo selecionado;
+  - `Esc` num campo de pesquisa volta a interromper a carga de um projeto;
+  - `F3`/`Shift+F3` na aba Line History antes da 1ª pesquisa não saltam mais para o Find dos módulos.
+- Documentação: tabela de versões do `Versoes.md` (linhas do 2063 e do 2065), espera do Find no manual 04
+  (300 ms), local do item Copy to clipboard e "build 2065" no manual 11 e no `doc/en/04`.
+
 ## [Beta 6, build 2065] — 2026-10-31
 
 Recompilação de correção do Beta 6, sobre o build 2063. O build 2064 foi interno e não foi publicado.

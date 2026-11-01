@@ -38,7 +38,9 @@ Segue o **mesmo padrão do JEDI VCS original** (`jvcsver.rc` do 2.5.0.1030: `FIL
 | Beta 6 | 2060 | `2.5.0.2060` | `2.5.0 Beta 6 (2026)` | `JediVCS-2.5.0-Beta6-build2060-Setup.exe` |
 | Beta 6, 1ª recompilação de correção (18/10/2026) | 2061 | `2.5.0.2061` | `2.5.0 Beta 6 (2026)` | `JediVCS-2.5.0-Beta6-build2061-Setup.exe` |
 | Beta 6, 2ª recompilação de correção (19/10/2026) | 2062 | `2.5.0.2062` | `2.5.0 Beta 6 (2026)` | `JediVCS-2.5.0-Beta6-build2062-Setup.exe` |
-@@ROW2065@@
+| Beta 6, 3ª recompilação de correção (19/10/2026) | 2063 | `2.5.0.2063` | `2.5.0 Beta 6 (2026)` | `JediVCS-2.5.0-Beta6-build2063-Setup.exe` |
+| Beta 6, recompilação interna (31/10/2026; não publicada) | 2064 | `2.5.0.2064` | `2.5.0 Beta 6 (2026)` | — |
+| Beta 6, 4ª recompilação de correção (31/10/2026) | 2065 | `2.5.0.2065` | `2.5.0 Beta 6 (2026)` | `JediVCS-2.5.0-Beta6-build2065-Setup.exe` |
 | Versão final | 2100 | `2.5.0.2100` | `2.5.0 (2026)` | `JediVCS-2.5.0-build2100-Setup.exe` |
 
 Regra: beta N → build `2000 + N×10`; recompilação de correção da mesma beta → +1 (2051, 2052, …); final

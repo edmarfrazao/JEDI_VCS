@@ -150,10 +150,44 @@ Ok ($r.Code -eq 2) "add id:1 -> 2"
 $r = J $S @('checkout', '#id:5', '-Project', $prj)
 Ok ($r.Code -eq 2 -or (M $r).exitCode -eq 2) "#id:5 -> 2"
 
+# --- revisão Fable: add de .pas + .dfm numa execução só, com um módulo de mesmo prefixo já no projeto
+$fV = "$G\Estrutura.Firma.Sesiag.NotaFiscalDevolucao.pas"
+$fVd = "$G\Estrutura.Firma.Sesiag.NotaFiscalDevolucao.dfm"
+[IO.File]::WriteAllText($fV, "unit Estrutura.Firma.Sesiag.NotaFiscalDevolucao;`r`ninterface`r`nimplementation`r`n{`$R *.dfm}`r`nend.`r`n", $enc)
+[IO.File]::WriteAllText($fVd, "object Form2: TForm2`r`n  Caption = 'Devolucao'`r`nend`r`n", $enc)
+$r = J $G @('add', $fV, $fVd, '-Comment', '[zz-teste] pas+dfm numa execucao', '-Project', $prj)
+$st = @($r.Json.modules | ForEach-Object { "$($_.name)=$($_.state)" })
+Ok (@($r.Json.modules | Where-Object { $_.name -like '*Devolucao.pas' -and $_.state -eq 'added' }).Count -eq 1 -and
+    @($r.Json.modules | Where-Object { $_.name -like '*Devolucao.dfm' -and $_.state -eq 'alreadyVersioned' }).Count -eq 1) "add .pas+.dfm numa execução: $($st -join ', ')"
+$r = J $G @('modules', '-Project', $prj)
+Ok (@($r.Json.modules | Where-Object { $_.name -like '*.dfm' }).Count -eq 0) 'nenhum módulo *.dfm avulso criado no servidor'
+
+# --- revisão Fable: mesmo nome-base, extensão que não é de membro (.~pas, .sql) = não versionado
+$fT = "$G\Estrutura.Firma.Sesiag.NotaFiscalEntrada.~pas"
+[IO.File]::WriteAllText($fT, "// backup do Delphi`r`n", $enc)
+$r = J $G @('status', $fT)
+Ok ($r.Code -eq 0 -and (M $r).localState -eq 'notVersioned') "status do .~pas com o nome-base de um módulo -> $((M $r).localState)"
+$fQ = "$G\Estrutura.Firma.Sesiag.NotaFiscalEntrada.sql"
+[IO.File]::WriteAllText($fQ, "select 1;`r`n", $enc)
+$r = J $G @('add', $fQ, '-Comment', '[zz-teste] sql com nome-base igual', '-Project', $prj)
+Ok ($r.Code -eq 0 -and (M $r).state -eq 'added') "add do .sql com o nome-base de um módulo -> $((M $r).state) ($((M $r).message))"
+
 # --- nada ficou em checkout
 $r = J $S @('locks', '-NoLocalState')
 $lk = @($r.Json.modules | ForEach-Object { [int]$_.id })
 Ok (-not ($lk -contains $idE) -and -not ($lk -contains $idS)) 'nenhum lock restante nos módulos do teste'
+
+# --- revisão Fable: id:<n> confere a identidade da PASTA DO MÓDULO (mapa [identities]), não só a pasta atual.
+# APPDATA à parte, com a pasta do teste mapeada para uma identidade que não existe: pelo caminho do arquivo a
+# chamada nem acha a identidade (4); com id:<n> rodado de fora da pasta, a identidade padrão é usada e o
+# wrapper precisa recusar (2) ao descobrir que a pasta do módulo é de outra identidade.
+$AD2 = Join-Path $S 'appdata-s0003-mapa'
+New-Item -ItemType Directory -Force "$AD2\JEDI\JVCS" | Out-Null
+[IO.File]::WriteAllText("$AD2\JEDI\JVCS\config.ini", "[ai]`r`njvcsExe=$Console`r`nidentity=DEFAULT`r`ncheckout=auto`r`ncheckin=auto`r`n[identities]`r`n$G=ZZ-TESTE-OUTRA`r`n", (New-Object Text.UTF8Encoding($true)))
+$env:APPDATA = $AD2
+$r = J $S @('status', "id:$idS", '-Project', $prj)
+Ok ($r.Code -eq 2 -and [string]$r.Json.message -match 'ZZ-TESTE-OUTRA') "id:<n> com a pasta do módulo mapeada para outra identidade -> $($r.Code) ($($r.Json.message))"
+$env:APPDATA = $AD
 } finally {
     $env:APPDATA = $appdataOriginal
 }
