@@ -12,6 +12,7 @@ ao usuário e sugira o passo dele.
 | `[ERRO 4] a pasta declara identity=X em ... .jvcsproject` | o marcador pede outra identidade | o usuário registra com `config set identityMap "<pasta>" X`; a IA não usa `-Identity` por conta própria |
 | `[ERRO 7] marcador ...\.jvcsproject inválido: ...` | linha ou nome inválido no marcador (inclusive `project: caractere especial de shell`) | avisar o usuário; corrigir o arquivo (`project=<nome>`) |
 | `[ERRO 10] -Identity X, diferente da identidade registrada ...` | a IA tentou sair da identidade da pasta | só com a aprovação do usuário (`-Confirmed`) |
+| `[ERRO 10] -Identity X, diferente da identidade padrão (...)` com X igual à identidade do mapa da pasta | problema conhecido: a comparação é com a identidade padrão, não com a do mapa | **não passe `-Identity`**: o mapa `[identities]` já escolhe X. Não peça `-Confirmed` por isso |
 | `projeto '...' não existe no servidor` (5) | projeto não criado no JEDI VCS ou nome diferente | `projects` para listar; usuário cria pelo cliente |
 | `notVersioned` | arquivo não é módulo | editar sem checkout; versionar só se o usuário pedir (`add`, console 2026) |
 | `local=unknown -> pathTruncated` | caminho do servidor truncado (47 car.) e arquivo não achado sob a pasta do projeto | rodar `status "<arquivo>"` na pasta do projeto |

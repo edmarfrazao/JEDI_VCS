@@ -7,6 +7,11 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+### Documentação
+- Wrapper da IA: escolha da identidade explicada em `tools/ai/LEIAME.md` (seção 18, R4), com o problema conhecido do
+  `-Identity` igual ao mapa `[identities]` (exemplo, contorno e correção prevista) e a conferência do `id:<n>`.
+  Item de homônimos da seção 7 atualizado para a S0003. Skills: linha nova em solução de problemas.
+
 ## [Beta 6, build 2066] — 2026-11-01
 
 Recompilação de correção do Beta 6, sobre o build 2065, com as correções da revisão do 2065.

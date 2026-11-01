@@ -12,6 +12,7 @@ to the user and suggest their next step.
 | `[ERRO 4] a pasta declara identity=X em ... .jvcsproject` | the marker asks for another identity | the user registers it with `config set identityMap "<folder>" X`; the AI does not use `-Identity` on its own |
 | `[ERRO 7] marcador ...\.jvcsproject inválido: ...` | invalid line or name in the marker (including `project: caractere especial de shell`) | tell the user; fix the file (`project=<name>`) |
 | `[ERRO 10] -Identity X, diferente da identidade registrada ...` | the AI tried to leave the folder's identity | only with the user's approval (`-Confirmed`) |
+| `[ERRO 10] -Identity X, diferente da identidade padrão (...)` with X equal to the folder's map identity | known issue: the comparison is against the default identity, not the map | **do not pass `-Identity`**: the `[identities]` map already picks X. Do not ask for `-Confirmed` for this |
 | `projeto '...' não existe no servidor` (5) | project not created in JEDI VCS, or a different name | `projects` to list them; the user creates it in the client |
 | `notVersioned` | the file is not a module | edit without check-out; version it only if the user asks (`add`, 2026 console) |
 | `local=unknown -> pathTruncated` | server path truncated (47 chars) and file not found under the project folder | run `status "<file>"` in the project folder |

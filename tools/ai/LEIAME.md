@@ -509,8 +509,10 @@ menos itens que arquivos), **nada sai do registro** e a mensagem diz `(status fa
    - `status -Project` procura o arquivo sob a pasta do `.dpr` (ou do `.jvcsproject`/mapa `[projects]`, seção 18, R4).
      Se não achar, devolve `localState=unknown`.
    - A prova precisa de um arquivo do módulo existente localmente; sem nenhum → 5.
-2. **Módulos homônimos** no mesmo projeto com o mesmo prefixo visível → erro 5. Não há como distinguir
-   pelo console. Nome de arquivo com mais de 30 caracteres também aparece truncado (comparação por prefixo).
+2. **Nome de arquivo com mais de 30 caracteres** aparece truncado no `listproject` (comparação por prefixo). Desde a
+   S0003 (build 2065), o wrapper desempata pelo nome completo do `listmodules` (console 2026); com o console original
+   continua o erro 5 para homônimos. Só fica empatado (5) o caso de dois módulos com o mesmo nome completo e a mesma
+   pasta: aí use `id:<n> -Project p` (veja `jvcs-ai.ps1 modules -Project p`).
 3. **Sessão única:**
    - O servidor sem branching apaga a sessão anterior do mesmo usuário no LOGIN (F-A). O servidor de teste
      (com branching) aceitou IDE e CLI juntas.
@@ -539,6 +541,8 @@ menos itens que arquivos), **nada sai do registro** e a mensagem diz `(status fa
     confere de novo byte a byte; o `-Only` vale sobre o retrato gravado no JSON, não sobre o estado atual. Chamando
     `powershell -File` de dentro do PowerShell, escreva `-Only "clean,mine"` entre aspas (sem aspas, a vírgula vira
     argumentos soltos e o lote dá 2 com essa dica).
+15. **Identidade:** pela IA, `-Identity` igual à identidade que o mapa `[identities]` dá para a pasta ainda pede
+    `-Confirmed` (10). Contorno: não passar `-Identity` quando a pasta está no mapa. Detalhes na seção 18, R4.
 
 ---
 
@@ -1612,6 +1616,9 @@ d:\fontes=Usuario
   `diff`, `history`, `show`, `blame`, `revert`, `add`, `labels`, `shared`, `bugs`, `bug-add`, `bug-link`, `rm-module`,
   `rename-module` (só o 1º argumento), `hide`, `comment`; sem os `id:<n>`); sem arquivo, a de `-Project <pasta>`;
   senão a pasta atual. Rodado fora, com `-Project <nome>`: a pasta do `[projects]` desse projeto, se for uma só.
+- Com `id:<n>` (build 2066), a pasta do módulo só aparece depois da consulta ao servidor: o wrapper então confere essa
+  pasta com a mesma regra. Mapa `[identities]` de outra identidade → **2** (sem `-Identity`) ou aprovação da IA (com
+  `-Identity`); `identity=` divergente no `.jvcsproject` → **4**.
 - Vale a entrada mais próxima de cada pasta. Pastas de identidades diferentes numa chamada → **2** ("faça uma chamada
   por identidade"); parte das pastas no mapa e parte fora, com identidade padrão diferente → **2** (o arquivo fora do
   mapa não troca de credencial); com a mesma identidade, segue.
@@ -1622,6 +1629,23 @@ d:\fontes=Usuario
   explícito, só aviso.
 - Pela IA, `-Identity` diferente da identidade que o usuário mapeou para **qualquer** das pastas do comando exige
   `-Confirmed` (10); com a aprovação, segue com aviso. Para humano, só o aviso.
+- Sem pasta mapeada, pela IA, `-Identity` diferente da identidade **padrão** (`[ai] identity`, senão `LastUsedID`) também
+  exige `-Confirmed` (10): a IA não troca de credencial sozinha (ex.: uma identidade de administrador salva).
+- **Problema conhecido (até o build 2066):** com a pasta no mapa, a IA passar **exatamente** a identidade do mapa ainda
+  cai na regra anterior, porque a comparação é feita com a identidade padrão, não com a do mapa. Exemplo:
+
+  ```
+  config.ini:  identity=DEFAULT
+               [identities]
+               D:\PROG=Edmar
+  IA, em D:\PROG:  jvcs-ai.ps1 status x.prg -Identity Edmar   -> 10, pede -Confirmed
+  ```
+
+  `Edmar` é a identidade certa da pasta. Não há risco de segurança (o wrapper pede aprovação a mais, não a menos), mas
+  cada comando da IA para esperando o usuário. **Contorno:** não passar `-Identity` quando a pasta está no mapa; o mapa
+  já escolhe `Edmar`. **Correção prevista:** antes de comparar com a padrão, aceitar sem aprovação a identidade que o
+  mapa dá para todas as pastas do comando (`Get-JaIdentity`, ramo do `-Identity` explícito), com um caso novo em
+  `tests\ia\teste-seguranca.ps1`.
 
 **Projeto novo sem `.dpr`**: `addproject projeto1` (nome **sem** extensão; `.dpr/.dpk` continuam valendo; outra extensão,
 só dígitos, mais de 50 caracteres, caractere inválido ou fora da 1252 → 2; nome sem extensão numa pasta com `.dpr` →
