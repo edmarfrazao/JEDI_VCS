@@ -7,6 +7,10 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+## [Beta 6, build 2068] — 2026-11-17
+
+Recompilação do Beta 6 com a code page configurável ([issue #1](https://github.com/edmarfrazao/JEDI_VCS/issues/1)). O build 2067 foi interno (não publicado).
+
 ### Adicionado
 - Code page do fio configurável (issue #1: Windows-1251 cirílico e outras além da 1252). Antes os textos iam
   sempre em 1252: comentários antigos em 1251 apareciam como `Ïîïðàâêà` e os novos iam como `????`. Agora a
