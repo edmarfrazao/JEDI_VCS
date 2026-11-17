@@ -7,10 +7,18 @@ torna o console seguro para automação. Nas versões 1.2.0 a 1.4.0 o wrapper ga
 check-in: diff, histórico, log do projeto, busca, labels, ToDo, bugs, blame, revert, sincronização e
 administração (tabela da seção 3; detalhes nas seções 11 a 17).
 
+> **Code page (build 2068, issue #1).** Onde este documento diz **CP1252**, leia "a code page do console": a
+> do `config.ini` (`wireCodePage=`), senão `JVCS_WIRECODEPAGE`, senão o valor `WireCodePage` em
+> `HKCU\Software\JEDI\JEDIVCS`, senão a ACP do Windows se for de 1 byte, senão 1252. O wrapper passa essa code page
+> ao `jvcs.exe` 2026 em `JVCS_WIRECODEPAGE`; o console original 2.5.0.1030 usa sempre a ACP. Fontes **ANSI** no disco
+> (`edit-preserve`, hook, `revert`, `diff -Encoding ansi`) usam a ACP do Windows (1251 numa estação cirílica;
+> 1252 se a ACP for UTF-8; `JVCS_SOURCECODEPAGE` muda). O `doctor` mostra as duas. Numa estação com ACP 1252 e sem
+> configuração, tudo continua em 1252.
+
 | Arquivo | Para quê |
 |---|---|
 | `jvcs-ai.ps1` | Wrapper do `jvcs.exe`: identidade salva, senha pelo stdin, mutex, timeout, prova do caminho do servidor, pré-checagens, JSON |
-| `edit-preserve.ps1` | Edição de fonte preservando codificação (ANSI 1252, UTF-8 com/sem BOM, UTF-16) e quebras de linha (CRLF/LF/CR) |
+| `edit-preserve.ps1` | Edição de fonte preservando codificação (ANSI na ACP do Windows, UTF-8 com/sem BOM, UTF-16) e quebras de linha (CRLF/LF/CR) |
 | `hooks\pretooluse.ps1` | Hook `PreToolUse` do Claude Code para `Edit\|MultiEdit\|Write` em fontes Delphi (codificação, checkout, somente leitura) |
 | `hooks\stop.ps1` | Hook `Stop`: lembra os checkouts da sessão que ficaram presos (só avisa, nunca bloqueia) |
 | `lib\jvcs-ai-common.ps1` | Funções comuns (JSON, config.ini, codificação, contexto de agente, aprovação, auditoria) |
@@ -369,11 +377,11 @@ edit-preserve.ps1 -Path Novo.pas -ContentFile c.txt -NewFileEncoding Ansi|Utf8Bo
 ```
 
 - Detecta: BOM UTF-8 → `utf8bom`; BOM UTF-16 → `utf16le`/`utf16be`; NUL → `binary` (recusa); sem byte
-  ≥ 0x80 → `ascii`; UTF-8 estrito válido → `utf8`; senão `ansi` (1252).
+  ≥ 0x80 → `ascii`; UTF-8 estrito válido → `utf8`; senão `ansi` (ACP do Windows: 1252, 1251...).
 - Antes de editar, exige que o arquivo faça ida e volta byte a byte na codificação detectada (código 8 se não fizer).
 - `-Old` ausente → 4; mais de uma ocorrência sem `-All` → 5; resultado idêntico → 3.
 - As quebras de linha de `-Old`/`-New`/`-ContentFile` são convertidas para as do arquivo (CRLF, LF ou CR isolado).
-- Alvo ANSI: caractere fora do 1252 → 6. Alvo ASCII que recebe acento → grava em 1252 (`asciiAs=ansi`),
+- Alvo ANSI: caractere fora da ACP do Windows → 6. Alvo ASCII que recebe acento → grava na ACP (`asciiAs=ansi`),
   porque o compilador Delphi lê fonte sem BOM como ANSI.
 - Nunca tira o somente leitura (7). Em arquivo de projeto JEDI VCS aplica o modo de checkout:
   `auto` → `ensure-checkout`; `confirm`/`manual` → exige checkout prévio (10). `-DryRun` simula.
