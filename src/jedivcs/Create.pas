@@ -229,7 +229,7 @@ uses
   JvGnugettext,
   {$ENDIF LANGUAGE}
   Vcsbase, VCSCommon, VCSProcBase, JVCSDialogs, mdMailSlot, DBModule, ShellAPI,
-  Winsock, SMTPSend, TZHandling, GetGlobalSettings,
+  Winsock, SMTPSend, TZHandling, GetGlobalSettings, JVCSWireCodePage,
   JVCSClientFunctions, JVCSCrypt, JVCSClientConsts,
   JclSysInfo, JclFileUtils, JclSecurity, JclWin32, ConfigStorage, JVCSGUIClientResources;
 
@@ -545,6 +545,9 @@ begin
           Exit;
         end;
 
+        // JVCS 2026 (issue #1): o LOGIN vai na code page da estacao; a do
+        // servidor (WireCodePage), se houver, vale logo depois do login
+        JVCSApplyLocalWireCodePage;
         AppSrvClient1.Request.Rewrite;
         AppSrvClient1.FunctionCode := 'LOGIN';
         AppSrvClient1.Request.WriteFields(True,  [UserEdit.Text]);
@@ -669,6 +672,9 @@ begin
         end; // on E:Exception do begin
       end; // try except
     end; // with DataModule1 do begin
+
+    // JVCS 2026 (issue #1): code page do fio definida no servidor
+    GetServerWireCodePage(Application);
 
     if UserEdit.Text <> sCurrentUser then
       sCurrentUser := UserEdit.Text;

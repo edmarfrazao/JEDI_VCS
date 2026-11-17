@@ -7,6 +7,20 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
 
 ## [Não publicado]
 
+### Adicionado
+- Code page do fio configurável (issue #1: Windows-1251 cirílico e outras além da 1252). Antes os textos iam
+  sempre em 1252: comentários antigos em 1251 apareciam como `Ïîïðàâêà` e os novos iam como `????`. Agora a
+  code page vem de `WireCodePage` em `[GlobalUserData]` no `jvcssrv.ini` do servidor (lida depois do login, com
+  qualquer servidor 2.x), senão de `JVCS_WIRECODEPAGE` ou de `HKCU\Software\JEDI\JEDIVCS\WireCodePage`, senão da
+  ACP do Windows quando ela é de 1 byte (como o cliente original), senão 1252. Vale para o cliente, a DLL da IDE
+  e o `jvcs.exe` (unit nova `src/common/client/JVCSWireCodePage.pas`).
+- Console `jvcs.exe`: stdin/stdout redirecionados, `/input`, `descriptionfile` e `workaroundfile` na code page
+  da estação (antes 1252 fixa; com ACP 65001 a saída redirecionada saía em UTF-8).
+- Wrapper da IA: `wireCodePage=` no `config.ini` (vazio = mesma escolha do console), repassado ao `jvcs.exe` em
+  `JVCS_WIRECODEPAGE`; validação de comentários e nomes nessa code page. O `edit-preserve.ps1` e o hook gravam
+  fontes ANSI na ACP do Windows (1251 numa estação cirílica), não mais em 1252 fixa. O `doctor` mostra as duas.
+- Teste `tests/cliente/teste-codepage.ps1` (sem servidor), incluído no `tests\executar.bat cliente`.
+
 ### Documentação
 - Wrapper da IA: escolha da identidade explicada em `tools/ai/LEIAME.md` (seção 18, R4), com o problema conhecido do
   `-Identity` igual ao mapa `[identities]` (exemplo, contorno e correção prevista) e a conferência do `id:<n>`.

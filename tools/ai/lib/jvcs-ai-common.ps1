@@ -43,12 +43,91 @@ $script:JaConfigDefaults = [ordered]@{
     buildCommandSha256 = ''
     verifyExtensions   = ''
     jvcsExeSha256      = ''
+    wireCodePage       = ''
 }
 
-# Codificações. 1252 estrita (exceção em caractere não representável) para gravar;
-# a decodificação de 1252 no .NET mapeia todos os 256 bytes.
-$script:JaEnc1252Strict = [Text.Encoding]::GetEncoding(1252, (New-Object Text.EncoderExceptionFallback), (New-Object Text.DecoderExceptionFallback))
-$script:JaEnc1252 = [Text.Encoding]::GetEncoding(1252)
+# Codificações (issue #1: code pages além da 1252). São duas code pages:
+#  - console/fio ($script:JaWireCP): stdin/stdout e /input do jvcs.exe, arquivos de descrição, comentários e
+#    nomes. Mesma escolha do jvcs.exe (src\common\client\JVCSWireCodePage.pas): JVCS_WIRECODEPAGE >
+#    HKCU\Software\JEDI\JEDIVCS\WireCodePage > ACP do Windows se for de 1 byte > 1252. O config.ini
+#    (wireCodePage=) muda só para o wrapper, que passa o valor ao jvcs.exe em JVCS_WIRECODEPAGE.
+#  - fontes ANSI no disco ($script:JaAnsiCP): a ACP do Windows se for de 1 byte (a IDE Delphi lê fonte sem
+#    BOM na ACP), senão 1252; JVCS_SOURCECODEPAGE muda.
+# Estritas (exceção em caractere não representável) para gravar; as outras para ler.
+
+# "1251", "cp1251", "windows-1251" ou "win1251" -> 1251; inválido -> 0.
+function ConvertTo-JaCodePage {
+    param([string]$Value)
+    if ($null -eq $Value) { return 0 }
+    $t = $Value.Trim().ToLowerInvariant()
+    if ($t.StartsWith('windows-')) { $t = $t.Substring(8) } elseif ($t.StartsWith('win')) { $t = $t.Substring(3) } elseif ($t.StartsWith('cp')) { $t = $t.Substring(2) }
+    $t = $t.Trim()
+    if ($t -notmatch '^\d{1,5}$') { return 0 }
+    $n = [int]$t
+    if ($n -lt 1 -or $n -gt 65535) { return 0 }
+    return $n
+}
+
+# Code page instalada e utilizável no fio: de 1 byte, ou com -AllowMultiByte as ANSI de 2 bytes do Windows
+# (932, 936, 949, 950, 1361). UTF-7/8/16/32 não. Mesma regra do JVCSIsUsableCodePage do cliente.
+function Test-JaUsableCodePage {
+    param([int]$CodePage, [switch]$AllowMultiByte)
+    if (@(0, 1, 2, 3, 42, 1200, 1201, 12000, 12001, 65000, 65001) -contains $CodePage) { return $false }
+    try { $e = [Text.Encoding]::GetEncoding($CodePage) } catch { return $false }
+    if ($e.IsSingleByte) { return $true }
+    return ([bool]$AllowMultiByte -and @(932, 936, 949, 950, 1361) -contains $CodePage)
+}
+
+# ACP do Windows (o .NET Core trocaria Encoding.Default por UTF-8: lê do registro primeiro).
+function Get-JaSystemAnsiCodePage {
+    try {
+        $v = (Get-ItemProperty -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Control\Nls\CodePage' -Name ACP -ErrorAction Stop).ACP
+        $n = ConvertTo-JaCodePage ([string]$v)
+        if ($n -gt 0) { return $n }
+    } catch { }
+    return [Text.Encoding]::Default.CodePage
+}
+
+# Escolha da estação (igual à do jvcs.exe): devolve @{ CodePage; Source }.
+function Get-JaLocalWireCodePage {
+    $n = ConvertTo-JaCodePage ([Environment]::GetEnvironmentVariable('JVCS_WIRECODEPAGE'))
+    if ($n -gt 0 -and (Test-JaUsableCodePage $n -AllowMultiByte)) { return [pscustomobject]@{ CodePage = $n; Source = 'JVCS_WIRECODEPAGE' } }
+    try {
+        $v = (Get-ItemProperty -LiteralPath 'HKCU:\Software\JEDI\JEDIVCS' -Name WireCodePage -ErrorAction Stop).WireCodePage
+        $n = ConvertTo-JaCodePage ([string]$v)
+        if ($n -gt 0 -and (Test-JaUsableCodePage $n -AllowMultiByte)) { return [pscustomobject]@{ CodePage = $n; Source = 'registro' } }
+    } catch { }
+    $n = Get-JaSystemAnsiCodePage
+    if (Test-JaUsableCodePage $n) { return [pscustomobject]@{ CodePage = $n; Source = 'ACP do Windows' } }
+    return [pscustomobject]@{ CodePage = 1252; Source = 'padrão' }
+}
+
+function Get-JaAnsiSourceCodePage {
+    $n = ConvertTo-JaCodePage ([Environment]::GetEnvironmentVariable('JVCS_SOURCECODEPAGE'))
+    if ($n -gt 0 -and (Test-JaUsableCodePage $n -AllowMultiByte)) { return $n }
+    $n = Get-JaSystemAnsiCodePage
+    if (Test-JaUsableCodePage $n) { return $n }
+    return 1252
+}
+
+function Set-JaWireCodePage {
+    param([int]$CodePage, [string]$Source)
+    $script:JaWireCP = $CodePage
+    $script:JaWireCPSource = $Source
+    $script:JaEncWireStrict = [Text.Encoding]::GetEncoding($CodePage, (New-Object Text.EncoderExceptionFallback), (New-Object Text.DecoderExceptionFallback))
+    $script:JaEncWire = [Text.Encoding]::GetEncoding($CodePage)
+}
+
+function Set-JaAnsiCodePage {
+    param([int]$CodePage)
+    $script:JaAnsiCP = $CodePage
+    $script:JaEncAnsiStrict = [Text.Encoding]::GetEncoding($CodePage, (New-Object Text.EncoderExceptionFallback), (New-Object Text.DecoderExceptionFallback))
+    $script:JaEncAnsi = [Text.Encoding]::GetEncoding($CodePage)
+}
+
+$script:JaLocalWire = Get-JaLocalWireCodePage
+Set-JaWireCodePage -CodePage $script:JaLocalWire.CodePage -Source $script:JaLocalWire.Source
+Set-JaAnsiCodePage -CodePage (Get-JaAnsiSourceCodePage)
 $script:JaUtf8Strict = New-Object Text.UTF8Encoding($false, $true)
 $script:JaUtf8NoBom = New-Object Text.UTF8Encoding($false)
 $script:JaLatin1 = [Text.Encoding]::GetEncoding(28591)
@@ -179,7 +258,7 @@ function Read-JaJsonFile {
 
 function Test-JaAnsiText {
     param([string]$Value)
-    try { [void]$script:JaEnc1252Strict.GetBytes($Value); return $true } catch { return $false }
+    try { [void]$script:JaEncWireStrict.GetBytes($Value); return $true } catch { return $false }
 }
 
 function Get-JaFirstNonAnsiChar {
@@ -227,7 +306,7 @@ function Get-JaTextInfo {
         'utf16be' { $text = [Text.Encoding]::BigEndianUnicode.GetString($Bytes, 2, $n - 2) }
         'utf8' { $text = $script:JaUtf8Strict.GetString($Bytes) }
         'ascii' { $text = $script:JaLatin1.GetString($Bytes) }
-        'ansi' { $text = $script:JaEnc1252.GetString($Bytes) }
+        'ansi' { $text = $script:JaEncAnsi.GetString($Bytes) }
         default { $text = '' }
     }
     $crlf = 0; $lf = 0; $cr = 0; $fffd = 0
@@ -336,7 +415,7 @@ function Test-JaProjectNameText {
     if ($n.StartsWith('-')) { return 'começa com -' }
     if ($n -match '^\d+$') { return 'só dígitos (o console trataria como ID)' }
     if ($n.Length -gt 50) { return 'mais de 50 caracteres' }
-    if (-not (Test-JaAnsiText $n)) { return "caractere fora da code page 1252 ($(Get-JaFirstNonAnsiChar $n))" }
+    if (-not (Test-JaAnsiText $n)) { return "caractere fora da code page $($script:JaWireCP) ($(Get-JaFirstNonAnsiChar $n))" }
     return ''
 }
 
@@ -347,11 +426,11 @@ function Test-JaIdentityNameText {
     $n = $Name.Trim()
     if ($n -match '[\\/"\x00-\x1f\x7f]' -or $n -eq '.' -or $n -eq '..') { return 'caractere inválido (\ / aspas ou controle)' }
     if ($n.Length -gt 100) { return 'mais de 100 caracteres' }
-    if (-not (Test-JaAnsiText $n)) { return "caractere fora da code page 1252 ($(Get-JaFirstNonAnsiChar $n))" }
+    if (-not (Test-JaAnsiText $n)) { return "caractere fora da code page $($script:JaWireCP) ($(Get-JaFirstNonAnsiChar $n))" }
     return ''
 }
 
-# Lê um .jvcsproject (até 4 KB; ANSI 1252, UTF-8 com ou sem BOM, UTF-16 com BOM - o ">" do PS 5.1 grava UTF-16).
+# Lê um .jvcsproject (até 4 KB; ANSI da estação, UTF-8 com ou sem BOM, UTF-16 com BOM - o ">" do PS 5.1 grava UTF-16).
 #   ; comentário (ou #)
 #   project=<nome do projeto no servidor>   obrigatório (ou a 1ª linha útil só com o nome, sem "=")
 #   identity=<identidade salva>             opcional: só confere a identidade em uso
@@ -374,7 +453,7 @@ function Read-JaProjectMarker {
         elseif ($b.Length -ge 2 -and $b[0] -eq 0xFF -and $b[1] -eq 0xFE) { $text = (New-Object Text.UnicodeEncoding($false, $false, $true)).GetString($b, 2, $b.Length - 2) }
         elseif ($b.Length -ge 2 -and $b[0] -eq 0xFE -and $b[1] -eq 0xFF) { $text = (New-Object Text.UnicodeEncoding($true, $false, $true)).GetString($b, 2, $b.Length - 2) }
         else {
-            try { $text = $script:JaUtf8Strict.GetString($b) } catch { $text = $script:JaEnc1252.GetString($b) }
+            try { $text = $script:JaUtf8Strict.GetString($b) } catch { $text = $script:JaEncAnsi.GetString($b) }
         }
     } catch { throw (New-JaError 7 "${bad}: codificação ilegível") }
     $proj = $null; $ident = $null
@@ -666,6 +745,13 @@ function Read-JaConfig {
         if (@('auto', 'confirm', 'manual') -notcontains $v) { $v = 'confirm'; $src[$k] = 'padrão (valor inválido no config.ini)' }
         $cfg[$k] = $v
     }
+    # wireCodePage: vazio = escolha da estação (Get-JaLocalWireCodePage); inválido = vazio
+    $wcp = ([string]$cfg['wireCodePage']).Trim()
+    if ($wcp) {
+        $n = ConvertTo-JaCodePage $wcp
+        if ($n -gt 0 -and (Test-JaUsableCodePage $n -AllowMultiByte)) { $cfg['wireCodePage'] = [string]$n }
+        else { $cfg['wireCodePage'] = ''; $src['wireCodePage'] = 'padrão (valor inválido no config.ini)' }
+    }
     $cfg['asciiAs'] = ([string]$cfg['asciiAs']).ToLowerInvariant()
     if (@('ansi', 'utf8') -notcontains $cfg['asciiAs']) { $cfg['asciiAs'] = 'ansi' }
     # rm-project/restore-project/rename-project: desligados salvo projectAdmin=on (só o usuário liga)
@@ -731,7 +817,8 @@ function Test-JaConfigValue {
         'moduleAdmin' { if (@('off', 'on', 'archive') -notcontains $Value.ToLowerInvariant()) { return 'use off, on ou archive' } }
         'timeoutSec' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 5 -or $n -gt 3600) { return 'inteiro entre 5 e 3600' } }
         'lockWaitSec' { $n = 0; if (-not [int]::TryParse($Value, [ref]$n) -or $n -lt 5 -or $n -gt 3600) { return 'inteiro entre 5 e 3600' } }
-        'commentPrefix' { if ($Value.Length -gt 20 -or $Value -match '["\x00-\x1f]' -or -not (Test-JaAnsiText $Value)) { return 'até 20 caracteres, sem aspas e representável em CP1252' } }
+        'commentPrefix' { if ($Value.Length -gt 20 -or $Value -match '["\x00-\x1f]' -or -not (Test-JaAnsiText $Value)) { return "até 20 caracteres, sem aspas e representável na code page $($script:JaWireCP)" } }
+        'wireCodePage' { if ($Value.Trim() -and -not ((ConvertTo-JaCodePage $Value) -gt 0 -and (Test-JaUsableCodePage (ConvertTo-JaCodePage $Value) -AllowMultiByte))) { return 'vazio (automático) ou code page instalada de 1 ou 2 bytes, ex.: 1251, cp1250, windows-1253' } }
         'jvcsExe' { if ([string]::IsNullOrWhiteSpace($Value)) { return 'caminho do jvcs.exe obrigatório' } }
         'identity' { if ($Value -match '[\\/"]') { return 'nome de identidade inválido' } }
         'buildCheck' { if (@('off', 'warn', 'block') -notcontains $Value.ToLowerInvariant()) { return 'use off, warn ou block' } }
@@ -962,7 +1049,7 @@ function Remove-JaTempDir {
 function Get-JaTextEncoder {
     param([string]$Kind)
     switch ($Kind) {
-        'ansi' { return $script:JaEnc1252Strict }
+        'ansi' { return $script:JaEncAnsiStrict }
         'utf8' { return (New-Object Text.UTF8Encoding($false, $true)) }
         'utf8bom' { return (New-Object Text.UTF8Encoding($false, $true)) }
         'utf16le' { return (New-Object Text.UnicodeEncoding($false, $false, $true)) }
@@ -980,7 +1067,8 @@ function ConvertTo-JaTextBytes {
         $lineNo = 1
         foreach ($ch in $Text.ToCharArray()) {
             if ($ch -eq "`n") { $lineNo++; continue }
-            if (-not (Test-JaAnsiText ([string]$ch))) { $bad += ('U+{0:X4} (linha {1})' -f [int]$ch, $lineNo); if ($bad.Count -ge 5) { break } }
+            $okCh = $true; try { [void]$enc.GetBytes([string]$ch) } catch { $okCh = $false }
+            if (-not $okCh) { $bad += ('U+{0:X4} (linha {1})' -f [int]$ch, $lineNo); if ($bad.Count -ge 5) { break } }
         }
         throw (New-JaError $ErrorCode ("caractere(s) não representável(is) na codificação do arquivo ($Kind): " + ($bad -join ', ')))
     }

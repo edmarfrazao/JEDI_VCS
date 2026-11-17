@@ -141,7 +141,7 @@ try {
     $kind = $info.Kind
     if ($tool -eq 'Edit' -or $tool -eq 'MultiEdit') {
         if ($kind -eq 'ansi') {
-            Exit-Deny ("JEDI VCS/codificação: '$full' está em ANSI (Windows-1252) e o Edit do Claude Code troca os acentos do arquivo por U+FFFD. " +
+            Exit-Deny ("JEDI VCS/codificação: '$full' está em ANSI (Windows-$($script:JaAnsiCP)) e o Edit do Claude Code troca os acentos do arquivo por U+FFFD. " +
                 "Use: $ep -Path `"$full`" -Old <texto> -New <texto>  (ou -OldFile/-NewFile com o texto em arquivos UTF-8).")
         }
         if ($kind -eq 'utf16le' -or $kind -eq 'utf16be' -or $kind -eq 'binary') {
@@ -149,7 +149,7 @@ try {
         }
         if ($kind -eq 'ascii' -and $hasNonAscii -and $asciiAs -eq 'ansi') {
             Exit-Deny ("JEDI VCS/codificação: '$full' é ASCII puro (o Delphi lê como ANSI) e a edição insere caracteres não-ASCII, que o Edit gravaria em UTF-8 sem BOM (acentos corrompidos na compilação). " +
-                "Use: $ep -Path `"$full`" -Old <texto> -New <texto>, que grava em Windows-1252.")
+                "Use: $ep -Path `"$full`" -Old <texto> -New <texto>, que grava em Windows-$($script:JaAnsiCP).")
         }
     } else {
         $why = ''

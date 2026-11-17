@@ -1,6 +1,6 @@
 ﻿<#
 .SYNOPSIS
-    edit-preserve.ps1 - edita um fonte preservando a codificação (ANSI 1252, UTF-8 com/sem
+    edit-preserve.ps1 - edita um fonte preservando a codificação (ANSI da estação, UTF-8 com/sem
     BOM, UTF-16) e as quebras de linha (CRLF/LF). Ver LEIAME.md.
 
 .DESCRIPTION
@@ -11,7 +11,8 @@
     - Falha se -Old não existir ou não for único (sem -All).
     - Quebras de linha em -Old/-New/-ContentFile são convertidas para as do arquivo.
     - Alvo ANSI (ou ASCII puro, tratado como ANSI por padrão: o compilador Delphi lê fonte
-      sem BOM na code page ANSI) recusa caractere não representável em 1252.
+      sem BOM na code page ANSI) recusa caractere não representável na code page ANSI do Windows
+      (1252, 1251...; se a ACP for UTF-8, 1252; JVCS_SOURCECODEPAGE muda).
     - Em fonte Delphi de projeto JEDI VCS, aplica o mesmo modo de checkout do hook:
       auto -> jvcs-ai.ps1 ensure-checkout antes de gravar; confirm/manual -> exige checkout prévio.
       -NoCheckout pula essa etapa (só humano; o arquivo somente leitura continua recusado).
@@ -81,7 +82,7 @@ function Convert-Eol {
 function Get-Encoder {
     param([string]$Kind)
     switch ($Kind) {
-        'ansi' { return $script:JaEnc1252Strict }
+        'ansi' { return $script:JaEncAnsiStrict }
         'utf8' { return (New-Object Text.UTF8Encoding($false, $true)) }
         'utf8bom' { return (New-Object Text.UTF8Encoding($false, $true)) }
         'utf16le' { return (New-Object Text.UnicodeEncoding($false, $false, $true)) }
@@ -109,9 +110,10 @@ function ConvertTo-Bytes {
         $lineNo = 1
         foreach ($ch in $S.ToCharArray()) {
             if ($ch -eq "`n") { $lineNo++; continue }
-            if (-not (Test-JaAnsiText ([string]$ch))) { $bad += ('U+{0:X4} (linha {1})' -f [int]$ch, $lineNo); if ($bad.Count -ge 5) { break } }
+            $okCh = $true; try { [void]$enc.GetBytes([string]$ch) } catch { $okCh = $false }
+            if (-not $okCh) { $bad += ('U+{0:X4} (linha {1})' -f [int]$ch, $lineNo); if ($bad.Count -ge 5) { break } }
         }
-        throw (New-JaError 6 ("caractere(s) não representável(is) na codificação do arquivo ($Kind): " + ($bad -join ', ') + '. Use só caracteres de Windows-1252 ou converta o arquivo conscientemente'))
+        throw (New-JaError 6 ("caractere(s) não representável(is) na codificação do arquivo ($Kind): " + ($bad -join ', ') + ". Use só caracteres de Windows-$($script:JaAnsiCP) ou converta o arquivo conscientemente"))
     }
     $pre = Get-Preamble $Kind
     if ($pre.Length -eq 0) { return , $body }

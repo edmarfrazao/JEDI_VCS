@@ -24,7 +24,7 @@ pasta do próprio script; os arquivos de trabalho ficam em `-Trabalho` (padrão 
 
 ```
 tests\executar.bat              cliente, console e ia
-tests\executar.bat cliente      só a pesquisa de módulos do cliente (sem servidor)
+tests\executar.bat cliente      só os testes do cliente sem servidor (pesquisa de módulos e code page)
 tests\executar.bat console      só o console
 tests\executar.bat ia           só a IA
 tests\executar.bat instalador   só o instalador
@@ -64,6 +64,16 @@ servidor:
   ficam em negrito.
 
 Parâmetro: `-Dcc` (caminho do `dcc32.exe`).
+
+### cliente\teste-codepage.ps1
+
+Compila `teste-codepage.dpr` e confere a code page do fio (issue #1), sem servidor:
+`src\common\client\JVCSWireCodePage.pas` (formatos aceitos, code pages recusadas, escolha por
+`JVCS_WIRECODEPAGE`/registro/ACP, `WireCodePage` do servidor válida e inválida) e a conversão do `RFormat` em
+1251: bytes de "Поправка", o mojibake `Ïîïðàâêà` e o `????` da issue com 1252, e a ida e volta por um `TMWBuffer`.
+Usa o `RFormat.dcu` do build do console: rode antes `tools\compilar.bat console Debug Win32`.
+
+Parâmetros: `-Dcc` e `-Dcu` (pasta com o `RFormat.dcu`).
 
 ### console\golden.ps1
 

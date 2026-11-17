@@ -160,6 +160,7 @@ uses
   , JclStrings
   , VCSCommon in '..\common\VCSCommon.pas'
   , JVCSAppVersion in '..\common\JVCSAppVersion.pas'
+  , JVCSWireCodePage in '..\common\client\JVCSWireCodePage.pas'
   , RFormat;
 
 const
@@ -234,6 +235,11 @@ var
   ModuleID: Integer = 0;
   LabelParamName: string = '';
   Connection: TJVCSConnection = nil;
+  // JVCS 2026 (issue #1): code page do console (stdin/stdout redirecionados, /input,
+  // descriptionfile/workaroundfile) = escolha da estacao (JVCS_WIRECODEPAGE, registro
+  // WireCodePage, ACP de 1 byte ou 1252). A do fio (MWCodePage) pode mudar depois do
+  // login para a WireCodePage do servidor.
+  ConsoleCodePage: Word = cWireCodePageFallback;
   {$IFDEF BRANCHING}
   BranchName: string = '';
   {$ENDIF BRANCHING}
@@ -764,7 +770,8 @@ const
       Syntax: 'addbug <bug_name> [severity=<0-4>] [status=<0-4>] [keywords="<text>"] [reportedby="<text>"] [description="<text>" | descriptionfile="<file>"] [workaround="<text>" | workaroundfile="<file>"]';
       HelpText: 'Creates a bug in the archive (ADD_UPDATE_BUG, same request as the standalone Maintain bugs, Add). ' + sLineBreak +
         'Defaults: severity 0 (Minor), status 1 (Open). The bug name must be unique (compared without case). ' + sLineBreak +
-        'descriptionfile and workaroundfile read a text file in code page 1252 (line breaks kept), for texts with quotes ' + sLineBreak +
+        'descriptionfile and workaroundfile read a text file in the console code page (JVCS_WIRECODEPAGE or the ' + sLineBreak +
+        'WireCodePage registry value, else the Windows ANSI code page; line breaks kept), for texts with quotes ' + sLineBreak +
         'or several lines. Limits: name and keywords 250 characters, the other texts 2000.';
       Proc: @CmdProcAddBug),
 
@@ -5552,7 +5559,7 @@ begin
   Result := TrimRight(AdjustLineBreaks(A, tlbsCRLF)) = TrimRight(AdjustLineBreaks(B, tlbsCRLF));
 end;
 
-// Text for description/workaround from a file in code page 1252 (texts with quotes or line
+// Text for description/workaround from a file in the console code page (texts with quotes or line
 // breaks cannot go on a command line). No BOM, no control characters except TAB/CR/LF.
 function internReadBugTextFile(const FileName: string): string;
 var
@@ -5576,14 +5583,15 @@ begin
     FS.Free;
   end;
   if (Length(Bytes) >= 3) and (Bytes[0] = $EF) and (Bytes[1] = $BB) and (Bytes[2] = $BF) then
-    raise Exception.CreateFmt('Text file must be code page 1252, not UTF-8: %s', [FullName]);
-  Enc := TEncoding.GetEncoding(1252);
+    raise Exception.CreateFmt('Text file must be code page %d, not UTF-8: %s', [ConsoleCodePage, FullName]);
+  Enc := TEncoding.GetEncoding(ConsoleCodePage);
   try
     Result := Enc.GetString(Bytes);
   finally
     Enc.Free;
   end;
-  // C0 controls (except TAB/CR/LF), DEL and C1 (bytes undefined in code page 1252 decode to U+0081..U+009D).
+  // C0 controls (except TAB/CR/LF), DEL and C1 (bytes undefined in the code page, e.g. 0x81 in 1252 or
+  // 0x98 in 1251, decode to U+0080..U+009F).
   // Compared by Ord: with HIGHCHARUNICODE off, the literal #$9F would be the ANSI char (U+0178).
   for I := 1 to Length(Result) do
     if ((Result[I] < ' ') and not CharInSet(Result[I], [#9, #10, #13])) or
@@ -6453,10 +6461,11 @@ begin
       raise Exception.CreateFmt(SInputFileNotFound, [InputFileName]);
     Lines := TStringList.Create;
     try
-      // JVCS 2026: without a BOM the file is read in the wire code page (cp1252), whatever the
-      // ANSI code page of Windows is: the 2.5.0.1030 console passed the bytes as they were, and
-      // with ACP 65001 the default would decode a cp1252 file as UTF-8. A BOM still wins.
-      InputEncoding := TEncoding.GetEncoding(MWCodePage);
+      // JVCS 2026: without a BOM the file is read in the console code page (ConsoleCodePage:
+      // JVCS_WIRECODEPAGE, WireCodePage in the registry, else the ANSI code page if single-byte,
+      // else 1252): the 2.5.0.1030 console passed the bytes as they were, and with ACP 65001 the
+      // default would decode an ANSI file as UTF-8. A BOM still wins.
+      InputEncoding := TEncoding.GetEncoding(ConsoleCodePage);
       try
         Lines.DefaultEncoding := InputEncoding; // TStrings keeps a clone
       finally
@@ -8630,15 +8639,58 @@ begin
 end;
 
 
+// JVCS 2026 (issue #1): stdin/stdout/stderr redirecionados (pipe ou arquivo) na code page do
+// console. O RTL abre esses Text na ACP de quando o programa iniciou; no console de verdade
+// (FILE_TYPE_CHAR) fica a code page do console (GetConsoleCP/GetConsoleOutputCP).
+procedure SetRedirectedTextCodePage(ACodePage: Word);
+begin
+  if GetFileType(GetStdHandle(STD_INPUT_HANDLE)) <> FILE_TYPE_CHAR then
+    SetTextCodePage(Input, ACodePage);
+  if GetFileType(GetStdHandle(STD_OUTPUT_HANDLE)) <> FILE_TYPE_CHAR then
+    SetTextCodePage(Output, ACodePage);
+  if GetFileType(GetStdHandle(STD_ERROR_HANDLE)) <> FILE_TYPE_CHAR then
+    SetTextCodePage(ErrOutput, ACodePage);
+end;
+
+// JVCS 2026 (issue #1): WireCodePage de [GlobalUserData] no ini do servidor (READ_CONFIG_DATA,
+// existe em todo servidor 2.x). Configurada, ela vale para o fio; o console continua em
+// ConsoleCodePage. Servidor sem a chave, valor invalido ou erro: fica a da estacao.
+procedure ApplyServerWireCodePage;
+var
+  ReadConfig: TJVCSReadConfigData;
+  Err: string;
+  I: Integer;
+begin
+  ReadConfig := TJVCSReadConfigData.Create(nil);
+  try
+    try
+      ReadConfig.AddInputItem(cWireCodePageName);
+      Connection.SendRequest(ReadConfig);
+      for I := 0 to ReadConfig.OutputItemCount - 1 do
+        if SameText(ReadConfig.OutputItems[I].Value, cWireCodePageName) then
+          JVCSApplyServerWireCodePage(ReadConfig.OutputItems[I].Data, Err);
+    except
+      // sem a chave no servidor a code page da estacao continua valendo
+    end;
+  finally
+    ReadConfig.Free;
+  end;
+  // os textos ShortString/AnsiString do nucleo seguem DefaultSystemCodePage
+  DefaultSystemCodePage := MWCodePage;
+end;
+
 {.$R *.RES}
 {$R jvcsver.res}
 
 begin
   try
-    // JVCS 2026: os textos trafegam em bytes da code page do protocolo (1252,
-    // como o cliente Delphi 2007). Os registros do nucleo usam ShortString, cuja
-    // conversao implicita segue DefaultSystemCodePage: alinhar as duas.
-    DefaultSystemCodePage := MWCodePage;
+    // JVCS 2026: os textos trafegam em bytes da code page do fio (MWCodePage). Os
+    // registros do nucleo usam ShortString, cuja conversao implicita segue
+    // DefaultSystemCodePage: alinhar as duas. Issue #1: a code page vem da estacao
+    // (JVCSWireCodePage) e, depois do login, da WireCodePage do servidor.
+    ConsoleCodePage := JVCSApplyLocalWireCodePage;
+    DefaultSystemCodePage := ConsoleCodePage;
+    SetRedirectedTextCodePage(ConsoleCodePage);
     SetConsoleTitle('JEDI VCS console client');
     ShowBanner;
     CheckRequiredLibs;
@@ -8689,6 +8741,7 @@ begin
       Connection.UserName := UserName;
       Connection.UserPassword := Password;
       Connection.Active := True;
+      ApplyServerWireCodePage;
 
       with Connection do
       begin

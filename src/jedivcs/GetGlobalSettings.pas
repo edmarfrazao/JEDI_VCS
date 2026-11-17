@@ -27,6 +27,8 @@ Unit history:
 2003/01/31  THuber    - 1st Migrationstep from FreeVCS code to JEDI-VCS
 2003/03/05  THensle   - changes for "ConfigStorage" unit
 2005/06/30  CSchuette - added option "check in comment required"
+2026/11/17  v2026     - GetServerWireCodePage: WireCodePage de [GlobalUserData]
+                        do servidor (issue #1, code pages diferentes de 1252)
 
 -----------------------------------------------------------------------------
 
@@ -45,10 +47,46 @@ uses
   Windows, Classes, Forms;
 
 procedure GetGlobalUserSettings(App : TApplication; WHandle : HWND);
+{ JVCS 2026: logo depois do LOGIN. Le WireCodePage de [GlobalUserData] no ini
+  do servidor e, se estiver configurado, troca a code page do fio
+  (RFormat.MWCodePage) para a do servidor; senao fica a da estacao
+  (JVCSWireCodePage). Falha de rede ou servidor sem a chave: nao muda nada. }
+procedure GetServerWireCodePage(App : TApplication);
 
 implementation
 
-uses SysUtils, VCSBase, VCSProcBase, DBModule, ConfigStorage;
+uses SysUtils, VCSBase, VCSProcBase, DBModule, ConfigStorage, JVCSWireCodePage;
+
+procedure GetServerWireCodePage(App : TApplication);
+var
+  Err : string;
+begin
+  with DataModule1 do
+  begin
+    try
+      AppSrvClient1.Request.Rewrite;
+      AppSrvClient1.FunctionCode := 'READ_CONFIG_DATA';
+      AppSrvClient1.Request.WriteFields(True, [TransactionNr]);
+      AppSrvClient1.Request.WriteFields(False, [ServerUserID]);
+      AppSrvClient1.Request.WriteFields(True, [cWireCodePageName]);
+      SetupTimeoutCounter;
+      AppSrvClient1.Send;
+
+      while WaitForAppSrvClient do
+        App.ProcessMessages;
+      if (AppSrvClientErr = 0) and (AppSrvClient1.AnswerStatus = '200') then
+      begin
+        AppSrvClient1.Answer.First;
+        if (not AppSrvClient1.Answer.EOF) and
+          SameText(AppSrvClient1.Answer.Fields[0], cWireCodePageName) then
+          JVCSApplyServerWireCodePage(AppSrvClient1.Answer.Fields[1], Err);
+      end;
+    except
+      // sem a chave no servidor a code page da estacao continua valendo
+    end;
+    jvcsWriteString(sBaseRegistryKey, 'LastWireCodePage', JVCSWireCodePageInfo);
+  end;
+end;
 
 procedure GetGlobalUserSettings;
 var

@@ -290,7 +290,7 @@ function Get-ProjectNameFromFolder {
 function Assert-AnsiArg {
     param([string]$Value, [string]$What)
     if (-not (Test-JaAnsiText $Value)) {
-        throw (New-JaError 2 "$What contém caractere fora da code page 1252 ($(Get-JaFirstNonAnsiChar $Value)); o console jvcs.exe 2.5 só aceita ANSI")
+        throw (New-JaError 2 "$What contém caractere fora da code page $($script:JaWireCP) ($(Get-JaFirstNonAnsiChar $Value)); o console jvcs.exe 2.5 só aceita ANSI (wireCodePage no config.ini, WireCodePage no registro ou JVCS_WIRECODEPAGE mudam a code page)")
     }
 }
 
@@ -560,7 +560,7 @@ function Invoke-Jvcs {
     $prefix = '"' + $exe + '" ' + ('{0}:{1} /user {2}' -f $id.Host, $id.Port, $userArg)
     if ($prefix.Contains('input')) { throw (New-JaError 12 "o caminho do jvcs.exe, o servidor ou o usuário contém 'input'; o console 2.5 confundiria com o comando /input") }
 
-    [IO.File]::WriteAllText($inFile, (($Lines -join "`r`n") + "`r`n"), $script:JaEnc1252)
+    [IO.File]::WriteAllText($inFile, (($Lines -join "`r`n") + "`r`n"), $script:JaEncWire)
 
     $psi = New-Object Diagnostics.ProcessStartInfo $exe
     $psi.Arguments = $arguments
@@ -569,16 +569,18 @@ function Invoke-Jvcs {
     $psi.RedirectStandardInput = $true
     $psi.RedirectStandardOutput = $true
     $psi.RedirectStandardError = $true
-    $psi.StandardOutputEncoding = $script:JaEnc1252
-    $psi.StandardErrorEncoding = $script:JaEnc1252
+    $psi.StandardOutputEncoding = $script:JaEncWire
+    $psi.StandardErrorEncoding = $script:JaEncWire
     $psi.WorkingDirectory = $tmpDir
+    # issue #1: o console 2026 lê e grava stdin/stdout e o /input nesta code page (o 2.5.0.1030 usa a ACP)
+    $psi.EnvironmentVariables['JVCS_WIRECODEPAGE'] = [string]$script:JaWireCP
 
     # O .NET Framework grava o preâmbulo (BOM) do Console.InputEncoding no stdin do filho
     # assim que cria o StandardInput; com UTF-8 a senha chegaria como EF BB BF + senha.
     $oldIn = $null
     try {
         $cur = [Console]::InputEncoding
-        if ($cur.GetPreamble().Length -gt 0) { $oldIn = $cur; [Console]::InputEncoding = $script:JaEnc1252 }
+        if ($cur.GetPreamble().Length -gt 0) { $oldIn = $cur; [Console]::InputEncoding = $script:JaEncWire }
     } catch {
         throw (New-JaError 12 ('não foi possível ajustar a codificação da entrada padrão (o BOM iria junto com a senha): ' + $_.Exception.Message))
     }
@@ -2299,7 +2301,7 @@ function Get-JaBatchPathProblem {
     # o .NET Framework (GetFullPath) e o Windows cortam ponto/espaço no fim: 'nome...' (nome truncado
     # pelo console) viraria 'nome', que pode ser OUTRO módulo
     if ($Value -match '[. ]$') { return 'termina em ponto ou espaço (nome truncado? o Windows leria outro arquivo)' }
-    if (-not (Test-JaAnsiText $Value)) { return "caractere fora da code page 1252 ($(Get-JaFirstNonAnsiChar $Value)); o console 2.5 só aceita ANSI" }
+    if (-not (Test-JaAnsiText $Value)) { return "caractere fora da code page $($script:JaWireCP) ($(Get-JaFirstNonAnsiChar $Value)); o console 2.5 só aceita ANSI" }
     if ($Value.Length -gt 259) { return 'caminho com mais de 259 caracteres' }
     return ''
 }
@@ -5773,7 +5775,7 @@ function New-BugTextFile {
     $p = Join-Path $Dir $Leaf
     Assert-AnsiArg $p 'caminho temporário'
     if ($p.Contains('"')) { throw (New-JaError 12 "caminho temporário com aspas: $p") }
-    [IO.File]::WriteAllBytes($p, $script:JaEnc1252Strict.GetBytes($TextValue))
+    [IO.File]::WriteAllBytes($p, $script:JaEncWireStrict.GetBytes($TextValue))
     return $p
 }
 
@@ -7939,7 +7941,7 @@ function Get-JaXbpSources {
     }
     $out = New-Object System.Collections.ArrayList
     $seen = @{}
-    foreach ($ln in [IO.File]::ReadAllLines($full, $script:JaEnc1252)) {
+    foreach ($ln in [IO.File]::ReadAllLines($full, $script:JaEncAnsi)) {
         $m = [regex]::Match($ln, '^\s*\[([^\]\[]+)\]\s*$')
         if (-not $m.Success) { continue }
         $rel = $m.Groups[1].Value.Trim()
@@ -8413,7 +8415,7 @@ function Invoke-CmdDoctor {
         if (-not $Ok -and $Code -gt $script:DoctorWorst) { $script:DoctorWorst = $Code }
     }
     $script:DoctorWorst = 0
-    & $add 'config' $true ("$($script:CfgInfo.Path): checkout=$($script:Cfg.checkout), checkin=$($script:Cfg.checkin), moduleAdmin=$($script:Cfg.moduleAdmin), projectAdmin=$($script:Cfg.projectAdmin), buildCheck=$($script:Cfg.buildCheck)") 0
+    & $add 'config' $true ("$($script:CfgInfo.Path): checkout=$($script:Cfg.checkout), checkin=$($script:Cfg.checkin), moduleAdmin=$($script:Cfg.moduleAdmin), projectAdmin=$($script:Cfg.projectAdmin), buildCheck=$($script:Cfg.buildCheck), code page do console $($script:JaWireCP) ($($script:JaWireCPSource)), fontes ANSI $($script:JaAnsiCP)") 0
     $exe = [string]$script:Cfg.jvcsExe
     $exeOk = $false
     if (Test-Path -LiteralPath $exe -PathType Leaf) {
@@ -8475,7 +8477,7 @@ function Get-JaCommentFromGit {
     $s = ([string](@($lines)[0])).Trim()
     if (-not $s) { throw (New-JaError 7 'nenhum commit do Git mexe nesses arquivos: use -Comment "texto"') }
     $s = $s.Replace('"', "'") -replace '[\x00-\x1f\x7f]', ' '
-    $s = $script:JaEnc1252.GetString($script:JaEnc1252.GetBytes($s))
+    $s = $script:JaEncWire.GetString($script:JaEncWire.GetBytes($s))
     if ($s.Length -gt 2000) { $s = $s.Substring(0, 2000) }
     return $s
 }
@@ -8499,6 +8501,7 @@ try {
     $script:CfgInfo = Read-JaConfig
     $script:Cfg = $script:CfgInfo.Values
     foreach ($w in $script:CfgInfo.MapWarnings) { Add-JaWarning $w }
+    if ([string]$script:Cfg.wireCodePage) { Set-JaWireCodePage -CodePage ([int]$script:Cfg.wireCodePage) -Source 'config.ini' }
     if ($Keep -and $script:Cmd -ne 'checkin') { throw (New-JaError 2 '-Keep vale só para checkin') }
     if ($Date -and $script:Cmd -ne 'sync') { throw (New-JaError 2 '-Date vale só para sync (use -Since em changes e -Due em todo)') }
     # lote (-FromList, R7); o -Only fora de status/list/locks é validado pelo Get-OnlyFilter (R5)
@@ -8523,7 +8526,7 @@ try {
         switch ($Encoding.ToLowerInvariant()) {
             'auto' { }
             'oem' { $script:JaDiffEncoding = [Text.Encoding]::GetEncoding([Globalization.CultureInfo]::CurrentCulture.TextInfo.OEMCodePage) }
-            'ansi' { $script:JaDiffEncoding = $script:JaEnc1252 }
+            'ansi' { $script:JaDiffEncoding = $script:JaEncAnsi }
             default { throw (New-JaError 2 "-Encoding inválido: '$Encoding' (use auto, oem ou ansi)") }
         }
     }

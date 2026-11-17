@@ -83,7 +83,9 @@ jvcsExe=C:\Program Files (x86)\JEDI\JVCS\jvcs.exe
 timeoutSec=120        ; por execução do jvcs.exe (kill no timeout)
 lockWaitSec=120       ; espera máxima pelo mutex da identidade
 identity=             ; vazio = LastUsedID; ou o nome de uma identidade salva
-asciiAs=ansi          ; arquivo ASCII puro que recebe acento: ansi (1252) | utf8 (sem BOM)
+asciiAs=ansi          ; arquivo ASCII puro que recebe acento: ansi (ACP do Windows; 1252 se a ACP for UTF-8) | utf8 (sem BOM)
+wireCodePage=         ; code page do console/fio: vazio = JVCS_WIRECODEPAGE, registro WireCodePage, ACP de 1 byte ou 1252;
+                      ; ou 1251, cp1250... (repassada ao jvcs.exe em JVCS_WIRECODEPAGE; o 2.5.0.1030 ignora e usa a ACP)
 projectAdmin=off      ; on | off (padrão off): rm-project/restore-project/rename-project com -Apply (seção 15)
 moduleAdmin=off       ; administração de módulos: off | on | archive (padrão off; ver seção 14)
 blameMaxRevisions=200 ; revisões que o blame percorre (1 a 5000; seção 16)

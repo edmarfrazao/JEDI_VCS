@@ -82,6 +82,34 @@ general rule, restore the database with the `gbak` of the **same Firebird versio
 The server accepts **one session per user name**. A new login with the same user (IDE, standalone client,
 `jvcs.exe` or an AI agent) closes the previous one. Use different users.
 
+### Cyrillic (or Greek, Central European...) comments show as `Ïîïðàâêà` or are saved as `????`
+
+The server stores comments, labels, descriptions and names as the bytes it receives (Firebird with
+`lc_ctype` NONE). The original 2.5.0.1030 client used the ANSI code page of each workstation; the 2026 client
+uses the **wire code page**, chosen in this order:
+
+1. **Server** (recommended, one setting for the whole team): `WireCodePage` in the `[GlobalUserData]` section
+   of the server's `jvcssrv.ini` (next to `JVCSSrv.exe`), for example:
+
+   ```ini
+   [GlobalUserData]
+   WireCodePage=1251
+   ```
+
+   The clients read it right after login (any 2.x server, no server update needed).
+2. **Workstation**: the `JVCS_WIRECODEPAGE` environment variable, or the string value `WireCodePage` in
+   `HKCU\Software\JEDI\JEDIVCS`.
+3. **Default**: the Windows ANSI code page if it is single-byte (1250-1258, 874), as the original client did;
+   1252 when Windows uses UTF-8 ("Beta: Use Unicode UTF-8").
+
+Accepted values: `1251`, `cp1251`, `windows-1251`. UTF-8/UTF-16 are refused; the double-byte ANSI code pages
+(932, 936, 949, 950, 1361) only when set explicitly. All workstations must use the code page the database was
+written with. Text already sent as `????` by an older 2026 build is lost on the server.
+
+The console `jvcs.exe` reads and writes stdin/stdout, `/input` files and `descriptionfile` in the
+workstation code page (step 2 or 3), even when the server sets another one for the wire: set the same value on
+the workstation when you use the console or the AI tools.
+
 ## Projects and files
 
 ### "Project names cannot be one of the following: project1.dpr, ..." (Project1 refused)

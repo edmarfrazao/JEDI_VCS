@@ -264,6 +264,7 @@ uses
   JVCSUIScale in '..\common\client\JVCSUIScale.pas',
   JVCSUITheme in '..\common\client\JVCSUITheme.pas',
   JVCSAIConfig in '..\common\client\JVCSAIConfig.pas',
+  JVCSWireCodePage in '..\common\client\JVCSWireCodePage.pas',
   JVCSErrorLog in '..\common\client\JVCSErrorLog.pas',
   JVCSClientAppearance in 'JVCSClientAppearance.pas';
 

@@ -1,7 +1,7 @@
 @echo off
 rem Roda os testes de tests\ (ver tests\LEIAME.md).
 rem   executar.bat              cliente, console e ia (servidor de TESTE, identidade DEFAULT)
-rem   executar.bat cliente      so o teste da pesquisa de modulos (sem servidor)
+rem   executar.bat cliente      so os testes do cliente sem servidor (pesquisa de modulos e code page)
 rem   executar.bat console      so os testes do console jvcs.exe
 rem   executar.bat ia           so os testes do wrapper da IA
 rem   executar.bat instalador   so o teste isolado do setup (feche o Delphi antes)
@@ -21,6 +21,9 @@ if /i "%ALVO%"=="ia" goto ia
 :cliente
 echo ==== cliente\teste-pesquisa.ps1
 %PS% "%T%cliente\teste-pesquisa.ps1"
+if errorlevel 1 set FALHOU=1
+echo ==== cliente\teste-codepage.ps1
+%PS% "%T%cliente\teste-codepage.ps1"
 if errorlevel 1 set FALHOU=1
 if /i "%ALVO%"=="cliente" goto fim
 
