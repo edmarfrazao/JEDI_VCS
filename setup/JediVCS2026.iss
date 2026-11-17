@@ -141,8 +141,8 @@ VersionInfoDescription=Instalador do {#AppName}
 VersionInfoCompany={#AppPublisher}
 
 [Languages]
-Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"; LicenseFile: "aviso-pt.txt"
-Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "aviso-en.txt"
+Name: "brazilianportuguese"; MessagesFile: "compiler:Languages\BrazilianPortuguese.isl"; LicenseFile: "aviso-pt.txt"; InfoBeforeFile: "novidades-pt.txt"
+Name: "english"; MessagesFile: "compiler:Default.isl"; LicenseFile: "aviso-en.txt"; InfoBeforeFile: "novidades-en.txt"
 
 [CustomMessages]
 brazilianportuguese.TypeFull=Instalação completa
@@ -159,6 +159,7 @@ brazilianportuguese.IconClient=JEDI VCS 2026
 brazilianportuguese.IconDiff=JEDI VCS Diff 2026
 brazilianportuguese.IconHelp=Ajuda do JEDI VCS
 brazilianportuguese.IconHelpDiff=Ajuda do JEDI VCS Diff
+brazilianportuguese.IconNews=Novidades do JEDI VCS 2026
 brazilianportuguese.IconToolsAi=Ferramentas da IA (pasta)
 brazilianportuguese.RunClient=Abrir o JEDI VCS 2026
 brazilianportuguese.IdeDetected=detectado: %1
@@ -183,6 +184,7 @@ english.IconClient=JEDI VCS 2026
 english.IconDiff=JEDI VCS Diff 2026
 english.IconHelp=JEDI VCS Help
 english.IconHelpDiff=JEDI VCS Diff Help
+english.IconNews=JEDI VCS 2026 - What's new
 english.IconToolsAi=AI tools (folder)
 english.RunClient=Open JEDI VCS 2026
 english.IdeDetected=detected: %1
@@ -260,6 +262,9 @@ Source: "{#Root}\doc\original\license.txt"; DestDir: "{app}"; Flags: ignoreversi
 ; licenca do port (MPL 1.1 + aviso do MidWare) e isencao de garantia
 Source: "{#Root}\LICENSE"; DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 Source: "{#Root}\DISCLAIMER.md"; DestDir: "{app}"; Flags: ignoreversion
+; novidades do build (a mesma pagina "Informacoes" mostrada antes da instalacao)
+Source: "novidades-pt.txt"; DestDir: "{app}"; DestName: "NOVIDADES.txt"; Languages: brazilianportuguese; Flags: ignoreversion
+Source: "novidades-en.txt"; DestDir: "{app}"; DestName: "WHATSNEW.txt"; Languages: english; Flags: ignoreversion
 ; ---- expert da IDE + DLL (mesma pasta: o expert so carrega a JvcsExternalDll.dll da propria pasta) ----
 Source: "{#IdeSrc}\JvcsExternalDll.dll"; DestDir: "{app}"; Components: ide ideold; Flags: ignoreversion
 ; ---- experts ORIGINAIS 2.5.0.1030 (IDEs antigas), byte a byte; carregam a JvcsExternalDll.dll nova acima ----
@@ -314,6 +319,8 @@ Name: "{group}\{cm:IconDiff}"; Filename: "{app}\JEDIVCSDiff.exe"; Components: cl
 Name: "{group}\{cm:IconHelp}"; Filename: "{app}\jedivcs.chm"; Components: client
 Name: "{group}\{cm:IconHelpDiff}"; Filename: "{app}\jedivcsdiff.chm"; Components: client
 Name: "{group}\{cm:IconToolsAi}"; Filename: "{app}\tools\ai"; Components: ai
+Name: "{group}\{cm:IconNews}"; Filename: "{app}\NOVIDADES.txt"; Languages: brazilianportuguese
+Name: "{group}\{cm:IconNews}"; Filename: "{app}\WHATSNEW.txt"; Languages: english
 Name: "{group}\{cm:UninstallProgram,{#AppName}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{cm:IconClient}"; Filename: "{app}\Jedivcs.exe"; Tasks: desktopicon
 

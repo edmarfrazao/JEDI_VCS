@@ -75,6 +75,11 @@ function JVCSWireCodePageSource: TJVCSCodePageSource;
 function JVCSCodePageSourceName(Source: TJVCSCodePageSource): string;
 { Texto para log e Sobre: "1251 (server)". }
 function JVCSWireCodePageInfo: string;
+{ True depois da primeira escolha (JVCSSetWireCodePage), ou seja, a partir do
+  primeiro login; antes disso MWCodePage ainda e o valor inicial do RFormat. }
+function JVCSWireCodePageApplied: Boolean;
+{ Linhas para Help|About|Version Information: em uso, estacao e onde configurar. }
+function JVCSWireCodePageReport: string;
 { True se S cabe inteiro em CodePage (sem '?' de substituicao nem "best fit"). }
 function JVCSCanEncode(const S: string; CodePage: Word): Boolean;
 
@@ -82,6 +87,7 @@ implementation
 
 var
   GWireSource: TJVCSCodePageSource = cpsFallback;
+  GWireApplied: Boolean = False;
 
 function JVCSParseCodePage(const S: string; out CodePage: Word): Boolean;
 var
@@ -199,6 +205,30 @@ procedure JVCSSetWireCodePage(CodePage: Word; Source: TJVCSCodePageSource);
 begin
   MWCodePage := CodePage;
   GWireSource := Source;
+  GWireApplied := True;
+end;
+
+function JVCSWireCodePageApplied: Boolean;
+begin
+  Result := GWireApplied;
+end;
+
+function JVCSWireCodePageReport: string;
+var
+  Source: TJVCSCodePageSource;
+  CP: Word;
+begin
+  CP := JVCSLocalCodePage(Source);
+  Result := 'Text code page (comments, names, labels, descriptions):' + #13;
+  if GWireApplied then
+    Result := Result + '  in use: ' + JVCSWireCodePageInfo + #13
+  else
+    Result := Result + '  in use: not connected yet' + #13;
+  Result := Result + Format('  workstation: %d (%s)', [CP, JVCSCodePageSourceName(Source)]) + #13 +
+    Format('  Windows ANSI code page: %d', [GetACP]) + #13 +
+    '  set for all users: ' + cWireCodePageName + '=<code page> in [GlobalUserData] of the server ini' + #13 +
+    '  set for this workstation: ' + cWireCodePageEnv + ' or HKCU\' + cWireCodePageRegKey + '\' +
+    cWireCodePageName + #13;
 end;
 
 function JVCSApplyLocalWireCodePage: Word;

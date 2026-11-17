@@ -20,6 +20,10 @@ Todas as mudanças relevantes do **JEDI VCS 2.5 Beta 2026**. Formato baseado em
   `JVCS_WIRECODEPAGE`; validação de comentários e nomes nessa code page. O `edit-preserve.ps1` e o hook gravam
   fontes ANSI na ACP do Windows (1251 numa estação cirílica), não mais em 1252 fixa. O `doctor` mostra as duas.
 - Teste `tests/cliente/teste-codepage.ps1` (sem servidor), incluído no `tests\executar.bat cliente`.
+- Cliente (standalone e DLL da IDE): a code page em uso, a da estação e onde configurar aparecem em
+  **Help > About > Version Information**; a janela de mensagens mostra `Text code page: ...` ao abrir um projeto.
+- Instalador: página de novidades antes da instalação (`setup/novidades-pt.txt`, `novidades-en.txt`), instalada
+  como `NOVIDADES.txt`/`WHATSNEW.txt` com atalho no menu Iniciar. Build 2068.
 
 ### Documentação
 - Wrapper da IA: escolha da identidade explicada em `tools/ai/LEIAME.md` (seção 18, R4), com o problema conhecido do

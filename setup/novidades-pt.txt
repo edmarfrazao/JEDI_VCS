@@ -1,0 +1,38 @@
+﻿JEDI VCS 2.5 Beta 2026 - Novidades do Beta 6, build 2068
+
+AVISO: fornecido sem garantia de funcionamento. Teste e valide em ambiente próprio, com backup e cópia do seu banco do JEDI VCS, antes de instalar em produção.
+
+=====================================================================
+CODE PAGE DOS TEXTOS (cirílico, grego, Europa Central...)
+=====================================================================
+
+Comentários de check-in, labels, descrições e nomes agora podem usar outras code pages além da 1252: Windows-1251 (cirílico), 1250 (Europa Central), 1253 (grego) etc. Antes, o cliente 2026 mandava tudo em 1252: os comentários antigos em cirílico apareciam trocados ("Ïîïðàâêà" em vez de "Поправка") e os novos chegavam ao servidor como "????".
+
+Como configurar (vale a primeira que existir):
+  1. No servidor, para todos: a linha WireCodePage=1251 na seção [GlobalUserData] do jvcssrv.ini (pasta do JVCSSrv.exe). Funciona com o servidor 2.5 atual, sem atualizá-lo.
+  2. Na estação: a variável de ambiente JVCS_WIRECODEPAGE ou o valor de texto WireCodePage em HKCU\Software\JEDI\JEDIVCS.
+  3. Padrão: a code page ANSI do Windows (1252 no Brasil), como fazia o cliente original 2.5.0.1030.
+
+Sem configuração, uma estação em português continua em 1252: nada muda para quem já usa.
+
+Todas as estações precisam usar a code page com que o banco foi gravado.
+
+Onde ver a code page em uso:
+  - Help > About > Version Information;
+  - janela de mensagens, ao abrir um projeto ("Text code page: 1252 (Windows ANSI code page)").
+
+Console jvcs.exe e automação por IA:
+  - entrada, saída, /input e descriptionfile ficam na code page da estação;
+  - o wrapper da IA aceita wireCodePage= no config.ini;
+  - o edit-preserve grava fontes ANSI na code page do Windows.
+
+=====================================================================
+BUILDS ANTERIORES DO BETA 6
+=====================================================================
+
+  - 2066: correções da revisão do 2065 (Select All Matches, Find, filtro da árvore, Esc e F3; wrapper da IA: .pas + .dfm de nome longo e id:<n>).
+  - 2065: pesquisa Find refeita, menu Edit, filtro da árvore de projetos e menu de contexto (Copy Full Path, Open in Explorer...).
+  - 2063: verify sem projeto e correções de segurança do wrapper da IA.
+  - 2061: console jvcs.exe 2026 no instalador (projetos e módulos sem IDE, histórico, labels, ToDo e bugs).
+
+Histórico completo: CHANGELOG.md e news\pt em https://github.com/edmarfrazao/JEDI_VCS

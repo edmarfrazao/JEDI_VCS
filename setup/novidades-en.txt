@@ -1,0 +1,36 @@
+﻿JEDI VCS 2.5 Beta 2026 - What's new in Beta 6, build 2068
+
+DISCLAIMER: provided without warranty. Test and validate in your own environment, with a backup and a copy of your JEDI VCS database, before installing in production.
+
+=====================================================================
+TEXT CODE PAGE (Cyrillic, Greek, Central European...)
+=====================================================================
+
+Check-in comments, labels, descriptions and names can now use code pages other than 1252: Windows-1251 (Cyrillic), 1250 (Central European), 1253 (Greek) and others. Before, the 2026 client always sent 1252: existing Cyrillic comments showed as "Ïîïðàâêà" instead of "Поправка", and new ones reached the server as "????".
+
+How to configure (the first one found wins):
+  1. On the server, for everybody: the line WireCodePage=1251 in the [GlobalUserData] section of jvcssrv.ini (folder of JVCSSrv.exe). Works with the current 2.5 server, no server update needed.
+  2. On the workstation: the environment variable JVCS_WIRECODEPAGE or the string value WireCodePage in HKCU\Software\JEDI\JEDIVCS.
+  3. Default: the Windows ANSI code page, as the original 2.5.0.1030 client did.
+
+All workstations must use the code page the database was written with. Without any setting nothing changes on a workstation whose ANSI code page is 1252.
+
+Where to see the code page in use:
+  - Help > About > Version Information;
+  - message window, when a project is opened ("Text code page: 1251 (server)").
+
+Console jvcs.exe and AI automation:
+  - stdin/stdout, /input and descriptionfile use the workstation code page;
+  - the AI wrapper accepts wireCodePage= in config.ini;
+  - edit-preserve writes ANSI sources in the Windows ANSI code page.
+
+=====================================================================
+EARLIER BETA 6 BUILDS
+=====================================================================
+
+  - 2066: fixes from the 2065 review (Select All Matches, Find, project tree filter, Esc and F3; AI wrapper: long-name .pas + .dfm and id:<n>).
+  - 2065: new Find search, Edit menu, project tree filter and context menu (Copy Full Path, Open in Explorer...).
+  - 2063: verify without a project and security fixes in the AI wrapper.
+  - 2061: 2026 console jvcs.exe in the installer (projects and modules without the IDE, history, labels, ToDo and bugs).
+
+Full history: CHANGELOG.md and news\en at https://github.com/edmarfrazao/JEDI_VCS

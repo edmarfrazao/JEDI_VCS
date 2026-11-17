@@ -95,6 +95,7 @@ uses
   , JclFileUtils
   , JvJVCLUtils
   , JVCSGUIClientResources
+  , JVCSWireCodePage
 {$IFDEF LANGUAGE}
   , JvGnugettext
 {$ENDIF LANGUAGE}
@@ -225,6 +226,9 @@ begin
   begin
     Msg := Msg + 'unzdll.dll' + ' N/A' + #13;
   end;
+
+  // JVCS 2026 (issue #1): code page dos textos no fio e onde configurar
+  Msg := Msg + #13 + JVCSWireCodePageReport;
 
   Msg := Msg + #13 + JVCSRES_Required_server47service_versions58 + #13 +
          GetSrvRequiredVersionString(svIdOraOci) + #13 +

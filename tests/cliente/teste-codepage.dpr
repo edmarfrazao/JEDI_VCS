@@ -120,6 +120,11 @@ begin
   Check(not JVCSApplyServerWireCodePage('1251', Err) and (MWCodePage = 1251),
     'servidor 1251 de novo: sem mudanca');
   Check(JVCSWireCodePageInfo = '1251 (server)', 'info: ' + JVCSWireCodePageInfo);
+  Check(JVCSWireCodePageApplied, 'JVCSWireCodePageApplied depois da escolha');
+  Check((Pos('in use: 1251 (server)', JVCSWireCodePageReport) > 0) and
+    (Pos('[GlobalUserData]', JVCSWireCodePageReport) > 0) and
+    (Pos(cWireCodePageEnv, JVCSWireCodePageReport) > 0),
+    'texto do Help|About: em uso, servidor e estacao');
 end;
 
 procedure TestesConversao;

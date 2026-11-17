@@ -1207,7 +1207,7 @@ uses
   AssignMilestones, Syncronice, MergeVersion, Options, About, Branch,
   SelectFolder, MaintainMilestones, SimpleReport, KWExpansion, MaintainBugs,
   AssignBugs, CompareFolders, LoadModule, DirectSQL, Distribution, {ProjectRoot,}
-  SMTPSend, TZHandling, Plugins, GetGlobalSettings, JclStrings, JclSecurity, JclWin32,
+  SMTPSend, TZHandling, Plugins, GetGlobalSettings, JVCSWireCodePage, JclStrings, JclSecurity, JclWin32,
   ConfigStorage, Registry, BugWindow, ModuleHistoryWindow, JclFileUtils,
   JVCSClientFunctions, JVCSClientConsts, JVCSCrypt, VCSCommon,
   {$IFNDEF IDEDLL}
@@ -3774,6 +3774,9 @@ begin
       if sCurrentMachine <> '' then
         Msg := Format(JVCSRES_37s_on_37s, [Msg, sCurrentMachine]);
       AddMessage(Format(JVCSRES_37s_910s93, [Msg]), msclNormal);
+      //--- JVCS 2026 (issue #1): code page dos textos no fio ----------------------
+      AddMessage('Text code page: ' + JVCSWireCodePageInfo +
+        ' (Help | About | Version Information)', msclNormal);
       //--- Global settings? -------------------------------------------------------
       if bGlobalSettings then
       begin
